@@ -481,7 +481,7 @@ Enable auto-regeneration to automatically rebuild the CRL whenever a certificate
 The CDP URL is embedded in certificates so clients know where to download the CRL. Copy the URL from the CRL details.
 
 \`\`\`
-https://your-server:8443/api/v2/crl/{ca_id}
+https://your-server:8443/cdp/{ca_id}.crl
 \`\`\`
 
 ### Downloading CRLs
@@ -502,7 +502,7 @@ The OCSP section shows:
 The Authority Information Access (AIA) URL is embedded in certificates to tell clients where the OCSP responder is located.
 
 \`\`\`
-https://your-server:8443/api/v2/crl/ocsp
+https://your-server:8443/ocsp
 \`\`\`
 
 ### OCSP vs CRL
@@ -1174,13 +1174,7 @@ Manage client certificates for mutual TLS authentication:
 5. Copy the key immediately — it is shown only once
 
 ### Using API Keys
-Include the key in the \`Authorization\` header:
-
-\`\`\`
-Authorization: Bearer <your-api-key>
-\`\`\`
-
-Or use the \`X-API-Key\` header:
+Include the key in the \`X-API-Key\` header:
 
 \`\`\`
 X-API-Key: <your-api-key>
