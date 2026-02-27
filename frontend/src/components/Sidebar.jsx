@@ -300,7 +300,7 @@ export function Sidebar({ activePage }) {
       </nav>
 
       {/* Bottom section */}
-      <div className="shrink-0 mt-1 px-2 space-y-0.5">
+      <div className="shrink-0 mt-1 px-2">
         <div className="h-px bg-border mx-1 mb-1.5" />
 
         {/* Settings */}
@@ -322,21 +322,22 @@ export function Sidebar({ activePage }) {
           </Link>
         )}
 
-        {/* WebSocket Indicator */}
-        <WebSocketIndicator className="px-2 py-0.5" />
-
-        {/* User Menu */}
-        <DropdownMenu.Root>
+        {/* User Menu — with integrated WebSocket status dot */}
+        <div className="mt-1.5 pt-1.5 border-t border-border">
+          <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
-            <button className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-bg-tertiary transition-colors group">
-              <div className="w-6 h-6 rounded-full bg-accent-primary-op15 border border-accent-primary-op20 flex items-center justify-center shrink-0">
-                <UserCircle size={14} weight="bold" className="text-accent-primary" />
+            <button className="w-full flex items-center gap-2.5 px-2 py-2 rounded-md hover:bg-bg-tertiary transition-colors">
+              <div className="relative shrink-0">
+                <div className="w-7 h-7 rounded-full bg-accent-primary-op15 border border-accent-primary-op20 flex items-center justify-center">
+                  <UserCircle size={16} weight="bold" className="text-accent-primary" />
+                </div>
+                <WebSocketIndicator variant="dot" className="absolute -bottom-0.5 -right-0.5" />
               </div>
               <div className="flex-1 min-w-0 text-left">
-                <div className="text-xs font-medium text-text-primary truncate">{user?.username || 'User'}</div>
+                <div className="text-[13px] font-medium text-text-primary truncate">{user?.username || 'User'}</div>
                 <div className="text-3xs text-text-tertiary capitalize">{user?.role || ''}</div>
               </div>
-              <CaretRight size={10} className="text-text-tertiary shrink-0" />
+              <CaretRight size={10} className="text-text-tertiary shrink-0 opacity-60" />
             </button>
           </DropdownMenu.Trigger>
 
@@ -463,6 +464,7 @@ export function Sidebar({ activePage }) {
             </DropdownMenu.Content>
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
+        </div>
       </div>
     </div>
   )

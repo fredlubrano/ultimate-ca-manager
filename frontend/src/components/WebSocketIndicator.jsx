@@ -34,7 +34,7 @@ const stateConfig = {
   },
 };
 
-export function WebSocketIndicator({ className, showLabel = false }) {
+export function WebSocketIndicator({ className, showLabel = false, variant = 'default' }) {
   const { connectionState, isConnected, connect } = useWebSocket({ showToasts: false });
   
   const config = stateConfig[connectionState] || stateConfig[ConnectionState.DISCONNECTED];
@@ -45,6 +45,18 @@ export function WebSocketIndicator({ className, showLabel = false }) {
       connect();
     }
   };
+
+  // Dot variant — small status dot for embedding in avatars
+  // Only visible when connected — no alarming indicators for proxy/Zscaler environments
+  if (variant === 'dot') {
+    if (!isConnected) return null
+    return (
+      <span
+        title={config.label}
+        className={cn('w-2.5 h-2.5 rounded-full border-2 border-bg-secondary bg-status-success', className)}
+      />
+    )
+  }
   
   return (
     <button
