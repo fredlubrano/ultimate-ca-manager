@@ -1,5 +1,5 @@
 /**
- * Detailed help guides for all UCM pages — v2.2.0
+ * Detailed help guides for all UCM pages — v2.50
  * Each entry: { title, content (markdown string) }
  * Markdown supports: ## h2, ### h3, #### h4, **bold**, `code`, *italic*,
  *   - lists, 1. numbered, > blockquotes, ``` code blocks
@@ -41,8 +41,10 @@ Lists certificates expiring soonest. Click any certificate to navigate to its de
 Shows the health of UCM services:
 - ACME server (enabled/disabled)
 - SCEP server
-- CRL auto-regeneration
+- EST protocol (enabled/disabled, assigned CA)
+- CRL auto-regeneration with CDP count
 - OCSP responder
+- Auto-renewal status
 - Service uptime
 
 ### Recent Activity
@@ -218,12 +220,23 @@ The original certificate remains valid until it expires or is revoked.
 ## Revoking a Certificate
 
 1. Select the certificate → **Revoke**
-2. Choose a revocation reason (Key Compromise, CA Compromise, etc.)
+2. Choose a revocation reason (Key Compromise, CA Compromise, Affiliation Changed, Superseded, Cessation of Operation, Certificate Hold, etc.)
 3. Confirm the revocation
 
 Revoked certificates are published in the CRL on next regeneration.
 
-> ⚠ Revocation is permanent — a revoked certificate cannot be un-revoked.
+> ⚠ Revocation is generally permanent — except for **Certificate Hold** which can be removed.
+
+### Remove Hold (Unhold)
+
+If a certificate was revoked with the **Certificate Hold** reason, it can be restored to valid status:
+
+1. Open the revoked certificate details
+2. The **Remove Hold** button appears in the action bar (only for Certificate Hold revocations)
+3. Click **Remove Hold** to restore the certificate
+4. The certificate returns to valid status, the CRL is regenerated, and the OCSP cache is updated
+
+> 💡 Certificate Hold is useful for temporary suspensions (e.g., lost device, pending investigation).
 
 ### Revoke & Replace
 Combines revocation with immediate re-issuance. The new certificate inherits the same Subject and SANs.
@@ -343,6 +356,20 @@ CSRs awaiting review and signing. New CSRs appear here after upload.
 ### History
 Previously signed or rejected CSRs, with links to the resulting certificates.
 
+## Generating a CSR
+
+UCM can generate a CSR and key pair directly:
+
+1. Click **Generate CSR**
+2. Fill in the Subject fields (CN required)
+3. Add Subject Alternative Names if needed
+4. Select key type and size (RSA 2048/4096, ECDSA P-256/P-384)
+5. Click **Generate**
+
+The CSR and private key are created and stored in UCM. The CSR appears in the Pending tab ready for signing.
+
+> 💡 This is convenient when you want UCM to manage the entire lifecycle — CSR, signing, and key storage.
+
 ## Uploading a CSR
 
 1. Click **Upload CSR**
@@ -363,7 +390,8 @@ Click a CSR to view:
 1. Select a pending CSR
 2. Click **Sign**
 3. Choose the **Signing CA** (must have a private key)
-4. Set the **validity period** in days
+4. Select the **Certificate Type** (server, client, code signing, email)
+5. Set the **validity period** in days
 5. Optionally apply a template for Key Usage and extensions
 6. Click **Sign**
 
@@ -494,9 +522,16 @@ OCSP provides real-time certificate status checking. Instead of downloading an e
 
 ### OCSP Status
 The OCSP section shows:
-- **Responder status** — Active or inactive
+- **Responder status** — Active or inactive per CA
 - **Total queries** — Number of OCSP requests processed
-- **Cache hit rate** — Percentage of queries served from cache
+- **Cache** — Response cache with automatic daily cleanup of expired entries
+
+### OCSP Cache
+
+UCM caches OCSP responses for performance. The cache is:
+- **Automatically cleaned** — Expired responses are purged daily by the scheduler
+- **Invalidated on revocation** — When a certificate is revoked, its cached OCSP response is immediately cleared
+- **Invalidated on unhold** — When a Certificate Hold is removed, the OCSP cache is updated
 
 ### AIA URL
 The Authority Information Access (AIA) URL is embedded in certificates to tell clients where the OCSP responder is located.
@@ -698,6 +733,148 @@ acme.sh --server https://your-server:8443/acme/directory \\
 \`\`\`
 
 > ⚠ For internal ACME, clients must trust the UCM CA. Install the Root CA certificate in the client's trust store.
+`
+  },
+
+  // ===================================================================
+  est: {
+    title: 'EST Protocol',
+    content: `
+## Overview
+
+Enrollment over Secure Transport (EST) is defined in **RFC 7030** and provides certificate enrollment, re-enrollment, and CA certificate retrieval over HTTPS. EST is the modern replacement for SCEP, offering stronger security through mutual TLS (mTLS) authentication.
+
+## Configuration
+
+### Settings Tab
+
+1. **Enable EST** — Toggle the EST protocol on or off
+2. **Signing CA** — Select which Certificate Authority signs EST-enrolled certificates
+3. **Authentication** — Configure HTTP Basic Auth credentials (username and password)
+4. **Certificate Validity** — Default validity period for EST-issued certificates (in days)
+
+### Saving Configuration
+
+Click **Save** to apply changes. The EST endpoints become available immediately when enabled.
+
+## Authentication
+
+EST supports two authentication methods:
+
+### Mutual TLS (mTLS) — Recommended
+
+The client presents a certificate during the TLS handshake. UCM validates the certificate and authenticates the client automatically.
+
+- **Strongest method** — cryptographic client identity
+- **Required for** \`/simplereenroll\` — the client must present its current certificate
+- **Depends on** proper TLS termination config (reverse proxy must pass \`SSL_CLIENT_CERT\` to UCM)
+
+### HTTP Basic Auth — Fallback
+
+Username and password authentication over HTTPS. Configured in EST Settings.
+
+- **Simpler to set up** — no client certificate needed
+- **Less secure** — credentials transmitted per request (protected by HTTPS)
+- **Use when** mTLS infrastructure is not available
+
+## EST Endpoints
+
+All endpoints are under \`/.well-known/est/\`:
+
+### GET /cacerts
+Retrieve the CA certificate chain. **No authentication required.**
+
+Use this to bootstrap trust — clients fetch the CA cert before enrollment.
+
+\`\`\`bash
+curl -k https://your-server:8443/.well-known/est/cacerts | \\
+  base64 -d | openssl pkcs7 -inform DER -print_certs
+\`\`\`
+
+### POST /simpleenroll
+Submit a PKCS#10 CSR and receive a signed certificate.
+
+Requires authentication (mTLS or Basic Auth).
+
+\`\`\`bash
+# Using curl with Basic Auth
+curl -k --user est-user:est-password \\
+  -H "Content-Type: application/pkcs10" \\
+  --data-binary @csr.pem \\
+  https://your-server:8443/.well-known/est/simpleenroll
+\`\`\`
+
+### POST /simplereenroll
+Renew an existing certificate. **Requires mTLS** — the client must present the certificate being renewed.
+
+\`\`\`bash
+curl -k --cert client.pem --key client.key \\
+  -H "Content-Type: application/pkcs10" \\
+  --data-binary @csr.pem \\
+  https://your-server:8443/.well-known/est/simplereenroll
+\`\`\`
+
+### GET /csrattrs
+Get the CSR attributes (OIDs) recommended by the server.
+
+### POST /serverkeygen
+Server generates a key pair and returns the certificate along with the private key. Useful when the client cannot generate keys locally.
+
+## Information Tab
+
+The Information tab displays:
+- **Endpoint URLs** — Copy-paste ready URLs for each EST operation
+- **Enrollment Statistics** — Number of enrollments, re-enrollments, and errors
+- **Last activity** — Most recent EST operations from audit logs
+
+## Integration Examples
+
+### Using est client (libest)
+\`\`\`bash
+estclient -s your-server -p 8443 \\
+  --srp-user est-user --srp-password est-password \\
+  -o /tmp/certs --enroll
+\`\`\`
+
+### Using OpenSSL
+\`\`\`bash
+# Fetch CA certs
+curl -k https://your-server:8443/.well-known/est/cacerts | \\
+  base64 -d > cacerts.p7
+
+# Generate CSR
+openssl req -new -newkey rsa:2048 -nodes \\
+  -keyout client.key -out client.csr \\
+  -subj "/CN=my-device/O=MyOrg"
+
+# Enroll (Basic Auth)
+curl -k --user est-user:est-password \\
+  -H "Content-Type: application/pkcs10" \\
+  --data-binary @<(openssl req -in client.csr -outform DER | base64) \\
+  https://your-server:8443/.well-known/est/simpleenroll | \\
+  base64 -d | openssl x509 -inform DER -out client.pem
+\`\`\`
+
+### Windows (certutil)
+\`\`\`cmd
+certutil -enrollmentServerURL add \\
+  "https://your-server:8443/.well-known/est" \\
+  kerberos
+\`\`\`
+
+## EST vs SCEP
+
+| Feature | EST | SCEP |
+|---------|-----|------|
+| Transport | HTTPS (TLS) | HTTP or HTTPS |
+| Authentication | mTLS + Basic Auth | Challenge password |
+| Standard | RFC 7030 (2013) | RFC 8894 (2020, but legacy) |
+| Key generation | Server-side option | Client-only |
+| Renewal | mTLS re-enrollment | Re-enrollment |
+| Security | Strong (TLS-based) | Weaker (shared secret) |
+| Recommendation | ✅ Preferred for new | Legacy devices only |
+
+> 💡 Use EST for new deployments. Use SCEP only for legacy network devices that don't support EST.
 `
   },
 

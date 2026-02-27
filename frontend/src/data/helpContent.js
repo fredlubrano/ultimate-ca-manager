@@ -1,5 +1,5 @@
 /**
- * Help content for all UCM pages — v2.2.0
+ * Help content for all UCM pages — v2.50
  * Each entry: { title, subtitle, overview, sections[], tips[], warnings[], related[] }
  * Section: { title, icon, content?, items?[], definitions?[], example? }
  * Item: string | { label, text }
@@ -28,7 +28,7 @@ export const helpContent = {
           { label: 'Certificate Trend', text: 'Issuance history chart over time' },
           { label: 'Status Distribution', text: 'Pie chart breakdown: valid / expiring / expired / revoked' },
           { label: 'Next Expiry', text: 'Certificates expiring within 30 days' },
-          { label: 'System Status', text: 'Service health, uptime, ACME / SCEP / CRL / OCSP status' },
+          { label: 'System Status', text: 'Service health: ACME, SCEP, EST, OCSP, CRL/CDP, auto-renewal status' },
           { label: 'Recent Activity', text: 'Latest operations across the system' },
           { label: 'Recent Certificates', text: 'Recently issued or imported certificates' },
           { label: 'Certificate Authorities', text: 'CA list with chain information' },
@@ -109,7 +109,8 @@ export const helpContent = {
           { label: 'Issue', text: 'Create a new certificate signed by one of your CAs' },
           { label: 'Import', text: 'Import an existing certificate (PEM, DER, or PKCS#12)' },
           { label: 'Renew', text: 'Re-issue with the same subject and a new validity period' },
-          { label: 'Revoke', text: 'Mark as revoked — will appear in CRL' },
+          { label: 'Revoke', text: 'Mark as revoked with a reason — will appear in CRL' },
+          { label: 'Remove Hold', text: 'Unhold a certificate revoked with "Certificate Hold" reason — restores it to valid status' },
           { label: 'Revoke & Replace', text: 'Revoke and immediately issue a replacement' },
           { label: 'Export', text: 'Download in PEM, DER, or PKCS#12 format' },
           { label: 'Compare', text: 'Side-by-side comparison of two certificates' },
@@ -122,7 +123,7 @@ export const helpContent = {
       'Renewing preserves the same subject but generates a new key pair',
     ],
     warnings: [
-      'Revocation is permanent — a revoked certificate cannot be un-revoked',
+      'Revocation is generally permanent — except for "Certificate Hold" which can be removed (unhold)',
       'Deleting a certificate removes it from UCM but does not revoke it',
     ],
     related: ['CAs', 'CSRs', 'Templates', 'CRL/OCSP']
@@ -187,9 +188,10 @@ export const helpContent = {
         title: 'Workflow',
         icon: FileText,
         items: [
+          { label: 'Generate CSR', text: 'Create a new CSR with key pair directly in UCM' },
           { label: 'Upload CSR', text: 'Accept PEM-encoded CSR files or paste PEM text' },
           { label: 'Review', text: 'Inspect subject, SANs, key type, and signature before signing' },
-          { label: 'Sign', text: 'Select a CA, set validity period, and issue the certificate' },
+          { label: 'Sign', text: 'Select a CA, certificate type, set validity period, and issue the certificate' },
           { label: 'Download', text: 'Download the original CSR in PEM format' },
         ]
       },
@@ -263,9 +265,9 @@ export const helpContent = {
         title: 'OCSP Service',
         icon: Globe,
         items: [
-          { label: 'Status', text: 'Indicates whether the OCSP responder is active' },
+          { label: 'Status', text: 'Indicates whether the OCSP responder is active for each CA' },
           { label: 'AIA URL', text: 'Authority Information Access URL for certificates' },
-          { label: 'Cache Hit Rate', text: 'Percentage of OCSP queries served from cache' },
+          { label: 'Cache', text: 'Response cache with automatic daily cleanup of expired entries' },
           { label: 'Total Queries', text: 'Number of OCSP requests processed' },
         ]
       },
@@ -313,6 +315,53 @@ export const helpContent = {
       'Challenge passwords are transmitted in the SCEP request — use HTTPS for transport security',
     ],
     related: ['Certificates', 'CAs']
+  },
+
+  // ===== EST =====
+  est: {
+    title: 'EST',
+    subtitle: 'Enrollment over Secure Transport',
+    overview: 'EST (RFC 7030) provides secure certificate enrollment over HTTPS with mutual TLS (mTLS) or HTTP Basic authentication. Ideal for modern enterprise environments requiring standards-based enrollment with strong transport security.',
+    sections: [
+      {
+        title: 'Tabs',
+        icon: ListChecks,
+        items: [
+          { label: 'Settings', text: 'Enable EST, select signing CA, configure authentication credentials and certificate validity' },
+          { label: 'Information', text: 'EST endpoint URLs for integration, enrollment statistics, and usage examples' },
+        ]
+      },
+      {
+        title: 'Authentication',
+        icon: ShieldCheck,
+        items: [
+          { label: 'mTLS (Mutual TLS)', text: 'Client presents a certificate during TLS handshake — strongest authentication method' },
+          { label: 'HTTP Basic Auth', text: 'Username/password fallback when mTLS is not available' },
+        ]
+      },
+      {
+        title: 'Endpoints',
+        icon: Globe,
+        items: [
+          { label: '/cacerts', text: 'Retrieve the CA certificate chain (no authentication required)' },
+          { label: '/simpleenroll', text: 'Submit a CSR and receive a signed certificate' },
+          { label: '/simplereenroll', text: 'Renew an existing certificate (requires mTLS)' },
+          { label: '/csrattrs', text: 'Get CSR attributes recommended by the server' },
+          { label: '/serverkeygen', text: 'Server generates the key pair and returns certificate + key' },
+        ]
+      },
+    ],
+    tips: [
+      'EST is the modern replacement for SCEP — prefer EST for new deployments',
+      'Use mTLS authentication for highest security — Basic Auth is a fallback',
+      'The /simplereenroll endpoint requires the client to present its current certificate via mTLS',
+      'Copy endpoint URLs from the Information tab to configure your EST clients',
+    ],
+    warnings: [
+      'EST requires HTTPS — the client must trust the UCM server certificate or CA',
+      'mTLS authentication requires proper TLS termination config (reverse proxy must forward client certs)',
+    ],
+    related: ['Certificates', 'CAs', 'SCEP', 'ACME']
   },
 
   // ===== ACME =====
