@@ -347,7 +347,9 @@
     "reportsShort": "レポート",
     "auditor": "監査役",
     "experimental": "実験的",
-    "experimentalTooltip": "この機能は実験的であり、期待どおりに動作しない場合があります"
+    "experimentalTooltip": "この機能は実験的であり、期待どおりに動作しない場合があります",
+    "est": "EST",
+    "estShort": "EST"
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",
@@ -2442,7 +2444,8 @@
         "ssoProviders": "SSOプロバイダーの読み込みに失敗しました",
         "templates": "テンプレートの読み込みに失敗しました",
         "truststore": "トラストストアの読み込みに失敗しました",
-        "users": "ユーザーの読み込みに失敗しました"
+        "users": "ユーザーの読み込みに失敗しました",
+        "est": "ESTデータの読み込みに失敗しました"
       },
       "revokeFailed": {
         "certificate": "証明書の失効に失敗しました"
@@ -2714,5 +2717,43 @@
     "deleteDescription": "{{name}}を完全に削除してよろしいですか？",
     "deleteSuccess": "証明書の削除に成功",
     "deleteFailed": "証明書の削除に失敗"
+  },
+  "est": {
+    "title": "ESTプロトコル",
+    "enableEst": "ESTサーバーを有効にする",
+    "enableEstDesc": "EST（RFC 7030）プロトコルによる証明書登録を許可",
+    "serverSettings": "サーバー設定",
+    "validityDays": "証明書の有効期間（日）",
+    "validityDaysHelp": "EST登録証明書のデフォルト有効期間",
+    "basicAuth": "HTTP Basic認証",
+    "basicAuthDesc": "ESTクライアント認証用の資格情報（mTLSの代替）",
+    "username": "ユーザー名",
+    "password": "パスワード",
+    "endpoints": "ESTエンドポイント",
+    "endpointsDesc": "ESTクライアント設定でこれらのURLを使用してください",
+    "cacerts": "CA証明書",
+    "cacertsDesc": "CA証明書チェーンを取得（PKCS#7）",
+    "simpleenroll": "簡易登録",
+    "simpleenrollDesc": "新しい証明書を登録（PKCS#10 CSRを送信）",
+    "simplereenroll": "簡易再登録",
+    "simplereenrollDesc": "既存の証明書を更新",
+    "csrattrs": "CSR属性",
+    "csrattrsDesc": "必要なCSR属性を取得",
+    "serverkeygen": "サーバー鍵生成",
+    "serverkeygenDesc": "サーバーが鍵ペアと証明書を生成",
+    "copied": "URLをクリップボードにコピーしました",
+    "estDisabled": "ESTは無効です",
+    "estDisabledDesc": "登録を許可するには設定でESTを有効にしてください",
+    "aboutEst": "ESTについて",
+    "aboutEstDesc": "Enrollment over Secure Transport（EST、RFC 7030）は、TLSとPKCS#10を使用した証明書の登録と管理を提供します。クライアント認証にmTLSとHTTP Basic Authの両方をサポートしています。",
+    "stats": "統計",
+    "totalEnrollments": "総登録数",
+    "successfulEnrollments": "成功",
+    "failedEnrollments": "失敗",
+    "noStats": "登録データがまだありません",
+    "groups": {
+      "management": "管理",
+      "settings": "設定"
+    }
   }
 }

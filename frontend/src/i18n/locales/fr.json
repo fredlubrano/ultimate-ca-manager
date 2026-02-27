@@ -848,7 +848,9 @@
     "approvalsShort": "Approbations",
     "reportsShort": "Rapports",
     "experimental": "Expérimental",
-    "experimentalTooltip": "Cette fonctionnalité est expérimentale et peut ne pas fonctionner comme prévu"
+    "experimentalTooltip": "Cette fonctionnalité est expérimentale et peut ne pas fonctionner comme prévu",
+    "est": "EST",
+    "estShort": "EST"
   },
   "compare": {
     "title": "Comparer les certificats",
@@ -2434,7 +2436,8 @@
         "policies": "Échec du chargement des politiques",
         "approvals": "Échec du chargement des demandes d'approbation",
         "reports": "Échec du chargement des rapports",
-        "generic": "Échec du chargement des données"
+        "generic": "Échec du chargement des données",
+        "est": "Échec du chargement des données EST"
       },
       "createFailed": {
         "certificate": "Échec de la création du certificat",
@@ -2717,5 +2720,43 @@
     "deleteDescription": "Êtes-vous sûr de vouloir supprimer définitivement {{name}} ? Cette action est irréversible.",
     "deleteSuccess": "Certificat supprimé avec succès",
     "deleteFailed": "Échec de la suppression du certificat"
+  },
+  "est": {
+    "title": "Protocole EST",
+    "enableEst": "Activer le serveur EST",
+    "enableEstDesc": "Autoriser l'inscription de certificats via le protocole EST (RFC 7030)",
+    "serverSettings": "Paramètres du serveur",
+    "validityDays": "Validité du certificat (jours)",
+    "validityDaysHelp": "Période de validité par défaut pour les certificats inscrits via EST",
+    "basicAuth": "Authentification HTTP Basic",
+    "basicAuthDesc": "Identifiants pour l'authentification client EST (alternative au mTLS)",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "endpoints": "Points d'accès EST",
+    "endpointsDesc": "Utilisez ces URLs dans la configuration de votre client EST",
+    "cacerts": "Certificats CA",
+    "cacertsDesc": "Obtenir la chaîne de certificats CA (PKCS#7)",
+    "simpleenroll": "Inscription simple",
+    "simpleenrollDesc": "Inscrire un nouveau certificat (envoyer un CSR PKCS#10)",
+    "simplereenroll": "Réinscription simple",
+    "simplereenrollDesc": "Renouveler un certificat existant",
+    "csrattrs": "Attributs CSR",
+    "csrattrsDesc": "Obtenir les attributs CSR requis",
+    "serverkeygen": "Génération de clé serveur",
+    "serverkeygenDesc": "Le serveur génère la paire de clés et le certificat",
+    "copied": "URL copiée dans le presse-papiers",
+    "estDisabled": "EST est désactivé",
+    "estDisabledDesc": "Activez EST dans les paramètres pour permettre l'inscription",
+    "aboutEst": "À propos d'EST",
+    "aboutEstDesc": "Enrollment over Secure Transport (EST, RFC 7030) fournit l'inscription et la gestion de certificats en utilisant TLS et PKCS#10. Il prend en charge l'authentification mTLS et HTTP Basic Auth.",
+    "stats": "Statistiques",
+    "totalEnrollments": "Inscriptions totales",
+    "successfulEnrollments": "Réussies",
+    "failedEnrollments": "Échouées",
+    "noStats": "Aucune donnée d'inscription",
+    "groups": {
+      "management": "Gestion",
+      "settings": "Paramètres"
+    }
   }
 }

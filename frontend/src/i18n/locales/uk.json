@@ -347,7 +347,9 @@
     "reportsShort": "Звіти",
     "auditor": "Аудитор",
     "experimental": "Експериментальна",
-    "experimentalTooltip": "Ця функція є експериментальною і може працювати не так, як очікується"
+    "experimentalTooltip": "Ця функція є експериментальною і може працювати не так, як очікується",
+    "est": "EST",
+    "estShort": "EST"
   },
   "commandPalette": {
     "searchPlaceholder": "Пошук команд, сертифікатів, ЦС, користувачів...",
@@ -2442,7 +2444,8 @@
         "ssoProviders": "Не вдалося завантажити SSO-провайдери",
         "templates": "Не вдалося завантажити шаблони",
         "truststore": "Не вдалося завантажити сховище довіри",
-        "users": "Не вдалося завантажити користувачів"
+        "users": "Не вдалося завантажити користувачів",
+        "est": "Не вдалося завантажити дані EST"
       },
       "revokeFailed": {
         "certificate": "Не вдалося відкликати сертифікат"
@@ -2714,5 +2717,43 @@
     "deleteDescription": "Ви впевнені, що хочете видалити {{name}} назавжди?",
     "deleteSuccess": "Сертифікат успішно видалено",
     "deleteFailed": "Не вдалося видалити сертифікат"
+  },
+  "est": {
+    "title": "Протокол EST",
+    "enableEst": "Увімкнути сервер EST",
+    "enableEstDesc": "Дозволити реєстрацію сертифікатів через протокол EST (RFC 7030)",
+    "serverSettings": "Налаштування сервера",
+    "validityDays": "Термін дії сертифіката (дні)",
+    "validityDaysHelp": "Стандартний термін дії для сертифікатів, зареєстрованих через EST",
+    "basicAuth": "HTTP Basic автентифікація",
+    "basicAuthDesc": "Облікові дані для автентифікації клієнта EST (альтернатива mTLS)",
+    "username": "Ім'я користувача",
+    "password": "Пароль",
+    "endpoints": "Точки доступу EST",
+    "endpointsDesc": "Використовуйте ці URL у конфігурації вашого клієнта EST",
+    "cacerts": "Сертифікати CA",
+    "cacertsDesc": "Отримати ланцюжок сертифікатів CA (PKCS#7)",
+    "simpleenroll": "Проста реєстрація",
+    "simpleenrollDesc": "Зареєструвати новий сертифікат (надіслати PKCS#10 CSR)",
+    "simplereenroll": "Проста перереєстрація",
+    "simplereenrollDesc": "Оновити існуючий сертифікат",
+    "csrattrs": "Атрибути CSR",
+    "csrattrsDesc": "Отримати необхідні атрибути CSR",
+    "serverkeygen": "Генерація ключа сервером",
+    "serverkeygenDesc": "Сервер генерує пару ключів та сертифікат",
+    "copied": "URL скопійовано до буфера обміну",
+    "estDisabled": "EST вимкнено",
+    "estDisabledDesc": "Увімкніть EST у налаштуваннях, щоб дозволити реєстрацію",
+    "aboutEst": "Про EST",
+    "aboutEstDesc": "Enrollment over Secure Transport (EST, RFC 7030) забезпечує реєстрацію та управління сертифікатами з використанням TLS та PKCS#10. Підтримує як mTLS, так і HTTP Basic Auth для автентифікації клієнтів.",
+    "stats": "Статистика",
+    "totalEnrollments": "Всього реєстрацій",
+    "successfulEnrollments": "Успішних",
+    "failedEnrollments": "Невдалих",
+    "noStats": "Даних про реєстрації ще немає",
+    "groups": {
+      "management": "Управління",
+      "settings": "Налаштування"
+    }
   }
 }

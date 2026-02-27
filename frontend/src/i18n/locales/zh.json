@@ -347,7 +347,9 @@
     "reportsShort": "报告",
     "auditor": "审计员",
     "experimental": "实验性",
-    "experimentalTooltip": "此功能为实验性功能，可能无法按预期工作"
+    "experimentalTooltip": "此功能为实验性功能，可能无法按预期工作",
+    "est": "EST",
+    "estShort": "EST"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",
@@ -2442,7 +2444,8 @@
         "ssoProviders": "加载 SSO 提供者失败",
         "templates": "加载模板失败",
         "truststore": "加载信任库失败",
-        "users": "加载用户失败"
+        "users": "加载用户失败",
+        "est": "加载EST数据失败"
       },
       "revokeFailed": {
         "certificate": "吊销证书失败"
@@ -2714,5 +2717,43 @@
     "deleteDescription": "确定要永久删除 {{name}} 吗？此操作无法撤消。",
     "deleteSuccess": "证书删除成功",
     "deleteFailed": "证书删除失败"
+  },
+  "est": {
+    "title": "EST协议",
+    "enableEst": "启用EST服务器",
+    "enableEstDesc": "允许通过EST（RFC 7030）协议进行证书注册",
+    "serverSettings": "服务器设置",
+    "validityDays": "证书有效期（天）",
+    "validityDaysHelp": "通过EST注册的证书的默认有效期",
+    "basicAuth": "HTTP Basic认证",
+    "basicAuthDesc": "EST客户端认证凭据（mTLS的替代方案）",
+    "username": "用户名",
+    "password": "密码",
+    "endpoints": "EST端点",
+    "endpointsDesc": "在您的EST客户端配置中使用这些URL",
+    "cacerts": "CA证书",
+    "cacertsDesc": "获取CA证书链（PKCS#7）",
+    "simpleenroll": "简单注册",
+    "simpleenrollDesc": "注册新证书（发送PKCS#10 CSR）",
+    "simplereenroll": "简单重新注册",
+    "simplereenrollDesc": "续订现有证书",
+    "csrattrs": "CSR属性",
+    "csrattrsDesc": "获取所需的CSR属性",
+    "serverkeygen": "服务器密钥生成",
+    "serverkeygenDesc": "服务器生成密钥对和证书",
+    "copied": "URL已复制到剪贴板",
+    "estDisabled": "EST已禁用",
+    "estDisabledDesc": "在设置中启用EST以允许注册",
+    "aboutEst": "关于EST",
+    "aboutEstDesc": "安全传输注册（EST，RFC 7030）使用TLS和PKCS#10提供证书注册和管理。它支持mTLS和HTTP Basic Auth进行客户端认证。",
+    "stats": "统计",
+    "totalEnrollments": "总注册数",
+    "successfulEnrollments": "成功",
+    "failedEnrollments": "失败",
+    "noStats": "暂无注册数据",
+    "groups": {
+      "management": "管理",
+      "settings": "设置"
+    }
   }
 }

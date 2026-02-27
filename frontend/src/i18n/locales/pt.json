@@ -347,7 +347,9 @@
     "reportsShort": "Relatórios",
     "auditor": "Auditor",
     "experimental": "Experimental",
-    "experimentalTooltip": "Este recurso é experimental e pode não funcionar como esperado"
+    "experimentalTooltip": "Este recurso é experimental e pode não funcionar como esperado",
+    "est": "EST",
+    "estShort": "EST"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
@@ -2442,7 +2444,8 @@
         "ssoProviders": "Falha ao carregar provedores SSO",
         "templates": "Falha ao carregar templates",
         "truststore": "Falha ao carregar trust store",
-        "users": "Falha ao carregar usuários"
+        "users": "Falha ao carregar usuários",
+        "est": "Falha ao carregar dados EST"
       },
       "revokeFailed": {
         "certificate": "Falha ao revogar certificado"
@@ -2714,5 +2717,43 @@
     "deleteDescription": "Tem certeza que deseja eliminar permanentemente {{name}}?",
     "deleteSuccess": "Certificado eliminado com sucesso",
     "deleteFailed": "Falha ao eliminar certificado"
+  },
+  "est": {
+    "title": "Protocolo EST",
+    "enableEst": "Ativar servidor EST",
+    "enableEstDesc": "Permitir inscrição de certificados via protocolo EST (RFC 7030)",
+    "serverSettings": "Configurações do servidor",
+    "validityDays": "Validade do certificado (dias)",
+    "validityDaysHelp": "Período de validade padrão para certificados inscritos via EST",
+    "basicAuth": "Autenticação HTTP Basic",
+    "basicAuthDesc": "Credenciais para autenticação de cliente EST (alternativa ao mTLS)",
+    "username": "Nome de utilizador",
+    "password": "Palavra-passe",
+    "endpoints": "Endpoints EST",
+    "endpointsDesc": "Use estes URLs na configuração do seu cliente EST",
+    "cacerts": "Certificados CA",
+    "cacertsDesc": "Obter cadeia de certificados CA (PKCS#7)",
+    "simpleenroll": "Inscrição simples",
+    "simpleenrollDesc": "Inscrever um novo certificado (enviar CSR PKCS#10)",
+    "simplereenroll": "Reinscrição simples",
+    "simplereenrollDesc": "Renovar um certificado existente",
+    "csrattrs": "Atributos CSR",
+    "csrattrsDesc": "Obter atributos CSR necessários",
+    "serverkeygen": "Geração de chave no servidor",
+    "serverkeygenDesc": "O servidor gera par de chaves e certificado",
+    "copied": "URL copiado para a área de transferência",
+    "estDisabled": "EST está desativado",
+    "estDisabledDesc": "Ative o EST nas configurações para permitir a inscrição",
+    "aboutEst": "Sobre o EST",
+    "aboutEstDesc": "Enrollment over Secure Transport (EST, RFC 7030) fornece inscrição e gestão de certificados usando TLS e PKCS#10. Suporta tanto mTLS como HTTP Basic Auth para autenticação de clientes.",
+    "stats": "Estatísticas",
+    "totalEnrollments": "Inscrições totais",
+    "successfulEnrollments": "Bem-sucedidas",
+    "failedEnrollments": "Falhadas",
+    "noStats": "Sem dados de inscrição ainda",
+    "groups": {
+      "management": "Gestão",
+      "settings": "Configurações"
+    }
   }
 }

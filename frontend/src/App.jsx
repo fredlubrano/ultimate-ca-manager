@@ -30,6 +30,7 @@ const TemplatesPage = lazyWithRetry(() => import('./pages/TemplatesPage'))
 const UsersGroupsPage = lazyWithRetry(() => import('./pages/UsersGroupsPage'))
 const ACMEPage = lazyWithRetry(() => import('./pages/ACMEPage'))
 const SCEPPage = lazyWithRetry(() => import('./pages/SCEPPage'))
+const ESTPage = lazyWithRetry(() => import('./pages/ESTPage'))
 const SettingsPage = lazyWithRetry(() => import('./pages/SettingsPage'))
 const OperationsPage = lazyWithRetry(() => import('./pages/OperationsPage'))
 const CertificateToolsPage = lazyWithRetry(() => import('./pages/CertificateToolsPage'))
@@ -126,6 +127,7 @@ function AppRoutes() {
           <Route path="/users" element={<AdminRoute><UsersGroupsPage /></AdminRoute>} />
           <Route path="/acme" element={<PermissionRoute permission="read:acme"><ACMEPage /></PermissionRoute>} />
           <Route path="/scep-config" element={<PermissionRoute permission="read:scep"><SCEPPage /></PermissionRoute>} />
+          <Route path="/est-config" element={<PermissionRoute permission="read:est"><ESTPage /></PermissionRoute>} />
           <Route path="/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
           <Route path="/audit" element={<PermissionRoute permission="read:audit"><AuditLogsPage /></PermissionRoute>} />
           <Route path="/operations" element={<AdminRoute><OperationsPage /></AdminRoute>} />

@@ -35,6 +35,7 @@ const mobileNavItems = [
   { id: 'templates', icon: ListIcon, labelKey: 'common.templates', shortKey: 'common.templatesShort', path: '/templates' },
   { id: 'acme', icon: Key, labelKey: 'common.acme', shortKey: 'common.acmeShort', path: '/acme', permission: 'read:acme' },
   { id: 'scep', icon: Robot, labelKey: 'common.scep', shortKey: 'common.scepShort', path: '/scep-config', permission: 'read:scep' },
+  { id: 'est', icon: Globe, labelKey: 'common.est', shortKey: 'common.estShort', path: '/est-config', permission: 'read:est' },
   { id: 'crl-ocsp', icon: FileX, labelKey: 'common.crlOcsp', shortKey: 'common.crlOcspShort', path: '/crl-ocsp', permission: 'read:crl' },
   { id: 'truststore', icon: Vault, labelKey: 'common.trustStore', shortKey: 'common.trustStoreShort', path: '/truststore', permission: 'read:truststore' },
   { id: 'operations', icon: Lightning, labelKey: 'common.operations', shortKey: 'common.operationsShort', path: '/operations', adminOnly: true },
@@ -68,7 +69,7 @@ export function AppShell() {
   // Extract current page from pathname (empty string for dashboard)
   const rawPage = location.pathname.split('/')[1] || ''
   // Map URL segments to nav item IDs when they differ
-  const pageIdMap = { 'scep-config': 'scep' }
+  const pageIdMap = { 'scep-config': 'scep', 'est-config': 'est' }
   const activePage = pageIdMap[rawPage] || rawPage
   
   // Map URL paths to helpContent keys
@@ -85,7 +86,7 @@ export function AppShell() {
   const pagesWithHelp = [
     // Core pages
     'certificates', 'cas', 'csrs', 'users', 'templates', 
-    'acme', 'scep', 'settings', 'truststore', 'crl-ocsp', 
+    'acme', 'scep', 'est', 'settings', 'truststore', 'crl-ocsp', 
     'tools', 'audit', 'account', 'operations',
     // Pro pages
     'rbac', 'hsm'

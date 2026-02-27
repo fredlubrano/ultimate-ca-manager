@@ -82,6 +82,7 @@ export function Sidebar({ activePage }) {
     // Protocols
     { id: 'acme', icon: Key, labelKey: 'common.acme', path: '/acme', permission: 'read:acme' },
     { id: 'scep', icon: Robot, labelKey: 'common.scep', path: '/scep-config', permission: 'read:scep' },
+    { id: 'est', icon: Globe, labelKey: 'common.est', path: '/est-config', permission: 'read:est' },
     { id: 'crl-ocsp', icon: FileX, labelKey: 'common.crlOcsp', path: '/crl-ocsp', permission: 'read:crl' },
     'separator',
     // Data
