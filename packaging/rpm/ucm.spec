@@ -143,12 +143,35 @@ ENVEOF
     chmod 600 "$UCM_CONFIG/ucm.env"
     
     echo ""
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    # Detect access URLs
+    INSTALL_HOST=$(hostname -f 2>/dev/null || hostname)
+    INSTALL_PORT=$(grep "^HTTPS_PORT=" "$UCM_CONFIG/ucm.env" 2>/dev/null | cut -d= -f2)
+    INSTALL_PORT=${INSTALL_PORT:-8443}
+    INSTALL_IPS=$(hostname -I 2>/dev/null | xargs)
+    echo ""
+    echo "============================================"
     echo " UCM INSTALLED"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo " Admin password: $ADMIN_PASS"
-    echo " Config: $UCM_CONFIG/ucm.env"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "============================================"
+    echo ""
+    echo " Access:   https://${INSTALL_HOST}:${INSTALL_PORT}"
+    if [ -n "$INSTALL_IPS" ]; then
+        for ip in $INSTALL_IPS; do
+            echo "            https://${ip}:${INSTALL_PORT}"
+        done
+    fi
+    echo ""
+    echo " Admin:    admin / $ADMIN_PASS"
+    echo " Config:   $UCM_CONFIG/ucm.env"
+    echo ""
+    # Optional packages suggestions
+    echo " Optional packages:"
+    if rpm -q softhsm >/dev/null 2>&1; then
+        echo "  [ok] softhsm (HSM support)"
+    else
+        echo "  [ ]  softhsm - HSM support (dnf install softhsm)"
+    fi
+    echo ""
+    echo "============================================"
 fi
 
 # Create venv if gunicorn not found
@@ -169,10 +192,19 @@ chmod 750 $UCM_DATA
 # Generate HTTPS cert if not exists
 if [ ! -f "$UCM_DATA/https_cert.pem" ]; then
     echo "Generating HTTPS certificate..."
+    # Detect hostname and IPs for SAN
+    CERT_HOST=$(hostname -f 2>/dev/null || hostname)
+    CERT_IPS=""
+    for ip in $(hostname -I 2>/dev/null); do
+        CERT_IPS="${CERT_IPS},IP:${ip}"
+    done
+    CERT_SAN="DNS:${CERT_HOST},DNS:localhost,IP:127.0.0.1${CERT_IPS}"
+    
     openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
         -keyout "$UCM_DATA/https_key.pem" \
         -out "$UCM_DATA/https_cert.pem" \
-        -subj "/CN=ucm/O=UCM/OU=PKI" 2>/dev/null
+        -subj "/CN=${CERT_HOST}/O=UCM/OU=PKI" \
+        -addext "subjectAltName=${CERT_SAN}" 2>/dev/null
     chown %{name}:%{name} "$UCM_DATA"/https_*.pem
     chmod 600 "$UCM_DATA/https_key.pem"
     chmod 644 "$UCM_DATA/https_cert.pem"
