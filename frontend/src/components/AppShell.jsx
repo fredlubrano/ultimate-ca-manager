@@ -9,10 +9,10 @@ import {
   House, Certificate, ShieldCheck, FileText, List as ListIcon, User, Key, Gear,
   Lightning, ClockCounterClockwise, Robot, FileX, Vault, Shield, Lock, Wrench,
   UserCircle, Palette, Question, SignOut, Globe, Check, CaretRight,
-  Gavel, Stamp, ChartBar
+  Gavel, Stamp, ChartBar, Broadcast
 } from '@phosphor-icons/react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { Sidebar } from './Sidebar'
+import { Sidebar, navGroups } from './Sidebar'
 import { CommandPalette, useKeyboardShortcuts } from './CommandPalette'
 import { WebSocketIndicator } from './WebSocketIndicator'
 import { FloatingHelpPanel } from './ui/FloatingHelpPanel'
@@ -26,28 +26,26 @@ import { usePermission } from '../hooks'
 import { certificatesService } from '../services'
 import { languages } from '../i18n'
 
-// Mobile navigation items — must match desktop sidebar (Sidebar.jsx)
-const mobileNavItems = [
-  { id: '', icon: House, labelKey: 'common.dashboard', shortKey: 'common.dashboardShort', path: '/' },
-  { id: 'certificates', icon: Certificate, labelKey: 'common.certificates', shortKey: 'common.certificatesShort', path: '/certificates' },
-  { id: 'cas', icon: ShieldCheck, labelKey: 'common.cas', shortKey: 'common.casShort', path: '/cas' },
-  { id: 'csrs', icon: FileText, labelKey: 'common.csrs', shortKey: 'common.csrsShort', path: '/csrs' },
-  { id: 'templates', icon: ListIcon, labelKey: 'common.templates', shortKey: 'common.templatesShort', path: '/templates' },
-  { id: 'acme', icon: Key, labelKey: 'common.acme', shortKey: 'common.acmeShort', path: '/acme', permission: 'read:acme' },
-  { id: 'scep', icon: Robot, labelKey: 'common.scep', shortKey: 'common.scepShort', path: '/scep-config', permission: 'read:scep' },
-  { id: 'est', icon: Globe, labelKey: 'common.est', shortKey: 'common.estShort', path: '/est-config', permission: 'read:est' },
-  { id: 'crl-ocsp', icon: FileX, labelKey: 'common.crlOcsp', shortKey: 'common.crlOcspShort', path: '/crl-ocsp', permission: 'read:crl' },
-  { id: 'truststore', icon: Vault, labelKey: 'common.trustStore', shortKey: 'common.trustStoreShort', path: '/truststore', permission: 'read:truststore' },
-  { id: 'operations', icon: Lightning, labelKey: 'common.operations', shortKey: 'common.operationsShort', path: '/operations', adminOnly: true },
-  { id: 'tools', icon: Wrench, labelKey: 'common.tools', shortKey: 'common.toolsShort', path: '/tools' },
-  { id: 'policies', icon: Gavel, labelKey: 'common.policies', shortKey: 'common.policiesShort', path: '/policies', permission: 'read:policies' },
-  { id: 'approvals', icon: Stamp, labelKey: 'common.approvals', shortKey: 'common.approvalsShort', path: '/approvals', permission: 'read:approvals' },
-  { id: 'reports', icon: ChartBar, labelKey: 'common.reports', shortKey: 'common.reportsShort', path: '/reports', permission: 'read:audit' },
-  { id: 'users', icon: User, labelKey: 'common.users', shortKey: 'common.usersShort', path: '/users', adminOnly: true },
-  { id: 'rbac', icon: Shield, labelKey: 'common.rbac', shortKey: 'common.rbacShort', path: '/rbac', adminOnly: true },
-  { id: 'hsm', icon: Lock, labelKey: 'common.hsm', shortKey: 'common.hsmShort', path: '/hsm', permission: 'read:hsm' },
-  { id: 'audit', icon: ClockCounterClockwise, labelKey: 'common.audit', shortKey: 'common.auditShort', path: '/audit', permission: 'read:audit' },
-  { id: 'settings', icon: Gear, labelKey: 'common.settings', shortKey: 'common.settingsShort', path: '/settings', adminOnly: true },
+// Mobile nav: Dashboard (direct) + grouped items from Sidebar navGroups
+// Also build flat lookup for page title derivation
+const mobileNavDashboard = { id: '', icon: House, labelKey: 'common.dashboard', shortKey: 'common.dashboardShort', path: '/' }
+
+// Short label keys for mobile grid (keep compact)
+const mobileShortKeys = {
+  certificates: 'common.certificatesShort', cas: 'common.casShort', csrs: 'common.csrsShort',
+  templates: 'common.templatesShort', acme: 'common.acmeShort', scep: 'common.scepShort',
+  est: 'common.estShort', 'crl-ocsp': 'common.crlOcspShort', truststore: 'common.trustStoreShort',
+  operations: 'common.operationsShort', tools: 'common.toolsShort', policies: 'common.policiesShort',
+  approvals: 'common.approvalsShort', reports: 'common.reportsShort', users: 'common.usersShort',
+  rbac: 'common.rbacShort', hsm: 'common.hsmShort', audit: 'common.auditShort', settings: 'common.settingsShort'
+}
+
+// Flat lookup of all nav items for page title
+const allNavItemsFlat = [
+  mobileNavDashboard,
+  ...navGroups.flatMap(g => g.children),
+  { id: 'settings', icon: Gear, labelKey: 'common.settings', path: '/settings', adminOnly: true },
+  { id: 'account', icon: UserCircle, labelKey: 'common.account', path: '/account' }
 ]
 
 export function AppShell() {
@@ -148,12 +146,18 @@ export function AppShell() {
     onCommandPalette: () => setCommandPaletteOpen(true)
   })
 
-  // All nav items for mobile menu — filtered by permission
-  const allNavItems = mobileNavItems.filter(item => {
-    if (item.adminOnly && !isAdmin()) return false
-    if (item.permission && !isAdmin() && !hasPermission(item.permission)) return false
-    return true
-  })
+  // Mobile nav groups filtered by permissions
+  const filteredMobileGroups = navGroups.map(group => ({
+    ...group,
+    children: group.children.filter(item => {
+      if (item.adminOnly && !isAdmin()) return false
+      if (item.permission && !isAdmin() && !hasPermission(item.permission)) return false
+      return true
+    })
+  })).filter(g => g.children.length > 0)
+
+  // Settings item for mobile (admin/operator only)
+  const showSettings = isAdmin() || hasPermission('read:settings')
 
   return (
     <div className={cn(
@@ -182,7 +186,7 @@ export function AppShell() {
           {/* Page title - use nav item labels for consistency */}
           <span className="text-xs font-medium text-text-primary truncate max-w-[140px]">
             {(() => {
-              const navItem = mobileNavItems.find(item => item.id === activePage)
+              const navItem = allNavItemsFlat.find(item => item.id === activePage)
               return navItem ? t(navItem.labelKey) : activePage.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
             })()}
           </span>
@@ -376,41 +380,80 @@ export function AppShell() {
           {/* Grid Menu Panel */}
           <div className="fixed top-10 right-0 left-0 z-50 p-2 animate-in slide-in-from-top-2 duration-200">
             <div className="bg-bg-secondary border border-border rounded-xl shadow-2xl p-3 max-h-[65vh] overflow-auto">
-              {/* Navigation Grid - 5 columns on small screens */}
-              <div className="grid grid-cols-5 gap-1.5">
-                {allNavItems.map((item) => {
-                  const Icon = item.icon
-                  const isActive = activePage === item.id
-                  
+              {/* Dashboard row */}
+              <div className="grid grid-cols-5 gap-1.5 mb-2">
+                {(() => {
+                  const DashIcon = mobileNavDashboard.icon
+                  const isActive = activePage === ''
                   return (
                     <Link
-                      key={item.id}
-                      to={item.path}
+                      to="/"
                       className={cn(
                         "flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all",
                         "hover:bg-bg-tertiary active:scale-95",
-                        isActive 
-                          ? "bg-accent-primary-op15 text-accent-primary" 
-                          : "text-text-secondary hover:text-text-primary"
+                        isActive ? "bg-accent-primary-op15 text-accent-primary" : "text-text-secondary hover:text-text-primary"
                       )}
                     >
-                      <Icon size={20} weight={isActive ? "fill" : "regular"} />
-                      <span className="text-3xs font-medium text-center leading-tight">
-                        {t(item.shortKey)}
-                      </span>
-                      {item.pro && (
-                        <span className="text-3xs px-0.5 py-0.5 status-warning-bg status-warning-text rounded">
-                          PRO
-                        </span>
-                      )}
+                      <DashIcon size={20} weight={isActive ? "fill" : "regular"} />
+                      <span className="text-3xs font-medium text-center leading-tight">{t('common.dashboardShort')}</span>
                     </Link>
                   )
-                })}
+                })()}
               </div>
+
+              {/* Grouped sections */}
+              {filteredMobileGroups.map((group) => (
+                <div key={group.id} className="mb-2">
+                  <div className="px-1 py-1 text-3xs font-semibold text-text-tertiary uppercase tracking-wider">
+                    {t(group.labelKey)}
+                  </div>
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {group.children.map((item) => {
+                      const Icon = item.icon
+                      const isActive = activePage === item.id
+                      const shortKey = mobileShortKeys[item.id] || item.labelKey
+                      return (
+                        <Link
+                          key={item.id}
+                          to={item.path}
+                          className={cn(
+                            "flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all",
+                            "hover:bg-bg-tertiary active:scale-95",
+                            isActive ? "bg-accent-primary-op15 text-accent-primary" : "text-text-secondary hover:text-text-primary"
+                          )}
+                        >
+                          <Icon size={20} weight={isActive ? "fill" : "regular"} />
+                          <span className="text-3xs font-medium text-center leading-tight">{t(shortKey)}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+
+              {/* Settings (if permitted) */}
+              {showSettings && (
+                <div className="mb-2">
+                  <div className="grid grid-cols-5 gap-1.5">
+                    <Link
+                      to="/settings"
+                      className={cn(
+                        "flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all",
+                        "hover:bg-bg-tertiary active:scale-95",
+                        activePage === 'settings' ? "bg-accent-primary-op15 text-accent-primary" : "text-text-secondary hover:text-text-primary"
+                      )}
+                    >
+                      <Gear size={20} weight={activePage === 'settings' ? "fill" : "regular"} />
+                      <span className="text-3xs font-medium text-center leading-tight">{t('common.settingsShort')}</span>
+                    </Link>
+                  </div>
+                </div>
+              )}
               
               {/* Footer: Logout only (language is in user dropdown) */}
               <div className="mt-3 pt-3 border-t border-border flex items-center justify-end">
                 <button
+                  type="button"
                   onClick={() => { setMobileMenuOpen(false); logout(); }}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg text-status-danger hover:bg-status-danger-op10 transition-colors"
                 >
