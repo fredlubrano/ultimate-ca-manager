@@ -586,9 +586,9 @@ export default function DashboardPage() {
                 <Card.Body className="flex-1 min-h-[180px] !p-2">
                     <StatusPieChart 
                       data={{
-                        valid: Math.max(0, totalCerts - (stats?.expiring_soon || 0) - (stats?.revoked || 0)),
+                        valid: Math.max(0, totalCerts - (stats?.expiring_soon || 0) - (stats?.expired || 0) - (stats?.revoked || 0)),
                         expiring: stats?.expiring_soon || 0,
-                        expired: 0,
+                        expired: stats?.expired || 0,
                         revoked: stats?.revoked || 0,
                       }}
                     />
@@ -1018,7 +1018,7 @@ export default function DashboardPage() {
               <Card.Header icon={Certificate} iconColor="violet" title={t('dashboard.statusDistribution')} compact />
               <Card.Body className="!pt-0 !pb-0 !px-2">
                 <div style={{ height: 200 }}>
-                  <StatusPieChart data={{ valid: Math.max(0, totalCerts - (stats?.expiring_soon || 0) - (stats?.revoked || 0)), expiring: stats?.expiring_soon || 0, expired: 0, revoked: stats?.revoked || 0 }} />
+                  <StatusPieChart data={{ valid: Math.max(0, totalCerts - (stats?.expiring_soon || 0) - (stats?.expired || 0) - (stats?.revoked || 0)), expiring: stats?.expiring_soon || 0, expired: stats?.expired || 0, revoked: stats?.revoked || 0 }} />
                 </div>
               </Card.Body>
             </Card>

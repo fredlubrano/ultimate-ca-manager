@@ -68,10 +68,18 @@ def get_dashboard_stats():
     # Count certificates
     total_certs = Certificate.query.count()
     
-    # Count expiring soon (next 30 days)
-    expiry_threshold = datetime.utcnow() + timedelta(days=30)
+    # Count expired (past valid_to, not revoked)
+    now = datetime.utcnow()
+    expired = Certificate.query.filter(
+        Certificate.valid_to < now,
+        Certificate.revoked == False
+    ).count()
+    
+    # Count expiring soon (next 30 days, not yet expired)
+    expiry_threshold = now + timedelta(days=30)
     expiring_soon = Certificate.query.filter(
         Certificate.valid_to <= expiry_threshold,
+        Certificate.valid_to >= now,
         Certificate.revoked == False
     ).count()
     
@@ -102,6 +110,7 @@ def get_dashboard_stats():
         'total_cas': total_cas,
         'total_certificates': total_certs,
         'expiring_soon': expiring_soon,
+        'expired': expired,
         'revoked': revoked,
         'pending_csrs': pending_csrs,
         'acme_renewals': acme_renewals
