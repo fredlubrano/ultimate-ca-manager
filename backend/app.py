@@ -405,6 +405,20 @@ def create_app(config_name=None):
         except ImportError:
             pass
         
+        # Register OCSP cache cleanup task (runs daily)
+        try:
+            from services.ocsp_service import OCSPService
+            ocsp_svc = OCSPService()
+            scheduler.register_task(
+                name="ocsp_cache_cleanup",
+                func=ocsp_svc.cleanup_expired_responses,
+                interval=86400,  # 24 hours
+                description="Clean up expired OCSP response cache"
+            )
+            app.logger.info("Registered OCSP cache cleanup task (daily)")
+        except ImportError:
+            pass
+        
         # Register update check task (runs daily)
         try:
             from services.updates import scheduled_update_check

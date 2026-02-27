@@ -591,7 +591,12 @@
     "orgPlaceholder": "我的公司",
     "ouPlaceholder": "IT部门",
     "emailPlaceholder": "admin@example.com",
-    "certTypePlaceholder": "选择类型"
+    "certTypePlaceholder": "选择类型",
+    "unholdWarning": "这将解除证书暂停并恢复其有效状态。证书将从CRL中移除。",
+    "unholdCertificate": "解除暂停",
+    "unheld": "证书暂停已解除",
+    "unholdFailed": "解除暂停失败",
+    "removeHold": "解除暂停"
   },
   "cas": {
     "parentCA": "父CA",

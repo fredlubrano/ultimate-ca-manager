@@ -24,6 +24,10 @@ export const certificatesService = {
     return apiClient.post(`/certificates/${id}/revoke`, { reason })
   },
 
+  async unhold(id) {
+    return apiClient.post(`/certificates/${id}/unhold`)
+  },
+
   async renew(id) {
     return apiClient.post(`/certificates/${id}/renew`)
   },

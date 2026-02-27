@@ -591,7 +591,12 @@
     "orgPlaceholder": "Моя Компанія",
     "ouPlaceholder": "IT відділ",
     "emailPlaceholder": "admin@приклад.com",
-    "certTypePlaceholder": "Оберіть тип"
+    "certTypePlaceholder": "Оберіть тип",
+    "unholdWarning": "Це зніме призупинення сертифіката та відновить його до дійсного статусу. Сертифікат буде видалено з CRL.",
+    "unholdCertificate": "Зняти призупинення",
+    "unheld": "Призупинення сертифіката знято",
+    "unholdFailed": "Не вдалося зняти призупинення",
+    "removeHold": "Зняти призупинення"
   },
   "cas": {
     "parentCA": "Батьківський ЦС",

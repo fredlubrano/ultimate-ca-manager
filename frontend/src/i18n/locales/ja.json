@@ -591,7 +591,12 @@
     "orgPlaceholder": "会社名",
     "ouPlaceholder": "IT部門",
     "emailPlaceholder": "admin@example.com",
-    "certTypePlaceholder": "タイプを選択"
+    "certTypePlaceholder": "タイプを選択",
+    "unholdWarning": "これにより証明書の一時停止が解除され、有効な状態に復元されます。証明書はCRLから削除されます。",
+    "unholdCertificate": "一時停止を解除",
+    "unheld": "証明書の一時停止が解除されました",
+    "unholdFailed": "一時停止の解除に失敗しました",
+    "removeHold": "一時停止解除"
   },
   "cas": {
     "parentCA": "親CA",

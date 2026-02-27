@@ -591,7 +591,12 @@
     "orgPlaceholder": "Minha Empresa",
     "ouPlaceholder": "Departamento de TI",
     "emailPlaceholder": "admin@exemplo.com",
-    "certTypePlaceholder": "Selecionar tipo"
+    "certTypePlaceholder": "Selecionar tipo",
+    "unholdWarning": "Isso removerá a suspensão do certificado e o restaurará para o estado válido. O certificado será removido da CRL.",
+    "unholdCertificate": "Remover suspensão",
+    "unheld": "Suspensão do certificado removida",
+    "unholdFailed": "Falha ao remover a suspensão",
+    "removeHold": "Remover suspensão"
   },
   "cas": {
     "parentCA": "CA pai",

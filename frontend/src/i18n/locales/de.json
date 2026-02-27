@@ -591,7 +591,12 @@
     "orgPlaceholder": "Meine Firma",
     "ouPlaceholder": "IT-Abteilung",
     "emailPlaceholder": "admin@beispiel.de",
-    "certTypePlaceholder": "Typ auswählen"
+    "certTypePlaceholder": "Typ auswählen",
+    "unholdWarning": "Dadurch wird die Zertifikatssperre aufgehoben und es wird wieder als gültig eingestuft. Das Zertifikat wird aus der CRL entfernt.",
+    "unholdCertificate": "Sperre aufheben",
+    "unheld": "Zertifikatssperre aufgehoben",
+    "unholdFailed": "Fehler beim Aufheben der Sperre",
+    "removeHold": "Sperre aufheben"
   },
   "cas": {
     "parentCA": "Übergeordnete CA",

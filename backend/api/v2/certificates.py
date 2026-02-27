@@ -22,6 +22,7 @@ from utils.dn_validation import validate_dn_field
 from utils.file_validation import validate_upload, CERT_EXTENSIONS
 from models import Certificate, CA, db
 from models.truststore import TrustedCertificate
+from models.ocsp import OCSPResponse
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
@@ -941,6 +942,68 @@ def revoke_certificate(cert_id):
         return error_response(str(e), 400)
     except Exception as e:
         return error_response(f'Failed to revoke certificate: {str(e)}', 500)
+
+
+@bp.route('/api/v2/certificates/<int:cert_id>/unhold', methods=['POST'])
+@require_auth(['write:certificates'])
+def unhold_certificate(cert_id):
+    """Remove certificate hold (temporary revocation) and restore to valid status"""
+    
+    cert = Certificate.query.get(cert_id)
+    if not cert:
+        return error_response('Certificate not found', 404)
+    
+    if not cert.revoked:
+        return error_response('Certificate is not revoked', 400)
+    
+    # Only certificateHold can be unheld
+    hold_reasons = ('certificate_hold', 'certificateHold')
+    if cert.revoke_reason not in hold_reasons:
+        return error_response(
+            'Only certificates with reason "certificateHold" can be unheld', 400
+        )
+    
+    try:
+        username = g.current_user.username if hasattr(g, 'current_user') else 'system'
+        
+        cert.revoked = False
+        cert.revoked_at = None
+        cert.revoke_reason = None
+        db.session.commit()
+        
+        # Audit log
+        AuditService.log(
+            action='certificate.unheld',
+            resource_type='certificate',
+            resource_id=cert.id,
+            resource_name=cert.descr or cert.refid,
+            username=username,
+            details=f'Certificate hold removed, restored to valid status'
+        )
+        
+        # Regenerate CRL for the issuing CA
+        try:
+            if cert.ca_id:
+                from services.crl_service import CRLService
+                CRLService.generate_crl(cert.ca_id, username=username)
+                logger.info(f"Regenerated CRL for CA {cert.ca_id} after unhold")
+        except Exception as e:
+            logger.warning(f"Failed to regenerate CRL after unhold: {e}")
+        
+        # Invalidate OCSP cache for this cert
+        try:
+            OCSPResponse.query.filter_by(cert_serial=cert.serial).delete()
+            db.session.commit()
+        except Exception:
+            pass
+        
+        return success_response(
+            data=cert.to_dict(),
+            message='Certificate hold removed successfully'
+        )
+    except Exception as e:
+        logger.error(f"Failed to unhold certificate: {e}")
+        return error_response('Failed to remove certificate hold', 500)
 
 
 @bp.route('/api/v2/certificates/<int:cert_id>/key', methods=['POST'])

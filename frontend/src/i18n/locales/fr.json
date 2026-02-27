@@ -498,7 +498,12 @@
     "orgPlaceholder": "Mon Entreprise",
     "ouPlaceholder": "Département IT",
     "emailPlaceholder": "admin@exemple.com",
-    "certTypePlaceholder": "Sélectionner le type"
+    "certTypePlaceholder": "Sélectionner le type",
+    "unholdWarning": "Cela supprimera la suspension du certificat et le restaurera en statut valide. Le certificat sera retiré de la CRL.",
+    "unholdCertificate": "Lever la suspension",
+    "unheld": "Suspension du certificat levée",
+    "unholdFailed": "Échec de la levée de suspension",
+    "removeHold": "Lever la suspension"
   },
   "common": {
     "saved": "Paramètres enregistrés",

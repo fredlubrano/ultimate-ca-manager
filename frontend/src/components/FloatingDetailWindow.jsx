@@ -131,6 +131,26 @@ export function FloatingDetailWindow({ windowInfo }) {
     }
   }
 
+  const handleUnhold = async () => {
+    const confirmed = await showConfirm(
+      t('certificates.unholdWarning', 'This will remove the certificate hold and restore it to valid status. The certificate will be removed from the CRL.'),
+      {
+        title: t('certificates.unholdCertificate', 'Remove Certificate Hold'),
+        confirmText: t('certificates.unholdCertificate', 'Remove Hold'),
+        variant: 'warning'
+      }
+    )
+    if (!confirmed) return
+    try {
+      await certificatesService.unhold(windowInfo.entityId)
+      showSuccess(t('certificates.unheld', 'Certificate hold removed'))
+      window.dispatchEvent(new CustomEvent('ucm:data-changed', { detail: { type: windowInfo.type } }))
+      closeWindow(windowInfo.id)
+    } catch (err) {
+      showError(err.message || t('certificates.unholdFailed', 'Failed to remove hold'))
+    }
+  }
+
   const handleRenew = async () => {
     try {
       await certificatesService.renew(windowInfo.entityId)
@@ -180,6 +200,7 @@ export function FloatingDetailWindow({ windowInfo }) {
     entityName: title,
     onRenew: isCert && canWrite('certificates') && !data.revoked && data.has_private_key ? handleRenew : null,
     onRevoke: (isCert || isUserCert) && canWrite(resource) && !data.revoked ? handleRevoke : null,
+    onUnhold: isCert && canWrite('certificates') && data.revoked && (data.revoke_reason === 'certificateHold' || data.revoke_reason === 'certificate_hold') ? handleUnhold : null,
     onDelete: canDelete(resource) ? handleDelete : null,
     t,
   } : null
@@ -264,7 +285,7 @@ function DetailContent({ type, data }) {
 /**
  * ActionBar — Toolbar under the window header with labeled action buttons
  */
-function ActionBar({ onExport, hasPrivateKey, canExportKey, entityType, entityName, onRenew, onRevoke, onDelete, t }) {
+function ActionBar({ onExport, hasPrivateKey, canExportKey, entityType, entityName, onRenew, onRevoke, onUnhold, onDelete, t }) {
   const [showExportModal, setShowExportModal] = useState(false)
   const btnBase = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-150'
 
@@ -290,6 +311,14 @@ function ActionBar({ onExport, hasPrivateKey, canExportKey, entityType, entityNa
         <button onClick={onRevoke} className={cn(btnBase, 'text-text-secondary hover:text-status-warning hover:bg-status-warning-op10')}>
           <X size={14} weight="bold" />
           {t('common.revoke', 'Revoke')}
+        </button>
+      )}
+
+      {/* Unhold — only shown for certificateHold revoked certs */}
+      {onUnhold && (
+        <button onClick={onUnhold} className={cn(btnBase, 'text-text-secondary hover:text-accent-success hover:bg-accent-success-op10')}>
+          <ArrowsClockwise size={14} weight="duotone" />
+          {t('certificates.removeHold', 'Remove Hold')}
         </button>
       )}
 

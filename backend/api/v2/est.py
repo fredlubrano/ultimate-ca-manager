@@ -42,7 +42,7 @@ def get_est_config():
         ca = CA.query.filter_by(refid=ca_refid).first()
         if ca:
             ca_id = ca.id
-            ca_name = ca.name or ca.subject
+            ca_name = ca.descr
 
     return success_response(data={
         'enabled': get_config('est_enabled', 'false') == 'true',

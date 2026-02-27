@@ -591,7 +591,12 @@
     "orgPlaceholder": "My Company",
     "ouPlaceholder": "IT Department",
     "emailPlaceholder": "admin@example.com",
-    "certTypePlaceholder": "Select certificate type"
+    "certTypePlaceholder": "Select certificate type",
+    "unholdWarning": "This will remove the certificate hold and restore it to valid status. The certificate will be removed from the CRL.",
+    "unholdCertificate": "Remove Certificate Hold",
+    "unheld": "Certificate hold removed",
+    "unholdFailed": "Failed to remove certificate hold",
+    "removeHold": "Remove Hold"
   },
   "cas": {
     "parentCA": "Parent CA",

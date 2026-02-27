@@ -333,6 +333,24 @@ def get_system_status():
     # SCEP is always available if UCM is running
     status['scep'] = {'status': 'online', 'message': 'Endpoint available'}
     
+    # EST status - check if configured
+    try:
+        est_enabled = db.session.execute(
+            text("SELECT value FROM system_config WHERE key = 'est_enabled'")
+        ).scalar()
+        est_ca = db.session.execute(
+            text("SELECT value FROM system_config WHERE key = 'est_ca_refid'")
+        ).scalar()
+        if est_enabled == 'true' and est_ca:
+            status['est'] = {'status': 'online', 'message': 'Configured'}
+        elif est_enabled == 'true':
+            status['est'] = {'status': 'warning', 'message': 'Enabled, no CA assigned'}
+        else:
+            status['est'] = {'status': 'offline', 'message': 'Disabled'}
+    except Exception:
+        logger.debug('EST status check failed')
+        status['est'] = {'status': 'offline', 'message': 'Disabled'}
+    
     # OCSP responder status - check if any CA has OCSP enabled
     try:
         ocsp_enabled_count = db.session.execute(
@@ -346,8 +364,29 @@ def get_system_status():
         logger.debug('OCSP status check failed')
         status['ocsp'] = {'status': 'offline', 'message': 'Status unknown'}
     
-    # CRL distribution status
-    status['crl'] = {'status': 'online', 'message': 'Distribution active'}
+    # CRL distribution status - check if any CA has CDP enabled
+    try:
+        cdp_count = db.session.execute(
+            text("SELECT COUNT(*) FROM certificate_authorities WHERE cdp_enabled = 1")
+        ).scalar() or 0
+        if cdp_count > 0:
+            status['crl'] = {'status': 'online', 'message': f'{cdp_count} CA(s) with CDP'}
+        else:
+            status['crl'] = {'status': 'online', 'message': 'Available on demand'}
+    except Exception:
+        status['crl'] = {'status': 'online', 'message': 'Distribution active'}
+    
+    # Auto-renewal status
+    try:
+        renewal_enabled = db.session.execute(
+            text("SELECT value FROM system_config WHERE key = 'auto_renewal_enabled'")
+        ).scalar()
+        if renewal_enabled == 'true':
+            status['auto_renewal'] = {'status': 'online', 'message': 'Scheduled'}
+        else:
+            status['auto_renewal'] = {'status': 'offline', 'message': 'Disabled'}
+    except Exception:
+        status['auto_renewal'] = {'status': 'offline', 'message': 'Disabled'}
     
     # Core is online if we can respond
     status['core'] = {'status': 'online', 'message': 'Operational'}
