@@ -80,9 +80,7 @@ const navGroups = [
   },
 ]
 
-function NavGroupFlyout({ group, activePage, iconSize, buttonSize, isAdmin, hasPermission, expiringCount, isBadgeDismissed, dismissBadge, t }) {
-  const [open, setOpen] = useState(false)
-  const timeoutRef = useRef(null)
+function NavGroupFlyout({ group, activePage, iconSize, buttonSize, isAdmin, hasPermission, expiringCount, isBadgeDismissed, dismissBadge, t, isOpen, onOpen, onClose }) {
   const navigate = useNavigate()
 
   // Filter children by permissions
@@ -96,25 +94,18 @@ function NavGroupFlyout({ group, activePage, iconSize, buttonSize, isAdmin, hasP
 
   const groupHasActive = visibleChildren.some(c => c.id === activePage)
   const GroupIcon = group.icon
-
-  const handleEnter = () => {
-    clearTimeout(timeoutRef.current)
-    setOpen(true)
-  }
-  const handleLeave = () => {
-    timeoutRef.current = setTimeout(() => setOpen(false), 150)
-  }
+  const open = isOpen
 
   return (
     <div
       className="relative"
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
+      onMouseEnter={onOpen}
+      onMouseLeave={onClose}
     >
       {/* Trigger icon */}
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={() => isOpen ? onClose() : onOpen()}
         className={cn(
           buttonSize,
           "rounded-lg flex items-center justify-center transition-all duration-200 relative group",
@@ -152,8 +143,8 @@ function NavGroupFlyout({ group, activePage, iconSize, buttonSize, isAdmin, hasP
       {open && (
         <div
           className="absolute left-full top-0 ml-1.5 z-50 min-w-[180px] py-1.5 bg-bg-secondary border border-border rounded-lg shadow-xl animate-in fade-in slide-in-from-left-2 duration-150"
-          onMouseEnter={handleEnter}
-          onMouseLeave={handleLeave}
+          onMouseEnter={onOpen}
+          onMouseLeave={onClose}
         >
           {/* Group header */}
           <div className="px-3 py-1 text-3xs font-semibold text-text-tertiary uppercase tracking-wider">
@@ -168,7 +159,7 @@ function NavGroupFlyout({ group, activePage, iconSize, buttonSize, isAdmin, hasP
               <Link
                 key={child.id}
                 to={child.path}
-                onClick={() => setOpen(false)}
+                onClick={() => onClose()}
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-1.5 mx-1 rounded-md text-sm transition-colors",
                   isActive
@@ -200,6 +191,20 @@ export function Sidebar({ activePage }) {
   const { isAdmin, canRead, canWrite, hasPermission } = usePermission()
   const { isLargeScreen } = useMobile()
   
+  // Centralized flyout state — only one group open at a time
+  const [openGroup, setOpenGroup] = useState(null)
+  const closeTimerRef = useRef(null)
+
+  const handleGroupOpen = useCallback((groupId) => {
+    clearTimeout(closeTimerRef.current)
+    setOpenGroup(groupId)
+  }, [])
+
+  const handleGroupClose = useCallback(() => {
+    clearTimeout(closeTimerRef.current)
+    closeTimerRef.current = setTimeout(() => setOpenGroup(null), 120)
+  }, [])
+
   // Expiring certificates badge
   const [expiringCount, setExpiringCount] = useState(0)
   const [badgeDismissed, setBadgeDismissed] = useState(() => {
@@ -291,6 +296,9 @@ export function Sidebar({ activePage }) {
           isBadgeDismissed={isBadgeDismissed}
           dismissBadge={dismissBadge}
           t={t}
+          isOpen={openGroup === group.id}
+          onOpen={() => handleGroupOpen(group.id)}
+          onClose={handleGroupClose}
         />
       ))}
 
