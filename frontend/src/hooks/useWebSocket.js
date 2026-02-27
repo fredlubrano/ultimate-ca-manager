@@ -215,6 +215,14 @@ export function useWebSocket(options = {}) {
         });
         break;
         
+      case EventType.CERTIFICATE_RENEWED:
+        toast.success(`Certificate renewed: ${data.cn}`);
+        break;
+        
+      case EventType.CERTIFICATE_DELETED:
+        toast.info(`Certificate deleted: ${data.cn}`);
+        break;
+        
       case EventType.CA_CREATED:
         toast.success(`CA created: ${data.name}`, {
           description: `Common Name: ${data.common_name}`,
@@ -225,6 +233,14 @@ export function useWebSocket(options = {}) {
         toast.error(`CA revoked: ${data.name}`, {
           description: `Reason: ${data.reason}`,
         });
+        break;
+        
+      case EventType.CA_UPDATED:
+        toast.info(`CA updated: ${data.name}`);
+        break;
+        
+      case EventType.CA_DELETED:
+        toast.info(`CA deleted: ${data.name}`);
         break;
         
       case EventType.CRL_REGENERATED:
@@ -239,6 +255,22 @@ export function useWebSocket(options = {}) {
         
       case EventType.USER_LOGOUT:
         toast.info(`User logged out: ${data.username}`);
+        break;
+        
+      case EventType.USER_CREATED:
+        toast.success(`User created: ${data.username}`);
+        break;
+        
+      case EventType.USER_DELETED:
+        toast.info(`User deactivated: ${data.username}`);
+        break;
+        
+      case EventType.GROUP_CREATED:
+        toast.success(`Group created: ${data.name}`);
+        break;
+        
+      case EventType.GROUP_DELETED:
+        toast.info(`Group deleted: ${data.name}`);
         break;
         
       case EventType.SYSTEM_ALERT:

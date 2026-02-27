@@ -116,6 +116,13 @@ def create_group():
             details=f'Created group: {group.name}',
             success=True
         )
+        
+        try:
+            from websocket.emitters import on_group_created
+            on_group_created(group.id, group.name, g.current_user.username)
+        except Exception:
+            pass
+        
         return created_response(data=group.to_dict(), message="Group created")
     except Exception as e:
         db.session.rollback()
@@ -201,6 +208,13 @@ def delete_group(group_id):
             details=f'Deleted group: {group_name}',
             success=True
         )
+        
+        try:
+            from websocket.emitters import on_group_deleted
+            on_group_deleted(group_id, group_name, g.current_user.username)
+        except Exception:
+            pass
+        
         return no_content_response()
     except Exception as e:
         db.session.rollback()

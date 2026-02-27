@@ -244,6 +244,12 @@ def create_user():
             success=True
         )
         
+        try:
+            from websocket.emitters import on_user_created
+            on_user_created(user.id, user.username, g.current_user.username)
+        except Exception:
+            pass
+        
         return created_response(
             data=user.to_dict(),
             message=f'User {user.username} created successfully'
@@ -394,6 +400,13 @@ def delete_user(user_id):
             details=f'Deactivated user: {username}',
             success=True
         )
+        
+        try:
+            from websocket.emitters import on_user_deleted
+            on_user_deleted(user_id, username, g.current_user.username)
+        except Exception:
+            pass
+        
         return success_response(
             message=f'User {username} deactivated successfully'
         )

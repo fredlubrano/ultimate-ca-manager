@@ -333,6 +333,10 @@ export default function DashboardPage() {
     const unsub1 = subscribe(EventType.CERTIFICATE_ISSUED, debouncedRefresh)
     const unsub2 = subscribe(EventType.CERTIFICATE_REVOKED, debouncedRefresh)
     const unsub3 = subscribe(EventType.CA_CREATED, debouncedRefresh)
+    const unsub5 = subscribe(EventType.CERTIFICATE_DELETED, debouncedRefresh)
+    const unsub6 = subscribe(EventType.CERTIFICATE_RENEWED, debouncedRefresh)
+    const unsub7 = subscribe(EventType.CA_DELETED, debouncedRefresh)
+    const unsub8 = subscribe(EventType.CRL_REGENERATED, debouncedRefresh)
     
     const unsub4 = subscribe(EventType.USER_LOGIN, (data) => {
       setActivityLog(prev => [{
@@ -345,10 +349,7 @@ export default function DashboardPage() {
     })
     
     return () => {
-      unsub1?.()
-      unsub2?.()
-      unsub3?.()
-      unsub4?.()
+      ;[unsub1, unsub2, unsub3, unsub4, unsub5, unsub6, unsub7, unsub8].forEach(u => u?.())
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current)
       }

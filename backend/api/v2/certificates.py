@@ -39,7 +39,7 @@ from services.import_service import (
     serialize_cert_to_pem, serialize_key_to_pem
 )
 from security.encryption import encrypt_private_key
-from websocket.emitters import on_certificate_issued, on_certificate_revoked
+from websocket.emitters import on_certificate_issued, on_certificate_revoked, on_certificate_deleted, on_certificate_renewed
 
 bp = Blueprint('certificates_v2', __name__)
 
@@ -609,6 +609,12 @@ def delete_certificate(cert_id):
         details=f'Deleted certificate: {cert_name}',
         success=True
     )
+    
+    try:
+        username = g.current_user.username if hasattr(g, 'current_user') else 'system'
+        on_certificate_deleted(cert_id, cert_name, username)
+    except Exception:
+        pass
     
     return no_content_response()
 
@@ -1263,6 +1269,11 @@ def renew_certificate(cert_id):
                 details=f"Renewed until {not_after.isoformat()}",
                 user_id=g.current_user.id if hasattr(g, 'current_user') else None
             )
+        except Exception:
+            pass
+        
+        try:
+            on_certificate_renewed(cert_id, cert_id, cert.subject or cert.descr or f'Certificate #{cert_id}')
         except Exception:
             pass
         

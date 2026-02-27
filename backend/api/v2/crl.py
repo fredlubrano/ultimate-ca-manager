@@ -90,6 +90,12 @@ def regenerate_crl(ca_id):
         if data:
             data['caref'] = ca.refid
         
+        try:
+            from websocket.emitters import on_crl_regenerated
+            on_crl_regenerated(ca_id, ca.descr, data.get('next_update', '') if data else '', data.get('entries_count', 0) if data else 0)
+        except Exception:
+            pass
+        
         return success_response(
             data=data,
             message='CRL regenerated successfully'

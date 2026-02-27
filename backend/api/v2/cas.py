@@ -30,7 +30,7 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
-from websocket.emitters import on_ca_created
+from websocket.emitters import on_ca_created, on_ca_updated, on_ca_deleted
 
 logger = logging.getLogger(__name__)
 
@@ -422,6 +422,11 @@ def update_ca(ca_id):
             success=True
         )
         
+        try:
+            on_ca_updated(ca_id, ca.descr, {k: v for k, v in data.items()})
+        except Exception:
+            pass
+        
         return success_response(data=ca.to_dict(), message='CA updated successfully')
     except Exception as e:
         db.session.rollback()
@@ -452,6 +457,12 @@ def delete_ca(ca_id):
         details=f'Deleted CA: {ca_name}',
         success=True
     )
+    
+    try:
+        username = g.current_user.username if hasattr(g, 'current_user') else 'system'
+        on_ca_deleted(ca_id, ca_name, username)
+    except Exception:
+        pass
     
     return no_content_response()
 
