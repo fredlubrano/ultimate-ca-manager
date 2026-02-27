@@ -46,7 +46,7 @@ export function SearchBar({
         value={internalValue}
         onChange={(e) => setInternalValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-7 pr-7 py-1 bg-bg-tertiary border border-border rounded-sm text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-transparent transition-all"
+        className="w-full pl-7 pr-7 py-1.5 bg-bg-tertiary border border-border rounded-md text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-accent-primary focus:border-transparent transition-all"
       />
       {internalValue && (
         <button

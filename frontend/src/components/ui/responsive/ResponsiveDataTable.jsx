@@ -1196,7 +1196,7 @@ function DesktopTable({
                   onClick={() => sortable && col.sortable !== false && onSort(col.key)}
                   style={style}
                   className={cn(
-                    'text-left text-2xs font-medium text-text-tertiary tracking-wide',
+                    'text-left text-[11px] font-medium text-text-tertiary tracking-wide',
                     'relative group',
                     dStyle.header,
                     'transition-colors duration-200',

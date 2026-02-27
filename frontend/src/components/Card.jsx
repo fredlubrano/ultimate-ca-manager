@@ -49,7 +49,7 @@ export function Card({
 Card.Header = function CardHeader({ children, className, icon: Icon, iconColor = 'primary', title, subtitle, action }) {
   if (Icon || title) {
     return (
-      <div className={cn('flex items-start justify-between gap-3 p-4 pb-3 border-b border-border-op30 section-header-gradient', className)}>
+      <div className={cn('flex items-start justify-between gap-3 p-3 pb-2 border-b border-border-op30 section-header-gradient', className)}>
         <div className="flex items-center gap-3">
           {Icon && (
             <IconBadge icon={Icon} color={iconColor} size="sm" rounded="lg" />
@@ -63,16 +63,16 @@ Card.Header = function CardHeader({ children, className, icon: Icon, iconColor =
       </div>
     )
   }
-  return <div className={cn('p-4 pb-3 border-b border-border-op30', className)}>{children}</div>
+  return <div className={cn('p-3 pb-2 border-b border-border-op30', className)}>{children}</div>
 }
 
 Card.Body = function CardBody({ children, className }) {
-  return <div className={cn('px-4 py-3', className)}>{children}</div>
+  return <div className={cn('px-3 py-2.5', className)}>{children}</div>
 }
 
 Card.Footer = function CardFooter({ children, className }) {
   return (
-    <div className={cn('px-4 py-3 border-t border-border-op50 bg-tertiary-op30 rounded-b-xl', className)}>
+    <div className={cn('px-3 py-2.5 border-t border-border-op50 bg-tertiary-op30 rounded-b-xl', className)}>
       {children}
     </div>
   )
