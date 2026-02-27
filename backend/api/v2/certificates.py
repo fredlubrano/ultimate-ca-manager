@@ -308,47 +308,46 @@ def create_certificate():
             critical=True
         )
         
-        # Key Usage
+        # Key Usage & Extended Key Usage based on cert_type
         cert_type = data.get('cert_type', 'server')
-        if cert_type == 'server':
-            builder = builder.add_extension(
-                x509.KeyUsage(
-                    digital_signature=True, key_encipherment=True, content_commitment=False,
-                    data_encipherment=False, key_agreement=False, key_cert_sign=False,
-                    crl_sign=False, encipher_only=False, decipher_only=False
-                ),
-                critical=True
-            )
-            builder = builder.add_extension(
-                x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]),
-                critical=False
-            )
-        elif cert_type == 'client':
-            builder = builder.add_extension(
-                x509.KeyUsage(
-                    digital_signature=True, key_encipherment=False, content_commitment=False,
-                    data_encipherment=False, key_agreement=False, key_cert_sign=False,
-                    crl_sign=False, encipher_only=False, decipher_only=False
-                ),
-                critical=True
-            )
-            builder = builder.add_extension(
-                x509.ExtendedKeyUsage([ExtendedKeyUsageOID.CLIENT_AUTH]),
-                critical=False
-            )
-        else:  # combined
-            builder = builder.add_extension(
-                x509.KeyUsage(
-                    digital_signature=True, key_encipherment=True, content_commitment=False,
-                    data_encipherment=False, key_agreement=False, key_cert_sign=False,
-                    crl_sign=False, encipher_only=False, decipher_only=False
-                ),
-                critical=True
-            )
-            builder = builder.add_extension(
-                x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH, ExtendedKeyUsageOID.CLIENT_AUTH]),
-                critical=False
-            )
+        
+        # Define profiles for each certificate type
+        cert_profiles = {
+            'server': {
+                'ku': dict(digital_signature=True, key_encipherment=True, content_commitment=False,
+                           data_encipherment=False, key_agreement=False, key_cert_sign=False,
+                           crl_sign=False, encipher_only=False, decipher_only=False),
+                'eku': [ExtendedKeyUsageOID.SERVER_AUTH],
+            },
+            'client': {
+                'ku': dict(digital_signature=True, key_encipherment=False, content_commitment=False,
+                           data_encipherment=False, key_agreement=False, key_cert_sign=False,
+                           crl_sign=False, encipher_only=False, decipher_only=False),
+                'eku': [ExtendedKeyUsageOID.CLIENT_AUTH],
+            },
+            'combined': {
+                'ku': dict(digital_signature=True, key_encipherment=True, content_commitment=False,
+                           data_encipherment=False, key_agreement=False, key_cert_sign=False,
+                           crl_sign=False, encipher_only=False, decipher_only=False),
+                'eku': [ExtendedKeyUsageOID.SERVER_AUTH, ExtendedKeyUsageOID.CLIENT_AUTH],
+            },
+            'code_signing': {
+                'ku': dict(digital_signature=True, key_encipherment=False, content_commitment=False,
+                           data_encipherment=False, key_agreement=False, key_cert_sign=False,
+                           crl_sign=False, encipher_only=False, decipher_only=False),
+                'eku': [ExtendedKeyUsageOID.CODE_SIGNING],
+            },
+            'email': {
+                'ku': dict(digital_signature=True, key_encipherment=True, content_commitment=True,
+                           data_encipherment=False, key_agreement=False, key_cert_sign=False,
+                           crl_sign=False, encipher_only=False, decipher_only=False),
+                'eku': [ExtendedKeyUsageOID.EMAIL_PROTECTION],
+            },
+        }
+        
+        profile = cert_profiles.get(cert_type, cert_profiles['server'])
+        builder = builder.add_extension(x509.KeyUsage(**profile['ku']), critical=True)
+        builder = builder.add_extension(x509.ExtendedKeyUsage(profile['eku']), critical=False)
         
         # Subject Alternative Names
         san_list = []
@@ -361,6 +360,9 @@ def create_certificate():
         if data.get('san_email'):
             for email in data['san_email']:
                 san_list.append(x509.RFC822Name(email))
+        if data.get('san_uri'):
+            for uri in data['san_uri']:
+                san_list.append(x509.UniformResourceIdentifier(uri))
         
         # Add CN as DNS SAN for server certs if it looks like a valid hostname
         cn = data['cn']
