@@ -1,42 +1,36 @@
-"""
-Migration 040 - Create discovered_certificate table
-"""
-from datetime import datetime
-import sqlalchemy as sa
-from alembic import op
+"""Migration 040 - Create discovered_certificates table for network certificate discovery."""
 
 
-def upgrade():
-    op.create_table(
-        'discovered_certificate',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('target', sa.String(length=1024), nullable=False),
-        sa.Column('certificate', sa.Text(), nullable=False),
-        sa.Column('issuer', sa.String(length=1024), nullable=True),
-        sa.Column('subject', sa.String(length=1024), nullable=True),
-        sa.Column('serial', sa.String(length=64), nullable=True),
-        sa.Column('not_before', sa.DateTime(), nullable=True),
-        sa.Column('not_after', sa.DateTime(), nullable=True),
-        sa.Column('fingerprint', sa.String(length=64), nullable=True),
-        sa.Column('status', sa.String(length=32), nullable=False, server_default='unknown'),
-        sa.Column('last_seen', sa.DateTime(), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),
-        sa.Column('ucm_certificate_id', sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(['ucm_certificate_id'], ['certificate.id'], ondelete='SET NULL'),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('fingerprint', name='uq_discovered_certificate_fingerprint'),
-        sa.Index('ix_discovered_certificate_target', 'target'),
-        sa.Index('ix_discovered_certificate_serial', 'serial'),
-        sa.Index('ix_discovered_certificate_status', 'status'),
-        sa.Index('ix_discovered_certificate_last_seen', 'last_seen'),
-    )
-    
-    op.create_index(
-        'ix_discovered_certificate_fingerprint',
-        'discovered_certificate',
-        ['fingerprint'],
-        unique=False
-    )
+def upgrade(conn):
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS discovered_certificates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            target VARCHAR(1024) NOT NULL,
+            port INTEGER NOT NULL DEFAULT 443,
+            subject TEXT,
+            issuer TEXT,
+            serial_number VARCHAR(100),
+            not_before DATETIME,
+            not_after DATETIME,
+            fingerprint_sha256 VARCHAR(64),
+            pem_certificate TEXT NOT NULL,
+            status VARCHAR(32) NOT NULL DEFAULT 'unknown',
+            ucm_certificate_id INTEGER,
+            first_seen DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            last_seen DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            scan_error TEXT,
+            FOREIGN KEY (ucm_certificate_id) REFERENCES certificates(id) ON DELETE SET NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS ix_disc_cert_fingerprint ON discovered_certificates(fingerprint_sha256);
+        CREATE INDEX IF NOT EXISTS ix_disc_cert_target ON discovered_certificates(target, port);
+        CREATE INDEX IF NOT EXISTS ix_disc_cert_status ON discovered_certificates(status);
+        CREATE INDEX IF NOT EXISTS ix_disc_cert_not_after ON discovered_certificates(not_after);
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_disc_cert_target_port ON discovered_certificates(target, port);
+    """)
+    conn.commit()
 
 
-def downgrade():
-    op.drop_table('discovered_certificate')
+def downgrade(conn):
+    conn.execute("DROP TABLE IF EXISTS discovered_certificates")
+    conn.commit()

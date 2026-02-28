@@ -1,164 +1,92 @@
 /**
- * Discovery Page
- * Certificate discovery and network scanning
+ * DiscoveryPage — Certificate network discovery and scanning
  */
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Globe, Gear, Copy, Info, ShieldCheck, Plugs, Warning, CheckCircle,
-  ChartBar, Lock, ArrowsClockwise, MagnifyingGlass, Network, Cpu
+  Globe, MagnifyingGlass, Warning, CheckCircle, Lock,
+  ArrowsClockwise, Network, Info, ShieldCheck, Trash,
+  ChartBar
 } from '@phosphor-icons/react'
 import {
-  ResponsiveLayout,
-  Button, Input, Select, Card,
-  LoadingSpinner, EmptyState, HelpCard,
-  CompactStats, Badge, Tabs
+  ResponsiveLayout, Card, Button, Input, Select,
+  LoadingSpinner, EmptyState, HelpCard, Badge, Tabs,
+  CompactStats
 } from '../components'
+import { ResponsiveDataTable } from '../components/ui/responsive/ResponsiveDataTable'
 import { discoveryService } from '../services'
 import { useNotification } from '../contexts'
 import { usePermission } from '../hooks'
-import { ToggleSwitch } from '../components/ui/ToggleSwitch'
-import { ResponsiveDataTable } from '../components/ui/responsive/ResponsiveDataTable'
 
 export default function DiscoveryPage() {
   const { t } = useTranslation()
-  const { showSuccess, showError, showInfo } = useNotification()
-  const { hasPermission, canWrite } = usePermission()
+  const { showSuccess, showError, showConfirm } = useNotification()
+  const { canWrite, isAdmin } = usePermission()
 
+  // Data
   const [loading, setLoading] = useState(true)
   const [scanning, setScanning] = useState(false)
-  const [importing, setImporting] = useState(false)
-  const [activeTab, setActiveTab] = useState('scan')
-  const [scanResults, setScanResults] = useState([])
-  const [history, setHistory] = useState([])
+  const [discovered, setDiscovered] = useState([])
   const [unknownCerts, setUnknownCerts] = useState([])
   const [expiredCerts, setExpiredCerts] = useState([])
-  const [stats, setStats] = useState({
-    totalScanned: 0,
-    found: 0,
-    imported: 0,
-    unknown: 0,
-    expired: 0
-  })
+  const [stats, setStats] = useState({ total: 0, known: 0, unknown: 0, expired: 0, errors: 0 })
+  const [scanResults, setScanResults] = useState([])
 
-  const [scanConfig, setScanConfig] = useState({
-    targets: 'example.com\ngoogle.com',
-    ports: [443, 8443],
-    scanType: 'targets'
-  })
+  // Scan form
+  const [scanType, setScanType] = useState('targets')
+  const [targetsText, setTargetsText] = useState('')
+  const [subnet, setSubnet] = useState('')
+  const [ports, setPorts] = useState('443')
 
-  useEffect(() => {
-    loadData()
-  }, [])
 
-  const loadData = async () => {
+
+  // ── Load data ─────────────────────────────────────────────
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [historyRes, unknownRes, expiredRes] = await Promise.all([
-        discoveryService.getHistory(100),
+      const [allRes, unknownRes, expiredRes, statsRes] = await Promise.all([
+        discoveryService.getAll(),
         discoveryService.getUnknown(),
-        discoveryService.getExpired()
+        discoveryService.getExpired(),
+        discoveryService.getStats(),
       ])
-      
-      setHistory(historyRes.data.history || [])
-      setUnknownCerts(unknownRes.data.unknown || [])
-      setExpiredCerts(expiredRes.data.expired || [])
-      
-      updateStats()
+      setDiscovered(allRes.data ?? allRes ?? [])
+      setUnknownCerts(unknownRes.data ?? unknownRes ?? [])
+      setExpiredCerts(expiredRes.data ?? expiredRes ?? [])
+      setStats(statsRes.data ?? statsRes ?? { total: 0, known: 0, unknown: 0, expired: 0, errors: 0 })
     } catch (error) {
-      showError(error.message || t('messages.errors.loadFailed.discovery'))
+      showError(error.message || t('discovery.errors.loadFailed'))
     } finally {
       setLoading(false)
     }
-  }
+  }, [showError, t])
 
-  const updateStats = () => {
-    setStats({
-      totalScanned: history.length,
-      found: history.length,
-      imported: history.filter(c => c.status === 'known').length,
-      unknown: unknownCerts.length,
-      expired: expiredCerts.length
-    })
-  }
+  useEffect(() => { loadData() }, [loadData])
 
-  // Column definitions for ResponsiveDataTable
-  const resultColumns = useMemo(() => [
-    { key: 'target', label: t('common.target'), sortable: true },
-    { key: 'subject', label: t('common.subject'), sortable: true },
-    { key: 'issuer', label: t('common.issuer'), sortable: true },
-    { key: 'serial', label: t('common.serial'), sortable: true },
-    { key: 'notAfter', label: t('common.expiry'), sortable: true, render: (row) => row.notAfter ? new Date(row.notAfter).toLocaleDateString() : '-' },
-    { key: 'status', label: t('common.status'), render: (row) => (
-      <Badge variant={row.status === 'known' ? 'success' : 'warning'}>
-        {t(`common.${row.status}`)}
-      </Badge>
-    )}
-  ], [t])
-
-  const historyColumns = useMemo(() => [
-    { key: 'target', label: t('common.target'), sortable: true },
-    { key: 'subject', label: t('common.subject'), sortable: true },
-    { key: 'issuer', label: t('common.issuer'), sortable: true },
-    { key: 'serial', label: t('common.serial'), sortable: true },
-    { key: 'lastSeen', label: t('common.lastSeen'), sortable: true, render: (row) => row.lastSeen ? new Date(row.lastSeen).toLocaleString() : '-' },
-    { key: 'status', label: t('common.status'), sortable: true, render: (row) => (
-      <Badge variant={row.status === 'known' ? 'success' : 'warning'}>
-        {t(`common.${row.status}`)}
-      </Badge>
-    )}
-  ], [t])
-
-  const unknownColumns = useMemo(() => [
-    { key: 'target', label: t('common.target'), sortable: true },
-    { key: 'subject', label: t('common.subject'), sortable: true },
-    { key: 'issuer', label: t('common.issuer'), sortable: true },
-    { key: 'serial', label: t('common.serial'), sortable: true },
-    { key: 'notAfter', label: t('common.expiry'), sortable: true, render: (row) => row.notAfter ? new Date(row.notAfter).toLocaleDateString() : '-' }
-  ], [t])
-
-  const expiredColumns = useMemo(() => [
-    { key: 'target', label: t('common.target'), sortable: true },
-    { key: 'subject', label: t('common.subject'), sortable: true },
-    { key: 'issuer', label: t('common.issuer'), sortable: true },
-    { key: 'serial', label: t('common.serial'), sortable: true },
-    { key: 'notAfter', label: t('common.expiry'), sortable: true, render: (row) => row.notAfter ? new Date(row.notAfter).toLocaleDateString() : '-' }
-  ], [t])
-
+  // ── Scan ──────────────────────────────────────────────────
   const handleScan = async () => {
-    if (!canWrite('system')) {
-      showError(t('messages.errors.permissionRequired'))
-      return
+    if (scanType === 'targets' && !targetsText.trim()) {
+      return showError(t('discovery.errors.noTargets'))
+    }
+    if (scanType === 'subnet' && !subnet.trim()) {
+      return showError(t('discovery.errors.noSubnet'))
     }
 
-    if (scanConfig.scanType === 'targets' && !scanConfig.targets.trim()) {
-      showError(t('discovery.errors.noTargets'))
-      return
-    }
-    
-    if (scanConfig.scanType === 'subnet' && !scanConfig.subnet) {
-      showError(t('discovery.errors.noSubnet'))
-      return
-    }
-
+    const parsedPorts = ports.split(',').map(p => parseInt(p.trim(), 10)).filter(Boolean)
     setScanning(true)
+    setScanResults([])
     try {
-      let response
-      
-      if (scanConfig.scanType === 'targets') {
-        const targets = scanConfig.targets.split('\n').filter(t => t.trim())
-        response = await discoveryService.scan(targets, scanConfig.ports)
+      let res
+      if (scanType === 'targets') {
+        const targets = targetsText.split('\n').map(s => s.trim()).filter(Boolean)
+        res = await discoveryService.scan(targets, parsedPorts)
       } else {
-        response = await discoveryService.scanSubnet(scanConfig.subnet, scanConfig.ports)
+        res = await discoveryService.scanSubnet(subnet.trim(), parsedPorts)
       }
-      
-      const results = response.data.results || []
+      const results = res.data?.results ?? res?.results ?? []
       setScanResults(results)
-      setActiveTab('results')
-      
-      showSuccess(
-        t('discovery.success.scanComplete', { count: results.length })
-      )
+      showSuccess(t('discovery.success.scanComplete', { count: results.length }))
+      await loadData()
     } catch (error) {
       showError(error.message || t('discovery.errors.scanFailed'))
     } finally {
@@ -166,332 +94,230 @@ export default function DiscoveryPage() {
     }
   }
 
-  const handleImport = async (certificates) => {
-    if (!canWrite('certificates')) {
-      showError(t('messages.errors.permissionRequired'))
-      return
-    }
-
-    setImporting(true)
+  // ── Delete ────────────────────────────────────────────────
+  const handleDelete = async (id) => {
     try {
-      const response = await discoveryService.import(certificates)
-      
-      showSuccess(
-        t('discovery.success.imported', {
-          imported: response.data.imported,
-          known: response.data.already_known
-        })
-      )
-      
+      await discoveryService.delete(id)
+      showSuccess(t('discovery.success.deleted'))
       await loadData()
-      setScanResults([])
     } catch (error) {
-      showError(error.message || t('discovery.errors.importFailed'))
-    } finally {
-      setImporting(false)
+      showError(error.message)
     }
   }
 
-  const handleImportSelected = async () => {
-    await handleImport(scanResults)
+  const handleDeleteAll = async () => {
+    const confirmed = await showConfirm(t('discovery.deleteAllConfirm'), {
+      variant: 'danger',
+      confirmText: t('discovery.deleteAll'),
+    })
+    if (!confirmed) return
+    try {
+      await discoveryService.deleteAll()
+      showSuccess(t('discovery.success.deletedAll'))
+      setScanResults([])
+      await loadData()
+    } catch (error) {
+      showError(error.message)
+    }
   }
 
-  const handleImportAllUnknown = async () => {
-    await handleImport(unknownCerts)
+  // ── Status badge ──────────────────────────────────────────
+  const StatusBadge = ({ status }) => {
+    const map = { known: 'success', unknown: 'warning', error: 'danger' }
+    return <Badge variant={map[status] || 'default'}>{status}</Badge>
   }
 
-  const handleRefresh = async () => {
-    await loadData()
-    showInfo(t('discovery.info.dataRefreshed'))
+  const ExpiryCell = ({ row }) => {
+    if (!row.not_after) return '-'
+    const d = new Date(row.not_after)
+    const days = row.days_until_expiry
+    const cls = row.is_expired ? 'text-red-500' : days != null && days < 30 ? 'text-yellow-500' : ''
+    return <span className={cls}>{d.toLocaleDateString()}{days != null ? ` (${days}d)` : ''}</span>
   }
 
-  const renderScanTab = () => {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <div className="flex items-center gap-4 mb-4">
-            <Network size={32} className="text-accent-primary" />
-            <h2 className="text-xl font-semibold">{t('discovery.scanConfiguration')}</h2>
+  // ── Columns ───────────────────────────────────────────────
+  const baseColumns = useMemo(() => [
+    { key: 'target', label: t('discovery.columns.target'), sortable: true },
+    { key: 'port', label: t('discovery.columns.port'), sortable: true },
+    { key: 'subject', label: t('discovery.columns.subject'), sortable: true,
+      render: (row) => {
+        if (!row.subject) return '-'
+        const cn = row.subject.match(/CN=([^,]+)/)?.[1] || row.subject
+        return <span title={row.subject}>{cn}</span>
+      }
+    },
+    { key: 'issuer', label: t('discovery.columns.issuer'), sortable: true,
+      render: (row) => {
+        if (!row.issuer) return '-'
+        const cn = row.issuer.match(/CN=([^,]+)/)?.[1] || row.issuer
+        return <span title={row.issuer}>{cn}</span>
+      }
+    },
+    { key: 'not_after', label: t('discovery.columns.expiry'), sortable: true,
+      render: (row) => <ExpiryCell row={row} />
+    },
+    { key: 'status', label: t('discovery.columns.status'), sortable: true,
+      render: (row) => <StatusBadge status={row.status} />
+    },
+    { key: 'last_seen', label: t('discovery.columns.lastSeen'), sortable: true,
+      render: (row) => row.last_seen ? new Date(row.last_seen).toLocaleString() : '-'
+    },
+  ], [t])
+
+  const scanResultColumns = useMemo(() => [
+    { key: 'target', label: t('discovery.columns.target'), sortable: true },
+    { key: 'port', label: t('discovery.columns.port'), sortable: true },
+    { key: 'subject', label: t('discovery.columns.subject'), sortable: true,
+      render: (row) => {
+        if (!row.subject) return row.error ? <span className="text-red-400">{row.error}</span> : '-'
+        const cn = row.subject.match(/CN=([^,]+)/)?.[1] || row.subject
+        return <span title={row.subject}>{cn}</span>
+      }
+    },
+    { key: 'issuer', label: t('discovery.columns.issuer'), sortable: true,
+      render: (row) => {
+        if (!row.issuer) return '-'
+        const cn = row.issuer.match(/CN=([^,]+)/)?.[1] || row.issuer
+        return <span title={row.issuer}>{cn}</span>
+      }
+    },
+    { key: 'not_after', label: t('discovery.columns.expiry'), sortable: true,
+      render: (row) => row.not_after ? new Date(row.not_after).toLocaleDateString() : '-'
+    },
+    { key: 'fingerprint_sha256', label: 'SHA-256', sortable: false,
+      render: (row) => row.fingerprint_sha256 ? <span className="font-mono text-xs">{row.fingerprint_sha256.substring(0, 16)}…</span> : '-'
+    },
+  ], [t])
+
+  // ── Tab content ───────────────────────────────────────────
+  const renderScanTab = () => (
+    <div className="space-y-6">
+      <Card>
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-3 mb-2">
+            <Network size={24} className="text-accent-primary" />
+            <h2 className="text-lg font-semibold">{t('discovery.scanConfiguration')}</h2>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">{t('discovery.scanType')}</label>
+              <label className="block text-sm font-medium mb-1">{t('discovery.scanType')}</label>
               <Select
-                value={scanConfig.scanType}
-                onChange={(value) => setScanConfig({...scanConfig, scanType: value})}
+                value={scanType}
+                onChange={setScanType}
                 options={[
                   { value: 'targets', label: t('discovery.scanTypeTargets') },
-                  { value: 'subnet', label: t('discovery.scanTypeSubnet') }
+                  { value: 'subnet', label: t('discovery.scanTypeSubnet') },
                 ]}
               />
             </div>
-            
             <div>
-              <label className="block text-sm font-medium mb-2">{t('discovery.ports')}</label>
-              <Select
-                value={scanConfig.ports}
-                onChange={(value) => setScanConfig({...scanConfig, ports: value})}
-                options={[
-                  { value: [443], label: '443 (HTTPS)' },
-                  { value: [8443], label: '8443 (Alternative)' },
-                  { value: [443, 8443], label: '443, 8443 (Both)' }
-                ]}
-                isMulti
-              />
+              <label className="block text-sm font-medium mb-1">{t('discovery.ports')}</label>
+              <Input value={ports} onChange={(e) => setPorts(e.target.value)} placeholder="443, 8443" />
             </div>
           </div>
-          
-          {scanConfig.scanType === 'targets' && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium mb-2">{t('discovery.targets')}</label>
-              <Input
-                type="textarea"
-                rows={6}
-                value={scanConfig.targets}
-                onChange={(e) => setScanConfig({...scanConfig, targets: e.target.value})}
-                placeholder="example.com\n192.168.1.1\n10.0.0.5\ngoogle.com"
+
+          {scanType === 'targets' ? (
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('discovery.targets')}</label>
+              <textarea
+                className="w-full rounded-md border border-border bg-bg-secondary text-text-primary px-3 py-2 text-sm font-mono min-h-[120px] focus:outline-none focus:ring-2 focus:ring-accent-primary"
+                value={targetsText}
+                onChange={(e) => setTargetsText(e.target.value)}
+                placeholder={'netsuit.lan.pew.pet\n192.168.1.1\npve:8445'}
               />
-              <p className="text-xs text-text-tertiary mt-1">
-                {t('discovery.targetsHelp')}
-              </p>
+              <p className="text-xs text-text-tertiary mt-1">{t('discovery.targetsHelp')}</p>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('discovery.subnet')}</label>
+              <Input value={subnet} onChange={(e) => setSubnet(e.target.value)} placeholder="192.168.1.0/24" />
+              <p className="text-xs text-text-tertiary mt-1">{t('discovery.subnetHelp')}</p>
             </div>
           )}
-          
-          {scanConfig.scanType === 'subnet' && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium mb-2">{t('discovery.subnet')}</label>
-              <Input
-                value={scanConfig.subnet}
-                onChange={(e) => setScanConfig({...scanConfig, subnet: e.target.value})}
-                placeholder="192.168.1.0/24"
-              />
-              <p className="text-xs text-text-tertiary mt-1">
-                {t('discovery.subnetHelp')}
-              </p>
-            </div>
-          )}
-          
-          <div className="flex gap-2 mt-6">
-            <Button
-              onClick={handleScan}
-              disabled={scanning}
-              icon={scanning ? <LoadingSpinner size="sm" /> : <MagnifyingGlass />}
-            >
-              {scanning ? t('discovery.scanning') : t('discovery.scan')}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => setScanConfig({
-                targets: 'example.com\ngoogle.com',
-                ports: [443, 8443],
-                scanType: 'targets'
-              })}
-              icon={<ArrowsClockwise />}
-            >
-              {t('common.reset')}
+
+          <div className="flex gap-2 pt-2">
+            <Button onClick={handleScan} disabled={scanning}>
+              {scanning ? <LoadingSpinner size="sm" /> : <MagnifyingGlass size={16} />}
+              <span className="ml-2">{scanning ? t('discovery.scanning') : t('discovery.scan')}</span>
             </Button>
           </div>
-        </Card>
-        
-        <HelpCard
-          title={t('discovery.helpTitle')}
-          icon={<Info />}
-        >
-          <p className="text-sm mb-2">{t('discovery.helpDescription')}</p>
-          <ul className="text-sm space-y-1 text-text-secondary">
-            <li>• {t('discovery.helpItem1')}</li>
-            <li>• {t('discovery.helpItem2')}</li>
-            <li>• {t('discovery.helpItem3')}</li>
-            <li>• {t('discovery.helpItem4')}</li>
-          </ul>
-        </HelpCard>
-      </div>
-    )
-  }
+        </div>
+      </Card>
 
-  const renderResultsTab = () => {
-    if (scanResults.length === 0) {
-      return (
-        <EmptyState
-          icon={<MagnifyingGlass size={48} />}
-          title={t('discovery.noResults')}
-          description={t('discovery.noResultsDescription')}
-        />
-      )
-    }
-
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">
+      {/* Scan results (live) */}
+      {scanResults.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-3">
             {t('discovery.scanResults', { count: scanResults.length })}
-          </h2>
-          {canWrite('certificates') && (
-            <Button
-              onClick={handleImportSelected}
-              disabled={importing}
-              icon={importing ? <LoadingSpinner size="sm" /> : <Plugs />}
-            >
-              {importing ? t('discovery.importing') : t('discovery.importAll')}
-            </Button>
-          )}
-        </div>
-        
-        <ResponsiveDataTable
-          data={scanResults}
-          columns={resultColumns}
-          loading={loading}
-          onRowClick={handleSelectCert}
-          searchable
-          searchPlaceholder={t('common.search') + ' ' + t('common.certificates').toLowerCase() + '...'}
-          searchKeys={['target', 'subject', 'issuer', 'serial']}
-          columnStorageKey="ucm-discovery-results-columns"
-        />
-      </div>
-    )
-  }
-
-  const renderHistoryTab = () => {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">{t('discovery.discoveryHistory')}</h2>
-          <Button
-            variant="secondary"
-            onClick={handleRefresh}
-            icon={<ArrowsClockwise />}
-          >
-            {t('common.refresh')}
-          </Button>
-        </div>
-        
-        {history.length === 0 ? (
-          <EmptyState
-            icon={<ChartBar size={48} />}
-            title={t('discovery.noHistory')}
-            description={t('discovery.noHistoryDescription')}
-          />
-        ) : (
+          </h3>
           <ResponsiveDataTable
-            data={history}
-            columns={historyColumns}
-            loading={loading}
+            data={scanResults}
+            columns={scanResultColumns}
             searchable
-            searchPlaceholder={t('common.search') + ' ' + t('common.history').toLowerCase() + '...'}
-            searchKeys={['target', 'subject', 'issuer', 'serial', 'status']}
-            columnStorageKey="ucm-discovery-history-columns"
+            searchKeys={['target', 'subject', 'issuer']}
+            columnStorageKey="ucm-disc-scan-cols"
           />
-        )}
-      </div>
-    )
-  }
-
-  const renderUnknownTab = () => {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">
-            {t('discovery.unknownCertificates', { count: unknownCerts.length })}
-          </h2>
-          {canWrite('certificates') && unknownCerts.length > 0 && (
-            <Button
-              onClick={handleImportAllUnknown}
-              disabled={importing}
-              icon={importing ? <LoadingSpinner size="sm" /> : <Plugs />}
-            >
-              {importing ? t('discovery.importing') : t('discovery.importAll')}
-            </Button>
-          )}
         </div>
-        
-        {unknownCerts.length === 0 ? (
-          <EmptyState
-            icon={<ShieldCheck size={48} />}
-            title={t('discovery.noUnknown')}
-            description={t('discovery.noUnknownDescription')}
-          />
-        ) : (
-          <ResponsiveDataTable
-            data={unknownCerts}
-            columns={unknownColumns}
-            loading={loading}
-            searchable
-            searchPlaceholder={t('common.search') + ' ' + t('common.certificates').toLowerCase() + '...'}
-            searchKeys={['target', 'subject', 'issuer', 'serial']}
-            columnStorageKey="ucm-discovery-unknown-columns"
-          />
-        )}
-      </div>
-    )
-  }
+      )}
 
-  const renderExpiredTab = () => {
+      <HelpCard title={t('discovery.helpTitle')} icon={<Info />}>
+        <p className="text-sm mb-2">{t('discovery.helpDescription')}</p>
+        <ul className="text-sm space-y-1 text-text-secondary">
+          <li>• {t('discovery.helpItem1')}</li>
+          <li>• {t('discovery.helpItem2')}</li>
+          <li>• {t('discovery.helpItem3')}</li>
+          <li>• {t('discovery.helpItem4')}</li>
+        </ul>
+      </HelpCard>
+    </div>
+  )
+
+  const renderTableTab = (data, columns, emptyIcon, emptyTitle, emptyDesc, storageKey) => {
+    if (data.length === 0) {
+      return <EmptyState icon={emptyIcon} title={emptyTitle} description={emptyDesc} />
+    }
     return (
-      <div className="space-y-6">
-        <h2 className="text-xl font-semibold">
-          {t('discovery.expiredCertificates', { count: expiredCerts.length })}
-        </h2>
-        
-        {expiredCerts.length === 0 ? (
-          <EmptyState
-            icon={<CheckCircle size={48} />}
-            title={t('discovery.noExpired')}
-            description={t('discovery.noExpiredDescription')}
-          />
-        ) : (
-          <ResponsiveDataTable
-            data={expiredCerts}
-            columns={expiredColumns}
-            loading={loading}
-            searchable
-            searchPlaceholder={t('common.search') + ' ' + t('common.certificates').toLowerCase() + '...'}
-            searchKeys={['target', 'subject', 'issuer', 'serial']}
-            columnStorageKey="ucm-discovery-expired-columns"
-          />
-        )}
-      </div>
+      <ResponsiveDataTable
+        data={data}
+        columns={columns}
+        searchable
+        searchKeys={['target', 'subject', 'issuer', 'serial_number', 'status']}
+        columnStorageKey={storageKey}
+      />
     )
   }
 
-  const renderStats = () => {
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <CompactStats
-          title={t('discovery.stats.totalScanned')}
-          value={stats.totalScanned}
-          icon={<Globe />}
-          color="blue"
-        />
-        <CompactStats
-          title={t('discovery.stats.found')}
-          value={stats.found}
-          icon={<MagnifyingGlass />}
-          color="green"
-        />
-        <CompactStats
-          title={t('discovery.stats.imported')}
-          value={stats.imported}
-          icon={<CheckCircle />}
-          color="purple"
-        />
-        <CompactStats
-          title={t('discovery.stats.unknown')}
-          value={stats.unknown}
-          icon={<Warning />}
-          color="yellow"
-        />
-        <CompactStats
-          title={t('discovery.stats.expired')}
-          value={stats.expired}
-          icon={<Lock />}
-          color="red"
-        />
-      </div>
-    )
-  }
+  // ── Stats bar ─────────────────────────────────────────────
+  const renderStats = () => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+      <CompactStats title={t('discovery.stats.total')} value={stats.total} icon={<Globe />} color="blue" />
+      <CompactStats title={t('discovery.stats.known')} value={stats.known} icon={<CheckCircle />} color="green" />
+      <CompactStats title={t('discovery.stats.unknown')} value={stats.unknown} icon={<Warning />} color="yellow" />
+      <CompactStats title={t('discovery.stats.expired')} value={stats.expired} icon={<Lock />} color="red" />
+      <CompactStats title={t('discovery.stats.errors')} value={stats.errors} icon={<ShieldCheck />} color="gray" />
+    </div>
+  )
 
-  if (loading && !history.length) {
+  // ── Tabs ──────────────────────────────────────────────────
+  const tabs = useMemo(() => [
+    { id: 'scan', icon: <MagnifyingGlass size={16} />, label: t('discovery.tabScan'), content: renderScanTab() },
+    { id: 'all', icon: <Globe size={16} />, label: t('discovery.tabAll'),
+      content: renderTableTab(discovered, baseColumns, <Globe size={48} />,
+        t('discovery.noDiscovered'), t('discovery.noDiscoveredDescription'), 'ucm-disc-all-cols')
+    },
+    { id: 'unknown', icon: <Warning size={16} />, label: `${t('discovery.tabUnknown')} (${stats.unknown})`,
+      content: renderTableTab(unknownCerts, baseColumns, <ShieldCheck size={48} />,
+        t('discovery.noUnknown'), t('discovery.noUnknownDescription'), 'ucm-disc-unknown-cols')
+    },
+    { id: 'expired', icon: <Lock size={16} />, label: `${t('discovery.tabExpired')} (${stats.expired})`,
+      content: renderTableTab(expiredCerts, baseColumns, <CheckCircle size={48} />,
+        t('discovery.noExpired'), t('discovery.noExpiredDescription'), 'ucm-disc-expired-cols')
+    },
+  ], [discovered, unknownCerts, expiredCerts, stats, scanResults, scanning, scanType, targetsText, subnet, ports, t])
+
+  // ── Render ────────────────────────────────────────────────
+  if (loading && discovered.length === 0) {
     return (
       <ResponsiveLayout>
         <div className="flex justify-center items-center h-64">
@@ -504,27 +330,29 @@ export default function DiscoveryPage() {
   return (
     <ResponsiveLayout>
       <div className="p-4">
-        <div className="flex justify-between items-center mb-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h1 className="text-2xl font-bold">{t('discovery.title')}</h1>
-            <p className="text-text-secondary mt-1">
-              {t('discovery.subtitle')}
-            </p>
+            <p className="text-text-secondary text-sm mt-1">{t('discovery.subtitle')}</p>
           </div>
-          {renderStats()}
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={loadData} disabled={loading}>
+              <ArrowsClockwise size={16} />
+            </Button>
+            {isAdmin && stats.total > 0 && (
+              <Button variant="danger" onClick={handleDeleteAll}>
+                <Trash size={16} />
+                <span className="ml-1">{t('discovery.deleteAll')}</span>
+              </Button>
+            )}
+          </div>
         </div>
 
-        <TabsComponent
-          tabs={[
-            { id: 'scan', icon: <MagnifyingGlass />, label: t('discovery.tabScan'), content: renderScanTab() },
-            { id: 'results', icon: <ChartBar />, label: t('discovery.tabResults'), content: renderResultsTab() },
-            { id: 'history', icon: <ArrowsClockwise />, label: t('discovery.tabHistory'), content: renderHistoryTab() },
-            { id: 'unknown', icon: <Warning />, label: t('discovery.tabUnknown'), content: renderUnknownTab() },
-            { id: 'expired', icon: <Lock />, label: t('discovery.tabExpired'), content: renderExpiredTab() }
-          ]}
-          defaultTab={activeTab}
-          className="mb-6"
-        />
+        {renderStats()}
+
+        <Tabs tabs={tabs} defaultTab="scan" />
+
       </div>
     </ResponsiveLayout>
   )

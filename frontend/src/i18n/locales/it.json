@@ -2766,5 +2766,77 @@
       "management": "Gestione",
       "settings": "Impostazioni"
     }
+  },
+  "discovery": {
+    "title": "Scoperta certificati",
+    "subtitle": "Scansiona la rete per scoprire certificati TLS",
+    "tabScan": "Scansione",
+    "tabResults": "Risultati",
+    "tabAll": "Tutti scoperti",
+    "tabUnknown": "Sconosciuti",
+    "tabExpired": "Scaduti",
+    "scanConfiguration": "Configurazione scansione",
+    "scanType": "Tipo scansione",
+    "scanTypeTargets": "Lista obiettivi",
+    "scanTypeSubnet": "Sottorete (CIDR)",
+    "targets": "Obiettivi",
+    "targetsHelp": "Un hostname o IP per riga",
+    "subnet": "Sottorete",
+    "subnetHelp": "Notazione CIDR, max /22 (1024 host)",
+    "ports": "Porte",
+    "scan": "Avvia scansione",
+    "scanning": "Scansione in corso...",
+    "scanResults": "Risultati scansione ({{count}})",
+    "noResults": "Nessun risultato",
+    "noResultsDescription": "Avvia una scansione per scoprire certificati TLS.",
+    "noDiscovered": "Nessun certificato scoperto",
+    "noDiscoveredDescription": "Avvia una scansione.",
+    "noUnknown": "Tutto in ordine",
+    "noUnknownDescription": "Tutti i certificati scoperti sono già in UCM.",
+    "noExpired": "Nessun certificato scaduto",
+    "noExpiredDescription": "Nessuno dei certificati scoperti è scaduto.",
+    "unknownCertificates": "Certificati sconosciuti ({{count}})",
+    "expiredCertificates": "Certificati scaduti ({{count}})",
+    "allDiscovered": "Tutti scoperti ({{count}})",
+    "helpTitle": "Come funziona la scoperta",
+    "helpDescription": "La scoperta scansiona gli endpoint di rete per certificati TLS e li confronta con il tuo inventario UCM.",
+    "helpItem1": "Inserisci hostname, IP o una sottorete CIDR",
+    "helpItem2": "Ogni obiettivo viene sondato via TLS sulle porte specificate",
+    "helpItem3": "I certificati vengono confrontati con UCM per numero di serie",
+    "helpItem4": "I certificati sconosciuti possono essere esaminati",
+    "stats": {
+      "total": "Totale scoperti",
+      "known": "Conosciuti (in UCM)",
+      "unknown": "Sconosciuti",
+      "expired": "Scaduti",
+      "errors": "Errori scansione"
+    },
+    "success": {
+      "scanComplete": "Scansione completata — {{count}} certificato/i trovato/i",
+      "deleted": "Certificato scoperto eliminato",
+      "deletedAll": "Tutti i certificati scoperti eliminati"
+    },
+    "errors": {
+      "noTargets": "Inserisci almeno un obiettivo",
+      "noSubnet": "Inserisci una sottorete CIDR",
+      "scanFailed": "Scansione fallita",
+      "loadFailed": "Caricamento fallito"
+    },
+    "columns": {
+      "target": "Obiettivo",
+      "port": "Porta",
+      "subject": "Soggetto",
+      "issuer": "Emittente",
+      "serial": "N° serie",
+      "expiry": "Scadenza",
+      "status": "Stato",
+      "lastSeen": "Ultimo",
+      "daysLeft": "Giorni rimasti"
+    },
+    "deleteConfirm": "Eliminare questo certificato scoperto?",
+    "deleteAllConfirm": "Eliminare tutti i certificati scoperti?",
+    "clearResults": "Pulisci risultati",
+    "deleteAll": "Elimina tutti",
+    "rescan": "Riscansiona"
   }
 }

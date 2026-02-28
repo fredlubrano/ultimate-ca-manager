@@ -2766,5 +2766,77 @@
       "management": "管理",
       "settings": "设置"
     }
+  },
+  "discovery": {
+    "title": "证书发现",
+    "subtitle": "扫描网络以发现TLS证书",
+    "tabScan": "扫描",
+    "tabResults": "结果",
+    "tabAll": "所有发现",
+    "tabUnknown": "未知",
+    "tabExpired": "已过期",
+    "scanConfiguration": "扫描配置",
+    "scanType": "扫描类型",
+    "scanTypeTargets": "目标列表",
+    "scanTypeSubnet": "子网 (CIDR)",
+    "targets": "目标",
+    "targetsHelp": "每行一个主机名或IP",
+    "subnet": "子网",
+    "subnetHelp": "CIDR表示法，最大 /22（1024主机）",
+    "ports": "端口",
+    "scan": "开始扫描",
+    "scanning": "扫描中...",
+    "scanResults": "扫描结果 ({{count}})",
+    "noResults": "无结果",
+    "noResultsDescription": "运行扫描以发现TLS证书。",
+    "noDiscovered": "未发现证书",
+    "noDiscoveredDescription": "运行扫描以开始。",
+    "noUnknown": "一切正常",
+    "noUnknownDescription": "所有发现的证书已在UCM中跟踪。",
+    "noExpired": "无过期证书",
+    "noExpiredDescription": "发现的证书均未过期。",
+    "unknownCertificates": "未知证书 ({{count}})",
+    "expiredCertificates": "过期证书 ({{count}})",
+    "allDiscovered": "所有发现 ({{count}})",
+    "helpTitle": "发现工作原理",
+    "helpDescription": "发现功能扫描网络端点的TLS证书并与UCM清单进行比较。",
+    "helpItem1": "输入主机名、IP或CIDR子网",
+    "helpItem2": "每个目标通过TLS在指定端口上探测",
+    "helpItem3": "证书通过序列号与UCM匹配",
+    "helpItem4": "未知证书可供审查",
+    "stats": {
+      "total": "发现总数",
+      "known": "已知（UCM中）",
+      "unknown": "未知",
+      "expired": "已过期",
+      "errors": "扫描错误"
+    },
+    "success": {
+      "scanComplete": "扫描完成 — 找到 {{count}} 个证书",
+      "deleted": "已删除发现的证书",
+      "deletedAll": "已删除所有发现的证书"
+    },
+    "errors": {
+      "noTargets": "请输入至少一个目标",
+      "noSubnet": "请输入CIDR子网",
+      "scanFailed": "扫描失败",
+      "loadFailed": "加载失败"
+    },
+    "columns": {
+      "target": "目标",
+      "port": "端口",
+      "subject": "主题",
+      "issuer": "颁发者",
+      "serial": "序列号",
+      "expiry": "到期",
+      "status": "状态",
+      "lastSeen": "最后扫描",
+      "daysLeft": "剩余天数"
+    },
+    "deleteConfirm": "删除此发现的证书？",
+    "deleteAllConfirm": "删除所有发现的证书？",
+    "clearResults": "清除结果",
+    "deleteAll": "全部删除",
+    "rescan": "重新扫描"
   }
 }

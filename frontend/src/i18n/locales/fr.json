@@ -2769,5 +2769,77 @@
       "management": "Gestion",
       "settings": "Paramètres"
     }
+  },
+  "discovery": {
+    "title": "Découverte de certificats",
+    "subtitle": "Scannez votre réseau pour découvrir les certificats TLS",
+    "tabScan": "Scanner",
+    "tabResults": "Résultats",
+    "tabAll": "Tous découverts",
+    "tabUnknown": "Inconnus",
+    "tabExpired": "Expirés",
+    "scanConfiguration": "Configuration du scan",
+    "scanType": "Type de scan",
+    "scanTypeTargets": "Liste de cibles",
+    "scanTypeSubnet": "Sous-réseau (CIDR)",
+    "targets": "Cibles",
+    "targetsHelp": "Un nom d hôte ou IP par ligne. Ajoutez :port optionnellement (ex: host:8443)",
+    "subnet": "Sous-réseau",
+    "subnetHelp": "Notation CIDR, max /22 (1024 hôtes). Exemple : 192.168.1.0/24",
+    "ports": "Ports",
+    "scan": "Lancer le scan",
+    "scanning": "Scan en cours...",
+    "scanResults": "Résultats du scan ({{count}})",
+    "noResults": "Aucun résultat",
+    "noResultsDescription": "Lancez un scan pour découvrir les certificats TLS sur votre réseau.",
+    "noDiscovered": "Aucun certificat découvert",
+    "noDiscoveredDescription": "Lancez un scan pour commencer la découverte.",
+    "noUnknown": "Tout est en ordre",
+    "noUnknownDescription": "Tous les certificats découverts sont déjà suivis dans UCM.",
+    "noExpired": "Aucun certificat expiré",
+    "noExpiredDescription": "Aucun certificat découvert n est expiré.",
+    "unknownCertificates": "Certificats inconnus ({{count}})",
+    "expiredCertificates": "Certificats expirés ({{count}})",
+    "allDiscovered": "Tous découverts ({{count}})",
+    "helpTitle": "Comment fonctionne la découverte",
+    "helpDescription": "La découverte scanne les endpoints réseau pour les certificats TLS et les compare à votre inventaire UCM.",
+    "helpItem1": "Entrez des noms d hôte, IPs ou un sous-réseau CIDR",
+    "helpItem2": "Chaque cible est sondée sur les ports spécifiés via TLS",
+    "helpItem3": "Les certificats sont comparés à UCM par numéro de série",
+    "helpItem4": "Les certificats inconnus peuvent être examinés et suivis",
+    "stats": {
+      "total": "Total découverts",
+      "known": "Connus (dans UCM)",
+      "unknown": "Inconnus",
+      "expired": "Expirés",
+      "errors": "Erreurs de scan"
+    },
+    "success": {
+      "scanComplete": "Scan terminé — {{count}} certificat(s) trouvé(s)",
+      "deleted": "Certificat découvert supprimé",
+      "deletedAll": "Tous les certificats découverts supprimés"
+    },
+    "errors": {
+      "noTargets": "Entrez au moins une cible",
+      "noSubnet": "Entrez un sous-réseau en notation CIDR",
+      "scanFailed": "Échec du scan",
+      "loadFailed": "Échec du chargement des certificats découverts"
+    },
+    "columns": {
+      "target": "Cible",
+      "port": "Port",
+      "subject": "Sujet",
+      "issuer": "Émetteur",
+      "serial": "N° série",
+      "expiry": "Expire",
+      "status": "Statut",
+      "lastSeen": "Vu le",
+      "daysLeft": "Jours restants"
+    },
+    "deleteConfirm": "Supprimer ce certificat découvert ?",
+    "deleteAllConfirm": "Supprimer tous les certificats découverts ? Cette action est irréversible.",
+    "clearResults": "Effacer les résultats",
+    "deleteAll": "Tout supprimer",
+    "rescan": "Re-scanner"
   }
 }

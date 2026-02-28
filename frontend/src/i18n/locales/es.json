@@ -2766,5 +2766,77 @@
       "management": "Gestión",
       "settings": "Configuración"
     }
+  },
+  "discovery": {
+    "title": "Descubrimiento de certificados",
+    "subtitle": "Escanee su red para descubrir certificados TLS",
+    "tabScan": "Escanear",
+    "tabResults": "Resultados",
+    "tabAll": "Todos descubiertos",
+    "tabUnknown": "Desconocidos",
+    "tabExpired": "Expirados",
+    "scanConfiguration": "Configuración del escaneo",
+    "scanType": "Tipo de escaneo",
+    "scanTypeTargets": "Lista de objetivos",
+    "scanTypeSubnet": "Subred (CIDR)",
+    "targets": "Objetivos",
+    "targetsHelp": "Un nombre de host o IP por línea",
+    "subnet": "Subred",
+    "subnetHelp": "Notación CIDR, máx /22 (1024 hosts)",
+    "ports": "Puertos",
+    "scan": "Iniciar escaneo",
+    "scanning": "Escaneando...",
+    "scanResults": "Resultados del escaneo ({{count}})",
+    "noResults": "Sin resultados",
+    "noResultsDescription": "Ejecute un escaneo para descubrir certificados TLS.",
+    "noDiscovered": "Sin certificados descubiertos",
+    "noDiscoveredDescription": "Ejecute un escaneo para comenzar.",
+    "noUnknown": "Todo en orden",
+    "noUnknownDescription": "Todos los certificados descubiertos están en UCM.",
+    "noExpired": "Sin certificados expirados",
+    "noExpiredDescription": "Ninguno de los certificados descubiertos ha expirado.",
+    "unknownCertificates": "Certificados desconocidos ({{count}})",
+    "expiredCertificates": "Certificados expirados ({{count}})",
+    "allDiscovered": "Todos descubiertos ({{count}})",
+    "helpTitle": "Cómo funciona el descubrimiento",
+    "helpDescription": "El descubrimiento escanea endpoints de red buscando certificados TLS y los compara con su inventario UCM.",
+    "helpItem1": "Ingrese nombres de host, IPs o una subred CIDR",
+    "helpItem2": "Cada objetivo se sondea por TLS en los puertos especificados",
+    "helpItem3": "Los certificados se comparan con UCM por número de serie",
+    "helpItem4": "Los certificados desconocidos pueden ser revisados",
+    "stats": {
+      "total": "Total descubiertos",
+      "known": "Conocidos (en UCM)",
+      "unknown": "Desconocidos",
+      "expired": "Expirados",
+      "errors": "Errores de escaneo"
+    },
+    "success": {
+      "scanComplete": "Escaneo completo — {{count}} certificado(s) encontrado(s)",
+      "deleted": "Certificado descubierto eliminado",
+      "deletedAll": "Todos los certificados descubiertos eliminados"
+    },
+    "errors": {
+      "noTargets": "Ingrese al menos un objetivo",
+      "noSubnet": "Ingrese una subred en notación CIDR",
+      "scanFailed": "Escaneo fallido",
+      "loadFailed": "Error al cargar"
+    },
+    "columns": {
+      "target": "Objetivo",
+      "port": "Puerto",
+      "subject": "Sujeto",
+      "issuer": "Emisor",
+      "serial": "N° serie",
+      "expiry": "Expira",
+      "status": "Estado",
+      "lastSeen": "Visto",
+      "daysLeft": "Días restantes"
+    },
+    "deleteConfirm": "¿Eliminar este certificado descubierto?",
+    "deleteAllConfirm": "¿Eliminar todos los certificados descubiertos?",
+    "clearResults": "Limpiar resultados",
+    "deleteAll": "Eliminar todos",
+    "rescan": "Re-escanear"
   }
 }

@@ -2766,5 +2766,77 @@
       "management": "管理",
       "settings": "設定"
     }
+  },
+  "discovery": {
+    "title": "証明書ディスカバリー",
+    "subtitle": "ネットワークをスキャンしてTLS証明書を発見",
+    "tabScan": "スキャン",
+    "tabResults": "結果",
+    "tabAll": "全て発見",
+    "tabUnknown": "未知",
+    "tabExpired": "期限切れ",
+    "scanConfiguration": "スキャン設定",
+    "scanType": "スキャンタイプ",
+    "scanTypeTargets": "ターゲットリスト",
+    "scanTypeSubnet": "サブネット (CIDR)",
+    "targets": "ターゲット",
+    "targetsHelp": "1行に1つのホスト名またはIP",
+    "subnet": "サブネット",
+    "subnetHelp": "CIDR表記、最大 /22 (1024ホスト)",
+    "ports": "ポート",
+    "scan": "スキャン開始",
+    "scanning": "スキャン中...",
+    "scanResults": "スキャン結果 ({{count}})",
+    "noResults": "結果なし",
+    "noResultsDescription": "スキャンを実行してTLS証明書を発見してください。",
+    "noDiscovered": "発見された証明書なし",
+    "noDiscoveredDescription": "スキャンを実行してください。",
+    "noUnknown": "問題なし",
+    "noUnknownDescription": "発見された全ての証明書がUCMで追跡されています。",
+    "noExpired": "期限切れの証明書なし",
+    "noExpiredDescription": "発見された証明書に期限切れはありません。",
+    "unknownCertificates": "未知の証明書 ({{count}})",
+    "expiredCertificates": "期限切れの証明書 ({{count}})",
+    "allDiscovered": "全て発見 ({{count}})",
+    "helpTitle": "ディスカバリーの仕組み",
+    "helpDescription": "ディスカバリーはネットワークエンドポイントをスキャンしてTLS証明書を発見し、UCMインベントリと比較します。",
+    "helpItem1": "ホスト名、IP、またはCIDRサブネットを入力",
+    "helpItem2": "各ターゲットは指定ポートでTLSプローブされます",
+    "helpItem3": "証明書はシリアル番号でUCMと照合されます",
+    "helpItem4": "未知の証明書はレビューできます",
+    "stats": {
+      "total": "発見合計",
+      "known": "既知 (UCM内)",
+      "unknown": "未知",
+      "expired": "期限切れ",
+      "errors": "スキャンエラー"
+    },
+    "success": {
+      "scanComplete": "スキャン完了 — {{count}}件の証明書が見つかりました",
+      "deleted": "発見された証明書を削除しました",
+      "deletedAll": "全ての発見された証明書を削除しました"
+    },
+    "errors": {
+      "noTargets": "少なくとも1つのターゲットを入力",
+      "noSubnet": "CIDRサブネットを入力",
+      "scanFailed": "スキャン失敗",
+      "loadFailed": "読み込み失敗"
+    },
+    "columns": {
+      "target": "ターゲット",
+      "port": "ポート",
+      "subject": "サブジェクト",
+      "issuer": "発行者",
+      "serial": "シリアル",
+      "expiry": "有効期限",
+      "status": "ステータス",
+      "lastSeen": "最終確認",
+      "daysLeft": "残り日数"
+    },
+    "deleteConfirm": "この発見された証明書を削除しますか？",
+    "deleteAllConfirm": "全ての発見された証明書を削除しますか？",
+    "clearResults": "結果をクリア",
+    "deleteAll": "全て削除",
+    "rescan": "再スキャン"
   }
 }

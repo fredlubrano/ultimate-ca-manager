@@ -2766,5 +2766,77 @@
       "management": "Verwaltung",
       "settings": "Einstellungen"
     }
+  },
+  "discovery": {
+    "title": "Zertifikatserkennung",
+    "subtitle": "Scannen Sie Ihr Netzwerk nach TLS-Zertifikaten",
+    "tabScan": "Scannen",
+    "tabResults": "Ergebnisse",
+    "tabAll": "Alle entdeckten",
+    "tabUnknown": "Unbekannt",
+    "tabExpired": "Abgelaufen",
+    "scanConfiguration": "Scan-Konfiguration",
+    "scanType": "Scan-Typ",
+    "scanTypeTargets": "Zielliste",
+    "scanTypeSubnet": "Subnetz (CIDR)",
+    "targets": "Ziele",
+    "targetsHelp": "Ein Hostname oder IP pro Zeile. Optional :port hinzufügen",
+    "subnet": "Subnetz",
+    "subnetHelp": "CIDR-Notation, max /22 (1024 Hosts). Beispiel: 192.168.1.0/24",
+    "ports": "Ports",
+    "scan": "Scan starten",
+    "scanning": "Wird gescannt...",
+    "scanResults": "Scan-Ergebnisse ({{count}})",
+    "noResults": "Keine Ergebnisse",
+    "noResultsDescription": "Starten Sie einen Scan, um TLS-Zertifikate zu entdecken.",
+    "noDiscovered": "Keine entdeckten Zertifikate",
+    "noDiscoveredDescription": "Starten Sie einen Scan.",
+    "noUnknown": "Alles in Ordnung",
+    "noUnknownDescription": "Alle entdeckten Zertifikate werden in UCM verfolgt.",
+    "noExpired": "Keine abgelaufenen Zertifikate",
+    "noExpiredDescription": "Keines der entdeckten Zertifikate ist abgelaufen.",
+    "unknownCertificates": "Unbekannte Zertifikate ({{count}})",
+    "expiredCertificates": "Abgelaufene Zertifikate ({{count}})",
+    "allDiscovered": "Alle entdeckten ({{count}})",
+    "helpTitle": "So funktioniert die Erkennung",
+    "helpDescription": "Die Erkennung scannt Netzwerk-Endpunkte nach TLS-Zertifikaten und vergleicht sie mit Ihrem UCM-Inventar.",
+    "helpItem1": "Geben Sie Hostnamen, IPs oder ein CIDR-Subnetz ein",
+    "helpItem2": "Jedes Ziel wird über TLS auf den angegebenen Ports abgefragt",
+    "helpItem3": "Zertifikate werden anhand der Seriennummer mit UCM abgeglichen",
+    "helpItem4": "Unbekannte Zertifikate können überprüft werden",
+    "stats": {
+      "total": "Gesamt entdeckt",
+      "known": "Bekannt (in UCM)",
+      "unknown": "Unbekannt",
+      "expired": "Abgelaufen",
+      "errors": "Scan-Fehler"
+    },
+    "success": {
+      "scanComplete": "Scan abgeschlossen — {{count}} Zertifikat(e) gefunden",
+      "deleted": "Entdecktes Zertifikat gelöscht",
+      "deletedAll": "Alle entdeckten Zertifikate gelöscht"
+    },
+    "errors": {
+      "noTargets": "Mindestens ein Ziel eingeben",
+      "noSubnet": "Subnetz in CIDR-Notation eingeben",
+      "scanFailed": "Scan fehlgeschlagen",
+      "loadFailed": "Laden fehlgeschlagen"
+    },
+    "columns": {
+      "target": "Ziel",
+      "port": "Port",
+      "subject": "Betreff",
+      "issuer": "Aussteller",
+      "serial": "Seriennr.",
+      "expiry": "Ablauf",
+      "status": "Status",
+      "lastSeen": "Zuletzt gesehen",
+      "daysLeft": "Tage übrig"
+    },
+    "deleteConfirm": "Dieses entdeckte Zertifikat löschen?",
+    "deleteAllConfirm": "Alle entdeckten Zertifikate löschen?",
+    "clearResults": "Ergebnisse löschen",
+    "deleteAll": "Alle löschen",
+    "rescan": "Erneut scannen"
   }
 }

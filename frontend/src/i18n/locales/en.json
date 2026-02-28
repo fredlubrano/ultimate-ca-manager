@@ -2769,5 +2769,77 @@
       "management": "Management",
       "settings": "Settings"
     }
+  },
+  "discovery": {
+    "title": "Certificate Discovery",
+    "subtitle": "Scan your network to discover TLS certificates",
+    "tabScan": "Scan",
+    "tabResults": "Results",
+    "tabAll": "All Discovered",
+    "tabUnknown": "Unknown",
+    "tabExpired": "Expired",
+    "scanConfiguration": "Scan Configuration",
+    "scanType": "Scan Type",
+    "scanTypeTargets": "Target List",
+    "scanTypeSubnet": "Subnet (CIDR)",
+    "targets": "Targets",
+    "targetsHelp": "One hostname or IP per line. Optionally add :port (e.g., host:8443)",
+    "subnet": "Subnet",
+    "subnetHelp": "CIDR notation, max /22 (1024 hosts). Example: 192.168.1.0/24",
+    "ports": "Ports",
+    "scan": "Start Scan",
+    "scanning": "Scanning...",
+    "scanResults": "Scan Results ({{count}})",
+    "noResults": "No Scan Results",
+    "noResultsDescription": "Run a scan to discover TLS certificates on your network.",
+    "noDiscovered": "No Discovered Certificates",
+    "noDiscoveredDescription": "Run a scan to start discovering certificates.",
+    "noUnknown": "All Clear",
+    "noUnknownDescription": "All discovered certificates are already tracked in UCM.",
+    "noExpired": "No Expired Certificates",
+    "noExpiredDescription": "None of the discovered certificates have expired.",
+    "unknownCertificates": "Unknown Certificates ({{count}})",
+    "expiredCertificates": "Expired Certificates ({{count}})",
+    "allDiscovered": "All Discovered ({{count}})",
+    "helpTitle": "How Discovery Works",
+    "helpDescription": "Discovery scans network endpoints for TLS certificates and compares them against your UCM inventory.",
+    "helpItem1": "Enter hostnames, IPs, or a CIDR subnet to scan",
+    "helpItem2": "Each target is probed on the specified ports via TLS",
+    "helpItem3": "Certificates are matched against UCM by serial number",
+    "helpItem4": "Unknown certificates can be reviewed and tracked",
+    "stats": {
+      "total": "Total Discovered",
+      "known": "Known (in UCM)",
+      "unknown": "Unknown",
+      "expired": "Expired",
+      "errors": "Scan Errors"
+    },
+    "success": {
+      "scanComplete": "Scan complete — {{count}} certificate(s) found",
+      "deleted": "Discovered certificate deleted",
+      "deletedAll": "All discovered certificates deleted"
+    },
+    "errors": {
+      "noTargets": "Enter at least one target",
+      "noSubnet": "Enter a subnet in CIDR notation",
+      "scanFailed": "Scan failed",
+      "loadFailed": "Failed to load discovered certificates"
+    },
+    "columns": {
+      "target": "Target",
+      "port": "Port",
+      "subject": "Subject",
+      "issuer": "Issuer",
+      "serial": "Serial",
+      "expiry": "Expires",
+      "status": "Status",
+      "lastSeen": "Last Seen",
+      "daysLeft": "Days Left"
+    },
+    "deleteConfirm": "Delete this discovered certificate?",
+    "deleteAllConfirm": "Delete all discovered certificates? This cannot be undone.",
+    "clearResults": "Clear Results",
+    "deleteAll": "Delete All",
+    "rescan": "Re-scan"
   }
 }
