@@ -11,6 +11,35 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.51] - 2026-02-28
+
+### Added
+- **EST management page** — full EST (RFC 7030) configuration UI with config, stats, and endpoint info tabs; backend management API (`/api/v2/est/config`, `/stats`)
+- **Certificate unhold** — `POST /certificates/<id>/unhold` endpoint to remove certificateHold status; frontend button in detail panel with confirmation dialog
+- **Enriched system-status** — dashboard now shows 8 service badges: ACME, SCEP, EST, OCSP, CRL, Auto-Renewal (with pending count), SMTP, Webhooks
+- **WebSocket real-time updates** — wired all backend emitters (certificate CRUD, CA, user, settings, audit) to push live updates to dashboard and tables
+- **Accordion sidebar navigation** — collapsible section groups with smooth animations, polished styling (200px width), mobile bottom sheet
+- **In-app help updates** — documentation for EST, certificate unhold, CSR generate, enriched system-status
+- **CSR generation form** — generate CSR directly from the UI with full DN fields and key options
+- **Enhanced certificate issuance form** — full options including key usage, extended key usage, SANs, and validity
+
+### Changed
+- **Global UI density harmonization** — unified component scale (~34px height): Input, Select, Textarea, SearchBar, Button all aligned; Card padding compacted; table rows tightened (13px font, reduced padding); icon frames 28→24px in tables
+- **Settings sidebar** — harmonized with main nav (200px, 13px text, accent bar active state)
+- **Dashboard chart curves** — switched from monotone to basis (B-spline) interpolation for smooth rounded lines
+- **Sidebar navigation** — mega-menu flyout with hover groups, then refined to accordion pattern with persistent expand/collapse state
+
+### Fixed
+- **OCSP null cert crash** — use `add_response_by_hash` when certificate `.crt` data is missing instead of crashing
+- **OCSP HSM signing** — added `_HsmPrivateKeyWrapper` to delegate OCSP response signing to HSM providers
+- **Dashboard expired count** — backend now returns actual expired certificate count; `expiring_soon` excludes already-expired certs
+- **System Health widget spacing** — fixed padding between header and content (desktop + mobile)
+- **Flyout menu overlap** — prevented menu superposition on fast hover transitions with debounce
+- **Post-install experience** — improved DEB/RPM post-install scripts with FQDN alternatives and correct API URLs
+- **Orphan cleanup** — removed obsolete files and unused components
+
+---
+
 ## [2.50] - 2026-02-22
 
 ### Added
