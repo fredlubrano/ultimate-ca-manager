@@ -391,11 +391,51 @@ def get_system_status():
             text("SELECT value FROM system_config WHERE key = 'auto_renewal_enabled'")
         ).scalar()
         if renewal_enabled == 'true':
-            status['auto_renewal'] = {'status': 'online', 'message': 'Scheduled'}
+            pending = db.session.execute(
+                text("""SELECT COUNT(*) FROM certificates 
+                    WHERE revoked = 0 AND valid_to IS NOT NULL 
+                    AND valid_to BETWEEN datetime('now') AND datetime('now', '+30 days')""")
+            ).scalar() or 0
+            msg = f'Scheduled ({pending} pending)' if pending > 0 else 'Scheduled'
+            status['auto_renewal'] = {'status': 'online', 'message': msg}
         else:
             status['auto_renewal'] = {'status': 'offline', 'message': 'Disabled'}
     except Exception:
         status['auto_renewal'] = {'status': 'offline', 'message': 'Disabled'}
+    
+    # SMTP / Email notifications status
+    try:
+        smtp_host = db.session.execute(
+            text("SELECT value FROM system_config WHERE key = 'email_smtp_host'")
+        ).scalar()
+        smtp_enabled = db.session.execute(
+            text("SELECT value FROM system_config WHERE key = 'email_enabled'")
+        ).scalar()
+        if smtp_enabled == 'true' and smtp_host:
+            status['smtp'] = {'status': 'online', 'message': f'Host: {smtp_host}'}
+        elif smtp_host:
+            status['smtp'] = {'status': 'warning', 'message': 'Configured but disabled'}
+        else:
+            status['smtp'] = {'status': 'offline', 'message': 'Not configured'}
+    except Exception:
+        status['smtp'] = {'status': 'offline', 'message': 'Not configured'}
+    
+    # Webhooks status
+    try:
+        webhook_count = db.session.execute(
+            text("SELECT COUNT(*) FROM webhook_endpoints WHERE active = 1")
+        ).scalar() or 0
+        total_webhooks = db.session.execute(
+            text("SELECT COUNT(*) FROM webhook_endpoints")
+        ).scalar() or 0
+        if webhook_count > 0:
+            status['webhooks'] = {'status': 'online', 'message': f'{webhook_count} active endpoint(s)'}
+        elif total_webhooks > 0:
+            status['webhooks'] = {'status': 'warning', 'message': f'{total_webhooks} endpoint(s), none active'}
+        else:
+            status['webhooks'] = {'status': 'offline', 'message': 'No endpoints'}
+    except Exception:
+        status['webhooks'] = {'status': 'offline', 'message': 'Not configured'}
     
     # Core is online if we can respond
     status['core'] = {'status': 'online', 'message': 'Operational'}

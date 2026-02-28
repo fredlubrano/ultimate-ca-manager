@@ -883,8 +883,12 @@ export default function DashboardPage() {
                   <div className="grid grid-cols-4 gap-1">
                     <ServiceBadge name="ACME" status={systemStatus?.acme} />
                     <ServiceBadge name="SCEP" status={systemStatus?.scep} />
+                    <ServiceBadge name="EST" status={systemStatus?.est} />
                     <ServiceBadge name="OCSP" status={systemStatus?.ocsp} />
                     <ServiceBadge name="CRL" status={systemStatus?.crl} />
+                    <ServiceBadge name={t('dashboard.autoRenewal')} status={systemStatus?.auto_renewal} />
+                    <ServiceBadge name="SMTP" status={systemStatus?.smtp} />
+                    <ServiceBadge name="Webhooks" status={systemStatus?.webhooks} />
                   </div>
                 </Card.Body>
               </Card>
@@ -1157,8 +1161,12 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-4 gap-1">
                   <ServiceBadge name="ACME" status={systemStatus?.acme} />
                   <ServiceBadge name="SCEP" status={systemStatus?.scep} />
+                  <ServiceBadge name="EST" status={systemStatus?.est} />
                   <ServiceBadge name="OCSP" status={systemStatus?.ocsp} />
                   <ServiceBadge name="CRL" status={systemStatus?.crl} />
+                  <ServiceBadge name={t('dashboard.autoRenewal')} status={systemStatus?.auto_renewal} />
+                  <ServiceBadge name="SMTP" status={systemStatus?.smtp} />
+                  <ServiceBadge name="Webhooks" status={systemStatus?.webhooks} />
                 </div>
               </Card.Body>
             </Card>

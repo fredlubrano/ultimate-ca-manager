@@ -9,11 +9,40 @@ from typing import Optional, Tuple
 from cryptography import x509
 from cryptography.x509 import ocsp
 from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec, rsa, padding, utils
 from cryptography.hazmat.backends import default_backend
 
 from models import db, CA, Certificate, OCSPResponse
 
 logger = logging.getLogger(__name__)
+
+
+class _HsmPrivateKeyWrapper:
+    """
+    Wraps an HSM key to work with cryptography's builder.sign() API.
+    Delegates actual signing to the HSM provider.
+    """
+    
+    def __init__(self, hsm_key_id: int, public_key):
+        self._hsm_key_id = hsm_key_id
+        self._public_key = public_key
+        self.key_size = getattr(public_key, 'key_size', 2048)
+    
+    def sign(self, data: bytes, signature_algorithm, algorithm=None):
+        """Sign data via HSM — compatible with cryptography's private key interface"""
+        from services.hsm.hsm_signer import sign_with_hsm
+        
+        # For EC keys, the cryptography lib passes (data, ECDSA(hash))
+        # For RSA keys, it passes (data, PKCS1v15(), hash)
+        if isinstance(signature_algorithm, ec.ECDSA):
+            return sign_with_hsm(data, self._hsm_key_id)
+        elif isinstance(signature_algorithm, padding.PKCS1v15):
+            return sign_with_hsm(data, self._hsm_key_id)
+        else:
+            return sign_with_hsm(data, self._hsm_key_id)
+    
+    def public_key(self):
+        return self._public_key
 
 # Map revoke_reason strings to X.509 ReasonFlags
 _REASON_MAP = {
@@ -62,9 +91,20 @@ class OCSPService:
     def _load_ca_key(self, ca: CA):
         """Load CA private key, supporting both local and HSM storage"""
         if ca.uses_hsm:
-            raise ValueError(
-                f"CA {ca.descr} uses HSM - OCSP signing with HSM not yet supported"
-            )
+            try:
+                from services.hsm import HsmService
+                from services.hsm.hsm_signer import get_hsm_public_key
+                # Get public key to determine algorithm, then create a wrapper
+                pub_pem = get_hsm_public_key(ca.hsm_key_id)
+                pub_key = serialization.load_pem_public_key(
+                    pub_pem.encode() if isinstance(pub_pem, str) else pub_pem,
+                    backend=self.backend
+                )
+                # Return an HSM signing wrapper
+                return _HsmPrivateKeyWrapper(ca.hsm_key_id, pub_key)
+            except Exception as e:
+                logger.warning(f"HSM signing unavailable for CA {ca.descr}: {e}")
+                raise ValueError(f"HSM signing failed for CA {ca.descr}: {e}")
         
         if not ca.prv:
             raise ValueError(f"CA {ca.descr} has no private key")
@@ -156,16 +196,43 @@ class OCSPService:
             next_update = this_update + timedelta(hours=24)
             
             builder = ocsp.OCSPResponseBuilder()
-            builder = builder.add_response(
-                cert=cert_x509 if cert_x509 else ca_cert,  # Fallback to CA cert if cert unavailable
-                issuer=ca_cert,
-                algorithm=hashes.SHA256(),
-                cert_status=status,
-                this_update=this_update,
-                next_update=next_update,
-                revocation_time=revocation_time,
-                revocation_reason=revocation_reason
-            ).responder_id(
+            
+            if cert_x509:
+                # Standard path: use cert object
+                builder = builder.add_response(
+                    cert=cert_x509,
+                    issuer=ca_cert,
+                    algorithm=hashes.SHA256(),
+                    cert_status=status,
+                    this_update=this_update,
+                    next_update=next_update,
+                    revocation_time=revocation_time,
+                    revocation_reason=revocation_reason
+                )
+            else:
+                # Fallback: cert .crt missing, use hash-based response
+                issuer_name_hash = hashes.Hash(hashes.SHA256())
+                issuer_name_hash.update(ca_cert.subject.public_bytes())
+                issuer_key_hash = hashes.Hash(hashes.SHA256())
+                issuer_key_hash.update(
+                    ca_cert.public_key().public_bytes(
+                        serialization.Encoding.DER,
+                        serialization.PublicFormat.SubjectPublicKeyInfo
+                    )
+                )
+                builder = builder.add_response_by_hash(
+                    issuer_name_hash=issuer_name_hash.finalize(),
+                    issuer_key_hash=issuer_key_hash.finalize(),
+                    serial_number=cert_serial,
+                    algorithm=hashes.SHA256(),
+                    cert_status=status,
+                    this_update=this_update,
+                    next_update=next_update,
+                    revocation_time=revocation_time,
+                    revocation_reason=revocation_reason
+                )
+            
+            builder = builder.responder_id(
                 ocsp.OCSPResponderEncoding.HASH, ca_cert
             )
             
