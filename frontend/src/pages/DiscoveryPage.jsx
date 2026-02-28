@@ -5,13 +5,11 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Globe, MagnifyingGlass, Warning, CheckCircle, Lock,
-  ArrowsClockwise, Network, Info, ShieldCheck, Trash,
-  ChartBar
+  ArrowsClockwise, Network, Info, ShieldCheck, Trash
 } from '@phosphor-icons/react'
 import {
   ResponsiveLayout, Card, Button, Input, Select,
-  LoadingSpinner, EmptyState, HelpCard, Badge, Tabs,
-  CompactStats
+  LoadingSpinner, EmptyState, HelpCard, Badge, Tabs
 } from '../components'
 import { ResponsiveDataTable } from '../components/ui/responsive/ResponsiveDataTable'
 import { discoveryService } from '../services'
@@ -127,9 +125,9 @@ export default function DiscoveryPage() {
     return <Badge variant={map[status] || 'default'}>{status}</Badge>
   }
 
-  const ExpiryCell = ({ row }) => {
-    if (!row.not_after) return '-'
-    const d = new Date(row.not_after)
+  const ExpiryCell = ({ value, row }) => {
+    if (!value) return '-'
+    const d = new Date(value)
     const days = row.days_until_expiry
     const cls = row.is_expired ? 'text-red-500' : days != null && days < 30 ? 'text-yellow-500' : ''
     return <span className={cls}>{d.toLocaleDateString()}{days != null ? ` (${days}d)` : ''}</span>
@@ -140,27 +138,27 @@ export default function DiscoveryPage() {
     { key: 'target', label: t('discovery.columns.target'), sortable: true },
     { key: 'port', label: t('discovery.columns.port'), sortable: true },
     { key: 'subject', label: t('discovery.columns.subject'), sortable: true,
-      render: (row) => {
-        if (!row.subject) return '-'
-        const cn = row.subject.match(/CN=([^,]+)/)?.[1] || row.subject
-        return <span title={row.subject}>{cn}</span>
+      render: (val) => {
+        if (!val) return '-'
+        const cn = val.match(/CN=([^,]+)/)?.[1] || val
+        return <span title={val}>{cn}</span>
       }
     },
     { key: 'issuer', label: t('discovery.columns.issuer'), sortable: true,
-      render: (row) => {
-        if (!row.issuer) return '-'
-        const cn = row.issuer.match(/CN=([^,]+)/)?.[1] || row.issuer
-        return <span title={row.issuer}>{cn}</span>
+      render: (val) => {
+        if (!val) return '-'
+        const cn = val.match(/CN=([^,]+)/)?.[1] || val
+        return <span title={val}>{cn}</span>
       }
     },
     { key: 'not_after', label: t('discovery.columns.expiry'), sortable: true,
-      render: (row) => <ExpiryCell row={row} />
+      render: (val, row) => <ExpiryCell value={val} row={row} />
     },
     { key: 'status', label: t('discovery.columns.status'), sortable: true,
-      render: (row) => <StatusBadge status={row.status} />
+      render: (val) => <StatusBadge status={val} />
     },
     { key: 'last_seen', label: t('discovery.columns.lastSeen'), sortable: true,
-      render: (row) => row.last_seen ? new Date(row.last_seen).toLocaleString() : '-'
+      render: (val) => val ? new Date(val).toLocaleString() : '-'
     },
   ], [t])
 
@@ -168,24 +166,24 @@ export default function DiscoveryPage() {
     { key: 'target', label: t('discovery.columns.target'), sortable: true },
     { key: 'port', label: t('discovery.columns.port'), sortable: true },
     { key: 'subject', label: t('discovery.columns.subject'), sortable: true,
-      render: (row) => {
-        if (!row.subject) return row.error ? <span className="text-red-400">{row.error}</span> : '-'
-        const cn = row.subject.match(/CN=([^,]+)/)?.[1] || row.subject
-        return <span title={row.subject}>{cn}</span>
+      render: (val, row) => {
+        if (!val) return row.error ? <span className="text-red-400">{row.error}</span> : '-'
+        const cn = val.match(/CN=([^,]+)/)?.[1] || val
+        return <span title={val}>{cn}</span>
       }
     },
     { key: 'issuer', label: t('discovery.columns.issuer'), sortable: true,
-      render: (row) => {
-        if (!row.issuer) return '-'
-        const cn = row.issuer.match(/CN=([^,]+)/)?.[1] || row.issuer
-        return <span title={row.issuer}>{cn}</span>
+      render: (val) => {
+        if (!val) return '-'
+        const cn = val.match(/CN=([^,]+)/)?.[1] || val
+        return <span title={val}>{cn}</span>
       }
     },
     { key: 'not_after', label: t('discovery.columns.expiry'), sortable: true,
-      render: (row) => row.not_after ? new Date(row.not_after).toLocaleDateString() : '-'
+      render: (val) => val ? new Date(val).toLocaleDateString() : '-'
     },
     { key: 'fingerprint_sha256', label: 'SHA-256', sortable: false,
-      render: (row) => row.fingerprint_sha256 ? <span className="font-mono text-xs">{row.fingerprint_sha256.substring(0, 16)}…</span> : '-'
+      render: (val) => val ? <span className="font-mono text-xs">{val.substring(0, 16)}…</span> : '-'
     },
   ], [t])
 
@@ -289,13 +287,25 @@ export default function DiscoveryPage() {
   }
 
   // ── Stats bar ─────────────────────────────────────────────
+  const statItems = [
+    { label: t('discovery.stats.total'), value: stats.total, icon: Globe, cls: 'text-blue-500' },
+    { label: t('discovery.stats.known'), value: stats.known, icon: CheckCircle, cls: 'text-green-500' },
+    { label: t('discovery.stats.unknown'), value: stats.unknown, icon: Warning, cls: 'text-yellow-500' },
+    { label: t('discovery.stats.expired'), value: stats.expired, icon: Lock, cls: 'text-red-500' },
+    { label: t('discovery.stats.errors'), value: stats.errors, icon: ShieldCheck, cls: 'text-text-tertiary' },
+  ]
+
   const renderStats = () => (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-      <CompactStats title={t('discovery.stats.total')} value={stats.total} icon={<Globe />} color="blue" />
-      <CompactStats title={t('discovery.stats.known')} value={stats.known} icon={<CheckCircle />} color="green" />
-      <CompactStats title={t('discovery.stats.unknown')} value={stats.unknown} icon={<Warning />} color="yellow" />
-      <CompactStats title={t('discovery.stats.expired')} value={stats.expired} icon={<Lock />} color="red" />
-      <CompactStats title={t('discovery.stats.errors')} value={stats.errors} icon={<ShieldCheck />} color="gray" />
+      {statItems.map(({ label, value, icon: Icon, cls }) => (
+        <div key={label} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-bg-secondary">
+          <Icon size={20} className={cls} />
+          <div>
+            <div className="text-lg font-semibold">{value}</div>
+            <div className="text-xs text-text-secondary">{label}</div>
+          </div>
+        </div>
+      ))}
     </div>
   )
 
