@@ -702,7 +702,7 @@ export default function DashboardPage() {
                         onClick={() => navigate(`/certificates/${cert.id}`)}
                         className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-all group flex items-center gap-2.5"
                       >
-                        <div className="w-7 h-7 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0 group-hover:bg-accent-primary-op10 transition-colors">
+                        <div className="w-6 h-6 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0 group-hover:bg-accent-primary-op10 transition-colors">
                           <Certificate size={14} weight="duotone" className="text-text-tertiary group-hover:text-accent-primary transition-colors" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -752,7 +752,7 @@ export default function DashboardPage() {
                         onClick={() => navigate(`/cas/${ca.id}`)}
                         className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors group flex items-center gap-2.5"
                       >
-                        <div className="w-7 h-7 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0 group-hover:bg-accent-primary-op10 transition-colors">
+                        <div className="w-6 h-6 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0 group-hover:bg-accent-primary-op10 transition-colors">
                           <ShieldCheck size={14} weight="duotone" className="text-text-tertiary group-hover:text-accent-primary transition-colors" />
                         </div>
                         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
@@ -918,7 +918,7 @@ export default function DashboardPage() {
                           className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors group flex items-center gap-2.5"
                           onClick={() => navigate('/acme')}
                         >
-                          <div className="w-7 h-7 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0 group-hover:bg-accent-primary-op10 transition-colors">
+                          <div className="w-6 h-6 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0 group-hover:bg-accent-primary-op10 transition-colors">
                             <User size={14} weight="duotone" className="text-text-tertiary group-hover:text-accent-primary transition-colors" />
                           </div>
                           <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
@@ -959,7 +959,7 @@ export default function DashboardPage() {
                     <div className="space-y-0.5">
                       {trustStoreExpiring.expired.slice(0, 2).map((cert) => (
                         <div key={cert.id} className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors group flex items-center gap-2.5" onClick={() => navigate(`/truststore/${cert.id}`)}>
-                          <div className="w-7 h-7 rounded-lg bg-status-danger-op10 flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-lg bg-status-danger-op10 flex items-center justify-center shrink-0">
                             <Warning size={14} weight="duotone" className="text-status-danger" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -970,7 +970,7 @@ export default function DashboardPage() {
                       ))}
                       {trustStoreExpiring.expiring.slice(0, 3).map((cert) => (
                         <div key={cert.id} className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors group flex items-center gap-2.5" onClick={() => navigate(`/truststore/${cert.id}`)}>
-                          <div className="w-7 h-7 rounded-lg bg-accent-warning-op10 flex items-center justify-center shrink-0">
+                          <div className="w-6 h-6 rounded-lg bg-accent-warning-op10 flex items-center justify-center shrink-0">
                             <Clock size={14} weight="duotone" className="text-accent-warning" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -1067,7 +1067,7 @@ export default function DashboardPage() {
                 ) : (
                   recentCerts.slice(0, 4).map((cert, i) => (
                     <div key={cert.id || i} onClick={() => navigate(`/certificates/${cert.id}`)} className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0">
+                      <div className="w-6 h-6 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0">
                         <Certificate size={14} weight="duotone" className="text-text-tertiary" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -1095,7 +1095,7 @@ export default function DashboardPage() {
                 ) : (
                   recentCAs.slice(0, 4).map((ca, i) => (
                     <div key={ca.id || i} onClick={() => navigate(`/cas/${ca.id}`)} className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0">
+                      <div className="w-6 h-6 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0">
                         <ShieldCheck size={14} weight="duotone" className="text-text-tertiary" />
                       </div>
                       <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
@@ -1174,7 +1174,7 @@ export default function DashboardPage() {
                   <div className="space-y-0.5">
                     {recentAcme.slice(0, 4).map((account, i) => (
                       <div key={account.id || i} className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors flex items-center gap-2.5" onClick={() => navigate('/acme')}>
-                        <div className="w-7 h-7 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0">
+                        <div className="w-6 h-6 rounded-lg bg-tertiary-op50 flex items-center justify-center shrink-0">
                           <User size={14} weight="duotone" className="text-text-tertiary" />
                         </div>
                         <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
@@ -1199,7 +1199,7 @@ export default function DashboardPage() {
                   <div className="space-y-0.5">
                     {trustStoreExpiring.expired.slice(0, 2).map((cert) => (
                       <div key={cert.id} className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors flex items-center gap-2.5" onClick={() => navigate(`/truststore/${cert.id}`)}>
-                        <div className="w-7 h-7 rounded-lg bg-status-danger-op10 flex items-center justify-center shrink-0">
+                        <div className="w-6 h-6 rounded-lg bg-status-danger-op10 flex items-center justify-center shrink-0">
                           <Warning size={14} weight="duotone" className="text-status-danger" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1210,7 +1210,7 @@ export default function DashboardPage() {
                     ))}
                     {trustStoreExpiring.expiring.slice(0, 3).map((cert) => (
                       <div key={cert.id} className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors flex items-center gap-2.5" onClick={() => navigate(`/truststore/${cert.id}`)}>
-                        <div className="w-7 h-7 rounded-lg bg-accent-warning-op10 flex items-center justify-center shrink-0">
+                        <div className="w-6 h-6 rounded-lg bg-accent-warning-op10 flex items-center justify-center shrink-0">
                           <Clock size={14} weight="duotone" className="text-accent-warning" />
                         </div>
                         <div className="flex-1 min-w-0">

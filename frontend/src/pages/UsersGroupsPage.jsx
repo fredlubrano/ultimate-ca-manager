@@ -450,7 +450,7 @@ export default function UsersGroupsPage() {
         return (
           <div className="flex items-center gap-2">
             <div className={cn(
-              "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+              "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
               colorClass
             )}>
               {val?.charAt(0)?.toUpperCase() || '?'}
@@ -477,7 +477,7 @@ export default function UsersGroupsPage() {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className={cn(
-                "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
                 colorClass
               )}>
                 {val?.charAt(0)?.toUpperCase() || '?'}
@@ -586,7 +586,7 @@ export default function UsersGroupsPage() {
         return (
           <div className="flex items-center gap-2">
             <div className={cn(
-              "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+              "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
               memberCount > 0 ? "icon-bg-blue" : "icon-bg-teal"
             )}>
               <UsersThree size={14} weight="duotone" />
@@ -800,7 +800,7 @@ export default function UsersGroupsPage() {
                   key={member.id || member.user_id || member.username}
                   className="flex items-center gap-3 px-3 py-2 bg-tertiary-op50 border border-border rounded-lg"
                 >
-                  <div className="w-7 h-7 rounded-full bg-accent-primary-op20 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-accent-primary-op20 flex items-center justify-center">
                     <User size={14} className="text-accent-primary" />
                   </div>
                   <div className="flex-1 min-w-0">

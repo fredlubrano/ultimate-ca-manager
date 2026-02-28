@@ -61,7 +61,7 @@ export function MobileCard({
     compact: {
       padding: 'p-2.5',
       gap: 'gap-2',
-      iconSize: 'table',  // w-7 h-7
+      iconSize: 'table',  // w-6 h-6
     },
     default: {
       padding: 'p-3',

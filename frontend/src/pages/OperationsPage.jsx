@@ -43,7 +43,7 @@ function useResourceTypes(t) {
             return (
               <div className="flex items-center gap-2">
                 <div className={cn(
-                  "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+                  "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
                   row.has_private_key ? "icon-bg-emerald" : "icon-bg-blue"
                 )}>
                   <Certificate size={14} weight="duotone" />
@@ -102,7 +102,7 @@ function useResourceTypes(t) {
           sortable: true, priority: 1,
           render: (val, row) => (
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 icon-bg-green">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 icon-bg-green">
                 <ShieldCheck size={14} weight="duotone" />
               </div>
               <span className="font-medium truncate">{val || extractCN(row.subject) || '—'}</span>
@@ -137,7 +137,7 @@ function useResourceTypes(t) {
           sortable: true, priority: 1,
           render: (val, row) => (
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 icon-bg-amber">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 icon-bg-amber">
                 <FileText size={14} weight="duotone" />
               </div>
               <span className="font-medium truncate">{val || extractCN(row.subject) || '—'}</span>
@@ -172,7 +172,7 @@ function useResourceTypes(t) {
           sortable: true, priority: 1,
           render: (val) => (
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 icon-bg-violet">
+              <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 icon-bg-violet">
                 <PencilSimple size={14} weight="duotone" />
               </div>
               <span className="font-medium truncate">{val || '—'}</span>
@@ -209,7 +209,7 @@ function useResourceTypes(t) {
             return (
               <div className="flex items-center gap-2">
                 <div className={cn(
-                  "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                  "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
                   colorClass
                 )}>
                   {val?.charAt(0)?.toUpperCase() || '?'}

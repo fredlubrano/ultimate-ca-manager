@@ -1342,7 +1342,7 @@ function RowActionMenu({ row, idx, actions, isOpen, onToggle, menuRef }) {
             }}
             title={action.label}
             className={cn(
-              'w-7 h-7 rounded-lg flex items-center justify-center',
+              'w-6 h-6 rounded-lg flex items-center justify-center',
               'transition-all duration-150',
               action.variant === 'danger'
                 ? 'text-text-tertiary hover:text-status-danger hover:bg-status-danger-op10'

@@ -217,7 +217,7 @@ export default function TemplatesPage() {
           : 'icon-bg-blue'
         return (
           <div className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconClass}`}>
+            <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${iconClass}`}>
               {type === 'ca' ? <ShieldCheck size={14} weight="duotone" /> : <FileText size={14} weight="duotone" />}
             </div>
             <span className="font-medium truncate">{val || t('common.unnamed')}</span>
@@ -230,7 +230,7 @@ export default function TemplatesPage() {
         return (
           <div className="flex items-center justify-between gap-2 w-full">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconClass}`}>
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${iconClass}`}>
                 {type === 'ca' ? <ShieldCheck size={14} weight="duotone" /> : <FileText size={14} weight="duotone" />}
               </div>
               <span className="font-medium truncate">{val || t('common.unnamed')}</span>

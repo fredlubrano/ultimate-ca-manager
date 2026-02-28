@@ -287,7 +287,7 @@ export default function TrustStorePage() {
       sortable: true,
       render: (val, row) => (
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 icon-bg-blue">
+          <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 icon-bg-blue">
             <Certificate size={14} weight="duotone" />
           </div>
           <span className="font-medium truncate">{val}</span>
@@ -302,7 +302,7 @@ export default function TrustStorePage() {
           <div className="flex items-center justify-between gap-2 w-full">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className={cn(
-                "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+                "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
                 isExpired ? 'icon-bg-red' : isExpiringSoon ? 'icon-bg-orange' : 'icon-bg-emerald'
               )}>
                 <Certificate size={14} weight="duotone" />

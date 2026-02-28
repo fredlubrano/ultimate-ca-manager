@@ -175,7 +175,7 @@ export default function CRLOCSPPage() {
       render: (v, row) => (
         <div className="flex items-center gap-2">
           <div className={cn(
-            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+            "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
             row.has_crl ? 'icon-bg-emerald' : 'icon-bg-orange'
           )}>
             <FileX size={14} weight="duotone" />
@@ -187,7 +187,7 @@ export default function CRLOCSPPage() {
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className={cn(
-              "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+              "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
               row.has_crl ? 'icon-bg-emerald' : 'icon-bg-orange'
             )}>
               <FileX size={14} weight="duotone" />

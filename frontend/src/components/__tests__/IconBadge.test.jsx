@@ -27,7 +27,7 @@ describe('IconBadge Component', () => {
 
   it('renders with different sizes', () => {
     const sizes = {
-      table: 'w-7 h-7',
+      table: 'w-6 h-6',
       xs: 'w-6 h-6',
       sm: 'w-8 h-8',
       md: 'w-10 h-10',

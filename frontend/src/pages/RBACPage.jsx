@@ -185,7 +185,7 @@ export default function RBACPage() {
       sortable: true,
       render: (val, row) => (
         <div className="flex items-center gap-2">
-          <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+          <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
             row.is_system ? 'icon-bg-amber' : 'icon-bg-violet'
           }`}>
             {row.is_system ? <Lock size={14} weight="duotone" /> : <Shield size={14} weight="duotone" />}
@@ -196,7 +196,7 @@ export default function RBACPage() {
       mobileRender: (val, row) => (
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+            <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
               row.is_system ? 'icon-bg-amber' : 'icon-bg-violet'
             }`}>
               {row.is_system ? <Lock size={14} weight="duotone" /> : <Shield size={14} weight="duotone" />}

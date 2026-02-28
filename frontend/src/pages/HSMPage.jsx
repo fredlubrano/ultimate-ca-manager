@@ -182,7 +182,7 @@ export default function HSMPage() {
         const Icon = PROVIDER_ICONS[row.provider_type] || Lock
         return (
           <div className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+            <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
               row.enabled ? 'icon-bg-violet' : 'icon-bg-gray'
             }`}>
               <Icon size={14} weight="duotone" />
@@ -196,7 +196,7 @@ export default function HSMPage() {
         return (
           <div className="flex items-center justify-between gap-2 w-full">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+              <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
                 row.enabled ? 'icon-bg-violet' : 'icon-bg-gray'
               }`}>
                 <Icon size={14} weight="duotone" />

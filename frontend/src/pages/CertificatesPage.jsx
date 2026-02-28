@@ -399,7 +399,7 @@ export default function CertificatesPage() {
       render: (val, row) => (
         <div className="flex items-center gap-2">
           <div className={cn(
-            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+            "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
             row.has_private_key ? "icon-bg-emerald" : "icon-bg-blue"
           )}>
             <Certificate size={14} weight="duotone" />
@@ -418,7 +418,7 @@ export default function CertificatesPage() {
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className={cn(
-              "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+              "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
               row.has_private_key ? "icon-bg-emerald" : "icon-bg-blue"
             )}>
               <Certificate size={14} weight="duotone" />

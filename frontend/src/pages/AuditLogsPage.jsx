@@ -279,7 +279,7 @@ export default function AuditLogsPage() {
         const Icon = actionIcons[value] || actionIcons.default;
         return (
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg icon-bg-violet flex items-center justify-center shrink-0">
+            <div className="w-6 h-6 rounded-lg icon-bg-violet flex items-center justify-center shrink-0">
               <Icon size={14} weight="duotone" />
             </div>
             <Badge variant={color} size="sm">
@@ -294,7 +294,7 @@ export default function AuditLogsPage() {
         return (
           <div className="flex items-center justify-between gap-2 w-full">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-7 h-7 rounded-lg icon-bg-violet flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-lg icon-bg-violet flex items-center justify-center shrink-0">
                 <Icon size={14} weight="duotone" />
               </div>
               <span className="font-medium truncate">{value?.replace(/_/g, ' ')}</span>

@@ -206,7 +206,7 @@ export default function UserCertificatesPage() {
       sortable: true,
       render: (_val, row) => (
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 icon-bg-blue">
+          <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 icon-bg-blue">
             <Certificate size={14} weight="duotone" />
           </div>
           <div className="min-w-0">

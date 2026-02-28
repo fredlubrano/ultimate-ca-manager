@@ -20,7 +20,7 @@ import { cn } from '../lib/utils'
  * - xl: Extra large (56px container, 28px icon)
  */
 const sizes = {
-  table: 'w-7 h-7',   // 28px - for dense table rows
+  table: 'w-6 h-6',   // 28px - for dense table rows
   xs: 'w-6 h-6',      // 24px
   sm: 'w-8 h-8',      // 32px
   md: 'w-10 h-10',    // 40px

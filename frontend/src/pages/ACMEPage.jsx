@@ -544,7 +544,7 @@ export default function ACMEPage() {
       priority: 1,
       render: (_, row) => (
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 icon-bg-emerald">
+          <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 icon-bg-emerald">
             <Key size={14} weight="duotone" />
           </div>
           <span className="font-medium text-text-primary">
@@ -555,7 +555,7 @@ export default function ACMEPage() {
       mobileRender: (_, row) => (
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 icon-bg-emerald">
+            <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 icon-bg-emerald">
               <Key size={14} weight="duotone" />
             </div>
             <span className="font-medium truncate">
@@ -1445,7 +1445,7 @@ export default function ACMEPage() {
       render: (value, row) => (
         <div className="flex items-center gap-2">
           <div className={cn(
-            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+            "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
             row?.revoked ? "icon-bg-orange" : "icon-bg-blue"
           )}>
             <Certificate size={14} weight="duotone" />
@@ -1462,7 +1462,7 @@ export default function ACMEPage() {
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <div className={cn(
-              "w-7 h-7 rounded-lg flex items-center justify-center shrink-0",
+              "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
               row?.revoked ? "icon-bg-orange" : "icon-bg-blue"
             )}>
               <Certificate size={14} weight="duotone" />
