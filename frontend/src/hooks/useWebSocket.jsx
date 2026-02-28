@@ -6,7 +6,7 @@
 import { createContext, useContext, useEffect, useRef, useCallback, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'sonner';
+import { useNotification } from '../contexts/NotificationContext';
 
 // Event type constants (matches backend EventType enum)
 export const EventType = {
@@ -58,92 +58,49 @@ export const ConnectionState = {
 
 const WebSocketContext = createContext(null);
 
-// Toast handler (module-level, no React dependency)
-function handleEventToast(payload) {
+// Event notification handler — maps WS events to notification type + message
+function getEventNotification(payload) {
   const { type, data } = payload;
   
   switch (type) {
     case EventType.CERTIFICATE_ISSUED:
-      toast.success(`Certificate issued: ${data.cn}`, {
-        description: `Issued by ${data.issuer}`,
-      });
-      break;
+      return { method: 'showSuccess', msg: `Certificate issued: ${data.cn}` };
     case EventType.CERTIFICATE_REVOKED:
-      toast.warning(`Certificate revoked: ${data.cn}`, {
-        description: `Reason: ${data.reason}`,
-      });
-      break;
+      return { method: 'showWarning', msg: `Certificate revoked: ${data.cn}` };
     case EventType.CERTIFICATE_EXPIRING:
-      toast.warning(`Certificate expiring: ${data.cn}`, {
-        description: `Expires in ${data.days_left} days`,
-      });
-      break;
+      return { method: 'showWarning', msg: `Certificate expiring: ${data.cn} (${data.days_left}d)` };
     case EventType.CERTIFICATE_RENEWED:
-      toast.success(`Certificate renewed: ${data.cn}`);
-      break;
+      return { method: 'showSuccess', msg: `Certificate renewed: ${data.cn}` };
     case EventType.CERTIFICATE_DELETED:
-      toast.info(`Certificate deleted: ${data.cn}`);
-      break;
+      return { method: 'showInfo', msg: `Certificate deleted: ${data.cn}` };
     case EventType.CA_CREATED:
-      toast.success(`CA created: ${data.name}`, {
-        description: `Common Name: ${data.common_name}`,
-      });
-      break;
+      return { method: 'showSuccess', msg: `CA created: ${data.name}` };
     case EventType.CA_REVOKED:
-      toast.error(`CA revoked: ${data.name}`, {
-        description: `Reason: ${data.reason}`,
-      });
-      break;
+      return { method: 'showError', msg: `CA revoked: ${data.name}` };
     case EventType.CA_UPDATED:
-      toast.info(`CA updated: ${data.name}`);
-      break;
+      return { method: 'showInfo', msg: `CA updated: ${data.name}` };
     case EventType.CA_DELETED:
-      toast.info(`CA deleted: ${data.name}`);
-      break;
+      return { method: 'showInfo', msg: `CA deleted: ${data.name}` };
     case EventType.CRL_REGENERATED:
-      toast.info(`CRL regenerated for ${data.ca_name}`, {
-        description: `${data.entries_count} entries`,
-      });
-      break;
+      return { method: 'showInfo', msg: `CRL regenerated for ${data.ca_name}` };
     case EventType.USER_LOGIN:
-      toast.info(`User logged in: ${data.username}`);
-      break;
+      return { method: 'showInfo', msg: `User logged in: ${data.username}` };
     case EventType.USER_LOGOUT:
-      toast.info(`User logged out: ${data.username}`);
-      break;
+      return { method: 'showInfo', msg: `User logged out: ${data.username}` };
     case EventType.USER_CREATED:
-      toast.success(`User created: ${data.username}`);
-      break;
+      return { method: 'showSuccess', msg: `User created: ${data.username}` };
     case EventType.USER_DELETED:
-      toast.info(`User deactivated: ${data.username}`);
-      break;
+      return { method: 'showInfo', msg: `User deactivated: ${data.username}` };
     case EventType.GROUP_CREATED:
-      toast.success(`Group created: ${data.name}`);
-      break;
+      return { method: 'showSuccess', msg: `Group created: ${data.name}` };
     case EventType.GROUP_DELETED:
-      toast.info(`Group deleted: ${data.name}`);
-      break;
-    case EventType.SYSTEM_ALERT: {
-      const toastMethod = {
-        info: toast.info,
-        warning: toast.warning,
-        error: toast.error,
-        critical: toast.error,
-      }[data.severity] || toast.info;
-      toastMethod(data.message, {
-        description: data.alert_type,
-        duration: data.severity === 'critical' ? 10000 : 5000,
-      });
-      break;
-    }
+      return { method: 'showInfo', msg: `Group deleted: ${data.name}` };
+    case EventType.SYSTEM_ALERT:
+      return { method: data.severity === 'critical' || data.severity === 'error' ? 'showError' : data.severity === 'warning' ? 'showWarning' : 'showInfo', msg: data.message };
     case EventType.AUDIT_CRITICAL:
-      toast.error(`Critical action: ${data.action}`, {
-        description: `User: ${data.user} | Resource: ${data.resource}`,
-        duration: 10000,
-      });
-      break;
+      return { method: 'showError', msg: `Critical: ${data.action} by ${data.user}` };
     default:
-      break;
+      return null;
   }
 }
 
@@ -153,10 +110,14 @@ function handleEventToast(payload) {
  */
 export function WebSocketProvider({ children }) {
   const { isAuthenticated } = useAuth();
+  const { showSuccess, showError, showWarning, showInfo } = useNotification();
   const socketRef = useRef(null);
   const [connectionState, setConnectionState] = useState(ConnectionState.DISCONNECTED);
   const [lastEvent, setLastEvent] = useState(null);
   const eventHandlersRef = useRef(new Map());
+  const notifyRef = useRef({ showSuccess, showError, showWarning, showInfo });
+  notifyRef.current = { showSuccess, showError, showWarning, showInfo };
+  const muteUntilRef = useRef(0);
   
   const connect = useCallback(() => {
     if (socketRef.current?.connected) return;
@@ -203,8 +164,12 @@ export function WebSocketProvider({ children }) {
         handlers.forEach((handler) => handler(payload.data, payload));
       }
       
-      // Show toast notifications
-      handleEventToast(payload);
+      // Show themed notification (skip if this tab just triggered the action)
+      if (Date.now() < muteUntilRef.current) return;
+      const notif = getEventNotification(payload);
+      if (notif) {
+        notifyRef.current[notif.method]?.(notif.msg);
+      }
     });
     
     socket.on('pong', () => {});
@@ -249,6 +214,11 @@ export function WebSocketProvider({ children }) {
     }
   }, []);
   
+  // Mute WS toasts briefly (call before local action to prevent double notif)
+  const muteToasts = useCallback((ms = 3000) => {
+    muteUntilRef.current = Date.now() + ms;
+  }, []);
+  
   // Auto-connect/disconnect based on auth state
   useEffect(() => {
     if (isAuthenticated) {
@@ -268,6 +238,7 @@ export function WebSocketProvider({ children }) {
     subscribe,
     subscribeToRoom,
     unsubscribeFromRoom,
+    muteToasts,
     ping,
   };
   
@@ -295,6 +266,7 @@ export function useWebSocket(_options = {}) {
       subscribe: () => () => {},
       subscribeToRoom: () => {},
       unsubscribeFromRoom: () => {},
+      muteToasts: () => {},
       ping: () => {},
     };
   }

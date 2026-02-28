@@ -1273,7 +1273,7 @@ def renew_certificate(cert_id):
             pass
         
         try:
-            on_certificate_renewed(cert_id, cert_id, cert.subject or cert.descr or f'Certificate #{cert_id}')
+            on_certificate_renewed(cert_id, cert_id, cert.descr or cert.subject or f'Certificate #{cert_id}')
         except Exception:
             pass
         

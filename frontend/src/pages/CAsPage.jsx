@@ -22,7 +22,7 @@ import { casService } from '../services'
 import { apiClient } from '../services'
 import { useNotification } from '../contexts'
 import { useWindowManager } from '../contexts/WindowManagerContext'
-import { usePermission, useModals, useRecentHistory } from '../hooks'
+import { usePermission, useModals, useRecentHistory, useWebSocket } from '../hooks'
 import { useMobile } from '../contexts/MobileContext'
 import { extractData, formatDate, cn } from '../lib/utils'
 
@@ -34,6 +34,7 @@ export default function CAsPage() {
   const { openWindow } = useWindowManager()
   const { showSuccess, showError, showConfirm } = useNotification()
   const { canWrite, canDelete } = usePermission()
+  const { muteToasts } = useWebSocket()
   const [searchParams, setSearchParams] = useSearchParams()
   const { addToHistory } = useRecentHistory('cas')
   
@@ -196,6 +197,7 @@ export default function CAsPage() {
     if (!confirmed) return
     
     try {
+      muteToasts()
       await casService.delete(id)
       showSuccess(t('messages.success.delete.ca'))
       loadCAs()
@@ -240,6 +242,7 @@ export default function CAsPage() {
     }
     
     try {
+      muteToasts()
       await casService.create(data)
       showSuccess(t('messages.success.create.ca'))
       closeModal('create')

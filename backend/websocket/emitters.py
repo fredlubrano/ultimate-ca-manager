@@ -3,10 +3,19 @@ WebSocket event integration helpers.
 Use these functions in services to emit events after actions.
 """
 
+import re
 from typing import Dict, Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def _extract_cn(subject: str) -> str:
+    """Extract clean CN from a full subject string like 'CN=host.example.com,O=Org,...'."""
+    if not subject:
+        return 'Unknown'
+    m = re.search(r'CN=([^,/]+)', subject)
+    return m.group(1).strip() if m else subject.split(',')[0].strip()
 
 
 def emit_ws_event(event_type, data: Dict[str, Any], room: Optional[str] = None):

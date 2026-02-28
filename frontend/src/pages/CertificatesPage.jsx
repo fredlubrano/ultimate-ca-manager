@@ -20,7 +20,7 @@ import { ExportModal } from '../components/ExportModal'
 import { SmartImportModal } from '../components/SmartImport'
 import { certificatesService, casService, truststoreService, templatesService } from '../services'
 import { useNotification, useMobile, useWindowManager } from '../contexts'
-import { usePermission, useRecentHistory, useFavorites } from '../hooks'
+import { usePermission, useRecentHistory, useFavorites, useWebSocket } from '../hooks'
 import { formatDate, extractCN, cn } from '../lib/utils'
 
 export default function CertificatesPage() {
@@ -72,6 +72,7 @@ export default function CertificatesPage() {
   
   const { showSuccess, showError, showConfirm, showPrompt } = useNotification()
   const { canWrite, canDelete } = usePermission()
+  const { muteToasts } = useWebSocket()
 
   // Load data - reload when filters or sort change
   useEffect(() => {
@@ -209,6 +210,7 @@ export default function CertificatesPage() {
     )
     if (!confirmed) return
     try {
+      muteToasts()
       await certificatesService.revoke(id)
       showSuccess(t('messages.success.other.revoked'))
       loadData()
@@ -230,6 +232,7 @@ export default function CertificatesPage() {
     )
     if (!confirmed) return
     try {
+      muteToasts()
       await certificatesService.renew(id)
       showSuccess(t('notifications.certificateIssued', { name: '' }).replace(': ', ''))
       loadData()
@@ -248,6 +251,7 @@ export default function CertificatesPage() {
     })
     if (!confirmed) return
     try {
+      muteToasts()
       await certificatesService.delete(id)
       showSuccess(t('messages.success.delete.certificate'))
       loadData()
@@ -792,6 +796,7 @@ export default function CertificatesPage() {
           cas={cas}
           onSubmit={async (data) => {
             try {
+              muteToasts()
               await certificatesService.create(data)
               showSuccess(t('messages.success.create.certificate'))
               setShowIssueModal(false)

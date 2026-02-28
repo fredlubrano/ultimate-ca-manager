@@ -165,8 +165,8 @@ export default function App() {
       <ThemeProvider>
         <BrowserRouter>
           <AuthProvider>
-            <WebSocketProvider>
             <NotificationProvider>
+            <WebSocketProvider>
               <MobileProvider>
                 <WindowManagerProvider>
                   <SafeModeOverlay />
@@ -174,8 +174,8 @@ export default function App() {
                   <DetailWindowLayer />
                 </WindowManagerProvider>
               </MobileProvider>
-            </NotificationProvider>
             </WebSocketProvider>
+            </NotificationProvider>
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>

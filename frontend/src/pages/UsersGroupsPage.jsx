@@ -20,7 +20,7 @@ import {
 import { usersService, groupsService, rolesService, casService, accountService } from '../services'
 import { apiClient } from '../services/apiClient'
 import { useNotification, useMobile } from '../contexts'
-import { usePermission } from '../hooks'
+import { usePermission, useWebSocket } from '../hooks'
 import { formatDate, cn } from '../lib/utils'
 export default function UsersGroupsPage() {
   const { t } = useTranslation()
@@ -28,6 +28,7 @@ export default function UsersGroupsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { showSuccess, showError, showConfirm } = useNotification()
   const { canWrite, canDelete } = usePermission()
+  const { muteToasts } = useWebSocket()
   
   // Tab state
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'users')
@@ -107,6 +108,7 @@ export default function UsersGroupsPage() {
   
   const handleCreateUser = async (data) => {
     try {
+      muteToasts()
       await usersService.create(data)
       showSuccess(t('messages.success.create.user'))
       setShowUserModal(false)
@@ -140,6 +142,7 @@ export default function UsersGroupsPage() {
     })
     if (!confirmed) return
     try {
+      muteToasts()
       await usersService.delete(user.id)
       showSuccess(t('messages.success.delete.user'))
       if (selectedUser?.id === user.id) setSelectedUser(null)
@@ -180,6 +183,7 @@ export default function UsersGroupsPage() {
   
   const handleCreateGroup = async (data) => {
     try {
+      muteToasts()
       await groupsService.create(data)
       showSuccess(t('messages.success.create.group'))
       setShowGroupModal(false)
@@ -210,6 +214,7 @@ export default function UsersGroupsPage() {
     })
     if (!confirmed) return
     try {
+      muteToasts()
       await groupsService.delete(group.id)
       showSuccess(t('messages.success.delete.group'))
       if (selectedGroup?.id === group.id) setSelectedGroup(null)
