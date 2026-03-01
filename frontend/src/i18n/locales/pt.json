@@ -2920,6 +2920,7 @@
     "exportFailed": "Falha na exportação",
     "subjectAltNames": "Nomes alternativos do titular",
     "bulkResolveDns": "Resolver DNS",
-    "bulkDnsSuccess": "DNS resolvido: {{updated}}/{{total}} atualizados"
+    "bulkDnsSuccess": "DNS resolvido: {{updated}}/{{total}} atualizados",
+    "invalidPort": "Porta inválida (1-65535)"
   }
 }

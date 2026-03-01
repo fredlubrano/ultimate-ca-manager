@@ -2920,6 +2920,7 @@
     "exportFailed": "エクスポート失敗",
     "subjectAltNames": "サブジェクト代替名",
     "bulkResolveDns": "DNS解決",
-    "bulkDnsSuccess": "DNS解決: {{updated}}/{{total}} 更新"
+    "bulkDnsSuccess": "DNS解決: {{updated}}/{{total}} 更新",
+    "invalidPort": "無効なポート (1-65535)"
   }
 }

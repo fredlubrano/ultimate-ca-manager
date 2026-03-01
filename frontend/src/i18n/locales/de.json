@@ -2920,6 +2920,7 @@
     "exportFailed": "Export fehlgeschlagen",
     "subjectAltNames": "Alternative Antragstellernamen",
     "bulkResolveDns": "DNS auflösen",
-    "bulkDnsSuccess": "DNS aufgelöst: {{updated}}/{{total}} aktualisiert"
+    "bulkDnsSuccess": "DNS aufgelöst: {{updated}}/{{total}} aktualisiert",
+    "invalidPort": "Ungültiger Port (1-65535)"
   }
 }

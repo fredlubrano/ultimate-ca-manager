@@ -2920,6 +2920,7 @@
     "exportFailed": "导出失败",
     "subjectAltNames": "主体备用名称",
     "bulkResolveDns": "解析DNS",
-    "bulkDnsSuccess": "DNS已解析: {{updated}}/{{total}} 已更新"
+    "bulkDnsSuccess": "DNS已解析: {{updated}}/{{total}} 已更新",
+    "invalidPort": "无效端口 (1-65535)"
   }
 }

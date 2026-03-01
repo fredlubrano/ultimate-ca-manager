@@ -852,7 +852,7 @@ export default function DiscoveryPage() {
 // ════════════════════════════════════════════════════════
 function QuickScanModal({ open, onClose, onScan, scanning, t }) {
   const [targets, setTargets] = useState([])
-  const [ports, setPorts] = useState('443')
+  const [ports, setPorts] = useState(['443'])
   const [timeout, setTimeout_] = useState(5)
   const [maxWorkers, setMaxWorkers] = useState(20)
   const [resolveDns, setResolveDns] = useState(false)
@@ -860,7 +860,7 @@ function QuickScanModal({ open, onClose, onScan, scanning, t }) {
 
   useEffect(() => {
     if (open) {
-      setTargets([]); setPorts('443'); setTimeout_(5)
+      setTargets([]); setPorts(['443']); setTimeout_(5)
       setMaxWorkers(20); setResolveDns(false); setShowAdvanced(false)
     }
   }, [open])
@@ -868,7 +868,7 @@ function QuickScanModal({ open, onClose, onScan, scanning, t }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!targets.length) return
-    const portList = ports.split(/[,\s]+/).map(s => parseInt(s.trim())).filter(n => n > 0 && n <= 65535)
+    const portList = ports.map(s => parseInt(s)).filter(n => n > 0 && n <= 65535)
     onScan({
       targets,
       ports: portList.length ? portList : [443],
@@ -879,10 +879,12 @@ function QuickScanModal({ open, onClose, onScan, scanning, t }) {
   }
 
   const portPresets = [
-    { label: 'HTTPS', value: '443', desc: '443' },
-    { label: 'HTTPS + Alt', value: '443, 8443', desc: '443, 8443' },
-    { label: t('discovery.allCommon'), value: '443, 8443, 8080, 636, 993, 995, 465, 587', desc: '8 ports' },
+    { label: 'HTTPS', ports: ['443'] },
+    { label: 'HTTPS + Alt', ports: ['443', '8443'] },
+    { label: t('discovery.allCommon'), ports: ['443', '8443', '8080', '636', '993', '995', '465', '587'] },
   ]
+
+  const portsMatch = (a, b) => a.length === b.length && a.every((v, i) => v === b[i])
 
   return (
     <Modal open={open} onClose={onClose} title={t('discovery.quickScan')}>
@@ -910,27 +912,27 @@ function QuickScanModal({ open, onClose, onScan, scanning, t }) {
           <div className="flex flex-wrap gap-2">
             {portPresets.map((preset) => (
               <button
-                key={preset.value}
+                key={preset.label}
                 type="button"
                 className={cn(
                   'flex flex-col items-center px-3.5 py-2 rounded-lg border text-xs transition-all',
-                  ports === preset.value
+                  portsMatch(ports, preset.ports)
                     ? 'bg-accent-op10 border-accent-primary text-accent-primary ring-1 ring-accent-primary'
                     : 'border-border bg-bg-secondary text-text-secondary hover:border-text-tertiary hover:bg-bg-tertiary'
                 )}
-                onClick={() => setPorts(preset.value)}
+                onClick={() => setPorts(preset.ports)}
               >
                 <span className="font-medium">{preset.label}</span>
-                <span className="text-2xs opacity-60 mt-0.5">{preset.desc}</span>
+                <span className="text-2xs opacity-60 mt-0.5">{preset.ports.join(', ')}</span>
               </button>
             ))}
           </div>
-          <Input
+          <TagsInput
             value={ports}
-            onChange={(e) => setPorts(e.target.value)}
+            onChange={setPorts}
             placeholder="443, 8443, 636"
             helperText={t('discovery.portsHelpDetailed')}
-            className="text-sm"
+            validate={(v) => { const n = parseInt(v); return n > 0 && n <= 65535 ? null : t('discovery.invalidPort') }}
           />
         </div>
 
@@ -1002,7 +1004,7 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [targets, setTargets] = useState([])
-  const [ports, setPorts] = useState('443')
+  const [ports, setPorts] = useState(['443'])
   const [schedule, setSchedule] = useState('0')
   const [notifyEmail, setNotifyEmail] = useState('')
   const [timeout, setTimeout_] = useState(5)
@@ -1020,7 +1022,7 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
         setTargets(tList.map(s => s.trim()).filter(Boolean))
         const pList = Array.isArray(profile.ports) ? profile.ports
           : (typeof profile.ports === 'string' ? (() => { try { return JSON.parse(profile.ports) } catch { return profile.ports.split(',') } })() : [443])
-        setPorts(pList.join(', '))
+        setPorts(pList.map(String))
         setSchedule(String(profile.schedule_interval_minutes || 0))
         setNotifyEmail(profile.notify_email || '')
         setTimeout_(profile.timeout || 5)
@@ -1028,7 +1030,7 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
         setResolveDns(profile.resolve_dns || false)
         setShowAdvanced(!!(profile.resolve_dns || profile.timeout !== 5 || profile.max_workers !== 20))
       } else {
-        setName(''); setDescription(''); setTargets([]); setPorts('443')
+        setName(''); setDescription(''); setTargets([]); setPorts(['443'])
         setSchedule('0'); setNotifyEmail('')
         setTimeout_(5); setMaxWorkers(20); setResolveDns(false); setShowAdvanced(false)
       }
@@ -1038,7 +1040,7 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!name.trim() || !targets.length) return
-    const portList = ports.split(/[,\s]+/).map(s => parseInt(s.trim())).filter(n => n > 0 && n <= 65535)
+    const portList = ports.map(s => parseInt(s)).filter(n => n > 0 && n <= 65535)
     onSave({
       name: name.trim(),
       description: description.trim(),
@@ -1063,10 +1065,12 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
   ]
 
   const portPresets = [
-    { label: 'HTTPS', value: '443', desc: '443' },
-    { label: 'HTTPS + Alt', value: '443, 8443', desc: '443, 8443' },
-    { label: t('discovery.allCommon'), value: '443, 8443, 8080, 636, 993, 995, 465, 587', desc: '8 ports' },
+    { label: 'HTTPS', ports: ['443'] },
+    { label: 'HTTPS + Alt', ports: ['443', '8443'] },
+    { label: t('discovery.allCommon'), ports: ['443', '8443', '8080', '636', '993', '995', '465', '587'] },
   ]
+
+  const portsMatch = (a, b) => a.length === b.length && a.every((v, i) => v === b[i])
 
   return (
     <Modal
@@ -1121,26 +1125,27 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
           <div className="flex flex-wrap gap-2">
             {portPresets.map((preset) => (
               <button
-                key={preset.value}
+                key={preset.label}
                 type="button"
                 className={cn(
                   'flex flex-col items-center px-3.5 py-2 rounded-lg border text-xs transition-all',
-                  ports === preset.value
+                  portsMatch(ports, preset.ports)
                     ? 'bg-accent-op10 border-accent-primary text-accent-primary ring-1 ring-accent-primary'
                     : 'border-border bg-bg-secondary text-text-secondary hover:border-text-tertiary hover:bg-bg-tertiary'
                 )}
-                onClick={() => setPorts(preset.value)}
+                onClick={() => setPorts(preset.ports)}
               >
                 <span className="font-medium">{preset.label}</span>
-                <span className="text-2xs opacity-60 mt-0.5">{preset.desc}</span>
+                <span className="text-2xs opacity-60 mt-0.5">{preset.ports.join(', ')}</span>
               </button>
             ))}
           </div>
-          <Input
+          <TagsInput
             value={ports}
-            onChange={(e) => setPorts(e.target.value)}
+            onChange={setPorts}
             placeholder="443, 8443, 636"
             helperText={t('discovery.portsHelpDetailed')}
+            validate={(v) => { const n = parseInt(v); return n > 0 && n <= 65535 ? null : t('discovery.invalidPort') }}
           />
         </div>
 

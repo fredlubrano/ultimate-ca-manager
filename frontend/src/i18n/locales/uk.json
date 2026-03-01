@@ -2920,6 +2920,7 @@
     "exportFailed": "Помилка експорту",
     "subjectAltNames": "Альтернативні імена суб'єкта",
     "bulkResolveDns": "Розв'язати DNS",
-    "bulkDnsSuccess": "DNS розв'язано: {{updated}}/{{total}} оновлено"
+    "bulkDnsSuccess": "DNS розв'язано: {{updated}}/{{total}} оновлено",
+    "invalidPort": "Недійсний порт (1-65535)"
   }
 }

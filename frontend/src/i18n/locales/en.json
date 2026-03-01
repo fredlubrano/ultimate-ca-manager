@@ -2923,6 +2923,7 @@
     "exportFailed": "Export failed",
     "subjectAltNames": "Subject Alternative Names",
     "bulkResolveDns": "Resolve DNS",
-    "bulkDnsSuccess": "DNS resolved: {{updated}}/{{total}} updated"
+    "bulkDnsSuccess": "DNS resolved: {{updated}}/{{total}} updated",
+    "invalidPort": "Invalid port (1-65535)"
   }
 }
