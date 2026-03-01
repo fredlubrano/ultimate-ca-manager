@@ -15,7 +15,7 @@ import os
 import traceback
 from datetime import datetime, timedelta
 from ipaddress import ip_address
-from sqlalchemy import or_, case
+from sqlalchemy import or_, case, func
 from auth.unified import require_auth, has_permission
 from utils.response import success_response, error_response, created_response, no_content_response
 from utils.dn_validation import validate_dn_field
@@ -60,9 +60,11 @@ def list_certificates():
     sort_order = request.args.get('sort_order', 'asc')  # Default ascending (A-Z)
     
     # Whitelist of allowed sort columns
+    # Use COALESCE for subject_cn to fallback to descr if CN not populated
+    _cn_sort = func.coalesce(Certificate.subject_cn, Certificate.descr)
     ALLOWED_SORT_COLUMNS = {
-        'subject': Certificate.subject_cn,  # Sort by CN, not full DN
-        'subject_cn': Certificate.subject_cn,
+        'subject': _cn_sort,
+        'subject_cn': _cn_sort,
         'issuer': Certificate.issuer,
         'valid_to': Certificate.valid_to,
         'valid_from': Certificate.valid_from,

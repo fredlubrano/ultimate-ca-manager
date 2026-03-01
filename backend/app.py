@@ -432,6 +432,19 @@ def create_app(config_name=None):
         except ImportError:
             pass
         
+        # Register discovery scheduler task (checks every 60s for due profiles)
+        try:
+            from services.discovery_scheduler_task import DiscoverySchedulerTask
+            scheduler.register_task(
+                name="discovery_scan",
+                func=DiscoverySchedulerTask.execute,
+                interval=60,  # Check every minute for due profiles
+                description="Run scheduled network discovery scans"
+            )
+            app.logger.info("Registered discovery scan scheduler task (every 60s)")
+        except ImportError:
+            pass
+        
         # Start scheduler now that tasks are registered
         scheduler.start(app=app)
         app.logger.info("Scheduler service started with all tasks")

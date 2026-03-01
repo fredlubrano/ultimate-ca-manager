@@ -206,6 +206,40 @@ def backfill_ski_aki():
         db.session.commit()
         logger.info(f"SKI/AKI chain repair: re-chained {stats['rechained_cas']} CAs, {stats['rechained_certs']} certs, deduplicated {stats['deduplicated']} CAs")
 
+    # Phase 5: Populate subject_cn for certificates missing it
+    certs_missing_cn = Certificate.query.filter(
+        (Certificate.subject_cn.is_(None)) | (Certificate.subject_cn == '')
+    ).all()
+    for cert in certs_missing_cn:
+        cn = None
+        # Try extracting from subject string
+        if cert.subject:
+            import re
+            m = re.search(r'CN=([^,]+)', cert.subject)
+            if m:
+                cn = m.group(1).strip()
+        # Try extracting from PEM
+        if not cn and cert.crt:
+            try:
+                pem_bytes = base64.b64decode(cert.crt)
+                x509_cert = x509.load_pem_x509_certificate(pem_bytes, default_backend())
+                for attr in x509_cert.subject:
+                    if attr.oid == x509.oid.NameOID.COMMON_NAME:
+                        cn = attr.value
+                        break
+            except Exception:
+                pass
+        if not cn:
+            cn = cert.descr
+        if cn:
+            cert.subject_cn = cn
+            stats.setdefault('populated_cn', 0)
+            stats['populated_cn'] += 1
+    if certs_missing_cn:
+        db.session.commit()
+        if stats.get('populated_cn'):
+            logger.info(f"SKI/AKI backfill: populated subject_cn for {stats['populated_cn']} certificates")
+
     # Count remaining orphans after repair (exclude self-signed roots)
     stats['orphan_cas'] = CA.query.filter(
         CA.caref.is_(None) | (CA.caref == ''),

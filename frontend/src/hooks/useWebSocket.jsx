@@ -46,6 +46,13 @@ export const EventType = {
   
   // Audit events
   AUDIT_CRITICAL: 'audit.critical',
+
+  // Discovery events
+  DISCOVERY_SCAN_STARTED: 'discovery.scan_started',
+  DISCOVERY_SCAN_PROGRESS: 'discovery.scan_progress',
+  DISCOVERY_SCAN_COMPLETE: 'discovery.scan_complete',
+  DISCOVERY_NEW_CERT: 'discovery.new_certificate',
+  DISCOVERY_CERT_CHANGED: 'discovery.cert_changed',
 };
 
 // Connection states

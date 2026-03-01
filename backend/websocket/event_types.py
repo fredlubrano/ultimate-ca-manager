@@ -50,6 +50,13 @@ class EventType(str, Enum):
     SCEP_ENROLLMENT = 'scep.enrollment'
     OCSP_REQUEST = 'ocsp.request'
 
+    # Discovery events
+    DISCOVERY_SCAN_STARTED = 'discovery.scan_started'
+    DISCOVERY_SCAN_PROGRESS = 'discovery.scan_progress'
+    DISCOVERY_SCAN_COMPLETE = 'discovery.scan_complete'
+    DISCOVERY_NEW_CERT = 'discovery.new_certificate'
+    DISCOVERY_CERT_CHANGED = 'discovery.cert_changed'
+
 
 # Event metadata for documentation
 EVENT_DESCRIPTIONS = {
@@ -63,4 +70,8 @@ EVENT_DESCRIPTIONS = {
     EventType.USER_LOGOUT: "A user has logged out",
     EventType.SYSTEM_ALERT: "A system alert has been triggered",
     EventType.AUDIT_CRITICAL: "A critical action has been logged",
+    EventType.DISCOVERY_SCAN_STARTED: "A network discovery scan has started",
+    EventType.DISCOVERY_SCAN_COMPLETE: "A network discovery scan has completed",
+    EventType.DISCOVERY_NEW_CERT: "A new unmanaged certificate was discovered",
+    EventType.DISCOVERY_CERT_CHANGED: "A certificate on a monitored endpoint has changed",
 }

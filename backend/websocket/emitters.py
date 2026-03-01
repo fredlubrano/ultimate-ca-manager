@@ -218,3 +218,58 @@ def on_audit_critical(action: str, user: str, resource: str, details: Optional[D
         'resource': resource,
         'details': details or {}
     })
+
+
+# ==================== Discovery Events ====================
+
+def on_discovery_scan_started(scan_run_id: int, profile_name: str, total_targets: int):
+    """Emit event when a discovery scan starts."""
+    from websocket.event_types import EventType
+    emit_ws_event(EventType.DISCOVERY_SCAN_STARTED, {
+        'scan_run_id': scan_run_id,
+        'profile_name': profile_name,
+        'total_targets': total_targets,
+    })
+
+
+def on_discovery_scan_progress(scan_run_id: int, scanned: int, total: int, found: int):
+    """Emit scan progress update."""
+    from websocket.event_types import EventType
+    emit_ws_event(EventType.DISCOVERY_SCAN_PROGRESS, {
+        'scan_run_id': scan_run_id,
+        'scanned': scanned,
+        'total': total,
+        'found': found,
+    })
+
+
+def on_discovery_scan_complete(scan_run_id: int, summary: Dict):
+    """Emit event when a discovery scan completes."""
+    from websocket.event_types import EventType
+    emit_ws_event(EventType.DISCOVERY_SCAN_COMPLETE, {
+        'scan_run_id': scan_run_id,
+        'summary': summary,
+    })
+
+
+def on_discovery_new_cert(target: str, port: int, subject: str):
+    """Emit event when a new unmanaged certificate is found."""
+    from websocket.event_types import EventType
+    cn = _extract_cn(subject)
+    emit_ws_event(EventType.DISCOVERY_NEW_CERT, {
+        'target': target,
+        'port': port,
+        'cn': cn,
+        'subject': subject,
+    })
+
+
+def on_discovery_cert_changed(target: str, port: int, old_subject: str, new_subject: str):
+    """Emit event when a certificate on a monitored endpoint has changed."""
+    from websocket.event_types import EventType
+    emit_ws_event(EventType.DISCOVERY_CERT_CHANGED, {
+        'target': target,
+        'port': port,
+        'old_cn': _extract_cn(old_subject),
+        'new_cn': _extract_cn(new_subject),
+    })
