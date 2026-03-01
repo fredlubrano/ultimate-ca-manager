@@ -932,7 +932,7 @@ function QuickScanModal({ open, onClose, onScan, scanning, t }) {
             onChange={setPorts}
             placeholder="443, 8443, 636"
             helperText={t('discovery.portsHelpDetailed')}
-            validate={(v) => { const n = parseInt(v); return n > 0 && n <= 65535 ? null : t('discovery.invalidPort') }}
+            validate={(v) => { const n = parseInt(v); return n > 0 && n <= 65535 }}
           />
         </div>
 
@@ -1145,7 +1145,7 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
             onChange={setPorts}
             placeholder="443, 8443, 636"
             helperText={t('discovery.portsHelpDetailed')}
-            validate={(v) => { const n = parseInt(v); return n > 0 && n <= 65535 ? null : t('discovery.invalidPort') }}
+            validate={(v) => { const n = parseInt(v); return n > 0 && n <= 65535 }}
           />
         </div>
 
