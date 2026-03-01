@@ -41,76 +41,125 @@ class DiscoveryService:
     def probe_tls(self, host: str, port: int = 443, timeout: int = None,
                   resolve_dns: bool = False, sni_hostname: str = None) -> Dict:
         """Connect to host:port via TLS and return certificate info.
-        If sni_hostname is set, connect to host but use sni_hostname for TLS SNI."""
+        If sni_hostname is set, connect to host but use sni_hostname for TLS SNI.
+        For IP targets, avoids sending IP as SNI per RFC 6066.
+        On TLSV1_UNRECOGNIZED_NAME, retries without SNI then with PTR hostname."""
         connect_timeout = timeout or self.timeout
-        server_name = sni_hostname or host
         result = {'target': host, 'port': port}
         if sni_hostname:
             result['sni_hostname'] = sni_hostname
+
+        # Determine SNI strategy: don't send IP addresses as SNI (RFC 6066)
+        is_ip = False
         try:
-            ctx = ssl.create_default_context()
-            ctx.check_hostname = False
-            ctx.verify_mode = ssl.CERT_NONE
+            ipaddress.ip_address(host)
+            is_ip = True
+        except ValueError:
+            pass
 
-            with socket.create_connection((host, port), timeout=connect_timeout) as sock:
-                with ctx.wrap_socket(sock, server_hostname=server_name) as tls:
-                    der = tls.getpeercert(binary_form=True)
-                    if not der:
-                        result['error'] = 'No certificate returned'
-                        result['error_type'] = 'no_cert'
-                        return result
+        if sni_hostname:
+            sni_attempts = [sni_hostname]
+        elif is_ip:
+            # For IPs: try without SNI first, then with PTR hostname
+            sni_attempts = [None]
+            try:
+                ptr_host, _, _ = socket.gethostbyaddr(host)
+                if ptr_host and ptr_host != host:
+                    sni_attempts.append(ptr_host)
+            except (socket.herror, socket.gaierror, OSError):
+                pass
+        else:
+            sni_attempts = [host]
 
-                    cert = x509.load_der_x509_certificate(der)
-                    pem = cert.public_bytes(serialization.Encoding.PEM).decode()
-                    fp = hashlib.sha256(der).hexdigest().upper()
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
 
-                    # Extract SANs
-                    san_dns = []
-                    san_ips = []
+        last_error = None
+        for sni in sni_attempts:
+            try:
+                with socket.create_connection((host, port), timeout=connect_timeout) as sock:
+                    kwargs = {}
+                    if sni:
+                        kwargs['server_hostname'] = sni
+                    with ctx.wrap_socket(sock, **kwargs) as tls:
+                        der = tls.getpeercert(binary_form=True)
+                        if not der:
+                            result['error'] = 'No certificate returned'
+                            result['error_type'] = 'no_cert'
+                            return result
+
+                        cert = x509.load_der_x509_certificate(der)
+                        pem = cert.public_bytes(serialization.Encoding.PEM).decode()
+                        fp = hashlib.sha256(der).hexdigest().upper()
+
+                        # Extract SANs
+                        san_dns = []
+                        san_ips = []
+                        try:
+                            san_ext = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
+                            san_dns = san_ext.value.get_values_for_type(x509.DNSName)
+                            san_ips = [str(ip) for ip in san_ext.value.get_values_for_type(x509.IPAddress)]
+                        except x509.ExtensionNotFound:
+                            pass
+
+                        result.update({
+                            'subject': cert.subject.rfc4514_string(),
+                            'issuer': cert.issuer.rfc4514_string(),
+                            'serial_number': format(cert.serial_number, 'X'),
+                            'not_before': cert.not_valid_before_utc.isoformat(),
+                            'not_after': cert.not_valid_after_utc.isoformat(),
+                            'fingerprint_sha256': fp,
+                            'pem_certificate': pem,
+                            'san_dns_names': san_dns,
+                            'san_ip_addresses': san_ips,
+                        })
+
+                # Reverse DNS resolution
+                if resolve_dns and not sni_hostname:
                     try:
-                        san_ext = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
-                        san_dns = san_ext.value.get_values_for_type(x509.DNSName)
-                        san_ips = [str(ip) for ip in san_ext.value.get_values_for_type(x509.IPAddress)]
-                    except x509.ExtensionNotFound:
+                        hostname, _, _ = socket.gethostbyaddr(host)
+                        if hostname and hostname != host:
+                            result['dns_hostname'] = hostname
+                    except (socket.herror, socket.gaierror, OSError):
                         pass
 
-                    result.update({
-                        'subject': cert.subject.rfc4514_string(),
-                        'issuer': cert.issuer.rfc4514_string(),
-                        'serial_number': format(cert.serial_number, 'X'),
-                        'not_before': cert.not_valid_before_utc.isoformat(),
-                        'not_after': cert.not_valid_after_utc.isoformat(),
-                        'fingerprint_sha256': fp,
-                        'pem_certificate': pem,
-                        'san_dns_names': san_dns,
-                        'san_ip_addresses': san_ips,
-                    })
+                return result  # Success — stop retrying
 
-            # Reverse DNS resolution
-            if resolve_dns and not sni_hostname:
-                try:
-                    hostname, _, _ = socket.gethostbyaddr(host)
-                    if hostname and hostname != host:
-                        result['dns_hostname'] = hostname
-                except (socket.herror, socket.gaierror, OSError):
-                    pass  # No PTR record — that's fine
+            except ssl.SSLError as e:
+                if 'TLSV1_UNRECOGNIZED_NAME' in str(e):
+                    last_error = e
+                    logger.debug(f"TLS probe {host}:{port} SNI={sni}: unrecognized name, trying next")
+                    continue  # Try next SNI strategy
+                result['error'] = str(e)
+                result['error_type'] = 'tls'
+                return result
+            except ConnectionRefusedError:
+                result['error'] = 'Connection refused'
+                result['error_type'] = 'refused'
+                return result
+            except socket.timeout:
+                result['error'] = 'Connection timed out'
+                result['error_type'] = 'timeout'
+                return result
+            except socket.gaierror as e:
+                result['error'] = f'DNS resolution failed: {e}'
+                result['error_type'] = 'dns'
+                return result
+            except OSError as e:
+                result['error'] = str(e)
+                result['error_type'] = 'network'
+                return result
+            except Exception as e:
+                logger.debug(f"TLS probe {host}:{port} (SNI={sni}) failed: {e}")
+                result['error'] = str(e)
+                result['error_type'] = 'tls'
+                return result
 
-        except ConnectionRefusedError:
-            result['error'] = 'Connection refused'
-            result['error_type'] = 'refused'
-        except socket.timeout:
-            result['error'] = 'Connection timed out'
-            result['error_type'] = 'timeout'
-        except socket.gaierror as e:
-            result['error'] = f'DNS resolution failed: {e}'
-            result['error_type'] = 'dns'
-        except OSError as e:
-            result['error'] = str(e)
-            result['error_type'] = 'network'
-        except Exception as e:
-            logger.debug(f"TLS probe {host}:{port} (SNI={server_name}) failed: {e}")
-            result['error'] = str(e)
-            result['error_type'] = 'tls'
+        # All SNI attempts failed with UNRECOGNIZED_NAME
+        if last_error:
+            result['error'] = 'TLS handshake rejected (server requires specific hostname/SNI)'
+            result['error_type'] = 'sni_rejected'
         return result
 
     # ------------------------------------------------------------------
@@ -567,9 +616,7 @@ class DiscoveryService:
     def get_all(self, limit: int = 200, offset: int = 0,
                 profile_id: int = None, status: str = None) -> Tuple[List[Dict], int]:
         """Return discovered certificates with pagination. Returns (items, total)."""
-        query = DiscoveredCertificate.query.filter(
-            DiscoveredCertificate.status != 'error'
-        )
+        query = DiscoveredCertificate.query
         if profile_id:
             query = query.filter_by(scan_profile_id=profile_id)
         if status:

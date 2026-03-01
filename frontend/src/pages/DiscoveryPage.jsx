@@ -6,12 +6,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  Globe, MagnifyingGlass, ShieldCheck, Warning, Clock,
+  Globe, MagnifyingGlass, ShieldCheck, Warning, WarningCircle, Clock,
   ArrowsClockwise, Trash, Play, Plus, CheckCircle, XCircle,
   ClockCounterClockwise, FolderOpen, Pencil, CalendarBlank,
   WifiHigh, WifiSlash, Certificate, ArrowSquareOut, Network,
   Export, Gauge, Lightning, MapPin, Crosshair, Plugs,
-  GearSix, Timer, Bell, CaretDown, Envelope
+  GearSix, Timer, Bell, CaretDown, Envelope, Funnel, ArrowCounterClockwise
 } from '@phosphor-icons/react'
 import {
   ResponsiveLayout, ResponsiveDataTable,
@@ -70,13 +70,19 @@ export default function DiscoveryPage() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
 
+  // Filters
+  const [statusFilter, setStatusFilter] = useState(null)   // null = all, 'managed', 'unmanaged', 'error'
+  const [profileFilter, setProfileFilter] = useState(null)  // null = all, profile id
+
   // ── Data loaders ──────────────────────────────────────
   const loadStats = useCallback(async () => {
     try {
-      const res = await discoveryService.getStats()
+      const params = {}
+      if (profileFilter) params.profile_id = profileFilter
+      const res = await discoveryService.getStats(profileFilter)
       setStats(res.data ?? res)
     } catch { /* silent */ }
-  }, [])
+  }, [profileFilter])
 
   const loadProfiles = useCallback(async () => {
     try {
@@ -87,7 +93,10 @@ export default function DiscoveryPage() {
 
   const loadDiscovered = useCallback(async () => {
     try {
-      const res = await discoveryService.getAll({ page, per_page: perPage })
+      const params = { limit: perPage, offset: (page - 1) * perPage }
+      if (statusFilter) params.status = statusFilter
+      if (profileFilter) params.profile_id = profileFilter
+      const res = await discoveryService.getAll(params)
       const data = res.data ?? res
       if (Array.isArray(data)) {
         setDiscovered(data)
@@ -97,11 +106,13 @@ export default function DiscoveryPage() {
         setDiscoveredTotal(data.total ?? data.items?.length ?? 0)
       }
     } catch { /* silent */ }
-  }, [page, perPage])
+  }, [page, perPage, statusFilter, profileFilter])
 
   const loadRuns = useCallback(async () => {
     try {
-      const res = await discoveryService.getRuns({ limit: 50 })
+      const params = { limit: 50 }
+      if (profileFilter) params.profile_id = profileFilter
+      const res = await discoveryService.getRuns(params)
       const data = res.data ?? res
       if (Array.isArray(data)) {
         setRuns(data)
@@ -111,7 +122,7 @@ export default function DiscoveryPage() {
         setRunsTotal(data.total ?? data.items?.length ?? 0)
       }
     } catch { /* silent */ }
-  }, [])
+  }, [profileFilter])
 
   const loadAll = useCallback(async () => {
     setLoading(true)
@@ -120,7 +131,8 @@ export default function DiscoveryPage() {
   }, [loadStats, loadProfiles, loadDiscovered, loadRuns])
 
   useEffect(() => { loadAll() }, [loadAll])
-  useEffect(() => { loadDiscovered() }, [page, perPage])
+  useEffect(() => { loadDiscovered() }, [page, perPage, statusFilter, profileFilter])
+  useEffect(() => { loadStats(); loadRuns() }, [profileFilter])
 
   // ── WebSocket ─────────────────────────────────────────
   useEffect(() => {
@@ -148,7 +160,32 @@ export default function DiscoveryPage() {
     setActiveTab(tabId)
     setSelectedItem(null)
     setPage(1)
-    setSearchParams({ tab: tabId })
+    if (tabId !== 'discovered') {
+      setStatusFilter(null)
+    }
+    setSearchParams({ tab: tabId, ...(profileFilter ? { profile: profileFilter } : {}) })
+  }
+
+  // Filter helpers
+  const handleStatusFilter = (status) => {
+    setStatusFilter(prev => prev === status ? null : status)
+    setPage(1)
+  }
+
+  const handleProfileFilter = (id) => {
+    setProfileFilter(prev => prev === id ? null : id)
+    setPage(1)
+    setStatusFilter(null)
+  }
+
+  const handleRetryScan = async (target, port) => {
+    try {
+      setScanning(true)
+      await discoveryService.scan({ targets: [`${target}:${port}`], ports: [port], timeout: 10 })
+    } catch (error) {
+      showError(error.message || t('discovery.scanFailed'))
+      setScanning(false)
+    }
   }
 
   const handleSaveProfile = async (formData) => {
@@ -250,12 +287,18 @@ export default function DiscoveryPage() {
     }
   }
 
-  // ── Stats bar ─────────────────────────────────────────
+  // ── Stats bar (clickable → filter) ─────────────────────
   const statsBar = useMemo(() => [
-    { icon: Globe, label: t('common.total'), value: stats.total, variant: 'primary' },
-    { icon: ShieldCheck, label: t('discovery.managed'), value: stats.managed, variant: 'success' },
-    { icon: Warning, label: t('discovery.unmanaged'), value: stats.unmanaged, variant: 'warning' },
+    { icon: Globe, label: t('common.total'), value: stats.total, variant: 'primary',
+      filterValue: null },
+    { icon: ShieldCheck, label: t('discovery.managed'), value: stats.managed, variant: 'success',
+      filterValue: 'managed' },
+    { icon: Warning, label: t('discovery.unmanaged'), value: stats.unmanaged, variant: 'warning',
+      filterValue: 'unmanaged' },
     { icon: XCircle, label: t('common.expired'), value: stats.expired, variant: 'danger' },
+    ...(stats.expiring_soon > 0 ? [{ icon: Clock, label: t('discovery.expiringSoon'), value: stats.expiring_soon, variant: 'warning' }] : []),
+    ...(stats.errors > 0 ? [{ icon: WarningCircle, label: t('common.error'), value: stats.errors, variant: 'danger',
+      filterValue: 'error' }] : []),
   ], [stats, t])
 
   // ── Discovered columns ────────────────────────────────
@@ -268,15 +311,21 @@ export default function DiscoveryPage() {
       render: (val, row) => {
         const extractCN = (s) => { const m = s?.match(/CN=([^,]+)/); return m ? m[1] : null }
         const name = extractCN(row.subject) || row.target || t('common.unknown')
+        const isError = row.status === 'error'
         return (
           <div className="flex items-center gap-2">
             <div className={cn(
               "w-6 h-6 rounded-lg flex items-center justify-center shrink-0",
-              row.status === 'managed' ? 'icon-bg-emerald' : 'icon-bg-orange'
+              isError ? 'icon-bg-red' : row.status === 'managed' ? 'icon-bg-emerald' : 'icon-bg-orange'
             )}>
-              <Certificate size={14} weight="duotone" />
+              {isError ? <XCircle size={14} weight="duotone" /> : <Certificate size={14} weight="duotone" />}
             </div>
-            <span className="font-medium truncate">{name}</span>
+            <div className="truncate">
+              <span className={cn("font-medium truncate", isError && "text-status-danger")}>{isError ? `${row.target}:${row.port}` : name}</span>
+              {isError && row.scan_error && (
+                <div className="text-2xs text-text-tertiary truncate" title={row.scan_error}>{row.scan_error}</div>
+              )}
+            </div>
           </div>
         )
       }
@@ -351,9 +400,19 @@ export default function DiscoveryPage() {
       key: 'actions',
       header: '',
       priority: 1,
-      width: 60,
+      width: 80,
       render: (_, row) => (
         <div className="flex items-center gap-1">
+          {row.status === 'error' && canWrite('certificates') && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); handleRetryScan(row.target, row.port) }}
+              className="p-1.5 rounded-md hover:bg-bg-tertiary text-text-tertiary hover:text-accent-primary transition-colors"
+              title={t('discovery.retry')}
+            >
+              <ArrowCounterClockwise size={14} />
+            </button>
+          )}
           {canWrite('certificates') && (
             <button
               type="button"
@@ -502,8 +561,23 @@ export default function DiscoveryPage() {
       header: t('discovery.certsFound'),
       sortable: true,
       priority: 3,
+      render: (val, row) => (
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-text-secondary">{val ?? 0}</span>
+          {row.errors_count > 0 && (
+            <Badge variant="danger" size="sm">{row.errors_count} err</Badge>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'targets_scanned',
+      header: t('discovery.targetsScanned'),
+      sortable: true,
+      priority: 4,
+      hideOnMobile: true,
       render: (val) => (
-        <span className="text-sm text-text-secondary">{val ?? 0}</span>
+        <span className="text-sm text-text-secondary">{val ?? '—'}</span>
       )
     },
     {
@@ -528,12 +602,87 @@ export default function DiscoveryPage() {
     }
   ], [t])
 
+  // ── Filter Bar Component ─────────────────────────────
+  const FilterBar = () => {
+    const activeProfile = profiles.find(p => p.id === profileFilter)
+    const statusFilters = [
+      { id: null, label: t('common.all'), icon: Globe },
+      { id: 'managed', label: t('discovery.managed'), icon: ShieldCheck, variant: 'success' },
+      { id: 'unmanaged', label: t('discovery.unmanaged'), icon: Warning, variant: 'warning' },
+      { id: 'error', label: t('common.error'), icon: WarningCircle, variant: 'danger' },
+    ]
+    return (
+      <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border bg-bg-secondary/50">
+        {/* Status pills */}
+        <div className="flex items-center gap-1">
+          <Funnel size={13} className="text-text-tertiary mr-0.5" />
+          {statusFilters.map(f => (
+            <button
+              key={f.id ?? 'all'}
+              type="button"
+              onClick={() => { setStatusFilter(f.id); setPage(1) }}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all',
+                statusFilter === f.id
+                  ? 'bg-accent-primary text-white shadow-sm'
+                  : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+              )}
+            >
+              <f.icon size={12} />
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Profile filter */}
+        {profiles.length > 0 && (
+          <>
+            <div className="w-px h-5 bg-border mx-1" />
+            <select
+              value={profileFilter ?? ''}
+              onChange={(e) => { handleProfileFilter(e.target.value ? parseInt(e.target.value) : null) }}
+              className="text-xs bg-bg-secondary border border-border rounded-lg px-2 py-1 text-text-secondary focus:border-accent-primary focus:outline-none"
+            >
+              <option value="">{t('discovery.allProfiles')}</option>
+              {profiles.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </>
+        )}
+
+        {/* Active filter indicator */}
+        {(statusFilter || profileFilter) && (
+          <>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button
+              type="button"
+              onClick={() => { setStatusFilter(null); setProfileFilter(null); setPage(1) }}
+              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs text-accent-primary hover:bg-accent-op10 transition-colors"
+            >
+              <XCircle size={12} />
+              {t('discovery.clearFilters')}
+            </button>
+            {activeProfile && (
+              <span className="text-xs text-text-tertiary">
+                {t('discovery.filterByProfile')}: <span className="font-medium text-text-secondary">{activeProfile.name}</span>
+              </span>
+            )}
+          </>
+        )}
+      </div>
+    )
+  }
+
   // ── Tab content ───────────────────────────────────────
   const renderContent = () => {
     switch (activeTab) {
       case 'discovered':
         return (
-          <ResponsiveDataTable
+          <div className="flex flex-col h-full">
+            <FilterBar />
+            <div className="flex-1 min-h-0">
+              <ResponsiveDataTable
             data={discovered}
             columns={discoveredColumns}
             loading={loading}
@@ -582,6 +731,30 @@ export default function DiscoveryPage() {
                         <MapPin size={14} />
                         {t('discovery.bulkResolveDns')}
                       </Button>
+                      {stats.errors > 0 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={async () => {
+                            const errorEntries = discovered.filter(d => d.status === 'error')
+                            if (!errorEntries.length) return
+                            const targets = errorEntries.map(e => `${e.target}:${e.port}`)
+                            try {
+                              setScanning(true)
+                              await discoveryService.scan({ targets, timeout: 10 })
+                            } catch (err) {
+                              showError(err.message || t('discovery.scanFailed'))
+                              setScanning(false)
+                            }
+                          }}
+                          className="text-status-danger hover:text-status-danger"
+                          title={t('discovery.retryAllErrors')}
+                        >
+                          <ArrowCounterClockwise size={14} />
+                          {t('discovery.retryAllErrors')}
+                        </Button>
+                      )}
                       <Button
                         type="button"
                         size="sm"
@@ -625,6 +798,8 @@ export default function DiscoveryPage() {
               </Button>
             )}
           />
+            </div>
+          </div>
         )
 
       case 'profiles':
@@ -774,6 +949,8 @@ export default function DiscoveryPage() {
         subtitle={subtitle}
         icon={Globe}
         stats={statsBar}
+        activeStatFilter={statusFilter}
+        onStatClick={(filterValue) => handleStatusFilter(filterValue)}
         tabs={tabsWithCounts}
         activeTab={activeTab}
         onTabChange={handleTabChange}
@@ -1250,7 +1427,8 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
 
 function DiscoveredDetailPanel({ item, t }) {
   const extractCN = (s) => { const m = s?.match(/CN=([^,]+)/); return m ? m[1] : null }
-  const name = extractCN(item.subject) || item.target || t('common.unknown')
+  const isError = item.status === 'error'
+  const name = isError ? `${item.target}:${item.port || 443}` : (extractCN(item.subject) || item.target || t('common.unknown'))
   const days = item.days_until_expiry
   const isExpired = item.is_expired
   const isExpiring = !isExpired && days != null && days <= 30
@@ -1260,6 +1438,62 @@ function DiscoveredDetailPanel({ item, t }) {
     const suffix = isExpired ? ` (${t('common.expired')})` : isExpiring ? ` (${days}d)` : ''
     return dateStr + suffix
   })()
+
+  // Error troubleshooting hints
+  const getErrorHint = (error) => {
+    if (!error) return null
+    const e = error.toLowerCase()
+    if (e.includes('unrecognized_name') || e.includes('sni'))
+      return { icon: '🔒', hint: t('discovery.errorHintSni') }
+    if (e.includes('connection refused') || e.includes('errno 111'))
+      return { icon: '🚫', hint: t('discovery.errorHintRefused') }
+    if (e.includes('timed out') || e.includes('errno 110'))
+      return { icon: '⏱️', hint: t('discovery.errorHintTimeout') }
+    if (e.includes('no route') || e.includes('errno 113') || e.includes('network unreachable'))
+      return { icon: '🌐', hint: t('discovery.errorHintNoRoute') }
+    if (e.includes('dns') || e.includes('name resolution') || e.includes('getaddrinfo'))
+      return { icon: '📡', hint: t('discovery.errorHintDns') }
+    if (e.includes('reset') || e.includes('errno 104'))
+      return { icon: '⛔', hint: t('discovery.errorHintReset') }
+    return null
+  }
+
+  if (isError) {
+    const errorHint = getErrorHint(item.scan_error)
+    return (
+      <div className="p-4 space-y-4">
+        <CompactSection title={t('common.error')}>
+          <div className="space-y-3">
+            <CompactGrid>
+              <CompactField label={t('discovery.host')} value={`${item.target}:${item.port || 443}`} mono />
+              {item.dns_hostname && (
+                <CompactField label={t('discovery.dnsHostname')} value={item.dns_hostname} />
+              )}
+              <CompactField
+                label={t('common.status')}
+                value={<Badge variant="danger" size="sm" icon={WarningCircle} dot>{t('common.error')}</Badge>}
+              />
+            </CompactGrid>
+            <div className="rounded-lg border border-status-danger/20 bg-status-danger/5 p-3">
+              <div className="text-xs font-mono text-status-danger break-all">{item.scan_error}</div>
+            </div>
+            {errorHint && (
+              <div className="rounded-lg border border-border bg-bg-tertiary p-3 flex items-start gap-2">
+                <span className="text-base shrink-0">{errorHint.icon}</span>
+                <p className="text-xs text-text-secondary leading-relaxed">{errorHint.hint}</p>
+              </div>
+            )}
+          </div>
+        </CompactSection>
+        <CompactSection title={t('discovery.scanInfo')}>
+          <CompactGrid>
+            <CompactField label={t('discovery.firstSeen')} value={item.first_seen ? formatDate(item.first_seen) : '—'} />
+            <CompactField label={t('discovery.lastSeen')} value={item.last_seen ? formatDate(item.last_seen) : '—'} />
+          </CompactGrid>
+        </CompactSection>
+      </div>
+    )
+  }
 
   return (
     <div className="p-4 space-y-4">
