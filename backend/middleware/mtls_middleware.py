@@ -3,6 +3,7 @@ mTLS Authentication Middleware
 HYBRID: Supports both native Flask and reverse proxy certificate extraction
 """
 from flask import request, session, g
+from datetime import datetime
 from functools import wraps
 from services.certificate_parser import CertificateParser
 from services.mtls_auth_service import MTLSAuthService
@@ -76,6 +77,8 @@ def process_client_certificate():
         session['auth_method'] = 'certificate'
         session['cert_id'] = auth_cert.id
         session['cert_serial'] = auth_cert.cert_serial
+        session['login_time'] = datetime.utcnow().isoformat()
+        session['last_activity'] = datetime.utcnow().isoformat()
         session.permanent = True
 
         g.user = user
@@ -83,6 +86,16 @@ def process_client_certificate():
         g.auth_method = 'certificate'
 
         logger.info(f"mTLS auto-login: user={user.username}")
+        
+        # Audit log for mTLS login
+        try:
+            from services.audit_service import AuditService
+            AuditService.log_auth(
+                'login_success', username=user.username,
+                user_id=user.id, details=f'mTLS auto-login (cert: {auth_cert.cert_serial})'
+            )
+        except Exception:
+            pass
     else:
         logger.debug(f"mTLS cert present but auth failed: {error}")
         g.cert_error = error

@@ -206,10 +206,18 @@ def logout():
     Logout endpoint
     Clears session (for session-based auth)
     """
+    username = session.get('username', 'unknown')
+    
+    # Audit log
+    try:
+        from services.audit_service import AuditService
+        AuditService.log_auth('logout', username=username, details=f'User {username} logged out')
+    except Exception:
+        pass
+    
     # WebSocket event for logout
     try:
         from websocket.emitters import on_user_logout
-        username = session.get('username', 'unknown')
         on_user_logout(username=username)
     except Exception:
         pass  # Non-blocking
