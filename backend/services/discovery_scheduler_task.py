@@ -50,6 +50,9 @@ class DiscoverySchedulerTask:
                         triggered_by='scheduled',
                         triggered_by_user='scheduler',
                         app=current_app._get_current_object(),
+                        timeout=profile.timeout,
+                        max_workers=profile.max_workers,
+                        resolve_dns=profile.resolve_dns,
                     )
 
                 except Exception as e:

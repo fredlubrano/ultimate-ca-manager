@@ -133,6 +133,9 @@ def scan_profile(profile_id):
         triggered_by='manual',
         triggered_by_user=username,
         app=current_app._get_current_object(),
+        timeout=profile.get('timeout', 5),
+        max_workers=profile.get('max_workers', 20),
+        resolve_dns=profile.get('resolve_dns', False),
     )
     _audit('discovery_scan_started', resource_name=profile.get('name', ''),
            resource_id=run_id, details=f"Profile scan: {profile.get('name')}, targets: {len(profile['targets'])}")
@@ -150,6 +153,9 @@ def ad_hoc_scan():
     targets = data.get('targets', [])
     subnet = data.get('subnet')
     ports = data.get('ports', [443])
+    timeout = min(max(int(data.get('timeout', 5)), 1), 30)
+    scan_max_workers = min(max(int(data.get('max_workers', 20)), 1), 50)
+    resolve_dns = bool(data.get('resolve_dns', False))
 
     if not targets and not subnet:
         return error_response("Provide either 'targets' or 'subnet'", 400)
@@ -172,6 +178,8 @@ def ad_hoc_scan():
             cidr=subnet, ports=ports,
             triggered_by='manual', triggered_by_user=username,
             app=current_app._get_current_object(),
+            timeout=timeout, max_workers=scan_max_workers,
+            resolve_dns=resolve_dns,
         )
         _audit('discovery_scan_started', resource_id=run_id,
                details=f"Ad-hoc subnet scan: {subnet}")
@@ -180,6 +188,8 @@ def ad_hoc_scan():
             targets=targets, ports=ports,
             triggered_by='manual', triggered_by_user=username,
             app=current_app._get_current_object(),
+            timeout=timeout, max_workers=scan_max_workers,
+            resolve_dns=resolve_dns,
         )
         _audit('discovery_scan_started', resource_id=run_id,
                details=f"Ad-hoc scan: {len(targets)} targets")
@@ -259,3 +269,46 @@ def delete_all_discovered():
     _audit('discovery_results_purged', details=f"Deleted {count} discovered certificates"
            + (f" for profile {profile_id}" if profile_id else ""))
     return success_response(data={'deleted': count}, message=f"Deleted {count} records")
+
+
+# ==================== Export ====================
+
+@bp.route('/api/v2/discovery/export', methods=['GET'])
+@require_auth(['read:certificates'])
+def export_discovered():
+    """Export discovered certificates as CSV or JSON."""
+    import csv
+    import io
+    from flask import Response
+
+    fmt = request.args.get('format', 'csv')
+    profile_id = request.args.get('profile_id', type=int)
+    status = request.args.get('status')
+    svc = _get_service()
+    items, total = svc.get_all(limit=10000, offset=0, profile_id=profile_id, status=status)
+
+    if fmt == 'json':
+        import json
+        _audit('discovery_export', details=f"JSON export: {total} certificates")
+        return Response(
+            json.dumps(items, indent=2, default=str),
+            mimetype='application/json',
+            headers={'Content-Disposition': 'attachment; filename=discovered_certificates.json'}
+        )
+
+    # CSV export
+    output = io.StringIO()
+    fields = ['target', 'port', 'dns_hostname', 'subject', 'issuer', 'serial_number',
+              'not_before', 'not_after', 'fingerprint_sha256', 'status',
+              'first_seen', 'last_seen', 'is_expired', 'days_until_expiry', 'scan_error']
+    writer = csv.DictWriter(output, fieldnames=fields, extrasaction='ignore')
+    writer.writeheader()
+    for item in items:
+        writer.writerow(item)
+
+    _audit('discovery_export', details=f"CSV export: {total} certificates")
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=discovered_certificates.csv'}
+    )

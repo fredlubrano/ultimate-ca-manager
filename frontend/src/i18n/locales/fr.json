@@ -2911,6 +2911,15 @@
     "lastChanged": "Dernier changement",
     "scanInfo": "Info scan",
     "scanResults": "Résultats du scan",
-    "targetsScanned": "Cibles scannées"
+    "targetsScanned": "Cibles scannées",
+    "targetsPlaceholder": "exemple.com, 192.168.1.0/24, host:8443",
+    "targetsTagHelp": "Tapez un hôte, IP ou CIDR et appuyez sur Entrée",
+    "advancedOptions": "Options avancées",
+    "reverseDns": "Résolution DNS inverse (enregistrements PTR)",
+    "timeout": "Délai d'attente",
+    "concurrency": "Concurrence",
+    "dnsHostname": "Nom d'hôte DNS",
+    "exportSuccess": "Export terminé",
+    "exportFailed": "Échec de l'export"
   }
 }

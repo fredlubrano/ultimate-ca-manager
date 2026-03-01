@@ -2908,6 +2908,15 @@
     "lastChanged": "最后变更",
     "scanInfo": "扫描信息",
     "scanResults": "扫描结果",
-    "targetsScanned": "已扫描目标"
+    "targetsScanned": "已扫描目标",
+    "targetsPlaceholder": "example.com, 192.168.1.0/24, host:8443",
+    "targetsTagHelp": "输入主机、IP或CIDR后按回车添加",
+    "advancedOptions": "高级选项",
+    "reverseDns": "反向DNS解析（PTR记录）",
+    "timeout": "超时时间",
+    "concurrency": "并发数",
+    "dnsHostname": "DNS主机名",
+    "exportSuccess": "导出完成",
+    "exportFailed": "导出失败"
   }
 }

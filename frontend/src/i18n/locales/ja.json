@@ -2908,6 +2908,15 @@
     "lastChanged": "最終変更",
     "scanInfo": "スキャン情報",
     "scanResults": "スキャン結果",
-    "targetsScanned": "スキャン対象数"
+    "targetsScanned": "スキャン対象数",
+    "targetsPlaceholder": "example.com, 192.168.1.0/24, host:8443",
+    "targetsTagHelp": "ホスト、IP、CIDRを入力してEnterで追加",
+    "advancedOptions": "詳細オプション",
+    "reverseDns": "逆引きDNS解決（PTRレコード）",
+    "timeout": "タイムアウト",
+    "concurrency": "同時実行数",
+    "dnsHostname": "DNSホスト名",
+    "exportSuccess": "エクスポート完了",
+    "exportFailed": "エクスポート失敗"
   }
 }

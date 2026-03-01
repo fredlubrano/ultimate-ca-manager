@@ -24,11 +24,11 @@ export const discoveryService = {
   scanProfile: (profileId) =>
     apiClient.post(`/discovery/profiles/${profileId}/scan`),
 
-  scan: (targets, ports = [443]) =>
-    apiClient.post('/discovery/scan', { targets, ports }),
+  scan: (data) =>
+    apiClient.post('/discovery/scan', data),
 
-  scanSubnet: (subnet, ports = [443]) =>
-    apiClient.post('/discovery/scan', { subnet, ports }),
+  scanSubnet: (subnet, ports = [443], options = {}) =>
+    apiClient.post('/discovery/scan', { subnet, ports, ...options }),
 
   // ── Results ───────────────────────────────────────────
   getAll: (params = {}) =>
@@ -49,4 +49,8 @@ export const discoveryService = {
 
   getRun: (id) =>
     apiClient.get(`/discovery/runs/${id}`),
+
+  // ── Export ────────────────────────────────────────────
+  export: (format = 'csv', params = {}) =>
+    apiClient.get(`/discovery/export${buildQueryString({ format, ...params })}`, { responseType: 'blob' }),
 }

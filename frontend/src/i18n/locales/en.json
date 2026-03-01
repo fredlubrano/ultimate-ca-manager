@@ -2911,6 +2911,15 @@
     "lastChanged": "Last Changed",
     "scanInfo": "Scan Info",
     "scanResults": "Scan Results",
-    "targetsScanned": "Targets Scanned"
+    "targetsScanned": "Targets Scanned",
+    "targetsPlaceholder": "example.com, 192.168.1.0/24, host:8443",
+    "targetsTagHelp": "Type a host, IP, or CIDR and press Enter to add",
+    "advancedOptions": "Advanced Options",
+    "reverseDns": "Resolve reverse DNS (PTR records)",
+    "timeout": "Timeout",
+    "concurrency": "Concurrency",
+    "dnsHostname": "DNS Hostname",
+    "exportSuccess": "Export completed",
+    "exportFailed": "Export failed"
   }
 }

@@ -38,15 +38,17 @@ class DiscoveryService:
     # TLS Probing
     # ------------------------------------------------------------------
 
-    def probe_tls(self, host: str, port: int = 443) -> Dict:
+    def probe_tls(self, host: str, port: int = 443, timeout: int = None,
+                  resolve_dns: bool = False) -> Dict:
         """Connect to host:port via TLS and return certificate info."""
+        connect_timeout = timeout or self.timeout
         result = {'target': host, 'port': port}
         try:
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE
 
-            with socket.create_connection((host, port), timeout=self.timeout) as sock:
+            with socket.create_connection((host, port), timeout=connect_timeout) as sock:
                 with ctx.wrap_socket(sock, server_hostname=host) as tls:
                     der = tls.getpeercert(binary_form=True)
                     if not der:
@@ -67,6 +69,16 @@ class DiscoveryService:
                         'fingerprint_sha256': fp,
                         'pem_certificate': pem,
                     })
+
+            # Reverse DNS resolution
+            if resolve_dns:
+                try:
+                    hostname, _, _ = socket.gethostbyaddr(host)
+                    if hostname and hostname != host:
+                        result['dns_hostname'] = hostname
+                except (socket.herror, socket.gaierror, OSError):
+                    pass  # No PTR record — that's fine
+
         except ConnectionRefusedError:
             result['error'] = 'Connection refused'
             result['error_type'] = 'refused'
@@ -91,10 +103,14 @@ class DiscoveryService:
 
     def start_scan(self, targets: List[str], ports: List[int] = None,
                    profile_id: int = None, triggered_by: str = 'manual',
-                   triggered_by_user: str = None, app=None) -> int:
+                   triggered_by_user: str = None, app=None,
+                   timeout: int = None, max_workers: int = None,
+                   resolve_dns: bool = False) -> int:
         """Start an async scan. Returns scan_run_id immediately."""
         if ports is None:
             ports = [443]
+        scan_timeout = timeout or self.timeout
+        scan_workers = max_workers or self.max_workers
 
         # Build job list — auto-expand CIDR notation in targets
         jobs = []
@@ -126,6 +142,9 @@ class DiscoveryService:
             total_targets=len(jobs),
             triggered_by=triggered_by,
             triggered_by_user=triggered_by_user,
+            timeout=scan_timeout,
+            max_workers=scan_workers,
+            resolve_dns=resolve_dns,
         )
         db.session.add(run)
         db.session.commit()
@@ -134,7 +153,7 @@ class DiscoveryService:
         # Launch background thread
         thread = threading.Thread(
             target=self._execute_scan,
-            args=(run_id, jobs, profile_id, app),
+            args=(run_id, jobs, profile_id, app, scan_timeout, scan_workers, resolve_dns),
             daemon=True,
         )
         thread.start()
@@ -142,22 +161,25 @@ class DiscoveryService:
 
     def start_subnet_scan(self, cidr: str, ports: List[int] = None,
                           profile_id: int = None, triggered_by: str = 'manual',
-                          triggered_by_user: str = None, app=None) -> int:
+                          triggered_by_user: str = None, app=None,
+                          timeout: int = None, max_workers: int = None,
+                          resolve_dns: bool = False) -> int:
         """Start async subnet scan. Returns scan_run_id."""
         network = ipaddress.ip_network(cidr, strict=False)
         targets = [str(ip) for ip in network.hosts()]
         return self.start_scan(targets, ports, profile_id, triggered_by,
-                               triggered_by_user, app)
+                               triggered_by_user, app, timeout, max_workers, resolve_dns)
 
     def _execute_scan(self, run_id: int, jobs: List[Tuple[str, int]],
-                      profile_id: int, app):
+                      profile_id: int, app, timeout: int = 5,
+                      max_workers: int = 20, resolve_dns: bool = False):
         """Background thread: scan all targets and save results."""
         try:
             if app:
                 with app.app_context():
-                    self._do_scan(run_id, jobs, profile_id)
+                    self._do_scan(run_id, jobs, profile_id, timeout, max_workers, resolve_dns)
             else:
-                self._do_scan(run_id, jobs, profile_id)
+                self._do_scan(run_id, jobs, profile_id, timeout, max_workers, resolve_dns)
         except Exception as e:
             logger.error(f"Scan run {run_id} failed: {e}", exc_info=True)
             try:
@@ -169,7 +191,8 @@ class DiscoveryService:
             except Exception:
                 pass
 
-    def _do_scan(self, run_id: int, jobs: List[Tuple[str, int]], profile_id: int):
+    def _do_scan(self, run_id: int, jobs: List[Tuple[str, int]], profile_id: int,
+                 timeout: int = 5, max_workers: int = 20, resolve_dns: bool = False):
         """Core scanning logic running in background."""
         from websocket.emitters import (on_discovery_scan_started,
                                         on_discovery_scan_progress,
@@ -183,7 +206,7 @@ class DiscoveryService:
 
         profile_name = run.profile.name if run.profile else 'Ad-hoc scan'
         on_discovery_scan_started(run_id, profile_name, len(jobs))
-        logger.info(f"Discovery scan {run_id} started: {len(jobs)} targets")
+        logger.info(f"Discovery scan {run_id} started: {len(jobs)} targets (timeout={timeout}s, workers={max_workers}, rdns={resolve_dns})")
 
         # Build fingerprint index for matching
         fp_index = self._build_fingerprint_index()
@@ -197,8 +220,8 @@ class DiscoveryService:
         now = datetime.now(timezone.utc)
         last_progress = time.time()
 
-        with ThreadPoolExecutor(max_workers=self.max_workers) as pool:
-            futures = {pool.submit(self.probe_tls, h, p): (h, p) for h, p in jobs}
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {pool.submit(self.probe_tls, h, p, timeout, resolve_dns): (h, p) for h, p in jobs}
 
             for future in as_completed(futures):
                 r = future.result()
@@ -263,6 +286,8 @@ class DiscoveryService:
                 existing.scan_profile_id = profile_id or existing.scan_profile_id
                 existing.last_seen = now
                 existing.scan_error = None
+                if r.get('dns_hostname'):
+                    existing.dns_hostname = r['dns_hostname']
             else:
                 new_certs += 1
                 dc = DiscoveredCertificate(
@@ -277,6 +302,7 @@ class DiscoveryService:
                     pem_certificate=r.get('pem_certificate'),
                     status=status,
                     ucm_certificate_id=ucm_id,
+                    dns_hostname=r.get('dns_hostname'),
                     first_seen=now, last_seen=now,
                 )
                 db.session.add(dc)
@@ -545,6 +571,9 @@ class DiscoveryService:
             notify_on_new=data.get('notify_on_new', True),
             notify_on_change=data.get('notify_on_change', True),
             notify_on_expiry=data.get('notify_on_expiry', True),
+            timeout=min(max(int(data.get('timeout', 5)), 1), 30),
+            max_workers=min(max(int(data.get('max_workers', 20)), 1), 50),
+            resolve_dns=bool(data.get('resolve_dns', False)),
         )
         if profile.schedule_enabled:
             profile.next_scan_at = datetime.now(timezone.utc) + timedelta(
@@ -576,6 +605,12 @@ class DiscoveryService:
             profile.notify_on_change = data['notify_on_change']
         if 'notify_on_expiry' in data:
             profile.notify_on_expiry = data['notify_on_expiry']
+        if 'timeout' in data:
+            profile.timeout = min(max(int(data['timeout']), 1), 30)
+        if 'max_workers' in data:
+            profile.max_workers = min(max(int(data['max_workers']), 1), 50)
+        if 'resolve_dns' in data:
+            profile.resolve_dns = bool(data['resolve_dns'])
         profile.updated_at = datetime.now(timezone.utc)
         if profile.schedule_enabled and not profile.next_scan_at:
             profile.next_scan_at = datetime.now(timezone.utc) + timedelta(

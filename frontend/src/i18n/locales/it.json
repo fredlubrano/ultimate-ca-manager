@@ -2908,6 +2908,15 @@
     "lastChanged": "Ultimo cambiamento",
     "scanInfo": "Info scansione",
     "scanResults": "Risultati scansione",
-    "targetsScanned": "Obiettivi scansionati"
+    "targetsScanned": "Obiettivi scansionati",
+    "targetsPlaceholder": "esempio.com, 192.168.1.0/24, host:8443",
+    "targetsTagHelp": "Digita un host, IP o CIDR e premi Invio",
+    "advancedOptions": "Opzioni avanzate",
+    "reverseDns": "Risoluzione DNS inversa (record PTR)",
+    "timeout": "Timeout",
+    "concurrency": "Concorrenza",
+    "dnsHostname": "Nome host DNS",
+    "exportSuccess": "Esportazione completata",
+    "exportFailed": "Esportazione fallita"
   }
 }

@@ -2908,6 +2908,15 @@
     "lastChanged": "Última alteração",
     "scanInfo": "Info da varredura",
     "scanResults": "Resultados da varredura",
-    "targetsScanned": "Alvos varridos"
+    "targetsScanned": "Alvos varridos",
+    "targetsPlaceholder": "exemplo.com, 192.168.1.0/24, host:8443",
+    "targetsTagHelp": "Digite um host, IP ou CIDR e pressione Enter",
+    "advancedOptions": "Opções avançadas",
+    "reverseDns": "Resolução DNS reversa (registros PTR)",
+    "timeout": "Tempo limite",
+    "concurrency": "Concorrência",
+    "dnsHostname": "Nome de host DNS",
+    "exportSuccess": "Exportação concluída",
+    "exportFailed": "Falha na exportação"
   }
 }

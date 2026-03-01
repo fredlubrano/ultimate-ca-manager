@@ -20,6 +20,9 @@ class ScanProfile(db.Model):
     notify_on_new = db.Column(db.Boolean, nullable=False, default=True)
     notify_on_change = db.Column(db.Boolean, nullable=False, default=True)
     notify_on_expiry = db.Column(db.Boolean, nullable=False, default=True)
+    timeout = db.Column(db.Integer, nullable=False, default=5)
+    max_workers = db.Column(db.Integer, nullable=False, default=20)
+    resolve_dns = db.Column(db.Boolean, nullable=False, default=False)
     last_scan_at = db.Column(db.DateTime)
     next_scan_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -62,6 +65,9 @@ class ScanProfile(db.Model):
             'notify_on_new': self.notify_on_new,
             'notify_on_change': self.notify_on_change,
             'notify_on_expiry': self.notify_on_expiry,
+            'timeout': self.timeout,
+            'max_workers': self.max_workers,
+            'resolve_dns': self.resolve_dns,
             'last_scan_at': self.last_scan_at.isoformat() if self.last_scan_at else None,
             'next_scan_at': self.next_scan_at.isoformat() if self.next_scan_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -86,6 +92,9 @@ class ScanRun(db.Model):
     errors = db.Column(db.Integer, nullable=False, default=0)
     triggered_by = db.Column(db.String(32), nullable=False, default='manual')
     triggered_by_user = db.Column(db.String(100))
+    timeout = db.Column(db.Integer, nullable=False, default=5)
+    max_workers = db.Column(db.Integer, nullable=False, default=20)
+    resolve_dns = db.Column(db.Boolean, nullable=False, default=False)
 
     @property
     def duration_seconds(self):
@@ -109,6 +118,9 @@ class ScanRun(db.Model):
             'errors': self.errors,
             'triggered_by': self.triggered_by,
             'triggered_by_user': self.triggered_by_user,
+            'timeout': self.timeout,
+            'max_workers': self.max_workers,
+            'resolve_dns': self.resolve_dns,
             'duration_seconds': self.duration_seconds,
         }
 
@@ -134,6 +146,7 @@ class DiscoveredCertificate(db.Model):
     last_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     last_changed_at = db.Column(db.DateTime)
     previous_fingerprint = db.Column(db.String(64))
+    dns_hostname = db.Column(db.String(1024))
     scan_error = db.Column(db.Text)
 
     ucm_certificate = db.relationship('Certificate', backref='discovered_instances')
@@ -178,6 +191,7 @@ class DiscoveredCertificate(db.Model):
             'last_seen': self.last_seen.isoformat() if self.last_seen else None,
             'last_changed_at': self.last_changed_at.isoformat() if self.last_changed_at else None,
             'previous_fingerprint': self.previous_fingerprint,
+            'dns_hostname': self.dns_hostname,
             'is_expired': self.is_expired,
             'days_until_expiry': self.days_until_expiry,
             'scan_error': self.scan_error,

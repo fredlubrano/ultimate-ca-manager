@@ -2908,6 +2908,15 @@
     "lastChanged": "Остання зміна",
     "scanInfo": "Інфо сканування",
     "scanResults": "Результати сканування",
-    "targetsScanned": "Проскановано цілей"
+    "targetsScanned": "Проскановано цілей",
+    "targetsPlaceholder": "example.com, 192.168.1.0/24, host:8443",
+    "targetsTagHelp": "Введіть хост, IP або CIDR і натисніть Enter",
+    "advancedOptions": "Розширені параметри",
+    "reverseDns": "Зворотне DNS-розпізнавання (PTR-записи)",
+    "timeout": "Час очікування",
+    "concurrency": "Паралельність",
+    "dnsHostname": "DNS-ім'я хоста",
+    "exportSuccess": "Експорт завершено",
+    "exportFailed": "Помилка експорту"
   }
 }

@@ -9,7 +9,8 @@ import {
   Globe, MagnifyingGlass, ShieldCheck, Warning, Clock,
   ArrowsClockwise, Trash, Play, Plus, CheckCircle, XCircle,
   ClockCounterClockwise, FolderOpen, Pencil, CalendarBlank,
-  WifiHigh, WifiSlash, Certificate, ArrowSquareOut, Network
+  WifiHigh, WifiSlash, Certificate, ArrowSquareOut, Network,
+  Export, Gauge, Lightning
 } from '@phosphor-icons/react'
 import {
   ResponsiveLayout, ResponsiveDataTable,
@@ -17,6 +18,7 @@ import {
   LoadingSpinner, EmptyState, HelpCard,
   CompactSection, CompactGrid, CompactField, CompactHeader, CompactStats
 } from '../components'
+import TagsInput from '../components/ui/TagsInput'
 import { ConfirmModal } from '../components/FormModal'
 import { discoveryService } from '../services'
 import { useNotification } from '../contexts'
@@ -189,7 +191,7 @@ export default function DiscoveryPage() {
     try {
       setScanning(true)
       setShowQuickScan(false)
-      await discoveryService.scan(formData.targets, formData.ports)
+      await discoveryService.scan(formData)
     } catch (error) {
       showError(error.message || t('discovery.scanFailed'))
       setScanning(false)
@@ -218,6 +220,21 @@ export default function DiscoveryPage() {
       showError(error.message)
     }
     setDeleteConfirm(null)
+  }
+
+  const handleExport = async (format = 'csv') => {
+    try {
+      const blob = await discoveryService.export(format)
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `discovered_certificates.${format}`
+      a.click()
+      window.URL.revokeObjectURL(url)
+      showSuccess(t('discovery.exportSuccess'))
+    } catch (error) {
+      showError(error.message || t('discovery.exportFailed'))
+    }
   }
 
   // ── Stats bar ─────────────────────────────────────────
@@ -258,7 +275,12 @@ export default function DiscoveryPage() {
       priority: 2,
       hideOnMobile: true,
       render: (val, row) => (
-        <span className="text-text-secondary text-sm">{val || '—'}:{row.port || 443}</span>
+        <div className="text-sm">
+          <span className="text-text-secondary">{val || '—'}:{row.port || 443}</span>
+          {row.dns_hostname && (
+            <div className="text-2xs text-text-tertiary truncate">{row.dns_hostname}</div>
+          )}
+        </div>
       )
     },
     {
@@ -522,15 +544,27 @@ export default function DiscoveryPage() {
               ) : (
                 <div className="flex gap-2">
                   {discovered.length > 0 && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setDeleteConfirm({ type: 'all' })}
-                    >
-                      <Trash size={14} />
-                      {t('discovery.deleteAll')}
-                    </Button>
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleExport('csv')}
+                      >
+                        <Export size={14} />
+                        {t('common.export')}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setDeleteConfirm({ type: 'all' })}
+                        className="text-status-danger hover:text-status-danger"
+                      >
+                        <Trash size={14} />
+                        {t('discovery.deleteAll')}
+                      </Button>
+                    </>
                   )}
                   <Button
                     type="button"
@@ -780,18 +814,33 @@ export default function DiscoveryPage() {
 // Quick Scan Modal
 // ════════════════════════════════════════════════════════
 function QuickScanModal({ open, onClose, onScan, scanning, t }) {
-  const [targets, setTargets] = useState('')
+  const [targets, setTargets] = useState([])
   const [ports, setPorts] = useState('443')
+  const [timeout, setTimeout_] = useState(5)
+  const [maxWorkers, setMaxWorkers] = useState(20)
+  const [resolveDns, setResolveDns] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setTargets([]); setPorts('443'); setTimeout_(5)
+      setMaxWorkers(20); setResolveDns(false); setShowAdvanced(false)
+    }
+  }, [open])
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const targetList = targets.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+    if (!targets.length) return
     const portList = ports.split(/[,\s]+/).map(s => parseInt(s.trim())).filter(n => n > 0 && n <= 65535)
-    if (!targetList.length) return
-    onScan({ targets: targetList, ports: portList.length ? portList : [443] })
+    onScan({
+      targets,
+      ports: portList.length ? portList : [443],
+      timeout,
+      max_workers: maxWorkers,
+      resolve_dns: resolveDns,
+    })
   }
 
-  // Common port presets
   const portPresets = [
     { label: 'HTTPS (443)', value: '443' },
     { label: 'HTTPS + Alt', value: '443, 8443' },
@@ -801,14 +850,12 @@ function QuickScanModal({ open, onClose, onScan, scanning, t }) {
   return (
     <Modal open={open} onClose={onClose} title={t('discovery.quickScan')}>
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
-        <Textarea
+        <TagsInput
           label={t('discovery.targets')}
           value={targets}
-          onChange={(e) => setTargets(e.target.value)}
-          placeholder={`example.com\n192.168.1.0/24\n10.0.0.1:8443`}
-          rows={5}
-          required
-          helperText={t('discovery.targetsHelpDetailed')}
+          onChange={setTargets}
+          placeholder={t('discovery.targetsPlaceholder')}
+          helperText={t('discovery.targetsTagHelp')}
         />
         <div>
           <Input
@@ -836,11 +883,59 @@ function QuickScanModal({ open, onClose, onScan, scanning, t }) {
             ))}
           </div>
         </div>
+
+        {/* Advanced options toggle */}
+        <button
+          type="button"
+          className="flex items-center gap-1 text-xs text-text-tertiary hover:text-accent-primary transition-colors"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+        >
+          <Gauge size={12} />
+          {t('discovery.advancedOptions')}
+          <span className={cn("transition-transform", showAdvanced && "rotate-180")}>▾</span>
+        </button>
+
+        {showAdvanced && (
+          <div className="space-y-3 pl-2 border-l-2 border-border">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={resolveDns}
+                onChange={(e) => setResolveDns(e.target.checked)}
+                className="rounded border-border"
+              />
+              <span className="text-sm text-text-secondary">{t('discovery.reverseDns')}</span>
+            </label>
+            <div className="flex gap-3">
+              <Input
+                label={t('discovery.timeout')}
+                type="number"
+                value={timeout}
+                onChange={(e) => setTimeout_(Math.min(Math.max(parseInt(e.target.value) || 1, 1), 30))}
+                min={1}
+                max={30}
+                className="w-24"
+                helperText={`1-30s`}
+              />
+              <Input
+                label={t('discovery.concurrency')}
+                type="number"
+                value={maxWorkers}
+                onChange={(e) => setMaxWorkers(Math.min(Math.max(parseInt(e.target.value) || 1, 1), 50))}
+                min={1}
+                max={50}
+                className="w-24"
+                helperText={`1-50`}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button type="button" variant="secondary" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" disabled={scanning || !targets.trim()}>
+          <Button type="submit" disabled={scanning || !targets.length}>
             {scanning ? <ArrowsClockwise size={14} className="animate-spin" /> : <MagnifyingGlass size={14} />}
             {t('discovery.startScan')}
           </Button>
@@ -857,54 +952,73 @@ function QuickScanModal({ open, onClose, onScan, scanning, t }) {
 function ProfileFormModal({ open, onClose, onSave, profile, t }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [targets, setTargets] = useState('')
+  const [targets, setTargets] = useState([])
   const [ports, setPorts] = useState('443')
   const [schedule, setSchedule] = useState('0')
   const [enabled, setEnabled] = useState(true)
   const [notifyEmail, setNotifyEmail] = useState('')
+  const [timeout, setTimeout_] = useState(5)
+  const [maxWorkers, setMaxWorkers] = useState(20)
+  const [resolveDns, setResolveDns] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
 
   useEffect(() => {
     if (open) {
       if (profile) {
         setName(profile.name || '')
         setDescription(profile.description || '')
-        const t = profile.targets_list || (typeof profile.targets === 'string' ? JSON.parse(profile.targets) : profile.targets) || []
-        setTargets(t.join('\n'))
-        const p = profile.ports_list || (typeof profile.ports === 'string' ? JSON.parse(profile.ports) : profile.ports) || [443]
-        setPorts(p.join(', '))
-        setSchedule(String(profile.schedule_interval || 0))
-        setEnabled(profile.enabled !== false)
+        const tList = Array.isArray(profile.targets) ? profile.targets
+          : (typeof profile.targets === 'string' ? (() => { try { return JSON.parse(profile.targets) } catch { return profile.targets.split(',') } })() : [])
+        setTargets(tList.map(s => s.trim()).filter(Boolean))
+        const pList = Array.isArray(profile.ports) ? profile.ports
+          : (typeof profile.ports === 'string' ? (() => { try { return JSON.parse(profile.ports) } catch { return profile.ports.split(',') } })() : [443])
+        setPorts(pList.join(', '))
+        setSchedule(String(profile.schedule_interval_minutes || 0))
+        setEnabled(profile.schedule_enabled !== false)
         setNotifyEmail(profile.notify_email || '')
+        setTimeout_(profile.timeout || 5)
+        setMaxWorkers(profile.max_workers || 20)
+        setResolveDns(profile.resolve_dns || false)
+        setShowAdvanced(!!(profile.resolve_dns || profile.timeout !== 5 || profile.max_workers !== 20))
       } else {
-        setName(''); setDescription(''); setTargets(''); setPorts('443')
+        setName(''); setDescription(''); setTargets([]); setPorts('443')
         setSchedule('0'); setEnabled(true); setNotifyEmail('')
+        setTimeout_(5); setMaxWorkers(20); setResolveDns(false); setShowAdvanced(false)
       }
     }
   }, [open, profile])
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const targetList = targets.split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+    if (!name.trim() || !targets.length) return
     const portList = ports.split(/[,\s]+/).map(s => parseInt(s.trim())).filter(n => n > 0 && n <= 65535)
-    if (!name.trim() || !targetList.length) return
     onSave({
       name: name.trim(),
       description: description.trim(),
-      targets: targetList,
+      targets,
       ports: portList.length ? portList : [443],
-      schedule_interval: parseInt(schedule) || 0,
-      enabled,
+      schedule_interval_minutes: parseInt(schedule) || 0,
+      schedule_enabled: parseInt(schedule) > 0,
+      timeout,
+      max_workers: maxWorkers,
+      resolve_dns: resolveDns,
       notify_email: notifyEmail.trim() || null,
     })
   }
 
   const scheduleOptions = [
     { value: '0', label: t('discovery.manual') },
-    { value: '3600', label: t('discovery.every1h') },
-    { value: '21600', label: t('discovery.every6h') },
-    { value: '43200', label: t('discovery.every12h') },
-    { value: '86400', label: t('discovery.every24h') },
-    { value: '604800', label: t('discovery.every7d') },
+    { value: '60', label: t('discovery.every1h') },
+    { value: '360', label: t('discovery.every6h') },
+    { value: '720', label: t('discovery.every12h') },
+    { value: '1440', label: t('discovery.every24h') },
+    { value: '10080', label: t('discovery.every7d') },
+  ]
+
+  const portPresets = [
+    { label: 'HTTPS (443)', value: '443' },
+    { label: 'HTTPS + Alt', value: '443, 8443' },
+    { label: t('discovery.allCommon'), value: '443, 8443, 8080, 636, 993, 995, 465, 587' },
   ]
 
   return (
@@ -927,14 +1041,12 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t('discovery.profileDescPlaceholder')}
         />
-        <Textarea
+        <TagsInput
           label={t('discovery.targets')}
           value={targets}
-          onChange={(e) => setTargets(e.target.value)}
-          placeholder={`example.com\n192.168.1.0/24\n10.0.0.1:8443`}
-          rows={4}
-          required
-          helperText={t('discovery.targetsHelpDetailed')}
+          onChange={setTargets}
+          placeholder={t('discovery.targetsPlaceholder')}
+          helperText={t('discovery.targetsTagHelp')}
         />
         <div>
           <Input
@@ -945,11 +1057,7 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
             helperText={t('discovery.portsHelpDetailed')}
           />
           <div className="flex flex-wrap gap-1.5 mt-2">
-            {[
-              { label: 'HTTPS (443)', value: '443' },
-              { label: 'HTTPS + Alt', value: '443, 8443' },
-              { label: t('discovery.allCommon'), value: '443, 8443, 8080, 636, 993, 995, 465, 587' },
-            ].map((preset) => (
+            {portPresets.map((preset) => (
               <button
                 key={preset.value}
                 type="button"
@@ -979,11 +1087,59 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
           placeholder="admin@example.com"
           type="email"
         />
+
+        {/* Advanced scan options */}
+        <button
+          type="button"
+          className="flex items-center gap-1 text-xs text-text-tertiary hover:text-accent-primary transition-colors"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+        >
+          <Gauge size={12} />
+          {t('discovery.advancedOptions')}
+          <span className={cn("transition-transform", showAdvanced && "rotate-180")}>▾</span>
+        </button>
+
+        {showAdvanced && (
+          <div className="space-y-3 pl-2 border-l-2 border-border">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={resolveDns}
+                onChange={(e) => setResolveDns(e.target.checked)}
+                className="rounded border-border"
+              />
+              <span className="text-sm text-text-secondary">{t('discovery.reverseDns')}</span>
+            </label>
+            <div className="flex gap-3">
+              <Input
+                label={t('discovery.timeout')}
+                type="number"
+                value={timeout}
+                onChange={(e) => setTimeout_(Math.min(Math.max(parseInt(e.target.value) || 1, 1), 30))}
+                min={1}
+                max={30}
+                className="w-24"
+                helperText={`1-30s`}
+              />
+              <Input
+                label={t('discovery.concurrency')}
+                type="number"
+                value={maxWorkers}
+                onChange={(e) => setMaxWorkers(Math.min(Math.max(parseInt(e.target.value) || 1, 1), 50))}
+                min={1}
+                max={50}
+                className="w-24"
+                helperText={`1-50`}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button type="button" variant="secondary" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button type="submit" disabled={!name.trim() || !targets.trim()}>
+          <Button type="submit" disabled={!name.trim() || !targets.length}>
             {profile ? t('common.save') : t('common.create')}
           </Button>
         </div>
@@ -1016,6 +1172,9 @@ function DiscoveredDetailPanel({ item, t }) {
         <CompactGrid>
           <CompactField label={t('common.commonName')} value={name} />
           <CompactField label={t('discovery.host')} value={`${item.target}:${item.port || 443}`} />
+          {item.dns_hostname && (
+            <CompactField label={t('discovery.dnsHostname')} value={item.dns_hostname} />
+          )}
           <CompactField
             label={t('common.status')}
             value={
