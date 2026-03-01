@@ -357,7 +357,11 @@
     "est": "EST",
     "estShort": "EST",
     "new": "nuovo",
-    "completed": "Completato"
+    "completed": "Completato",
+    "notBefore": "Non prima di",
+    "notAfter": "Non dopo",
+    "fingerprint": "Impronta",
+    "started": "Avviato"
   },
   "commandPalette": {
     "searchPlaceholder": "Cerca comandi, certificati, CA, utenti...",
@@ -2787,7 +2791,7 @@
     "targets": "Obiettivi",
     "targetsHelp": "Un hostname o IP per riga (es: server.esempio.com, 10.0.0.1:8443)",
     "ports": "Porte",
-    "certsFound": "certificati trovati",
+    "certsFound": "Certificati trovati",
     "scanType": "Tipo di scansione",
     "scanTypeTargets": "Lista obiettivi",
     "scanTypeSubnet": "Sottorete (CIDR)",
@@ -2893,6 +2897,17 @@
     "unmanaged": "Non gestito",
     "targetsHelpDetailed": "Uno per riga: hostname, IP, sottorete CIDR (192.168.1.0/24) o host:porta (10.0.0.1:8443)",
     "portsHelpDetailed": "Porte TCP separate da virgola da scansionare su ogni target (es: 443, 8443, 636)",
-    "allCommon": "Tutte le porte TLS comuni"
+    "allCommon": "Tutte le porte TLS comuni",
+    "certDetails": "Dettagli certificato",
+    "certInfo": "Info certificato",
+    "profileDetails": "Dettagli profilo",
+    "runDetails": "Dettagli scansione",
+    "selectItem": "Seleziona un elemento per i dettagli",
+    "firstSeen": "Prima rilevazione",
+    "lastSeen": "Ultima rilevazione",
+    "lastChanged": "Ultimo cambiamento",
+    "scanInfo": "Info scansione",
+    "scanResults": "Risultati scansione",
+    "targetsScanned": "Obiettivi scansionati"
   }
 }

@@ -357,7 +357,11 @@
     "est": "EST",
     "estShort": "EST",
     "new": "新",
-    "completed": "已完成"
+    "completed": "已完成",
+    "notBefore": "生效日期",
+    "notAfter": "过期日期",
+    "fingerprint": "指纹",
+    "started": "开始时间"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",
@@ -2787,7 +2791,7 @@
     "targets": "目标",
     "targetsHelp": "每行一个主机名或IP（例: server.example.com, 10.0.0.1:8443）",
     "ports": "端口",
-    "certsFound": "证书已发现",
+    "certsFound": "发现的证书",
     "scanType": "扫描类型",
     "scanTypeTargets": "目标列表",
     "scanTypeSubnet": "子网（CIDR）",
@@ -2893,6 +2897,17 @@
     "unmanaged": "未管理",
     "targetsHelpDetailed": "每行一个：主机名、IP、CIDR子网 (192.168.1.0/24) 或 主机:端口 (10.0.0.1:8443)",
     "portsHelpDetailed": "以逗号分隔的TCP端口，用于扫描每个目标（例如：443, 8443, 636）",
-    "allCommon": "所有常见TLS端口"
+    "allCommon": "所有常见TLS端口",
+    "certDetails": "证书详情",
+    "certInfo": "证书信息",
+    "profileDetails": "配置文件详情",
+    "runDetails": "扫描详情",
+    "selectItem": "选择项目查看详情",
+    "firstSeen": "首次发现",
+    "lastSeen": "最后发现",
+    "lastChanged": "最后变更",
+    "scanInfo": "扫描信息",
+    "scanResults": "扫描结果",
+    "targetsScanned": "已扫描目标"
   }
 }

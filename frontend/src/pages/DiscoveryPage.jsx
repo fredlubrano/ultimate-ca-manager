@@ -53,6 +53,9 @@ export default function DiscoveryPage() {
   const [scanning, setScanning] = useState(false)
   const [scanProgress, setScanProgress] = useState(null)
 
+  // Selection (detail panel)
+  const [selectedItem, setSelectedItem] = useState(null)
+
   // Modals
   const [showProfileForm, setShowProfileForm] = useState(false)
   const [editingProfile, setEditingProfile] = useState(null)
@@ -139,6 +142,7 @@ export default function DiscoveryPage() {
   // ── Handlers ──────────────────────────────────────────
   const handleTabChange = (tabId) => {
     setActiveTab(tabId)
+    setSelectedItem(null)
     setPage(1)
     setSearchParams({ tab: tabId })
   }
@@ -495,12 +499,21 @@ export default function DiscoveryPage() {
             data={discovered}
             columns={discoveredColumns}
             loading={loading}
+            selectedId={selectedItem?.id}
+            onRowClick={(item) => item ? setSelectedItem(item) : setSelectedItem(null)}
             searchable
             searchPlaceholder={t('discovery.searchDiscovered')}
             searchKeys={['subject', 'target', 'issuer', 'serial_number']}
             columnStorageKey="ucm-discovery-columns"
             sortable
             defaultSort={{ key: 'cn', direction: 'asc' }}
+            pagination={{
+              page,
+              total: discoveredTotal,
+              perPage,
+              onChange: setPage,
+              onPerPageChange: (v) => { setPerPage(v); setPage(1) }
+            }}
             toolbarActions={canWrite('certificates') && (
               isMobile ? (
                 <Button type="button" size="lg" onClick={() => setShowQuickScan(true)} disabled={scanning} className="w-11 h-11 p-0">
@@ -549,12 +562,21 @@ export default function DiscoveryPage() {
             data={profiles}
             columns={profileColumns}
             loading={loading}
+            selectedId={selectedItem?.id}
+            onRowClick={(item) => item ? setSelectedItem(item) : setSelectedItem(null)}
             searchable
             searchPlaceholder={t('discovery.searchProfiles')}
             searchKeys={['name', 'description', 'targets']}
             columnStorageKey="ucm-discovery-profiles-columns"
             sortable
             defaultSort={{ key: 'name', direction: 'asc' }}
+            pagination={{
+              page,
+              total: profiles.length,
+              perPage,
+              onChange: setPage,
+              onPerPageChange: (v) => { setPerPage(v); setPage(1) }
+            }}
             toolbarActions={canWrite('certificates') && (
               isMobile ? (
                 <Button type="button" size="lg" onClick={() => { setEditingProfile(null); setShowProfileForm(true) }} className="w-11 h-11 p-0">
@@ -585,12 +607,21 @@ export default function DiscoveryPage() {
             data={runs}
             columns={historyColumns}
             loading={loading}
+            selectedId={selectedItem?.id}
+            onRowClick={(item) => item ? setSelectedItem(item) : setSelectedItem(null)}
             searchable
             searchPlaceholder={t('discovery.searchHistory')}
             searchKeys={['profile_name', 'status']}
             columnStorageKey="ucm-discovery-history-columns"
             sortable
             defaultSort={{ key: 'started_at', direction: 'desc' }}
+            pagination={{
+              page,
+              total: runsTotal,
+              perPage,
+              onChange: setPage,
+              onPerPageChange: (v) => { setPerPage(v); setPage(1) }
+            }}
             emptyIcon={ClockCounterClockwise}
             emptyTitle={t('discovery.noHistory')}
             emptyDescription={t('discovery.noHistoryDesc')}
@@ -650,6 +681,21 @@ export default function DiscoveryPage() {
     ? `${t('discovery.scanning')}… ${scanProgress.scanned}/${scanProgress.total}`
     : t('discovery.subtitle')
 
+  // ── Detail panel content ────────────────────────────────
+  const getSlideOverTitle = () => {
+    if (!selectedItem) return ''
+    if (activeTab === 'discovered') return t('discovery.certDetails')
+    if (activeTab === 'profiles') return t('discovery.profileDetails')
+    return t('discovery.runDetails')
+  }
+
+  const getSlideOverContent = () => {
+    if (!selectedItem) return null
+    if (activeTab === 'discovered') return <DiscoveredDetailPanel item={selectedItem} t={t} />
+    if (activeTab === 'profiles') return <ProfileDetailPanel item={selectedItem} t={t} />
+    return <RunDetailPanel item={selectedItem} t={t} />
+  }
+
   return (
     <>
       <ResponsiveLayout
@@ -662,6 +708,19 @@ export default function DiscoveryPage() {
         onTabChange={handleTabChange}
         tabLayout="sidebar"
         helpPageKey="discovery"
+        splitView={true}
+        splitEmptyContent={
+          <div className="h-full flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-14 h-14 rounded-xl bg-bg-tertiary flex items-center justify-center mb-3">
+              <Globe size={24} className="text-text-tertiary" />
+            </div>
+            <p className="text-sm text-text-secondary">{t('discovery.selectItem')}</p>
+          </div>
+        }
+        slideOverOpen={!!selectedItem}
+        onSlideOverClose={() => setSelectedItem(null)}
+        slideOverTitle={getSlideOverTitle()}
+        slideOverContent={getSlideOverContent()}
       >
         {renderContent()}
       </ResponsiveLayout>
@@ -877,13 +936,36 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
           required
           helperText={t('discovery.targetsHelpDetailed')}
         />
-        <Input
-          label={t('discovery.ports')}
-          value={ports}
-          onChange={(e) => setPorts(e.target.value)}
-          placeholder="443, 8443, 636"
-          helperText={t('discovery.portsHelpDetailed')}
-        />
+        <div>
+          <Input
+            label={t('discovery.ports')}
+            value={ports}
+            onChange={(e) => setPorts(e.target.value)}
+            placeholder="443, 8443, 636"
+            helperText={t('discovery.portsHelpDetailed')}
+          />
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {[
+              { label: 'HTTPS (443)', value: '443' },
+              { label: 'HTTPS + Alt', value: '443, 8443' },
+              { label: t('discovery.allCommon'), value: '443, 8443, 8080, 636, 993, 995, 465, 587' },
+            ].map((preset) => (
+              <button
+                key={preset.value}
+                type="button"
+                className={cn(
+                  'text-xs px-2 py-0.5 rounded-full border transition-colors',
+                  ports === preset.value
+                    ? 'bg-accent-primary text-white border-accent-primary'
+                    : 'border-border text-text-secondary hover:border-accent-primary hover:text-accent-primary'
+                )}
+                onClick={() => setPorts(preset.value)}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <Select
           label={t('discovery.schedule')}
           value={schedule}
@@ -907,5 +989,203 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
         </div>
       </form>
     </Modal>
+  )
+}
+
+
+// ════════════════════════════════════════════════════════
+// Detail Panels
+// ════════════════════════════════════════════════════════
+
+function DiscoveredDetailPanel({ item, t }) {
+  const extractCN = (s) => { const m = s?.match(/CN=([^,]+)/); return m ? m[1] : null }
+  const name = extractCN(item.subject) || item.target || t('common.unknown')
+  const days = item.days_until_expiry
+  const isExpired = item.is_expired
+  const isExpiring = !isExpired && days != null && days <= 30
+
+  const expiryValue = (() => {
+    const dateStr = item.not_after ? formatDate(item.not_after) : '—'
+    const suffix = isExpired ? ` (${t('common.expired')})` : isExpiring ? ` (${days}d)` : ''
+    return dateStr + suffix
+  })()
+
+  return (
+    <div className="p-4 space-y-4">
+      <CompactSection title={t('discovery.certInfo')}>
+        <CompactGrid>
+          <CompactField label={t('common.commonName')} value={name} />
+          <CompactField label={t('discovery.host')} value={`${item.target}:${item.port || 443}`} />
+          <CompactField
+            label={t('common.status')}
+            value={
+              <Badge
+                variant={item.status === 'managed' ? 'success' : 'warning'}
+                size="sm"
+                icon={item.status === 'managed' ? ShieldCheck : Warning}
+                dot
+              >
+                {item.status === 'managed' ? t('discovery.managed') : t('discovery.unmanaged')}
+              </Badge>
+            }
+          />
+          <CompactField label={t('common.serialNumber')} value={item.serial_number || '—'} mono />
+        </CompactGrid>
+      </CompactSection>
+
+      <CompactSection title={t('common.subject')}>
+        <div className="space-y-2">
+          <div>
+            <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-0.5">{t('common.subject')}</div>
+            <div className="text-xs font-mono text-text-primary break-all">{item.subject || '—'}</div>
+          </div>
+          <div>
+            <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-0.5">{t('common.issuer')}</div>
+            <div className="text-xs font-mono text-text-primary break-all">{item.issuer || '—'}</div>
+          </div>
+        </div>
+      </CompactSection>
+
+      <CompactSection title={t('common.validity')}>
+        <CompactGrid>
+          <CompactField label={t('common.notBefore')} value={item.not_before ? formatDate(item.not_before) : '—'} />
+          <CompactField
+            label={t('common.notAfter')}
+            value={expiryValue}
+            className={isExpired ? 'text-status-danger' : isExpiring ? 'text-status-warning' : ''}
+          />
+        </CompactGrid>
+      </CompactSection>
+
+      <CompactSection title={t('common.fingerprint')}>
+        <div>
+          <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-0.5">SHA-256</div>
+          <div className="text-xs font-mono text-text-primary break-all">{item.fingerprint_sha256 || '—'}</div>
+        </div>
+      </CompactSection>
+
+      <CompactSection title={t('discovery.scanInfo')}>
+        <CompactGrid>
+          <CompactField label={t('discovery.firstSeen')} value={item.first_seen ? formatDate(item.first_seen) : '—'} />
+          <CompactField label={t('discovery.lastSeen')} value={item.last_seen ? formatDate(item.last_seen) : '—'} />
+          {item.last_changed_at && (
+            <CompactField label={t('discovery.lastChanged')} value={formatDate(item.last_changed_at)} />
+          )}
+          {item.scan_error && (
+            <CompactField label={t('common.error')} value={item.scan_error} />
+          )}
+        </CompactGrid>
+      </CompactSection>
+    </div>
+  )
+}
+
+function ProfileDetailPanel({ item, t }) {
+  const targets = item.targets_list || (typeof item.targets === 'string' ? (() => { try { return JSON.parse(item.targets) } catch { return item.targets.split(',') } })() : item.targets) || []
+  const ports = item.ports_list || (typeof item.ports === 'string' ? (() => { try { return JSON.parse(item.ports) } catch { return item.ports.split(',') } })() : item.ports) || [443]
+
+  const scheduleLabel = (val) => {
+    if (!val) return t('discovery.manual')
+    const h = Math.round(val / 3600)
+    if (h < 24) return `${h}h`
+    return `${Math.round(h / 24)}d`
+  }
+
+  return (
+    <div className="p-4 space-y-4">
+      <CompactSection title={t('common.info')}>
+        <CompactGrid>
+          <CompactField label={t('common.name')} value={item.name} />
+          {item.description && <CompactField label={t('common.description')} value={item.description} />}
+          <CompactField
+            label={t('common.status')}
+            value={
+              <Badge variant={item.enabled ? 'success' : 'secondary'} size="sm" dot>
+                {item.enabled ? t('common.enabled') : t('common.disabled')}
+              </Badge>
+            }
+          />
+          <CompactField label={t('discovery.schedule')} value={scheduleLabel(item.schedule_interval)} />
+          {item.notify_email && <CompactField label={t('discovery.notifyEmail')} value={item.notify_email} />}
+        </CompactGrid>
+      </CompactSection>
+
+      <CompactSection title={t('discovery.targets')}>
+        <div className="space-y-1">
+          {targets.map((target, i) => (
+            <div key={i} className="text-sm font-mono text-text-secondary px-2 py-1 bg-bg-tertiary rounded">
+              {target}
+            </div>
+          ))}
+        </div>
+      </CompactSection>
+
+      <CompactSection title={t('discovery.ports')}>
+        <div className="flex flex-wrap gap-1.5">
+          {ports.map((port, i) => (
+            <Badge key={i} variant="secondary" size="sm">{port}</Badge>
+          ))}
+        </div>
+      </CompactSection>
+
+      {item.last_scan_at && (
+        <CompactSection title={t('discovery.lastScan')}>
+          <CompactGrid>
+            <CompactField label={t('common.date')} value={formatDate(item.last_scan_at)} />
+          </CompactGrid>
+        </CompactSection>
+      )}
+    </div>
+  )
+}
+
+function RunDetailPanel({ item, t }) {
+  const duration = item.duration_seconds
+  const durationStr = duration == null ? '—' : duration < 60 ? `${Math.round(duration)}s` : `${Math.round(duration / 60)}m ${Math.round(duration % 60)}s`
+
+  return (
+    <div className="p-4 space-y-4">
+      <CompactSection title={t('common.info')}>
+        <CompactGrid>
+          <CompactField label={t('discovery.profile')} value={item.profile_name || t('discovery.adHocScan')} />
+          <CompactField
+            label={t('common.status')}
+            value={
+              <Badge
+                variant={item.status === 'completed' ? 'success' : item.status === 'running' ? 'info' : 'danger'}
+                size="sm"
+                icon={item.status === 'completed' ? CheckCircle : item.status === 'running' ? ArrowsClockwise : XCircle}
+                dot={item.status === 'running'}
+              >
+                {item.status === 'completed' ? t('common.completed') : item.status === 'running' ? t('discovery.scanning') : t('common.failed')}
+              </Badge>
+            }
+          />
+        </CompactGrid>
+      </CompactSection>
+
+      <CompactSection title={t('discovery.scanResults')}>
+        <CompactGrid>
+          <CompactField label={t('discovery.certsFound')} value={item.certs_found ?? 0} />
+          <CompactField label={t('discovery.targetsScanned')} value={item.targets_scanned ?? 0} />
+        </CompactGrid>
+      </CompactSection>
+
+      <CompactSection title={t('common.timeline')}>
+        <CompactGrid>
+          <CompactField label={t('common.started')} value={item.started_at ? formatDate(item.started_at) : '—'} />
+          <CompactField label={t('common.completed')} value={item.completed_at ? formatDate(item.completed_at) : '—'} />
+          <CompactField label={t('discovery.duration')} value={durationStr} />
+        </CompactGrid>
+      </CompactSection>
+
+      {item.error_message && (
+        <CompactSection title={t('common.error')}>
+          <div className="text-sm text-status-danger bg-bg-tertiary rounded p-2 font-mono">
+            {item.error_message}
+          </div>
+        </CompactSection>
+      )}
+    </div>
   )
 }

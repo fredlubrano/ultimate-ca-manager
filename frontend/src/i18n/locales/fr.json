@@ -863,7 +863,11 @@
     "est": "EST",
     "estShort": "EST",
     "new": "nouveau",
-    "completed": "Terminé"
+    "completed": "Terminé",
+    "notBefore": "Pas avant",
+    "notAfter": "Pas après",
+    "fingerprint": "Empreinte",
+    "started": "Démarré"
   },
   "compare": {
     "title": "Comparer les certificats",
@@ -2790,7 +2794,7 @@
     "targets": "Cibles",
     "targetsHelp": "Un nom d'hôte ou IP par ligne (ex: serveur.exemple.com, 10.0.0.1:8443)",
     "ports": "Ports",
-    "certsFound": "certificats trouvés",
+    "certsFound": "Certificats trouvés",
     "scanType": "Type de scan",
     "scanTypeTargets": "Liste de cibles",
     "scanTypeSubnet": "Sous-réseau (CIDR)",
@@ -2896,6 +2900,17 @@
     "unmanaged": "Non géré",
     "targetsHelpDetailed": "Un par ligne : nom d'hôte, IP, sous-réseau CIDR (192.168.1.0/24) ou hôte:port (10.0.0.1:8443)",
     "portsHelpDetailed": "Ports TCP séparés par des virgules à scanner sur chaque cible (ex : 443, 8443, 636)",
-    "allCommon": "Tous les ports TLS courants"
+    "allCommon": "Tous les ports TLS courants",
+    "certDetails": "Détails du certificat",
+    "certInfo": "Info certificat",
+    "profileDetails": "Détails du profil",
+    "runDetails": "Détails du scan",
+    "selectItem": "Sélectionnez un élément pour voir les détails",
+    "firstSeen": "Première détection",
+    "lastSeen": "Dernière détection",
+    "lastChanged": "Dernier changement",
+    "scanInfo": "Info scan",
+    "scanResults": "Résultats du scan",
+    "targetsScanned": "Cibles scannées"
   }
 }

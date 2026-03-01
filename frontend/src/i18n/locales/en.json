@@ -357,7 +357,11 @@
     "est": "EST",
     "estShort": "EST",
     "new": "new",
-    "completed": "Completed"
+    "completed": "Completed",
+    "notBefore": "Not Before",
+    "notAfter": "Not After",
+    "fingerprint": "Fingerprint",
+    "started": "Started"
   },
   "commandPalette": {
     "searchPlaceholder": "Search commands, certificates, CAs, users...",
@@ -2790,7 +2794,7 @@
     "targets": "Targets",
     "targetsHelp": "One hostname or IP per line (e.g., server.example.com, 10.0.0.1:8443)",
     "ports": "Ports",
-    "certsFound": "certs found",
+    "certsFound": "Certs Found",
     "scanType": "Scan Type",
     "scanTypeTargets": "Target List",
     "scanTypeSubnet": "Subnet (CIDR)",
@@ -2896,6 +2900,17 @@
     "unmanaged": "Unmanaged",
     "targetsHelpDetailed": "One per line: hostname, IP, CIDR subnet (192.168.1.0/24), or host:port (10.0.0.1:8443)",
     "portsHelpDetailed": "Comma-separated TCP ports to scan on each target (e.g., 443, 8443, 636)",
-    "allCommon": "All common TLS ports"
+    "allCommon": "All common TLS ports",
+    "certDetails": "Certificate Details",
+    "certInfo": "Certificate Info",
+    "profileDetails": "Profile Details",
+    "runDetails": "Scan Run Details",
+    "selectItem": "Select an item to view details",
+    "firstSeen": "First Seen",
+    "lastSeen": "Last Seen",
+    "lastChanged": "Last Changed",
+    "scanInfo": "Scan Info",
+    "scanResults": "Scan Results",
+    "targetsScanned": "Targets Scanned"
   }
 }

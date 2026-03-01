@@ -357,7 +357,11 @@
     "est": "EST",
     "estShort": "EST",
     "new": "novo",
-    "completed": "Concluído"
+    "completed": "Concluído",
+    "notBefore": "Não antes de",
+    "notAfter": "Não depois de",
+    "fingerprint": "Impressão digital",
+    "started": "Iniciado"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
@@ -2787,7 +2791,7 @@
     "targets": "Alvos",
     "targetsHelp": "Um hostname ou IP por linha (ex: servidor.exemplo.com, 10.0.0.1:8443)",
     "ports": "Portas",
-    "certsFound": "certificados encontrados",
+    "certsFound": "Certificados encontrados",
     "scanType": "Tipo de varredura",
     "scanTypeTargets": "Lista de alvos",
     "scanTypeSubnet": "Sub-rede (CIDR)",
@@ -2893,6 +2897,17 @@
     "unmanaged": "Não gerenciado",
     "targetsHelpDetailed": "Um por linha: hostname, IP, sub-rede CIDR (192.168.1.0/24) ou host:porta (10.0.0.1:8443)",
     "portsHelpDetailed": "Portas TCP separadas por vírgula para escanear em cada alvo (ex: 443, 8443, 636)",
-    "allCommon": "Todas as portas TLS comuns"
+    "allCommon": "Todas as portas TLS comuns",
+    "certDetails": "Detalhes do certificado",
+    "certInfo": "Info do certificado",
+    "profileDetails": "Detalhes do perfil",
+    "runDetails": "Detalhes da varredura",
+    "selectItem": "Selecione um item para ver detalhes",
+    "firstSeen": "Primeira detecção",
+    "lastSeen": "Última detecção",
+    "lastChanged": "Última alteração",
+    "scanInfo": "Info da varredura",
+    "scanResults": "Resultados da varredura",
+    "targetsScanned": "Alvos varridos"
   }
 }
