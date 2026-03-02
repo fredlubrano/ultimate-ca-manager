@@ -2932,6 +2932,16 @@
     "timeout": "Timeout",
     "title": "Scoperta certificati",
     "triggeredBy": "Attivato da",
-    "unmanaged": "Non gestito"
+    "unmanaged": "Non gestito",
+    "helpScanProfiles": "I profili di scansione consentono di salvare configurazioni target per analisi ricorrenti. Imposta target, porte e numero di worker, poi esegui su richiesta o programma.",
+    "helpScanProfilesTitle": "Profili di Scansione",
+    "helpFilters": "Usa i filtri di stato per affinare i risultati: Gestito (noto a UCM), Non gestito (non nell'inventario), Errore (fallimenti scansione), Scaduto o In scadenza.",
+    "helpFiltersTitle": "Filtrare i Risultati",
+    "helpErrors": "Gli errori di scansione includono connessione rifiutata, errori DNS, problemi handshake TLS e timeout. Controlla la colonna errore per suggerimenti e riprova i singoli target.",
+    "helpErrorsTitle": "Risoluzione Errori",
+    "helpExport": "Esporta i certificati scoperti come CSV o JSON. Applica prima i filtri per esportare solo il sottoinsieme necessario.",
+    "helpExportTitle": "Esportare Risultati",
+    "helpSecurity": "Discovery blocca gli indirizzi interni/loopback per protezione SSRF. I target sono validati prima della scansione. Tutte le azioni sono registrate nell'audit.",
+    "helpSecurityTitle": "Sicurezza"
   }
 }

@@ -837,6 +837,21 @@ export default function DiscoveryPage() {
       <HelpCard title={t('discovery.quickScan')} variant="tip">
         {t('discovery.quickScanHelp')}
       </HelpCard>
+      <HelpCard title={t('discovery.helpScanProfilesTitle')} variant="info">
+        {t('discovery.helpScanProfiles')}
+      </HelpCard>
+      <HelpCard title={t('discovery.helpFiltersTitle')} variant="tip">
+        {t('discovery.helpFilters')}
+      </HelpCard>
+      <HelpCard title={t('discovery.helpErrorsTitle')} variant="warning">
+        {t('discovery.helpErrors')}
+      </HelpCard>
+      <HelpCard title={t('discovery.helpExportTitle')} variant="info">
+        {t('discovery.helpExport')}
+      </HelpCard>
+      <HelpCard title={t('discovery.helpSecurityTitle')} variant="info">
+        {t('discovery.helpSecurity')}
+      </HelpCard>
     </div>
   )
 

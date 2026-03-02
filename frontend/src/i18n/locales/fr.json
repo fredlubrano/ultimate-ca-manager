@@ -2935,6 +2935,16 @@
     "timeout": "Délai d'attente",
     "title": "Découverte de certificats",
     "triggeredBy": "Déclenché par",
-    "unmanaged": "Non géré"
+    "unmanaged": "Non géré",
+    "helpScanProfiles": "Les profils de scan vous permettent de sauvegarder des configurations cibles pour des analyses récurrentes. Définissez les cibles, ports et nombre de workers, puis lancez à la demande ou planifiez.",
+    "helpScanProfilesTitle": "Profils de Scan",
+    "helpFilters": "Utilisez les filtres de statut pour affiner les résultats : Géré (connu d'UCM), Non géré (pas dans l'inventaire), Erreur (échecs de scan), Expiré ou Expire bientôt.",
+    "helpFiltersTitle": "Filtrer les Résultats",
+    "helpErrors": "Les erreurs de scan incluent connexion refusée, échecs DNS, problèmes de poignée de main TLS et délais d'attente. Vérifiez la colonne d'erreur pour des indices et réessayez les cibles individuelles.",
+    "helpErrorsTitle": "Résolution des Erreurs",
+    "helpExport": "Exportez les certificats découverts en CSV ou JSON. Appliquez d'abord les filtres pour n'exporter que le sous-ensemble nécessaire.",
+    "helpExportTitle": "Exporter les Résultats",
+    "helpSecurity": "Le Discovery bloque les adresses internes/bouclage pour la protection SSRF. Les cibles sont validées avant le scan. Toutes les actions sont journalisées.",
+    "helpSecurityTitle": "Sécurité"
   }
 }

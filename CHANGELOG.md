@@ -11,6 +11,41 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.52] - 2025-07-14
+
+### Added
+- **Certificate Discovery** — Network scanner to find TLS certificates on hosts, IPs, and CIDR subnets
+- **Quick Scan** — Instant scan without saving a profile; enter targets and ports inline
+- **Scan Profiles** — Save and manage reusable scan configurations with targets, ports, worker count
+- **Discovered Certificates Inventory** — Track all found certs with managed/unmanaged/error/expired/expiring status
+- **Scan History** — Browse past scan runs with duration, found/new/changed/error counts
+- **CSV & JSON Export** — Export discovered certificates with all metadata
+- **SNI Probing** — Multi-hostname TLS handshake (PTR, target, bare IP) for maximum coverage
+- **SAN Extraction** — Extracts all Subject Alternative Names from discovered certificates
+- **Bulk DNS Resolution** — Parallel PTR lookups for IP-based targets
+- **WebSocket Progress** — Real-time scan progress updates in the UI
+- **Split-View Layout** — Table + detail panel for discovered certs, profiles, and scan history
+- **Clickable Stats** — Click stat cards to filter the table by status
+- **Error Visibility** — Scan errors shown in results with troubleshooting hints
+- **In-App Help** — Expanded help panel with scan profiles, filters, errors, export, and security docs
+- **Wiki Documentation** — Certificate Discovery page and updated Security page
+
+### Security
+- **SSRF Protection** — Blocks scanning of loopback, link-local, multicast, and reserved IPs
+- **DNS Rebinding Protection** — PTR hostname validated with forward DNS resolution
+- **2FA Brute-Force Protection** — 5 attempt limit with 15-minute lockout for TOTP verification
+- **WebAuthn Brute-Force Protection** — Same lockout pattern for FIDO2/WebAuthn verification
+- **User Enumeration Prevention** — Generic error messages for WebAuthn credential lookup
+- **SSO Audit Logging** — OAuth2/SAML login success/failure events logged to audit trail
+- **LDAP Audit Logging** — LDAP authentication attempts logged with success/failure
+- **LDAP Password Encryption** — LDAP bind passwords encrypted at rest using master key
+- **mTLS Trusted Proxies** — `UCM_TRUSTED_PROXIES` env var limits proxy client cert injection
+- **SSO Rate Limiting** — OAuth2 callback and LDAP login endpoints rate-limited
+- **Discovery Input Validation** — Target format regex, port range validation, field length limits
+- **API Error Sanitization** — ~150 error responses no longer expose internal details
+
+---
+
 ## [2.51] - 2026-02-28
 
 ### Added

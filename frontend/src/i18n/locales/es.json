@@ -2932,6 +2932,16 @@
     "timeout": "Tiempo de espera",
     "title": "Descubrimiento de certificados",
     "triggeredBy": "Activado por",
-    "unmanaged": "No gestionado"
+    "unmanaged": "No gestionado",
+    "helpScanProfiles": "Los perfiles de escaneo permiten guardar configuraciones de destino para análisis recurrentes. Defina destinos, puertos y cantidad de workers, luego ejecute bajo demanda o programe.",
+    "helpScanProfilesTitle": "Perfiles de Escaneo",
+    "helpFilters": "Use los filtros de estado para refinar resultados: Gestionado (conocido por UCM), No gestionado (no en inventario), Error (fallos de escaneo), Expirado o Por expirar.",
+    "helpFiltersTitle": "Filtrar Resultados",
+    "helpErrors": "Los errores de escaneo incluyen conexión rechazada, fallos DNS, problemas de handshake TLS y tiempos de espera. Revise la columna de error para pistas y reintente destinos individuales.",
+    "helpErrorsTitle": "Solución de Errores",
+    "helpExport": "Exporte certificados descubiertos como CSV o JSON. Aplique filtros primero para exportar solo el subconjunto necesario.",
+    "helpExportTitle": "Exportar Resultados",
+    "helpSecurity": "Discovery bloquea direcciones internas/loopback para protección SSRF. Los destinos se validan antes del escaneo. Todas las acciones se registran en auditoría.",
+    "helpSecurityTitle": "Seguridad"
   }
 }

@@ -2932,6 +2932,16 @@
     "timeout": "Tempo limite",
     "title": "Descoberta de certificados",
     "triggeredBy": "Acionado por",
-    "unmanaged": "Não gerenciado"
+    "unmanaged": "Não gerenciado",
+    "helpScanProfiles": "Perfis de varredura permitem salvar configurações de alvos para análises recorrentes. Defina alvos, portas e número de workers, depois execute sob demanda ou agende.",
+    "helpScanProfilesTitle": "Perfis de Varredura",
+    "helpFilters": "Use os filtros de status para refinar resultados: Gerenciado (conhecido pelo UCM), Não gerenciado (não no inventário), Erro (falhas de varredura), Expirado ou Expirando em breve.",
+    "helpFiltersTitle": "Filtrar Resultados",
+    "helpErrors": "Erros de varredura incluem conexão recusada, falhas DNS, problemas de handshake TLS e timeouts. Verifique a coluna de erro para dicas e tente novamente alvos individuais.",
+    "helpErrorsTitle": "Resolução de Erros",
+    "helpExport": "Exporte certificados descobertos como CSV ou JSON. Aplique filtros primeiro para exportar apenas o subconjunto necessário.",
+    "helpExportTitle": "Exportar Resultados",
+    "helpSecurity": "O Discovery bloqueia endereços internos/loopback para proteção SSRF. Os alvos são validados antes da varredura. Todas as ações são registradas em auditoria.",
+    "helpSecurityTitle": "Segurança"
   }
 }

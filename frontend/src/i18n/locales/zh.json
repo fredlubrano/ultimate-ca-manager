@@ -2932,6 +2932,16 @@
     "timeout": "超时时间",
     "title": "证书发现",
     "triggeredBy": "触发者",
-    "unmanaged": "未管理"
+    "unmanaged": "未管理",
+    "helpScanProfiles": "扫描配置文件允许保存目标配置以便重复扫描。设置目标、端口和工作线程数，然后按需运行或计划执行。",
+    "helpScanProfilesTitle": "扫描配置",
+    "helpFilters": "使用状态筛选器缩小结果范围：已管理（UCM已知）、未管理（不在清单中）、错误（扫描失败）、已过期或即将过期。",
+    "helpFiltersTitle": "筛选结果",
+    "helpErrors": "扫描错误包括连接被拒、DNS失败、TLS握手问题和超时。检查错误列获取提示并重试单个目标。",
+    "helpErrorsTitle": "故障排除",
+    "helpExport": "将发现的证书导出为CSV或JSON。先应用筛选器以仅导出所需的子集。",
+    "helpExportTitle": "导出结果",
+    "helpSecurity": "Discovery阻止内部/回环地址以防止SSRF攻击。目标在扫描前经过验证。所有扫描操作都记录在审计日志中。",
+    "helpSecurityTitle": "安全"
   }
 }

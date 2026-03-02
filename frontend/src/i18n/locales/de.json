@@ -2932,6 +2932,16 @@
     "timeout": "Zeitüberschreitung",
     "title": "Zertifikatserkennung",
     "triggeredBy": "Ausgelöst von",
-    "unmanaged": "Nicht verwaltet"
+    "unmanaged": "Nicht verwaltet",
+    "helpScanProfiles": "Scan-Profile ermöglichen das Speichern von Zielkonfigurationen für wiederkehrende Scans. Legen Sie Ziele, Ports und Worker-Anzahl fest, dann starten Sie bei Bedarf oder planen Sie ein.",
+    "helpScanProfilesTitle": "Scan-Profile",
+    "helpFilters": "Verwenden Sie die Statusfilter, um Ergebnisse einzugrenzen: Verwaltet (UCM bekannt), Nicht verwaltet (nicht im Inventar), Fehler (Scan-Fehler), Abgelaufen oder Bald ablaufend.",
+    "helpFiltersTitle": "Ergebnisse filtern",
+    "helpErrors": "Scan-Fehler umfassen Verbindungsablehnung, DNS-Fehler, TLS-Handshake-Probleme und Zeitüberschreitungen. Prüfen Sie die Fehlerspalte für Hinweise und versuchen Sie einzelne Ziele erneut.",
+    "helpErrorsTitle": "Fehlerbehebung",
+    "helpExport": "Exportieren Sie entdeckte Zertifikate als CSV oder JSON. Wenden Sie zuerst Filter an, um nur die benötigte Teilmenge zu exportieren.",
+    "helpExportTitle": "Ergebnisse exportieren",
+    "helpSecurity": "Discovery blockiert interne/Loopback-Adressen zum SSRF-Schutz. Ziele werden vor dem Scan validiert. Alle Scan-Aktionen werden protokolliert.",
+    "helpSecurityTitle": "Sicherheit"
   }
 }

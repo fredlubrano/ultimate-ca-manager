@@ -2935,6 +2935,16 @@
     "timeout": "Timeout",
     "title": "Certificate Discovery",
     "triggeredBy": "Triggered By",
-    "unmanaged": "Unmanaged"
+    "unmanaged": "Unmanaged",
+    "helpScanProfiles": "Scan profiles let you save target configurations for recurring scans. Set targets, ports, and worker count, then run on demand or schedule.",
+    "helpScanProfilesTitle": "Scan Profiles",
+    "helpFilters": "Use the status filter pills to narrow results: Managed (known to UCM), Unmanaged (not in inventory), Error (scan failures), Expired, or Expiring Soon.",
+    "helpFiltersTitle": "Filtering Results",
+    "helpErrors": "Scan errors include connection refused, DNS failures, TLS handshake issues, and timeouts. Check the error column for hints and retry individual targets.",
+    "helpErrorsTitle": "Troubleshooting Errors",
+    "helpExport": "Export discovered certificates as CSV or JSON. Apply filters first to export only the subset you need.",
+    "helpExportTitle": "Export Results",
+    "helpSecurity": "Discovery blocks internal/loopback addresses for SSRF protection. Targets are validated before scanning. All scan actions are audit-logged.",
+    "helpSecurityTitle": "Security"
   }
 }
