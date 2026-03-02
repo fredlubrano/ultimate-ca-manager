@@ -78,8 +78,6 @@ export default function DiscoveryPage() {
   // ── Data loaders ──────────────────────────────────────
   const loadStats = useCallback(async () => {
     try {
-      const params = {}
-      if (profileFilter) params.profile_id = profileFilter
       const res = await discoveryService.getStats(profileFilter)
       setStats(res.data ?? res)
     } catch { /* silent */ }
@@ -132,8 +130,6 @@ export default function DiscoveryPage() {
   }, [loadStats, loadProfiles, loadDiscovered, loadRuns])
 
   useEffect(() => { loadAll() }, [loadAll])
-  useEffect(() => { loadDiscovered() }, [page, perPage, statusFilter, profileFilter])
-  useEffect(() => { loadStats(); loadRuns() }, [profileFilter])
 
   // ── WebSocket ─────────────────────────────────────────
   useEffect(() => {
@@ -185,6 +181,7 @@ export default function DiscoveryPage() {
       await discoveryService.scan({ targets: [`${target}:${port}`], ports: [port], timeout: 10 })
     } catch (error) {
       showError(error.message || t('discovery.scanFailed'))
+    } finally {
       setScanning(false)
     }
   }
@@ -604,84 +601,13 @@ export default function DiscoveryPage() {
   ], [t])
 
   // ── Filter Bar Component ─────────────────────────────
-  const FilterBar = () => {
-    const activeProfile = profiles.find(p => p.id === profileFilter)
-    const statusFilters = [
-      { id: null, label: t('common.all'), icon: Globe },
-      { id: 'managed', label: t('discovery.managed'), icon: ShieldCheck, variant: 'success' },
-      { id: 'unmanaged', label: t('discovery.unmanaged'), icon: Warning, variant: 'warning' },
-      { id: 'error', label: t('common.error'), icon: WarningCircle, variant: 'danger' },
-    ]
-    return (
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border bg-bg-secondary/50">
-        {/* Status pills */}
-        <div className="flex items-center gap-1">
-          <Funnel size={13} className="text-text-tertiary mr-0.5" />
-          {statusFilters.map(f => (
-            <button
-              key={f.id ?? 'all'}
-              type="button"
-              onClick={() => { setStatusFilter(f.id); setPage(1) }}
-              className={cn(
-                'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all',
-                statusFilter === f.id
-                  ? 'bg-accent-primary text-white shadow-sm'
-                  : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
-              )}
-            >
-              <f.icon size={12} />
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Profile filter */}
-        {profiles.length > 0 && (
-          <>
-            <div className="w-px h-5 bg-border mx-1" />
-            <select
-              value={profileFilter ?? ''}
-              onChange={(e) => { handleProfileFilter(e.target.value ? parseInt(e.target.value) : null) }}
-              className="text-xs bg-bg-secondary border border-border rounded-lg px-2 py-1 text-text-secondary focus:border-accent-primary focus:outline-none"
-            >
-              <option value="">{t('discovery.allProfiles')}</option>
-              {profiles.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </>
-        )}
-
-        {/* Active filter indicator */}
-        {(statusFilter || profileFilter) && (
-          <>
-            <div className="w-px h-5 bg-border mx-1" />
-            <button
-              type="button"
-              onClick={() => { setStatusFilter(null); setProfileFilter(null); setPage(1) }}
-              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs text-accent-primary hover:bg-accent-op10 transition-colors"
-            >
-              <XCircle size={12} />
-              {t('discovery.clearFilters')}
-            </button>
-            {activeProfile && (
-              <span className="text-xs text-text-tertiary">
-                {t('discovery.filterByProfile')}: <span className="font-medium text-text-secondary">{activeProfile.name}</span>
-              </span>
-            )}
-          </>
-        )}
-      </div>
-    )
-  }
-
   // ── Tab content ───────────────────────────────────────
   const renderContent = () => {
     switch (activeTab) {
       case 'discovered':
         return (
           <div className="flex flex-col h-full">
-            <FilterBar />
+            <DiscoveryFilterBar statusFilter={statusFilter} setStatusFilter={setStatusFilter} profileFilter={profileFilter} profiles={profiles} handleProfileFilter={handleProfileFilter} setPage={setPage} t={t} />
             <div className="flex-1 min-h-0">
               <ResponsiveDataTable
             data={discovered}
@@ -1423,6 +1349,78 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
 
 
 // ════════════════════════════════════════════════════════
+// Filter Bar (extracted for stable React identity)
+// ════════════════════════════════════════════════════════
+
+function DiscoveryFilterBar({ statusFilter, setStatusFilter, profileFilter, profiles, handleProfileFilter, setPage, t }) {
+  const activeProfile = profiles.find(p => p.id === profileFilter)
+  const statusFilters = [
+    { id: null, label: t('common.all'), icon: Globe },
+    { id: 'managed', label: t('discovery.managed'), icon: ShieldCheck, variant: 'success' },
+    { id: 'unmanaged', label: t('discovery.unmanaged'), icon: Warning, variant: 'warning' },
+    { id: 'error', label: t('common.error'), icon: WarningCircle, variant: 'danger' },
+  ]
+  return (
+    <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border bg-secondary-op50">
+      <div className="flex items-center gap-1">
+        <Funnel size={13} className="text-text-tertiary mr-0.5" />
+        {statusFilters.map(f => (
+          <button
+            key={f.id ?? 'all'}
+            type="button"
+            onClick={() => { setStatusFilter(f.id); setPage(1) }}
+            className={cn(
+              'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all',
+              statusFilter === f.id
+                ? 'bg-accent-primary text-white shadow-sm'
+                : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+            )}
+          >
+            <f.icon size={12} />
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {profiles.length > 0 && (
+        <>
+          <div className="w-px h-5 bg-border mx-1" />
+          <select
+            value={profileFilter ?? ''}
+            onChange={(e) => { handleProfileFilter(e.target.value ? parseInt(e.target.value) : null) }}
+            className="text-xs bg-bg-secondary border border-border rounded-lg px-2 py-1 text-text-secondary focus:border-accent-primary focus:outline-none"
+          >
+            <option value="">{t('discovery.allProfiles')}</option>
+            {profiles.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+        </>
+      )}
+
+      {(statusFilter || profileFilter) && (
+        <>
+          <div className="w-px h-5 bg-border mx-1" />
+          <button
+            type="button"
+            onClick={() => { setStatusFilter(null); handleProfileFilter(null); setPage(1) }}
+            className="flex items-center gap-1 px-2 py-1 rounded-full text-xs text-accent-primary hover:bg-accent-op10 transition-colors"
+          >
+            <XCircle size={12} />
+            {t('discovery.clearFilters')}
+          </button>
+          {activeProfile && (
+            <span className="text-xs text-text-tertiary">
+              {t('discovery.filterByProfile')}: <span className="font-medium text-text-secondary">{activeProfile.name}</span>
+            </span>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════════════════
 // Detail Panels
 // ════════════════════════════════════════════════════════
 
@@ -1520,7 +1518,7 @@ function DiscoveredDetailPanel({ item, t }) {
                 value={<Badge variant="danger" size="sm" icon={WarningCircle} dot>{t('common.error')}</Badge>}
               />
             </CompactGrid>
-            <div className="rounded-lg border border-status-danger/20 bg-status-danger/5 p-3">
+            <div className="rounded-lg border border-accent-danger-op20 bg-accent-danger-op5 p-3">
               <div className="text-xs font-mono text-status-danger break-all">{item.scan_error}</div>
             </div>
             {errorHint && (

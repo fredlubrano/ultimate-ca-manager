@@ -13,6 +13,19 @@ logger = logging.getLogger(__name__)
 
 bp = Blueprint('discovery', __name__)
 
+
+def _safe_int(val, default, lo=None, hi=None):
+    """Safely cast to int with bounds. Returns default on invalid input."""
+    try:
+        v = int(val)
+    except (ValueError, TypeError):
+        return default
+    if lo is not None:
+        v = max(v, lo)
+    if hi is not None:
+        v = min(v, hi)
+    return v
+
 _service = None
 
 
@@ -153,8 +166,8 @@ def ad_hoc_scan():
     targets = data.get('targets', [])
     subnet = data.get('subnet')
     ports = data.get('ports', [443])
-    timeout = min(max(int(data.get('timeout', 5)), 1), 30)
-    scan_max_workers = min(max(int(data.get('max_workers', 20)), 1), 50)
+    timeout = _safe_int(data.get('timeout', 5), 5, lo=1, hi=30)
+    scan_max_workers = _safe_int(data.get('max_workers', 20), 20, lo=1, hi=50)
     resolve_dns = bool(data.get('resolve_dns', False))
 
     if not targets and not subnet:
@@ -203,8 +216,8 @@ def ad_hoc_scan():
 @require_auth(['read:certificates'])
 def list_runs():
     """List scan run history."""
-    limit = min(int(request.args.get('limit', 50)), 200)
-    offset = int(request.args.get('offset', 0))
+    limit = _safe_int(request.args.get('limit', 50), 50, lo=1, hi=200)
+    offset = _safe_int(request.args.get('offset', 0), 0, lo=0)
     profile_id = request.args.get('profile_id', type=int)
     svc = _get_service()
     items, total = svc.get_runs(limit=limit, offset=offset, profile_id=profile_id)
@@ -228,8 +241,8 @@ def get_run(run_id):
 @require_auth(['read:certificates'])
 def list_discovered():
     """List discovered certificates with pagination and filtering."""
-    limit = min(int(request.args.get('limit', 50)), 200)
-    offset = int(request.args.get('offset', 0))
+    limit = _safe_int(request.args.get('limit', 50), 50, lo=1, hi=200)
+    offset = _safe_int(request.args.get('offset', 0), 0, lo=0)
     profile_id = request.args.get('profile_id', type=int)
     status = request.args.get('status')
     svc = _get_service()

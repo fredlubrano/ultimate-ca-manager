@@ -6,6 +6,7 @@ SIMPLE, ROBUST, TESTABLE
 """
 
 import hashlib
+import logging
 import secrets
 import json
 from datetime import datetime, timedelta
@@ -21,6 +22,8 @@ except ImportError:
     APIKey = None
     User = None
     db = None
+
+logger = logging.getLogger(__name__)
 
 
 class AuthManager:
@@ -131,8 +134,7 @@ class AuthManager:
                 login_time = datetime.fromisoformat(login_time_str)
                 max_lifetime = self._get_session_max_lifetime()
                 if (now - login_time).total_seconds() > max_lifetime:
-                    import logging
-                    logging.getLogger(__name__).info(
+                    logger.info(
                         f"Session expired (max lifetime): user={user.username}, "
                         f"login_time={login_time_str}, max={max_lifetime}s"
                     )
@@ -148,8 +150,7 @@ class AuthManager:
                 last_activity = datetime.fromisoformat(last_activity_str)
                 inactivity_timeout = self._get_session_timeout()
                 if (now - last_activity).total_seconds() > inactivity_timeout:
-                    import logging
-                    logging.getLogger(__name__).info(
+                    logger.info(
                         f"Session expired (inactivity): user={user.username}, "
                         f"last_activity={last_activity_str}, timeout={inactivity_timeout}s"
                     )
