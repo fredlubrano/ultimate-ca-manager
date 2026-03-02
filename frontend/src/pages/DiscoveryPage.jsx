@@ -2,7 +2,7 @@
  * DiscoveryPage — Certificate Discovery with scan profiles, results & history
  * Pattern: CSRsPage (stats + sidebar tabs + table) 
  */
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, Fragment } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -1425,6 +1425,51 @@ function ProfileFormModal({ open, onClose, onSave, profile, t }) {
 // Detail Panels
 // ════════════════════════════════════════════════════════
 
+// OID-to-label mapping for DN fields
+const DN_LABELS = {
+  'CN': 'Common Name',
+  'O': 'Organization',
+  'OU': 'Org. Unit',
+  'L': 'Locality',
+  'ST': 'State',
+  'C': 'Country',
+  'SN': 'Surname',
+  'GN': 'Given Name',
+  'DC': 'Domain Component',
+  '1.2.840.113549.1.9.1': 'Email',
+  'emailAddress': 'Email',
+  'E': 'Email',
+  'STREET': 'Street',
+  'SERIALNUMBER': 'Serial',
+}
+
+function FormattedDN({ dn }) {
+  if (!dn) return <span className="text-xs text-text-tertiary">—</span>
+  // Parse DN: handles both KEY=value and OID=value formats
+  const parts = []
+  const regex = /([\w.]+)=([^,]*(?:,(?!\s*[A-Z0-9.]+=).*)*)/g
+  let match
+  while ((match = regex.exec(dn)) !== null) {
+    parts.push({ key: match[1].trim(), value: match[2].trim() })
+  }
+  if (!parts.length) return <span className="text-xs font-mono text-text-primary break-all">{dn}</span>
+
+  return (
+    <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+      {parts.map((p, i) => (
+        <Fragment key={i}>
+          <span className="text-2xs text-text-tertiary font-medium whitespace-nowrap py-0.5">
+            {DN_LABELS[p.key] || p.key}
+          </span>
+          <span className="text-xs text-text-primary break-all py-0.5">
+            {p.value}
+          </span>
+        </Fragment>
+      ))}
+    </div>
+  )
+}
+
 function DiscoveredDetailPanel({ item, t }) {
   const extractCN = (s) => { const m = s?.match(/CN=([^,]+)/); return m ? m[1] : null }
   const isError = item.status === 'error'
@@ -1525,14 +1570,14 @@ function DiscoveredDetailPanel({ item, t }) {
       </CompactSection>
 
       <CompactSection title={t('common.subject')}>
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div>
-            <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-0.5">{t('common.subject')}</div>
-            <div className="text-xs font-mono text-text-primary break-all">{item.subject || '—'}</div>
+            <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-1.5">{t('common.subject')}</div>
+            <FormattedDN dn={item.subject} />
           </div>
           <div>
-            <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-0.5">{t('common.issuer')}</div>
-            <div className="text-xs font-mono text-text-primary break-all">{item.issuer || '—'}</div>
+            <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-1.5">{t('common.issuer')}</div>
+            <FormattedDN dn={item.issuer} />
           </div>
         </div>
       </CompactSection>
