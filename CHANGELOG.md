@@ -11,6 +11,15 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.55] - 2026-03-05
+
+### Fixed
+- **Certificate DN Formatting** — Subject and issuer fields now use RFC 4514 abbreviations (CN, C, ST, O, L) instead of verbose Python OID names (commonName, countryName, etc.)
+- **ACME Order Status Transitions** — Failed verifications reset to "pending" (retry allowed); successful verifications immediately poll Let's Encrypt for actual status (#29)
+- **Auto-fix Migration** — New migration automatically corrects existing certificates with verbose DN format on upgrade
+
+---
+
 ## [2.54] - 2026-03-05
 
 ### Fixed
