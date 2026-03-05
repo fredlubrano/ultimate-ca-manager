@@ -544,9 +544,21 @@ class TrustStoreService:
         # Load CSR
         csr = x509.load_pem_x509_csr(csr_pem, default_backend())
         
+        # If CSR has empty subject, populate CN from first SAN DNS name
+        subject = csr.subject
+        if not list(subject):
+            try:
+                san_ext = csr.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+                for name in san_ext.value:
+                    if isinstance(name, x509.DNSName):
+                        subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, name.value)])
+                        break
+            except x509.ExtensionNotFound:
+                pass
+        
         # Build certificate from CSR
         builder = x509.CertificateBuilder()
-        builder = builder.subject_name(csr.subject)
+        builder = builder.subject_name(subject)
         builder = builder.issuer_name(ca_cert.subject)
         builder = builder.public_key(csr.public_key())
         builder = builder.serial_number(x509.random_serial_number())
@@ -607,6 +619,33 @@ class TrustStoreService:
                         decipher_only=False,
                     ),
                     critical=True,
+                )
+        
+        # Add Extended Key Usage if not in CSR
+        try:
+            csr.extensions.get_extension_for_oid(ExtensionOID.EXTENDED_KEY_USAGE)
+        except x509.ExtensionNotFound:
+            if cert_type == 'server_cert':
+                builder = builder.add_extension(
+                    x509.ExtendedKeyUsage([
+                        x509.oid.ExtendedKeyUsageOID.SERVER_AUTH,
+                    ]),
+                    critical=False,
+                )
+            elif cert_type in ('usr_cert', 'client_cert'):
+                builder = builder.add_extension(
+                    x509.ExtendedKeyUsage([
+                        x509.oid.ExtendedKeyUsageOID.CLIENT_AUTH,
+                    ]),
+                    critical=False,
+                )
+            elif cert_type in ('combined_server_client', 'combined_cert'):
+                builder = builder.add_extension(
+                    x509.ExtendedKeyUsage([
+                        x509.oid.ExtendedKeyUsageOID.SERVER_AUTH,
+                        x509.oid.ExtendedKeyUsageOID.CLIENT_AUTH,
+                    ]),
+                    critical=False,
                 )
         
         # Sign
