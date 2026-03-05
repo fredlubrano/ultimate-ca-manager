@@ -1037,7 +1037,14 @@
     "groups": {
       "letsEncrypt": "Let's Encrypt",
       "localAcme": "ACME Locale"
-    }
+    },
+    "challengeValidated": "Challenge validata — ordine pronto per la finalizzazione",
+    "checkStatus": "Verifica stato",
+    "retryVerification": "Riprova",
+    "orderReady": "L'ordine è pronto per la finalizzazione",
+    "orderInvalid": "Validazione dell'ordine fallita",
+    "orderStillProcessing": "L'ordine è ancora in fase di validazione dal server ACME",
+    "statusCheckFailed": "Verifica dello stato fallita"
   },
   "scep": {
     "title": "Protocollo SCEP",

@@ -331,7 +331,7 @@ def verify_challenges(order_id):
     if not order:
         return error_response('Order not found', 404)
     
-    if order.status not in ['pending', 'processing']:
+    if order.status not in ['pending', 'processing', 'validating']:
         return error_response(f'Order cannot be verified (status: {order.status})', 400)
     
     data = request.json or {}
@@ -353,11 +353,27 @@ def verify_challenges(order_id):
             success, message = client.verify_challenge(order, domain)
             results[domain] = {'success': success, 'message': message}
         
-        # Update order status
-        order.status = 'validating'
-        db.session.commit()
-        
         all_success = all(r['success'] for r in results.values())
+        any_failed = any(not r['success'] for r in results.values())
+        
+        if all_success:
+            # Check if LE has already validated (poll order status)
+            try:
+                le_status, _ = client.check_order_status(order)
+                if le_status in ['ready', 'valid']:
+                    order.status = le_status
+                else:
+                    order.status = 'validating'
+            except Exception:
+                order.status = 'validating'
+        elif any_failed:
+            # Reset to pending so user can retry
+            order.status = 'pending'
+            order.error_message = '; '.join(
+                f"{d}: {r['message']}" for d, r in results.items() if not r['success']
+            )
+        
+        db.session.commit()
         
         return success_response(
             data={

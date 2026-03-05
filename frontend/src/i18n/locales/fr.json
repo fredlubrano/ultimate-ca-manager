@@ -300,7 +300,14 @@
     "groups": {
       "letsEncrypt": "Let's Encrypt",
       "localAcme": "ACME Local"
-    }
+    },
+    "challengeValidated": "Challenge validé — commande prête pour finalisation",
+    "checkStatus": "Vérifier le statut",
+    "retryVerification": "Réessayer",
+    "orderReady": "La commande est prête pour la finalisation",
+    "orderInvalid": "La validation de la commande a échoué",
+    "orderStillProcessing": "La commande est encore en cours de validation par le serveur ACME",
+    "statusCheckFailed": "Échec de la vérification du statut"
   },
   "audit": {
     "event": "Événement",

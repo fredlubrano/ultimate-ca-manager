@@ -1037,7 +1037,14 @@
     "groups": {
       "letsEncrypt": "Let's Encrypt",
       "localAcme": "Локальний ACME"
-    }
+    },
+    "challengeValidated": "Виклик підтверджено — замовлення готове до завершення",
+    "checkStatus": "Перевірити статус",
+    "retryVerification": "Повторити",
+    "orderReady": "Замовлення готове до завершення",
+    "orderInvalid": "Перевірка замовлення не вдалася",
+    "orderStillProcessing": "Замовлення ще перевіряється сервером ACME",
+    "statusCheckFailed": "Не вдалося перевірити статус"
   },
   "scep": {
     "title": "Протокол SCEP",

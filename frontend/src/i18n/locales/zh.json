@@ -1037,7 +1037,14 @@
     "groups": {
       "letsEncrypt": "Let's Encrypt",
       "localAcme": "本地ACME"
-    }
+    },
+    "challengeValidated": "挑战已验证 — 订单准备好进行最终化",
+    "checkStatus": "检查状态",
+    "retryVerification": "重试",
+    "orderReady": "订单已准备好进行最终化",
+    "orderInvalid": "订单验证失败",
+    "orderStillProcessing": "订单仍在被ACME服务器验证中",
+    "statusCheckFailed": "检查状态失败"
   },
   "scep": {
     "title": "SCEP协议",

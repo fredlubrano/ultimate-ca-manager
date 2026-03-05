@@ -239,11 +239,37 @@ export default function ACMEPage() {
   
   const handleVerifyChallenge = async (order) => {
     try {
-      await acmeService.verifyChallenge(order.id)
-      showSuccess(t('acme.challengeVerificationStarted'))
+      const result = await acmeService.verifyChallenge(order.id)
+      const updatedOrder = result.data?.order
+      if (updatedOrder?.status === 'ready') {
+        showSuccess(t('acme.challengeValidated'))
+      } else if (updatedOrder?.status === 'pending') {
+        showWarning(result.message || t('acme.challengeVerificationFailed'))
+      } else {
+        showSuccess(t('acme.challengeVerificationStarted'))
+      }
       loadData()
     } catch (error) {
       showError(error.message || t('acme.challengeVerificationFailed'))
+    }
+  }
+  
+  const handleCheckOrderStatus = async (order) => {
+    try {
+      const result = await acmeService.checkOrderStatus(order.id)
+      const status = result.data?.status
+      if (status === 'ready') {
+        showSuccess(t('acme.orderReady'))
+      } else if (status === 'valid' || status === 'issued') {
+        showSuccess(t('acme.orderFinalized'))
+      } else if (status === 'invalid') {
+        showError(t('acme.orderInvalid'))
+      } else {
+        showWarning(t('acme.orderStillProcessing'))
+      }
+      loadData()
+    } catch (error) {
+      showError(error.message || t('acme.statusCheckFailed'))
     }
   }
   
@@ -1010,6 +1036,18 @@ export default function ACMEPage() {
                           <Play size={12} />
                           {t('acme.verifyChallenge')}
                         </Button>
+                      )}
+                      {order.status === 'validating' && (
+                        <>
+                          <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleCheckOrderStatus(order) }}>
+                            <MagnifyingGlass size={12} />
+                            {t('acme.checkStatus')}
+                          </Button>
+                          <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleVerifyChallenge(order) }}>
+                            <Play size={12} />
+                            {t('acme.retryVerification')}
+                          </Button>
+                        </>
                       )}
                       {order.status === 'ready' && (
                         <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleFinalizeOrder(order) }}>

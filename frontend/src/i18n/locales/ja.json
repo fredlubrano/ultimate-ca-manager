@@ -1037,7 +1037,14 @@
     "groups": {
       "letsEncrypt": "Let's Encrypt",
       "localAcme": "ローカルACME"
-    }
+    },
+    "challengeValidated": "チャレンジ検証済み — オーダーの最終化準備完了",
+    "checkStatus": "ステータス確認",
+    "retryVerification": "再試行",
+    "orderReady": "オーダーの最終化準備が完了しました",
+    "orderInvalid": "オーダーの検証に失敗しました",
+    "orderStillProcessing": "オーダーはACMEサーバーで検証中です",
+    "statusCheckFailed": "ステータス確認に失敗しました"
   },
   "scep": {
     "title": "SCEPプロトコル",

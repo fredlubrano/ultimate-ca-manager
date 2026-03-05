@@ -1037,7 +1037,14 @@
     "groups": {
       "letsEncrypt": "Let's Encrypt",
       "localAcme": "Lokales ACME"
-    }
+    },
+    "challengeValidated": "Challenge validiert — Auftrag bereit zur Finalisierung",
+    "checkStatus": "Status prüfen",
+    "retryVerification": "Erneut versuchen",
+    "orderReady": "Auftrag ist bereit zur Finalisierung",
+    "orderInvalid": "Auftragsvalidierung fehlgeschlagen",
+    "orderStillProcessing": "Auftrag wird noch vom ACME-Server validiert",
+    "statusCheckFailed": "Statusprüfung fehlgeschlagen"
   },
   "scep": {
     "title": "SCEP-Protokoll",
