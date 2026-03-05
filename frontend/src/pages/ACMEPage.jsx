@@ -923,6 +923,132 @@ export default function ACMEPage() {
           {t('acme.viewHistoryForCertificates')}
         </span>
       </HelpCard>
+
+      {/* Client Orders */}
+      <CompactSection title={`${t('acme.orders')} (${clientOrders.length})`} icon={Certificate}>
+        {clientOrders.length === 0 ? (
+          <p className="text-xs text-text-tertiary py-4 text-center">{t('acme.noCertificateOrders')}</p>
+        ) : (
+          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+            {clientOrders.map((order) => (
+              <div 
+                key={order.id} 
+                className={cn(
+                  "p-3 bg-tertiary-op50 rounded-lg border transition-colors cursor-pointer",
+                  selectedClientOrder?.id === order.id 
+                    ? "border-accent-primary ring-1 ring-accent-primary/30" 
+                    : "border-border-op50 hover:border-border"
+                )}
+                onClick={() => setSelectedClientOrder(selectedClientOrder?.id === order.id ? null : order)}
+              >
+                {/* Header: Domain + Status */}
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-sm font-medium text-text-primary truncate flex-1">
+                    {order.primary_domain || order.domains?.[0] || t('common.unknown')}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={order.environment === 'production' ? 'default' : 'secondary'} size="sm">
+                      {order.environment}
+                    </Badge>
+                    <Badge 
+                      variant={
+                        order.status === 'valid' || order.status === 'issued' ? 'success' : 
+                        order.status === 'pending' || order.status === 'processing' || order.status === 'validating' ? 'warning' :
+                        order.status === 'ready' ? 'info' :
+                        'error'
+                      } 
+                      size="sm"
+                    >
+                      {order.status}
+                    </Badge>
+                  </div>
+                </div>
+                
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-text-tertiary">{t('acme.method')}</span>
+                    <span className="text-text-secondary font-medium">{order.challenge_type || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-text-tertiary">{t('common.created')}</span>
+                    <span className="text-text-secondary">{order.created_at ? formatDate(order.created_at) : 'N/A'}</span>
+                  </div>
+                  {order.dns_provider_name && (
+                    <div className="flex justify-between col-span-2">
+                      <span className="text-text-tertiary">{t('acme.dnsProviders')}</span>
+                      <span className="text-text-secondary">{order.dns_provider_name}</span>
+                    </div>
+                  )}
+                  {order.domains?.length > 1 && (
+                    <div className="flex justify-between col-span-2">
+                      <span className="text-text-tertiary">{t('acme.domains')}</span>
+                      <span className="text-text-secondary truncate max-w-[200px]" title={order.domains.join(', ')}>
+                        {order.domains.join(', ')}
+                      </span>
+                    </div>
+                  )}
+                  {order.error_message && (
+                    <div className="col-span-2 mt-1 pt-1 border-t border-border-op30">
+                      <span className="text-xs status-danger-text">{order.error_message}</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Expanded Detail + Actions */}
+                {selectedClientOrder?.id === order.id && (
+                  <div className="mt-3 pt-3 border-t border-border-op30 space-y-2">
+                    {order.expires_at && (
+                      <div className="flex justify-between text-xs">
+                        <span className="text-text-tertiary">{t('common.expires')}</span>
+                        <span className="text-text-secondary">{formatDate(order.expires_at)}</span>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {(order.status === 'pending' || order.status === 'processing') && (
+                        <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleVerifyChallenge(order) }}>
+                          <Play size={12} />
+                          {t('acme.verifyChallenge')}
+                        </Button>
+                      )}
+                      {order.status === 'ready' && (
+                        <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleFinalizeOrder(order) }}>
+                          <CheckCircle size={12} />
+                          {t('acme.finalize')}
+                        </Button>
+                      )}
+                      {order.certificate_id && (
+                        <>
+                          <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleViewCertificate(order) }}>
+                            <Eye size={12} />
+                            {t('common.viewCertificate')}
+                          </Button>
+                          <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleDownloadCertificate(order) }}>
+                            <DownloadSimple size={12} />
+                            {t('common.download')}
+                          </Button>
+                        </>
+                      )}
+                      {(order.status === 'valid' || order.status === 'issued') && (
+                        <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); handleRenewCertificate(order) }}>
+                          <ArrowsClockwise size={12} />
+                          {t('acme.renew')}
+                        </Button>
+                      )}
+                      {canDelete('acme') && (
+                        <Button type="button" variant="danger" size="sm" onClick={(e) => { e.stopPropagation(); handleDeleteClientOrder(order) }}>
+                          <Trash size={12} />
+                          {t('common.delete')}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CompactSection>
       
       {/* Client Settings */}
       <CompactSection title={t('common.settings')} icon={Gear}>
