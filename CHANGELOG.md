@@ -11,6 +11,20 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.57] - 2026-03-05
+
+### Fixed
+- **CSR SAN Prefix Duplication** — Fixed generated CSRs embedding `DNS:` prefix in SAN values (e.g., `DNS:DNS:example.com`) when frontend sends typed SANs (#31)
+- **CSR Key Upload Flash Error** — Fixed brief "Something went wrong" error during private key upload by reordering data refresh (#31)
+
+### Documentation
+- Updated UPGRADE.md with version-specific notes for v2.49–v2.56
+- Updated USER_GUIDE with Discovery, EST, and Certificate Tools sections
+- Updated ADMIN_GUIDE with SSO configuration, EST, and Discovery admin sections
+- Updated SECURITY.md with v2.52+ security features (SSRF, WebAuthn, SSO audit)
+
+---
+
 ## [2.56] - 2026-03-05
 
 ### Fixed
