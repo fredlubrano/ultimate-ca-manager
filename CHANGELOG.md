@@ -11,6 +11,17 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.59] - 2026-03-06
+
+### Fixed
+- **Audit Log Binding Error** — Fixed `sqlite3.InterfaceError` when signing CSRs; dict was passed as positional arg to audit logger instead of string
+- **Missing i18n Keys** — Added 12 missing translation keys across all 9 locales (`common.deleted`, `common.dismiss`, `common.exportFailed`, `common.generating`, `common.createdBy`, `acme.renew`, `certificates.cnRequired`, `certificates.localityPlaceholder`, `certificates.statePlaceholder`, `csrs.generateFailed`, `operations.selectCA`, `userCertificates.exportError`)
+
+### Improved
+- Added safety guard in `AuditService.log_action()` to auto-serialize dict/non-string values, preventing future binding errors
+
+---
+
 ## [2.58] - 2026-03-06
 
 ### Fixed
