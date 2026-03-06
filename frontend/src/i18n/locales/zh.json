@@ -1036,7 +1036,8 @@
     "daysLeft_one": "{{count}} day left",
     "groups": {
       "letsEncrypt": "Let's Encrypt",
-      "localAcme": "本地ACME"
+      "localAcme": "本地ACME",
+      "history": "历史记录"
     },
     "challengeValidated": "挑战已验证 — 订单准备好进行最终化",
     "checkStatus": "检查状态",

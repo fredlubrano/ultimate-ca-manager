@@ -1036,7 +1036,8 @@
     "daysLeft_one": "{{count}} day left",
     "groups": {
       "letsEncrypt": "Let's Encrypt",
-      "localAcme": "ローカルACME"
+      "localAcme": "ローカルACME",
+      "history": "履歴"
     },
     "challengeValidated": "チャレンジ検証済み — オーダーの最終化準備完了",
     "checkStatus": "ステータス確認",

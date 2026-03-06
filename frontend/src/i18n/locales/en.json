@@ -1036,7 +1036,8 @@
     "daysLeft_one": "{{count}} day left",
     "groups": {
       "letsEncrypt": "Let's Encrypt",
-      "localAcme": "Local ACME"
+      "localAcme": "Local ACME",
+      "history": "History"
     },
     "challengeValidated": "Challenge validated — order ready for finalization",
     "checkStatus": "Check Status",

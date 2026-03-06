@@ -299,7 +299,8 @@
     "daysLeft_one": "{{count}} jour restant",
     "groups": {
       "letsEncrypt": "Let's Encrypt",
-      "localAcme": "ACME Local"
+      "localAcme": "ACME Local",
+      "history": "Historique"
     },
     "challengeValidated": "Challenge validé — commande prête pour finalisation",
     "checkStatus": "Vérifier le statut",

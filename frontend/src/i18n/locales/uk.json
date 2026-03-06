@@ -1036,7 +1036,8 @@
     "daysLeft_one": "{{count}} день залишився",
     "groups": {
       "letsEncrypt": "Let's Encrypt",
-      "localAcme": "Локальний ACME"
+      "localAcme": "Локальний ACME",
+      "history": "Історія"
     },
     "challengeValidated": "Виклик підтверджено — замовлення готове до завершення",
     "checkStatus": "Перевірити статус",

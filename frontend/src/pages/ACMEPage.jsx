@@ -2101,7 +2101,8 @@ export default function ACMEPage() {
         sidebarContentClass=""
         tabGroups={[
           { labelKey: 'acme.groups.letsEncrypt', tabs: ['letsencrypt', 'dns', 'domains'], color: 'icon-bg-emerald' },
-          { labelKey: 'acme.groups.localAcme', tabs: ['config', 'localdomains', 'accounts', 'history'], color: 'icon-bg-violet' },
+          { labelKey: 'acme.groups.localAcme', tabs: ['config', 'localdomains', 'accounts'], color: 'icon-bg-violet' },
+          { labelKey: 'acme.groups.history', tabs: ['history'], color: 'icon-bg-blue' },
         ]}
         onTabChange={(tab) => {
           setActiveTab(tab)
