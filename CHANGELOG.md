@@ -11,6 +11,19 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.58] - 2026-03-06
+
+### Fixed
+- **SAML IdP Certificate** — Fixed SAML certificate field showing "True" instead of PEM content; `to_dict()` was converting public cert to boolean
+- **ACME Account Orders/Challenges** — Fixed queries using integer PK instead of string `account_id` FK, causing orders and challenges to never display
+- **ACME Account Email Dedup** — Added email uniqueness check on UI account creation to prevent duplicate accounts
+- **ACME Dashboard Widget** — Fixed `mailto:` prefix showing in account emails on dashboard
+- **ACME History Environment** — Local ACME certificates now show "Local ACME" badge instead of incorrect "Staging"
+- **ACME Domain Form CA Select** — Fixed Radix Select value type mismatch (integer vs string) causing selected CA to not display
+- **ACME History Tab Placement** — Moved History tab to its own group since it contains both Local ACME and Let's Encrypt certificates
+
+---
+
 ## [2.57] - 2026-03-05
 
 ### Fixed
