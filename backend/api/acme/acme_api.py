@@ -58,7 +58,7 @@ def acme_response(data: Dict[str, Any], status_code: int = 200) -> Any:
 
 
 def acme_error(error_type: str, detail: str, status_code: int = 400) -> Any:
-    """Create ACME error response
+    """Create ACME error response per RFC 7807 (Problem Details)
     
     Args:
         error_type: ACME error type (e.g., 'malformed', 'unauthorized')
@@ -66,14 +66,22 @@ def acme_error(error_type: str, detail: str, status_code: int = 400) -> Any:
         status_code: HTTP status code
         
     Returns:
-        Flask Response object
+        Flask Response object with application/problem+json
     """
+    service = get_acme_service()
+    
     error_data = {
         "type": f"urn:ietf:params:acme:error:{error_type}",
-        "detail": detail
+        "detail": detail,
+        "status": status_code
     }
     
-    return acme_response(error_data, status_code)
+    response = make_response(jsonify(error_data), status_code)
+    response.headers['Content-Type'] = 'application/problem+json'
+    response.headers['Replay-Nonce'] = service.generate_nonce()
+    response.headers['Link'] = f'<{service.base_url}/acme/directory>;rel="index"'
+    
+    return response
 
 
 def verify_jws(jws_data: Dict[str, Any], expected_url: str, account_key: Optional[Dict] = None) -> Tuple[bool, Optional[Dict], Optional[Dict], Optional[str]]:
@@ -208,22 +216,33 @@ def verify_jws(jws_data: Dict[str, Any], expected_url: str, account_key: Optiona
                     
             elif alg.startswith('ES'):  # EC signatures (ES256, ES384, ES512)
                 from cryptography.hazmat.primitives import hashes
-                from cryptography.hazmat.primitives.asymmetric import ec
+                from cryptography.hazmat.primitives.asymmetric import ec, utils
                 
-                # Get hash algorithm
+                # Get hash algorithm and key size
                 if alg == 'ES256':
                     hash_alg = hashes.SHA256()
+                    key_size = 32
                 elif alg == 'ES384':
                     hash_alg = hashes.SHA384()
+                    key_size = 48
                 elif alg == 'ES512':
                     hash_alg = hashes.SHA512()
+                    key_size = 66
                 else:
                     return False, None, None, f"Unsupported EC algorithm: {alg}"
                 
-                # Verify signature
+                # JWS EC signatures use raw R||S format (RFC 7518 Section 3.4)
+                # cryptography library expects DER-encoded signature
                 try:
+                    if len(signature_bytes) == 2 * key_size:
+                        r = int.from_bytes(signature_bytes[:key_size], 'big')
+                        s = int.from_bytes(signature_bytes[key_size:], 'big')
+                        der_signature = utils.encode_dss_signature(r, s)
+                    else:
+                        der_signature = signature_bytes
+                    
                     public_key.key.verify(
-                        signature_bytes,
+                        der_signature,
                         signing_input.encode('utf-8'),
                         ec.ECDSA(hash_alg)
                     )
@@ -327,6 +346,24 @@ def new_account():
         # Extract account details
         contact = payload.get('contact', [])
         terms_agreed = payload.get('termsOfServiceAgreed', False)
+        only_return_existing = payload.get('onlyReturnExisting', False)
+        
+        # Handle onlyReturnExisting (RFC 8555 Section 7.3.1)
+        if only_return_existing:
+            thumbprint = service._compute_jwk_thumbprint(jwk)
+            existing = AcmeAccount.query.filter_by(jwk_thumbprint=thumbprint).first()
+            if not existing:
+                return acme_error('accountDoesNotExist', 'Account does not exist', 400)
+            account_url = f"{service.base_url}/acme/acct/{existing.account_id}"
+            response_data = {
+                "status": existing.status,
+                "contact": json.loads(existing.contact) if existing.contact else [],
+                "termsOfServiceAgreed": existing.terms_of_service_agreed,
+                "orders": f"{account_url}/orders"
+            }
+            response = acme_response(response_data, 200)
+            response.headers['Location'] = account_url
+            return response
         
         # Create or retrieve account
         account, is_new = service.create_account(
@@ -356,13 +393,31 @@ def new_account():
 
 @acme_bp.route('/acct/<account_id>', methods=['POST'])
 def account_info(account_id: str):
-    """Get account information (RFC 8555 Section 7.3.1)"""
+    """Get/update account information (RFC 8555 Section 7.3.1-7.3.2)"""
     service = get_acme_service()
     
     account = service.get_account_by_kid(account_id)
     
     if not account:
         return acme_error('accountDoesNotExist', 'Account not found', 404)
+    
+    # Verify JWS
+    jws_data = request.get_json()
+    if jws_data:
+        expected_url = f"{service.base_url}/acme/acct/{account_id}"
+        is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+        if not is_valid:
+            return acme_error('malformed', f'Invalid JWS: {error}')
+        
+        # Handle account deactivation (RFC 8555 Section 7.3.6)
+        if payload and payload.get('status') == 'deactivated':
+            account.status = 'deactivated'
+            db.session.commit()
+        
+        # Handle contact update (RFC 8555 Section 7.3.2)
+        if payload and 'contact' in payload:
+            account.contact = json.dumps(payload['contact'])
+            db.session.commit()
     
     account_url = f"{service.base_url}/acme/acct/{account.account_id}"
     
@@ -482,8 +537,16 @@ def new_order():
 
 @acme_bp.route('/order/<order_id>', methods=['POST'])
 def order_info(order_id: str):
-    """Get order status (RFC 8555 Section 7.4)"""
+    """Get order status (RFC 8555 Section 7.4) — POST-as-GET"""
     service = get_acme_service()
+    
+    # Verify JWS (POST-as-GET: empty payload)
+    jws_data = request.get_json()
+    if jws_data:
+        expected_url = f"{service.base_url}/acme/order/{order_id}"
+        is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+        if not is_valid:
+            return acme_error('malformed', f'Invalid JWS: {error}')
     
     order = service.get_order(order_id)
     
@@ -512,6 +575,10 @@ def order_info(order_id: str):
     response = acme_response(response_data)
     response.headers['Location'] = order_url
     
+    # Add Retry-After for pending/processing orders (RFC 8555 Section 7.4)
+    if order.status in ('pending', 'processing'):
+        response.headers['Retry-After'] = '3'
+    
     return response
 
 
@@ -523,11 +590,18 @@ def finalize_order(order_id: str):
     try:
         jws_data = request.get_json()
         
-        # Decode payload
-        import base64
-        payload_b64 = jws_data.get('payload', '')
-        payload_json = base64.urlsafe_b64decode(payload_b64 + '==').decode()
-        payload = json.loads(payload_json)
+        if not jws_data:
+            return acme_error('malformed', 'Request body must be JWS')
+        
+        # Verify JWS
+        expected_url = f"{service.base_url}/acme/order/{order_id}/finalize"
+        is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+        
+        if not is_valid:
+            return acme_error('malformed', f'Invalid JWS: {error}')
+        
+        if not payload:
+            return acme_error('malformed', 'Payload required for finalize')
         
         # Extract CSR
         csr_b64 = payload.get('csr', '')
@@ -584,10 +658,18 @@ def finalize_order(order_id: str):
 
 @acme_bp.route('/authz/<authorization_id>', methods=['POST'])
 def authorization_info(authorization_id: str):
-    """Get authorization status (RFC 8555 Section 7.5)"""
+    """Get authorization status (RFC 8555 Section 7.5) — POST-as-GET"""
     from models.acme_models import AcmeAuthorization
     
     service = get_acme_service()
+    
+    # Verify JWS (POST-as-GET: empty payload)
+    jws_data = request.get_json()
+    if jws_data:
+        expected_url = f"{service.base_url}/acme/authz/{authorization_id}"
+        is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+        if not is_valid:
+            return acme_error('malformed', f'Invalid JWS: {error}')
     
     auth = AcmeAuthorization.query.filter_by(
         authorization_id=authorization_id
@@ -635,17 +717,34 @@ def respond_to_challenge(challenge_id: str):
     """Respond to challenge and trigger validation (RFC 8555 Section 7.5.1)"""
     service = get_acme_service()
     
-    # Extract challenge ID from URL path
-    # In practice, challenge ID is embedded in the URL
-    # For simplicity, we'll accept it as a parameter
-    
     try:
         jws_data = request.get_json()
         
-        # Decode protected to get account
-        import base64
+        if not jws_data:
+            return acme_error('malformed', 'Request body must be JWS')
+        
+        # Verify JWS
+        # Challenge URLs use the challenge-specific URL, not a fixed pattern
+        # Try to find the challenge first to get its URL for verification
+        challenge = AcmeChallenge.query.filter(
+            AcmeChallenge.url.endswith(f'/{challenge_id}')
+        ).first()
+        if not challenge:
+            challenge = AcmeChallenge.query.filter_by(challenge_id=challenge_id).first()
+        
+        if not challenge:
+            return acme_error('challengeDoesNotExist', 'Challenge not found', 404)
+        
+        expected_url = challenge.url or f"{service.base_url}/acme/challenge/{challenge_id}"
+        is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+        
+        if not is_valid:
+            return acme_error('malformed', f'Invalid JWS: {error}')
+        
+        # Get account from KID
         protected_b64 = jws_data.get('protected', '')
-        protected_json = base64.urlsafe_b64decode(protected_b64 + '==').decode()
+        protected_b64 += '=' * (4 - len(protected_b64) % 4)
+        protected_json = base64.urlsafe_b64decode(protected_b64).decode()
         protected = json.loads(protected_json)
         
         kid = protected.get('kid', '')
@@ -654,15 +753,6 @@ def respond_to_challenge(challenge_id: str):
         account = service.get_account_by_kid(account_id)
         if not account:
             return acme_error('accountDoesNotExist', 'Account not found', 404)
-        
-        # Find challenge by URL pattern
-        # In real implementation, challenge_id would be extracted from URL
-        challenge = AcmeChallenge.query.filter(
-            AcmeChallenge.url.like(f'%{challenge_id}%')
-        ).first()
-        
-        if not challenge:
-            return acme_error('challengeDoesNotExist', 'Challenge not found', 404)
         
         # Trigger validation based on challenge type
         if challenge.type == "http-01":
@@ -704,9 +794,19 @@ def respond_to_challenge(challenge_id: str):
 def download_certificate(order_id: str):
     """Download certificate (RFC 8555 Section 7.4.2)
     
-    Returns certificate chain in PEM format
+    Returns certificate chain in PEM format.
+    Accepts POST (POST-as-GET with JWS) and GET for compatibility.
     """
     service = get_acme_service()
+    
+    # Verify JWS for POST requests (POST-as-GET)
+    if request.method == 'POST':
+        jws_data = request.get_json()
+        if jws_data:
+            expected_url = f"{service.base_url}/acme/cert/{order_id}"
+            is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+            if not is_valid:
+                return acme_error('malformed', f'Invalid JWS: {error}')
     
     # Get order
     order = service.get_order(order_id)
@@ -766,6 +866,127 @@ def download_certificate(order_id: str):
     response.headers['Replay-Nonce'] = service.generate_nonce()
     
     return response
+
+
+# ==================== Certificate Revocation ====================
+
+@acme_bp.route('/revoke-cert', methods=['POST'])
+def revoke_cert():
+    """Revoke certificate (RFC 8555 Section 7.6)"""
+    service = get_acme_service()
+    
+    try:
+        jws_data = request.get_json()
+        
+        if not jws_data:
+            return acme_error('malformed', 'Request body must be JWS')
+        
+        expected_url = f"{service.base_url}/acme/revoke-cert"
+        is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+        
+        if not is_valid:
+            return acme_error('malformed', f'Invalid JWS: {error}')
+        
+        if not payload:
+            return acme_error('malformed', 'Payload required')
+        
+        # Extract certificate DER
+        cert_b64 = payload.get('certificate', '')
+        if not cert_b64:
+            return acme_error('malformed', 'Certificate required in payload')
+        
+        reason = payload.get('reason', 0)  # RFC 5280 CRLReason
+        
+        # Decode certificate
+        cert_der = base64.urlsafe_b64decode(cert_b64 + '==')
+        
+        from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
+        cert_obj = x509.load_der_x509_certificate(cert_der, default_backend())
+        
+        # Find certificate in database by serial number
+        from models import Certificate
+        serial_hex = format(cert_obj.serial_number, 'x').upper()
+        
+        cert = Certificate.query.filter(
+            Certificate.serial.ilike(f'%{serial_hex}%')
+        ).first()
+        
+        if not cert:
+            return acme_error('serverInternal', 'Certificate not found', 404)
+        
+        # Revoke certificate
+        try:
+            from services.cert_service import CertificateService
+            CertificateService.revoke_certificate(
+                cert_id=cert.id,
+                reason='keyCompromise' if reason == 1 else 'unspecified',
+                username='acme'
+            )
+        except Exception as e:
+            return acme_error('serverInternal', f'Revocation failed: {str(e)}', 500)
+        
+        return make_response('', 200)
+        
+    except Exception as e:
+        return acme_error('serverInternal', f'Internal error: {str(e)}', 500)
+
+
+# ==================== Key Change ====================
+
+@acme_bp.route('/key-change', methods=['POST'])
+def key_change():
+    """Key change (RFC 8555 Section 7.3.5)"""
+    service = get_acme_service()
+    
+    try:
+        jws_data = request.get_json()
+        
+        if not jws_data:
+            return acme_error('malformed', 'Request body must be JWS')
+        
+        expected_url = f"{service.base_url}/acme/key-change"
+        is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+        
+        if not is_valid:
+            return acme_error('malformed', f'Invalid JWS: {error}')
+        
+        if not payload:
+            return acme_error('malformed', 'Payload required')
+        
+        # Extract inner JWS (key change is double-wrapped)
+        # The outer JWS is signed with the old key, inner with the new key
+        # For now, extract account and new key from payload
+        account_url = payload.get('account', '')
+        old_key = payload.get('oldKey', {})
+        
+        account_id = account_url.split('/')[-1] if account_url else None
+        if not account_id:
+            return acme_error('malformed', 'Account URL required')
+        
+        account = service.get_account_by_kid(account_id)
+        if not account:
+            return acme_error('accountDoesNotExist', 'Account not found', 404)
+        
+        # Update account JWK
+        if jwk:
+            account.jwk = json.dumps(jwk)
+            account.jwk_thumbprint = service._compute_jwk_thumbprint(jwk)
+            db.session.commit()
+        
+        account_url_full = f"{service.base_url}/acme/acct/{account.account_id}"
+        response_data = {
+            "status": account.status,
+            "contact": json.loads(account.contact) if account.contact else [],
+            "orders": f"{account_url_full}/orders"
+        }
+        
+        response = acme_response(response_data)
+        response.headers['Location'] = account_url_full
+        return response
+        
+    except Exception as e:
+        return acme_error('serverInternal', f'Internal error: {str(e)}', 500)
 
 
 # ==================== Health Check ====================
