@@ -70,6 +70,12 @@ class AuditService:
                     ip_address = ip_address.split(',')[0].strip()
                 user_agent = request.headers.get('User-Agent', '')[:500]  # Limit length
             
+            # Ensure resource_name and details are strings (guard against dicts)
+            if isinstance(resource_name, dict):
+                resource_name = json.dumps(resource_name)
+            if isinstance(details, dict):
+                details = json.dumps(details)
+            
             # Create audit log entry
             audit_log = AuditLog(
                 timestamp=datetime.utcnow(),
@@ -77,8 +83,8 @@ class AuditService:
                 action=action,
                 resource_type=resource_type,
                 resource_id=str(resource_id) if resource_id else None,
-                resource_name=resource_name,
-                details=details,
+                resource_name=str(resource_name) if resource_name else None,
+                details=str(details) if details else None,
                 ip_address=ip_address,
                 user_agent=user_agent,
                 success=success

@@ -270,7 +270,13 @@ def upload_csr():
         db.session.commit()
         
         # Audit log
-        AuditService.log_action('csr', 'upload', new_cert.id, {'subject': subject_str})
+        AuditService.log_action(
+            action='csr_uploaded',
+            resource_type='csr',
+            resource_id=new_cert.id,
+            resource_name=cn,
+            details=f'CSR uploaded: {subject_str}'
+        )
         
         # Return CSR-friendly format
         result = new_cert.to_dict()
@@ -584,12 +590,13 @@ def sign_csr(csr_id):
         )
         
         # Audit log
-        AuditService.log_action('certificate', 'sign', csr_id, {
-            'ca_id': ca_id,
-            'ca_name': ca.descr,
-            'validity_days': validity_days,
-            'subject': cert.subject
-        })
+        AuditService.log_action(
+            action='csr_signed',
+            resource_type='certificate',
+            resource_id=csr_id,
+            resource_name=cert.subject,
+            details=f'CSR signed by CA {ca.descr} (id={ca_id}), validity={validity_days} days'
+        )
         
         return success_response(
             data=signed_cert.to_dict(),
