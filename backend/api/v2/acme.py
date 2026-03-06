@@ -247,6 +247,13 @@ def create_acme_account():
     if not email:
         return error_response('Email is required', 400)
 
+    # Check for existing account with same email
+    existing = AcmeAccount.query.filter(
+        AcmeAccount.contact.like(f'%{email}%')
+    ).first()
+    if existing:
+        return error_response(f'An account with email {email} already exists', 409)
+
     try:
         import secrets
         account_id = f'acme-{secrets.token_hex(8)}'
@@ -399,7 +406,7 @@ def delete_acme_account(account_id):
             for authz in order.authorizations:
                 AcmeChallenge.query.filter_by(authorization_id=authz.id).delete()
             AcmeAuthorization.query.filter_by(order_id=order.id).delete()
-        AcmeOrder.query.filter_by(account_id=acc.id).delete()
+        AcmeOrder.query.filter_by(account_id=acc.account_id).delete()
         db.session.delete(acc)
         db.session.commit()
 
@@ -464,7 +471,7 @@ def list_account_orders(account_id):
     """List orders for a specific ACME account"""
     account = AcmeAccount.query.get_or_404(account_id)
     
-    orders = AcmeOrder.query.filter_by(account_id=account.id).order_by(
+    orders = AcmeOrder.query.filter_by(account_id=account.account_id).order_by(
         AcmeOrder.created_at.desc()
     ).limit(50).all()
     
@@ -498,7 +505,7 @@ def list_account_challenges(account_id):
     account = AcmeAccount.query.get_or_404(account_id)
     
     # Get all orders for this account
-    orders = AcmeOrder.query.filter_by(account_id=account.id).all()
+    orders = AcmeOrder.query.filter_by(account_id=account.account_id).all()
     
     data = []
     for order in orders:
