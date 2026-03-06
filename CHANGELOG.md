@@ -11,6 +11,19 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.61] - 2026-03-06
+
+### Fixed
+- **Dashboard ACME Widget** — Fixed crash when ACME account contact is an array (`.replace()` TypeError)
+
+### Improved
+- **OCSP RFC 6960 Compliance** — Unknown certificate serials now return proper `UNKNOWN` status in a signed OCSP response instead of `UNAUTHORIZED` error; deduplicated GET/POST handlers; added `Cache-Control` and `Expires` headers
+- **CRL/CDP RFC 5280 Compliance** — CDP endpoint now serves CRLs from database (auto-generates if missing) instead of filesystem; logs warning when serial numbers exceed 159 bits
+- **SCEP RFC 8894 Compliance** — Error responses now include `failInfo` attribute; encryption upgraded from DES-CBC to AES-256-CBC (matching advertised capabilities); `GetCACert` returns PKCS#7 chain for intermediate CAs; replaced debug prints with proper logging
+- **EST RFC 7030 Compliance** — `/simplereenroll` now requires mTLS only (no longer accepts Basic auth); `/serverkeygen` encrypts private key with client password when available
+
+---
+
 ## [2.60] - 2026-03-06
 
 ### Fixed
