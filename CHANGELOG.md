@@ -11,6 +11,16 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.63] - 2026-03-08
+
+### Added
+- **Auto-SAN from CN** — Common Name is automatically included as SAN (DNS for server/combined, Email for email/combined certs) with visual indicator in the form
+- **Wildcard base domain suggestion** — When CN is `*.example.com`, suggests adding `example.com` as additional SAN since wildcards don't cover the bare domain
+- **Subject email auto-SAN** — Subject DN email field automatically included as Email SAN for email/combined certificates
+- Backend auto-includes CN and subject email as SANs during certificate generation
+
+---
+
 ## [2.62] - 2026-03-06
 
 ### Fixed
