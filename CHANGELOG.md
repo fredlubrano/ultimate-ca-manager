@@ -11,6 +11,23 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.64] - 2026-03-08
+
+### Added
+- **Certificate Compliance Scoring** — A+ to F grading system based on key strength, signature algorithm, validity status, SAN presence, and certificate lifetime; grade badge in table and full breakdown in detail view
+- **Discovery Expiry Notifications** — `notify_on_expiry` alerts count expiring certificates (≤30 days) after each scan and include them in email notifications
+- **Notification Event Toggles** — Three per-profile toggles (new, changed, expiring) in discovery profile form, visible when schedule is enabled
+- **Markdown Release Notes** — Update checker renders release notes as styled markdown using react-markdown
+- **OCSP Per-CA Toggle** — CRL/OCSP page now has separate CRL and OCSP toggle switches per CA
+- **Compliance Stats API** — `/api/v2/certificates/compliance` returns aggregate grade distribution
+
+### Fixed
+- **OCSP Dashboard Status** — Dashboard OCSP badge was always gray; `/ocsp/status` endpoint was hardcoded to `enabled: true` without checking DB — now queries actual `ocsp_enabled` flags
+- **OCSP Detail Panel** — Detail panel showed global OCSP status instead of selected CA's `ocsp_enabled` state
+- **OCSP Stats** — `/ocsp/stats` now returns real response counts from `ocsp_responses` table instead of hardcoded zeros
+
+---
+
 ## [2.63] - 2026-03-08
 
 ### Added
