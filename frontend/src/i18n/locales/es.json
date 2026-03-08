@@ -2979,5 +2979,31 @@
     "helpExportTitle": "Exportar Resultados",
     "helpSecurity": "Discovery bloquea direcciones internas/loopback para protección SSRF. Los destinos se validan antes del escaneo. Todas las acciones se registran en auditoría.",
     "helpSecurityTitle": "Seguridad"
+  },
+  "compliance": {
+    "title": "Puntuación de cumplimiento",
+    "grade": "Nota",
+    "score": "Puntuación",
+    "criteria": {
+      "key_strength": "Fortaleza de clave",
+      "signature": "Algoritmo de firma",
+      "validity": "Estado de validez",
+      "san": "Presencia de SAN",
+      "lifetime": "Duración del certificado"
+    },
+    "reasons": {
+      "valid": "Válido",
+      "expired": "Expirado",
+      "revoked": "Revocado",
+      "expires_week": "< 7 días",
+      "expires_month": "< 30 días",
+      "unknown": "Desconocido",
+      "present": "Presente",
+      "missing": "Ausente",
+      "ca_exempt": "CA exento",
+      "short": "≤ 398 días",
+      "moderate": "≤ 825 días",
+      "long": "> 825 días"
+    }
   }
 }

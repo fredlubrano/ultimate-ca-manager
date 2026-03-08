@@ -2979,5 +2979,31 @@
     "helpExportTitle": "Ergebnisse exportieren",
     "helpSecurity": "Discovery blockiert interne/Loopback-Adressen zum SSRF-Schutz. Ziele werden vor dem Scan validiert. Alle Scan-Aktionen werden protokolliert.",
     "helpSecurityTitle": "Sicherheit"
+  },
+  "compliance": {
+    "title": "Konformitätsbewertung",
+    "grade": "Note",
+    "score": "Punktzahl",
+    "criteria": {
+      "key_strength": "Schlüsselstärke",
+      "signature": "Signaturalgorithmus",
+      "validity": "Gültigkeitsstatus",
+      "san": "SAN-Präsenz",
+      "lifetime": "Zertifikatslaufzeit"
+    },
+    "reasons": {
+      "valid": "Gültig",
+      "expired": "Abgelaufen",
+      "revoked": "Widerrufen",
+      "expires_week": "< 7 Tage",
+      "expires_month": "< 30 Tage",
+      "unknown": "Unbekannt",
+      "present": "Vorhanden",
+      "missing": "Fehlt",
+      "ca_exempt": "CA ausgenommen",
+      "short": "≤ 398 Tage",
+      "moderate": "≤ 825 Tage",
+      "long": "> 825 Tage"
+    }
   }
 }

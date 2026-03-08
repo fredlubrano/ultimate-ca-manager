@@ -2979,5 +2979,31 @@
     "helpExportTitle": "导出结果",
     "helpSecurity": "Discovery阻止内部/回环地址以防止SSRF攻击。目标在扫描前经过验证。所有扫描操作都记录在审计日志中。",
     "helpSecurityTitle": "安全"
+  },
+  "compliance": {
+    "title": "合规评分",
+    "grade": "等级",
+    "score": "分数",
+    "criteria": {
+      "key_strength": "密钥强度",
+      "signature": "签名算法",
+      "validity": "有效性状态",
+      "san": "SAN 存在",
+      "lifetime": "证书有效期"
+    },
+    "reasons": {
+      "valid": "有效",
+      "expired": "已过期",
+      "revoked": "已吊销",
+      "expires_week": "< 7 天",
+      "expires_month": "< 30 天",
+      "unknown": "未知",
+      "present": "存在",
+      "missing": "缺失",
+      "ca_exempt": "CA 豁免",
+      "short": "≤ 398 天",
+      "moderate": "≤ 825 天",
+      "long": "> 825 天"
+    }
   }
 }

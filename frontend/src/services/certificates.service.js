@@ -77,5 +77,9 @@ export const certificatesService = {
   },
   async bulkExport(ids, format = 'pem') {
     return apiClient.post('/certificates/bulk/export', { ids, format }, { responseType: 'blob' })
+  },
+
+  async getComplianceStats() {
+    return apiClient.get('/certificates/compliance')
   }
 }

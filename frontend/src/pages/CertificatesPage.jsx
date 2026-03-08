@@ -461,6 +461,31 @@ export default function CertificatesPage() {
       }
     },
     {
+      key: 'compliance_grade',
+      header: t('compliance.grade'),
+      priority: 2,
+      sortable: true,
+      hideOnMobile: true,
+      render: (val, row) => {
+        const grade = row.compliance_grade || 'F'
+        const score = row.compliance_score ?? 0
+        const config = {
+          'A+': { variant: 'emerald', label: 'A+' },
+          'A': { variant: 'success', label: 'A' },
+          'B': { variant: 'blue', label: 'B' },
+          'C': { variant: 'warning', label: 'C' },
+          'D': { variant: 'orange', label: 'D' },
+          'F': { variant: 'danger', label: 'F' },
+        }
+        const { variant, label } = config[grade] || config['F']
+        return (
+          <Badge variant={variant} size="sm" title={`${score}/100`}>
+            {label}
+          </Badge>
+        )
+      }
+    },
+    {
       key: 'issuer',
       header: t('common.issuer'),
       priority: 3,

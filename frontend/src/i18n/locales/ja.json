@@ -2979,5 +2979,31 @@
     "helpExportTitle": "結果のエクスポート",
     "helpSecurity": "DiscoveryはSSRF保護のために内部/ループバックアドレスをブロックします。ターゲットはスキャン前に検証されます。すべてのスキャンアクションは監査ログに記録されます。",
     "helpSecurityTitle": "セキュリティ"
+  },
+  "compliance": {
+    "title": "コンプライアンススコア",
+    "grade": "グレード",
+    "score": "スコア",
+    "criteria": {
+      "key_strength": "鍵の強度",
+      "signature": "署名アルゴリズム",
+      "validity": "有効性状態",
+      "san": "SAN の存在",
+      "lifetime": "証明書の有効期間"
+    },
+    "reasons": {
+      "valid": "有効",
+      "expired": "期限切れ",
+      "revoked": "失効済み",
+      "expires_week": "7日未満",
+      "expires_month": "30日未満",
+      "unknown": "不明",
+      "present": "あり",
+      "missing": "なし",
+      "ca_exempt": "CA免除",
+      "short": "≤ 398日",
+      "moderate": "≤ 825日",
+      "long": "> 825日"
+    }
   }
 }

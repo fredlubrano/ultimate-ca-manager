@@ -2982,5 +2982,31 @@
     "helpExportTitle": "Export Results",
     "helpSecurity": "Discovery blocks internal/loopback addresses for SSRF protection. Targets are validated before scanning. All scan actions are audit-logged.",
     "helpSecurityTitle": "Security"
+  },
+  "compliance": {
+    "title": "Compliance Score",
+    "grade": "Grade",
+    "score": "Score",
+    "criteria": {
+      "key_strength": "Key Strength",
+      "signature": "Signature Algorithm",
+      "validity": "Validity Status",
+      "san": "SAN Presence",
+      "lifetime": "Certificate Lifetime"
+    },
+    "reasons": {
+      "valid": "Valid",
+      "expired": "Expired",
+      "revoked": "Revoked",
+      "expires_week": "< 7 days",
+      "expires_month": "< 30 days",
+      "unknown": "Unknown",
+      "present": "Present",
+      "missing": "Missing",
+      "ca_exempt": "CA exempt",
+      "short": "≤ 398 days",
+      "moderate": "≤ 825 days",
+      "long": "> 825 days"
+    }
   }
 }

@@ -2979,5 +2979,31 @@
     "helpExportTitle": "Esportare Risultati",
     "helpSecurity": "Discovery blocca gli indirizzi interni/loopback per protezione SSRF. I target sono validati prima della scansione. Tutte le azioni sono registrate nell'audit.",
     "helpSecurityTitle": "Sicurezza"
+  },
+  "compliance": {
+    "title": "Punteggio di conformità",
+    "grade": "Voto",
+    "score": "Punteggio",
+    "criteria": {
+      "key_strength": "Forza della chiave",
+      "signature": "Algoritmo di firma",
+      "validity": "Stato di validità",
+      "san": "Presenza SAN",
+      "lifetime": "Durata del certificato"
+    },
+    "reasons": {
+      "valid": "Valido",
+      "expired": "Scaduto",
+      "revoked": "Revocato",
+      "expires_week": "< 7 giorni",
+      "expires_month": "< 30 giorni",
+      "unknown": "Sconosciuto",
+      "present": "Presente",
+      "missing": "Assente",
+      "ca_exempt": "CA esente",
+      "short": "≤ 398 giorni",
+      "moderate": "≤ 825 giorni",
+      "long": "> 825 giorni"
+    }
   }
 }

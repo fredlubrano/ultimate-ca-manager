@@ -2979,5 +2979,31 @@
     "helpExportTitle": "Експорт Результатів",
     "helpSecurity": "Discovery блокує внутрішні/loopback адреси для захисту від SSRF. Цілі перевіряються перед скануванням. Усі дії записуються в аудит.",
     "helpSecurityTitle": "Безпека"
+  },
+  "compliance": {
+    "title": "Оцінка відповідності",
+    "grade": "Оцінка",
+    "score": "Бал",
+    "criteria": {
+      "key_strength": "Сила ключа",
+      "signature": "Алгоритм підпису",
+      "validity": "Стан дійсності",
+      "san": "Наявність SAN",
+      "lifetime": "Термін дії сертифіката"
+    },
+    "reasons": {
+      "valid": "Дійсний",
+      "expired": "Прострочений",
+      "revoked": "Відкликаний",
+      "expires_week": "< 7 днів",
+      "expires_month": "< 30 днів",
+      "unknown": "Невідомо",
+      "present": "Наявний",
+      "missing": "Відсутній",
+      "ca_exempt": "CA звільнено",
+      "short": "≤ 398 днів",
+      "moderate": "≤ 825 днів",
+      "long": "> 825 днів"
+    }
   }
 }

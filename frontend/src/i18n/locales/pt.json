@@ -2979,5 +2979,31 @@
     "helpExportTitle": "Exportar Resultados",
     "helpSecurity": "O Discovery bloqueia endereços internos/loopback para proteção SSRF. Os alvos são validados antes da varredura. Todas as ações são registradas em auditoria.",
     "helpSecurityTitle": "Segurança"
+  },
+  "compliance": {
+    "title": "Pontuação de conformidade",
+    "grade": "Nota",
+    "score": "Pontuação",
+    "criteria": {
+      "key_strength": "Força da chave",
+      "signature": "Algoritmo de assinatura",
+      "validity": "Estado de validade",
+      "san": "Presença de SAN",
+      "lifetime": "Duração do certificado"
+    },
+    "reasons": {
+      "valid": "Válido",
+      "expired": "Expirado",
+      "revoked": "Revogado",
+      "expires_week": "< 7 dias",
+      "expires_month": "< 30 dias",
+      "unknown": "Desconhecido",
+      "present": "Presente",
+      "missing": "Ausente",
+      "ca_exempt": "CA isento",
+      "short": "≤ 398 dias",
+      "moderate": "≤ 825 dias",
+      "long": "> 825 dias"
+    }
   }
 }

@@ -31,6 +31,7 @@ from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID, ExtensionOID
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509 import load_pem_x509_certificate
 from services.cert_service import CertificateService
+from services.compliance_service import calculate_compliance_score
 from services.audit_service import AuditService
 from services.notification_service import NotificationService
 from services.import_service import (
@@ -138,7 +139,13 @@ def list_certificates():
     # Paginate
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     
-    certs = [cert.to_dict() for cert in pagination.items]
+    certs = []
+    for cert in pagination.items:
+        d = cert.to_dict()
+        compliance = calculate_compliance_score(d)
+        d['compliance_score'] = compliance['score']
+        d['compliance_grade'] = compliance['grade']
+        certs.append(d)
     
     return success_response(
         data=certs,
@@ -176,6 +183,38 @@ def get_certificate_stats():
         'expiring': expiring,
         'expired': expired,
         'revoked': revoked
+    })
+
+
+@bp.route('/api/v2/certificates/compliance', methods=['GET'])
+@require_auth(['read:certificates'])
+def get_compliance_stats():
+    """Get aggregate compliance statistics for all certificates"""
+
+    certs = Certificate.query.filter_by(revoked=False).all()
+    if not certs:
+        return success_response(data={
+            'average_score': 0,
+            'distribution': {'A+': 0, 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0},
+            'total': 0,
+        })
+
+    grades = {'A+': 0, 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0}
+    total_score = 0
+
+    for cert in certs:
+        d = cert.to_dict()
+        result = calculate_compliance_score(d)
+        total_score += result['score']
+        grade = result['grade']
+        if grade in grades:
+            grades[grade] += 1
+
+    count = len(certs)
+    return success_response(data={
+        'average_score': round(total_score / count) if count else 0,
+        'distribution': grades,
+        'total': count,
     })
 
 
@@ -513,6 +552,10 @@ def get_certificate(cert_id):
     # Build chain validation status
     chain_status = _validate_cert_chain(cert)
     data['chain_status'] = chain_status
+    
+    # Full compliance breakdown for detail view
+    compliance = calculate_compliance_score(data)
+    data['compliance'] = compliance
     
     return success_response(data=data)
 

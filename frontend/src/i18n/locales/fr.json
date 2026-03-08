@@ -2982,5 +2982,31 @@
     "helpExportTitle": "Exporter les Résultats",
     "helpSecurity": "Le Discovery bloque les adresses internes/bouclage pour la protection SSRF. Les cibles sont validées avant le scan. Toutes les actions sont journalisées.",
     "helpSecurityTitle": "Sécurité"
+  },
+  "compliance": {
+    "title": "Score de conformité",
+    "grade": "Note",
+    "score": "Score",
+    "criteria": {
+      "key_strength": "Force de la clé",
+      "signature": "Algorithme de signature",
+      "validity": "État de validité",
+      "san": "Présence SAN",
+      "lifetime": "Durée du certificat"
+    },
+    "reasons": {
+      "valid": "Valide",
+      "expired": "Expiré",
+      "revoked": "Révoqué",
+      "expires_week": "< 7 jours",
+      "expires_month": "< 30 jours",
+      "unknown": "Inconnu",
+      "present": "Présent",
+      "missing": "Absent",
+      "ca_exempt": "CA exempté",
+      "short": "≤ 398 jours",
+      "moderate": "≤ 825 jours",
+      "long": "> 825 jours"
+    }
   }
 }

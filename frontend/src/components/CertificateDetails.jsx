@@ -376,6 +376,59 @@ export function CertificateDetails({
         </CompactSection>
       )}
       
+      {/* Compliance Score */}
+      {cert.compliance && (
+        <CompactSection title={t('compliance.title')} icon={ShieldCheck} iconClass={
+          cert.compliance.grade === 'A+' || cert.compliance.grade === 'A' ? 'icon-bg-emerald' :
+          cert.compliance.grade === 'B' ? 'icon-bg-blue' :
+          cert.compliance.grade === 'C' ? 'icon-bg-orange' :
+          'icon-bg-red'
+        }>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-bold text-text-primary">{cert.compliance.grade}</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-text-secondary">{cert.compliance.score}/100</span>
+                </div>
+                <div className="h-2 bg-tertiary-op50 rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      cert.compliance.score >= 85 ? "bg-emerald-500" :
+                      cert.compliance.score >= 70 ? "bg-blue-500" :
+                      cert.compliance.score >= 55 ? "bg-amber-500" :
+                      "bg-red-500"
+                    )}
+                    style={{ width: `${cert.compliance.score}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            {cert.compliance.breakdown && (
+              <div className="grid gap-1.5">
+                {Object.entries(cert.compliance.breakdown).map(([key, item]) => (
+                  <div key={key} className="flex items-center justify-between text-xs">
+                    <span className="text-text-secondary">{t(`compliance.criteria.${key}`)}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "font-mono font-medium",
+                        item.score >= item.max * 0.8 ? "text-emerald-500" :
+                        item.score >= item.max * 0.5 ? "text-amber-500" :
+                        "text-red-500"
+                      )}>
+                        {item.score}/{item.max}
+                      </span>
+                      <span className="text-text-tertiary text-2xs w-20 text-right truncate">{t(`compliance.reasons.${item.reason}`, item.reason)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CompactSection>
+      )}
+      
       {/* Thumbprints */}
       <CompactSection title={t('common.fingerprints')} icon={Fingerprint} iconClass="icon-bg-gray" collapsible defaultOpen={false}>
         <CompactGrid cols={1}>
