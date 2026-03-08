@@ -1150,7 +1150,10 @@
     "includeURLsNote": "自動失効確認のために、これらのURLをCA設定に含めてください。",
     "autoRegenEnabled": "{{name}} の自動再生成は有効です",
     "autoRegenDisabled": "{{name}} の自動再生成は無効です",
-    "toggleAutoRegenFailed": "自動再生成の切り替えに失敗しました"
+    "toggleAutoRegenFailed": "自動再生成の切り替えに失敗しました",
+    "ocspEnabled": "{{name}} の OCSP を有効化しました",
+    "ocspDisabled": "{{name}} の OCSP を無効化しました",
+    "toggleOcspFailed": "OCSP の切替に失敗しました"
   },
   "trustStore": {
     "caTrust": "CAトラスト",

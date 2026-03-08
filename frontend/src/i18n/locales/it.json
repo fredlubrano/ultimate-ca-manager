@@ -1150,7 +1150,10 @@
     "includeURLsNote": "Includi questi URL nelle impostazioni CA per il controllo automatico della revoca.",
     "autoRegenEnabled": "Rigenerazione auto abilitata per {{name}}",
     "autoRegenDisabled": "Rigenerazione auto disabilitata per {{name}}",
-    "toggleAutoRegenFailed": "Impossibile attivare/disattivare la rigenerazione automatica"
+    "toggleAutoRegenFailed": "Impossibile attivare/disattivare la rigenerazione automatica",
+    "ocspEnabled": "OCSP abilitato per {{name}}",
+    "ocspDisabled": "OCSP disabilitato per {{name}}",
+    "toggleOcspFailed": "Errore nel commutare OCSP"
   },
   "trustStore": {
     "caTrust": "Fiducia CA",

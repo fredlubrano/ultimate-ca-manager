@@ -110,6 +110,22 @@ export default function CRLOCSPPage() {
     }
   }
 
+  const handleToggleOcsp = async (ca) => {
+    if (!canWrite('crl')) return
+    try {
+      const newVal = !ca.ocsp_enabled
+      const result = await casService.update(ca.id, { ocsp_enabled: newVal })
+      showSuccess(t(newVal ? 'crlOcsp.ocspEnabled' : 'crlOcsp.ocspDisabled', { name: ca.descr }))
+      setCas(prev => prev.map(c => c.id === ca.id ? { ...c, ocsp_enabled: newVal } : c))
+      if (selectedCA?.id === ca.id) {
+        setSelectedCA(prev => ({ ...prev, ocsp_enabled: newVal }))
+      }
+      loadData()
+    } catch (error) {
+      showError(error.message || t('crlOcsp.toggleOcspFailed'))
+    }
+  }
+
   const handleDownloadCRL = () => {
     if (!selectedCRL?.crl_pem) return
     
@@ -213,7 +229,7 @@ export default function CRLOCSPPage() {
     },
     {
       key: 'cdp_enabled',
-      header: t('common.auto'),
+      header: 'CRL',
       priority: 3,
       hideOnMobile: true,
       render: (v, row) => (
@@ -221,6 +237,22 @@ export default function CRLOCSPPage() {
           <ToggleSwitch
             checked={v}
             onChange={() => handleToggleAutoRegen(row)}
+            disabled={!row.has_private_key || !canWrite('crl')}
+            size="sm"
+          />
+        </div>
+      )
+    },
+    {
+      key: 'ocsp_enabled',
+      header: 'OCSP',
+      priority: 3,
+      hideOnMobile: true,
+      render: (v, row) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ToggleSwitch
+            checked={v}
+            onChange={() => handleToggleOcsp(row)}
             disabled={!row.has_private_key || !canWrite('crl')}
             size="sm"
           />
@@ -257,7 +289,7 @@ export default function CRLOCSPPage() {
         </span>
       )
     }
-  ], [canWrite, handleToggleAutoRegen, t])
+  ], [canWrite, handleToggleAutoRegen, handleToggleOcsp, t])
 
   // Help content
   const helpContent = (
@@ -398,11 +430,13 @@ export default function CRLOCSPPage() {
         <CompactGrid cols={2}>
           <CompactField 
             autoIcon="status" label={t('common.status')} 
-            value={ocspStatus.enabled ? (ocspStatus.running ? t('common.running') : t('crlOcsp.stopped')) : t('common.disabled')} 
+            value={selectedCA.ocsp_enabled ? t('common.enabled') : t('common.disabled')} 
           />
+          {selectedCA.ocsp_enabled && selectedCA.ocsp_url && (
+            <CompactField autoIcon="url" label="OCSP URL" value={selectedCA.ocsp_url} mono />
+          )}
           <CompactField autoIcon="totalRequests" label={t('crlOcsp.totalRequests')} value={ocspStats.total_requests} />
           <CompactField autoIcon="cacheHits" label={t('crlOcsp.cacheHits')} value={ocspStats.cache_hits} />
-          <CompactField autoIcon="hitRate" label={t('crlOcsp.hitRate')} value={`${cacheHitRate}%`} />
         </CompactGrid>
       </CompactSection>
 

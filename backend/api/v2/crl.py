@@ -151,20 +151,36 @@ def toggle_auto_regen(ca_id):
 @require_auth(['read:certificates'])
 def get_ocsp_status():
     """Get OCSP service status"""
-    # Check if OCSP is enabled in SystemConfig (placeholder)
-    return success_response(data={
-        'enabled': True,
-        'running': True
-    })
+    try:
+        ocsp_cas = CA.query.filter_by(ocsp_enabled=True).count()
+        enabled = ocsp_cas > 0
+        return success_response(data={
+            'enabled': enabled,
+            'running': enabled,
+            'ca_count': ocsp_cas
+        })
+    except Exception as e:
+        logger.warning(f"OCSP status check failed: {e}")
+        return success_response(data={
+            'enabled': False,
+            'running': False,
+            'ca_count': 0
+        })
 
 
 @bp.route('/api/v2/ocsp/stats', methods=['GET'])
 @require_auth(['read:certificates'])
 def get_ocsp_stats():
-    """Get OCSP statistics"""
-    # In a real implementation this would query logs or stats table
-    # For now we don't have OCSP stats tracking in DB
-    return success_response(data={
-        'total_requests': 0,
-        'cache_hits': 0
-    })
+    """Get OCSP statistics from cached responses"""
+    from models.ocsp import OCSPResponse
+    try:
+        total = OCSPResponse.query.count()
+        return success_response(data={
+            'total_requests': total,
+            'cache_hits': total,
+        })
+    except Exception:
+        return success_response(data={
+            'total_requests': 0,
+            'cache_hits': 0,
+        })

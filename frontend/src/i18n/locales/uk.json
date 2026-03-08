@@ -1150,7 +1150,10 @@
     "includeURLsNote": "Include these URLs in CA settings for автоmatic revocation перевірка.",
     "autoRegenEnabled": "Автоматичне оновлення увімкнено для {{name}}",
     "autoRegenDisabled": "Автоматичне оновлення вимкнено для {{name}}",
-    "toggleAutoRegenFailed": "Невдало to toggle авто-regeneration"
+    "toggleAutoRegenFailed": "Невдало to toggle авто-regeneration",
+    "ocspEnabled": "OCSP увімкнено для {{name}}",
+    "ocspDisabled": "OCSP вимкнено для {{name}}",
+    "toggleOcspFailed": "Не вдалося перемкнути OCSP"
   },
   "trustStore": {
     "caTrust": "Довіра CA",

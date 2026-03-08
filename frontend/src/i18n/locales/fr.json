@@ -948,7 +948,10 @@
     "includeURLsNote": "Incluez ces URL dans les paramètres de l'AC.",
     "autoRegenEnabled": "Régénération automatique activée pour {{name}}",
     "autoRegenDisabled": "Régénération automatique désactivée pour {{name}}",
-    "toggleAutoRegenFailed": "Échec du basculement de la régénération automatique"
+    "toggleAutoRegenFailed": "Échec du basculement de la régénération automatique",
+    "ocspEnabled": "OCSP activé pour {{name}}",
+    "ocspDisabled": "OCSP désactivé pour {{name}}",
+    "toggleOcspFailed": "Échec du basculement OCSP"
   },
   "csrs": {
     "uploadCSR": "Téléverser une CSR",

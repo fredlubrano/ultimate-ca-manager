@@ -1150,7 +1150,10 @@
     "includeURLsNote": "Include these URLs in CA configuración for automatic revocation verificaring.",
     "autoRegenEnabled": "Auto-regeneration habilitard for {{name}}",
     "autoRegenDisabled": "Auto-regeneration deshabilitard for {{name}}",
-    "toggleAutoRegenFailed": "Error to toggle auto-regeneration"
+    "toggleAutoRegenFailed": "Error to toggle auto-regeneration",
+    "ocspEnabled": "OCSP habilitado para {{name}}",
+    "ocspDisabled": "OCSP deshabilitado para {{name}}",
+    "toggleOcspFailed": "Error al cambiar OCSP"
   },
   "trustStore": {
     "caTrust": "Confianza de CA",

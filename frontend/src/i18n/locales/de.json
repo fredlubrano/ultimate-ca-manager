@@ -1150,7 +1150,10 @@
     "includeURLsNote": "Diese URLs in CA-Einstellungen eintragen.",
     "autoRegenEnabled": "Auto-Regenerierung aktiviert für {{name}}",
     "autoRegenDisabled": "Auto-Regenerierung deaktiviert für {{name}}",
-    "toggleAutoRegenFailed": "Fehler beim Umschalten der automatischen Regenerierung"
+    "toggleAutoRegenFailed": "Fehler beim Umschalten der automatischen Regenerierung",
+    "ocspEnabled": "OCSP aktiviert für {{name}}",
+    "ocspDisabled": "OCSP deaktiviert für {{name}}",
+    "toggleOcspFailed": "OCSP-Umschaltung fehlgeschlagen"
   },
   "trustStore": {
     "caTrust": "CA-Vertrauen",

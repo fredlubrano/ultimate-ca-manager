@@ -1150,7 +1150,10 @@
     "includeURLsNote": "在 CA 设置中包含这些 URL 以进行自动吊销检查。",
     "autoRegenEnabled": "已为 {{name}} 启用自动生成",
     "autoRegenDisabled": "已为 {{name}} 禁用自动生成",
-    "toggleAutoRegenFailed": "切换自动生成失败"
+    "toggleAutoRegenFailed": "切换自动生成失败",
+    "ocspEnabled": "已为 {{name}} 启用 OCSP",
+    "ocspDisabled": "已为 {{name}} 禁用 OCSP",
+    "toggleOcspFailed": "切换 OCSP 失败"
   },
   "trustStore": {
     "caTrust": "CA 信任",

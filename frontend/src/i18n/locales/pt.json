@@ -1150,7 +1150,10 @@
     "includeURLsNote": "Include these URLs em AC settings para automatic revocation a verificar.",
     "autoRegenEnabled": "Auto-regeneration activado para {{name}}",
     "autoRegenDisabled": "Auto-regeneration desactivado para {{name}}",
-    "toggleAutoRegenFailed": "Falhado para toggle auto-regeneration"
+    "toggleAutoRegenFailed": "Falhado para toggle auto-regeneration",
+    "ocspEnabled": "OCSP ativado para {{name}}",
+    "ocspDisabled": "OCSP desativado para {{name}}",
+    "toggleOcspFailed": "Falha ao alternar OCSP"
   },
   "trustStore": {
     "caTrust": "AC Trust",
