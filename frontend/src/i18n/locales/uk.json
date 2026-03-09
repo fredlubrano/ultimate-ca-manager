@@ -2074,7 +2074,11 @@
     "oauth2PresetGithub": "GitHub",
     "oauth2PresetCustom": "Власний",
     "oauth2TenantId": "ID орендаря",
-    "oauth2TenantIdPlaceholder": "ваш-id-орендаря"
+    "oauth2TenantIdPlaceholder": "ваш-id-орендаря",
+    "verifySsl": "Перевірити сертифікат SSL",
+    "caBundleLabel": "Користувацький сертифікат CA (PEM)",
+    "caBundleHelp": "Вставте сертифікат CA у форматі PEM, якщо провайдер використовує приватний або самопідписаний сертифікат.",
+    "sslWarning": "⚠ Перевірку SSL вимкнено. З'єднання вразливі до атак типу man-in-the-middle."
   },
   "notifications": {
     "certificateIssued": "Сертифікат видано: {{name}}",

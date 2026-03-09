@@ -542,6 +542,8 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
     ldap_server: provider?.ldap_server || '',
     ldap_port: provider?.ldap_port || 389,
     ldap_use_ssl: provider?.ldap_use_ssl ?? false,
+    ldap_verify_ssl: provider?.ldap_verify_ssl ?? true,
+    ldap_ca_bundle: '',
     ldap_bind_dn: provider?.ldap_bind_dn || '',
     ldap_bind_password: '',
     ldap_base_dn: provider?.ldap_base_dn || '',
@@ -558,6 +560,8 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
     oauth2_token_url: provider?.oauth2_token_url || '',
     oauth2_userinfo_url: provider?.oauth2_userinfo_url || '',
     oauth2_scopes: provider?.oauth2_scopes?.join(' ') || 'openid profile email',
+    oauth2_verify_ssl: provider?.oauth2_verify_ssl ?? true,
+    oauth2_ca_bundle: '',
     // SAML
     saml_metadata_url: provider?.saml_metadata_url || '',
     saml_entity_id: provider?.saml_entity_id || '',
@@ -566,6 +570,8 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
     saml_certificate: provider?.saml_certificate || '',
     saml_sign_requests: provider?.saml_sign_requests ?? true,
     saml_sp_cert_source: provider?.saml_sp_cert_source || 'https',
+    saml_verify_ssl: provider?.saml_verify_ssl ?? true,
+    saml_ca_bundle: '',
   })
   const [fetchingMetadata, setFetchingMetadata] = useState(false)
   const [availableCerts, setAvailableCerts] = useState([])
@@ -596,7 +602,11 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
     if (!formData.saml_metadata_url) return
     setFetchingMetadata(true)
     try {
-      const response = await ssoService.fetchIdpMetadata(formData.saml_metadata_url)
+      const response = await ssoService.fetchIdpMetadata(formData.saml_metadata_url, {
+        provider_id: provider?.id,
+        verify_ssl: formData.saml_verify_ssl,
+        ca_bundle: formData.saml_ca_bundle || undefined,
+      })
       const meta = response.data
       setFormData(prev => ({
         ...prev,
@@ -647,6 +657,10 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
     e.preventDefault()
     const data = { ...formData }
     delete data._directoryType
+    // Don't send empty ca_bundle strings
+    if (!data.oauth2_ca_bundle) delete data.oauth2_ca_bundle
+    if (!data.saml_ca_bundle) delete data.saml_ca_bundle
+    if (!data.ldap_ca_bundle) delete data.ldap_ca_bundle
     if (data.provider_type === 'oauth2') {
       data.oauth2_scopes = data.oauth2_scopes.split(/\s+/).filter(Boolean)
     }
@@ -805,6 +819,31 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                 label={t('sso.ldapUseSsl')}
                 size="sm"
               />
+              {formData.ldap_use_ssl && (
+                <>
+                  <ToggleSwitch
+                    checked={formData.ldap_verify_ssl}
+                    onChange={(val) => handleChange('ldap_verify_ssl', val)}
+                    label={t('sso.verifySsl')}
+                    size="sm"
+                  />
+                  {!formData.ldap_verify_ssl && (
+                    <p className="text-xs text-amber-500">{t('sso.sslWarning')}</p>
+                  )}
+                  {formData.ldap_verify_ssl && (
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1">{t('sso.caBundleLabel')}</label>
+                      <textarea
+                        className="w-full h-24 px-3 py-2 text-xs font-mono bg-bg-secondary border border-border rounded-md"
+                        value={formData.ldap_ca_bundle}
+                        onChange={e => handleChange('ldap_ca_bundle', e.target.value)}
+                        placeholder="-----BEGIN CERTIFICATE-----&#10;..."
+                      />
+                      <p className="text-xs text-text-tertiary mt-1">{t('sso.caBundleHelp')}</p>
+                    </div>
+                  )}
+                </>
+              )}
               <Input
                 label={t('sso.bindDn')}
                 value={formData.ldap_bind_dn}
@@ -1079,6 +1118,27 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                 placeholder={t('sso.scopesPlaceholder')}
               />
               <CopyableUrl label={t('sso.redirectUri')} value={oauthCallbackUrl} />
+              <ToggleSwitch
+                checked={formData.oauth2_verify_ssl}
+                onChange={(val) => handleChange('oauth2_verify_ssl', val)}
+                label={t('sso.verifySsl')}
+                size="sm"
+              />
+              {!formData.oauth2_verify_ssl && (
+                <p className="text-xs text-amber-500">{t('sso.sslWarning')}</p>
+              )}
+              {formData.oauth2_verify_ssl && (
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">{t('sso.caBundleLabel')}</label>
+                  <textarea
+                    className="w-full h-24 px-3 py-2 text-xs font-mono bg-bg-secondary border border-border rounded-md"
+                    value={formData.oauth2_ca_bundle}
+                    onChange={e => handleChange('oauth2_ca_bundle', e.target.value)}
+                    placeholder="-----BEGIN CERTIFICATE-----&#10;..."
+                  />
+                  <p className="text-xs text-text-tertiary mt-1">{t('sso.caBundleHelp')}</p>
+                </div>
+              )}
               {provider?.id && (
                 <Button
                   type="button"
@@ -1239,6 +1299,27 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                   : [{ value: 'https', label: t('sso.httpsDefault') }]
                 }
               />
+              <ToggleSwitch
+                checked={formData.saml_verify_ssl}
+                onChange={(val) => handleChange('saml_verify_ssl', val)}
+                label={t('sso.verifySsl')}
+                size="sm"
+              />
+              {!formData.saml_verify_ssl && (
+                <p className="text-xs text-amber-500">{t('sso.sslWarning')}</p>
+              )}
+              {formData.saml_verify_ssl && (
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1">{t('sso.caBundleLabel')}</label>
+                  <textarea
+                    className="w-full h-24 px-3 py-2 text-xs font-mono bg-bg-secondary border border-border rounded-md"
+                    value={formData.saml_ca_bundle}
+                    onChange={e => handleChange('saml_ca_bundle', e.target.value)}
+                    placeholder="-----BEGIN CERTIFICATE-----&#10;..."
+                  />
+                  <p className="text-xs text-text-tertiary mt-1">{t('sso.caBundleHelp')}</p>
+                </div>
+              )}
               {provider?.id && (
                 <Button
                   type="button"

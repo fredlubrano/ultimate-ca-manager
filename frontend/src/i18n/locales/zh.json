@@ -2074,7 +2074,11 @@
     "oauth2PresetGithub": "GitHub",
     "oauth2PresetCustom": "自定义",
     "oauth2TenantId": "租户ID",
-    "oauth2TenantIdPlaceholder": "your-tenant-id"
+    "oauth2TenantIdPlaceholder": "your-tenant-id",
+    "verifySsl": "验证SSL证书",
+    "caBundleLabel": "自定义CA证书（PEM）",
+    "caBundleHelp": "如果提供商使用私有或自签名证书，请粘贴PEM格式的CA证书。",
+    "sslWarning": "⚠ SSL验证已禁用。连接容易受到中间人攻击。"
   },
   "notifications": {
     "certificateIssued": "证书已颁发：{{name}}",

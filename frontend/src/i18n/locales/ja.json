@@ -2074,7 +2074,11 @@
     "oauth2PresetGithub": "GitHub",
     "oauth2PresetCustom": "カスタム",
     "oauth2TenantId": "テナントID",
-    "oauth2TenantIdPlaceholder": "your-tenant-id"
+    "oauth2TenantIdPlaceholder": "your-tenant-id",
+    "verifySsl": "SSL証明書を検証",
+    "caBundleLabel": "カスタムCA証明書（PEM）",
+    "caBundleHelp": "プロバイダーがプライベートまたは自己署名証明書を使用している場合、PEM形式のCA証明書を貼り付けてください。",
+    "sslWarning": "⚠ SSL検証が無効です。接続は中間者攻撃に対して脆弱です。"
   },
   "notifications": {
     "certificateIssued": "証明書が発行されました：{{name}}",

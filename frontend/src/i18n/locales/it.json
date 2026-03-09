@@ -2074,7 +2074,11 @@
     "oauth2PresetGithub": "GitHub",
     "oauth2PresetCustom": "Personalizzato",
     "oauth2TenantId": "ID tenant",
-    "oauth2TenantIdPlaceholder": "il-tuo-tenant-id"
+    "oauth2TenantIdPlaceholder": "il-tuo-tenant-id",
+    "verifySsl": "Verifica certificato SSL",
+    "caBundleLabel": "Certificato CA personalizzato (PEM)",
+    "caBundleHelp": "Incolla il certificato CA in formato PEM se il provider utilizza un certificato privato o autofirmato.",
+    "sslWarning": "⚠ La verifica SSL è disattivata. Le connessioni sono vulnerabili agli attacchi man-in-the-middle."
   },
   "notifications": {
     "certificateIssued": "Certificato emesso: {{name}}",

@@ -2077,7 +2077,11 @@
     "oauth2PresetGoogle": "Google Workspace",
     "oauth2PresetGithub": "GitHub",
     "oauth2TenantId": "Tenant ID",
-    "oauth2TenantIdPlaceholder": "your-tenant-id"
+    "oauth2TenantIdPlaceholder": "your-tenant-id",
+    "verifySsl": "Verify SSL Certificate",
+    "caBundleLabel": "Custom CA Certificate (PEM)",
+    "caBundleHelp": "Paste the CA certificate in PEM format if the provider uses a private or self-signed certificate.",
+    "sslWarning": "⚠ SSL verification is disabled. Connections are vulnerable to man-in-the-middle attacks."
   },
   "notifications": {
     "certificateIssued": "Certificate issued: {{name}}",

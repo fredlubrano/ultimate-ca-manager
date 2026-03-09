@@ -20,11 +20,69 @@ import requests as http_requests
 from lxml import etree
 
 import logging
+import os
+import tempfile
 logger = logging.getLogger(__name__)
 
 VALID_ROLES = {'admin', 'operator', 'auditor', 'viewer'}
 
 bp = Blueprint('sso_pro', __name__)
+
+
+def _get_ssl_verify(provider, protocol):
+    """Get SSL verification parameter for requests library.
+    
+    Returns:
+        False if verify_ssl is disabled
+        str (temp file path) if ca_bundle PEM is configured
+        True otherwise (use default certifi bundle)
+    """
+    verify_ssl = getattr(provider, f'{protocol}_verify_ssl', None)
+    if verify_ssl is False or verify_ssl == 0:
+        return False
+    
+    ca_bundle = getattr(provider, f'{protocol}_ca_bundle', None)
+    if ca_bundle:
+        fd, path = tempfile.mkstemp(suffix='.pem', prefix='ucm_sso_ca_')
+        try:
+            os.write(fd, ca_bundle.encode('utf-8') if isinstance(ca_bundle, str) else ca_bundle)
+        finally:
+            os.close(fd)
+        return path
+    
+    return True
+
+
+def _cleanup_ssl_verify(verify_param):
+    """Clean up temp CA bundle file if one was created."""
+    if isinstance(verify_param, str) and verify_param.startswith(tempfile.gettempdir()):
+        try:
+            os.unlink(verify_param)
+        except OSError:
+            pass
+
+
+def _build_ldap_tls(provider):
+    """Build ldap3 Tls object based on provider SSL settings."""
+    import ssl
+    verify_ssl = provider.ldap_verify_ssl if provider.ldap_verify_ssl is not None else True
+    
+    if not provider.ldap_use_ssl and not verify_ssl:
+        return None
+    
+    if not verify_ssl:
+        return __import__('ldap3').Tls(validate=ssl.CERT_NONE)
+    
+    ca_bundle = provider.ldap_ca_bundle
+    if ca_bundle:
+        fd, ca_path = tempfile.mkstemp(suffix='.pem', prefix='ucm_ldap_ca_')
+        try:
+            os.write(fd, ca_bundle.encode('utf-8') if isinstance(ca_bundle, str) else ca_bundle)
+        finally:
+            os.close(fd)
+        return __import__('ldap3').Tls(ca_certs_file=ca_path, validate=ssl.CERT_REQUIRED)
+    
+    return None
 
 
 def _encrypt_ldap_password(password: str) -> str:
@@ -196,6 +254,8 @@ def create_provider():
         provider.saml_certificate = data.get('saml_certificate')
         provider.saml_sign_requests = data.get('saml_sign_requests', True)
         provider.saml_sp_cert_source = data.get('saml_sp_cert_source', 'https')
+        provider.saml_verify_ssl = data.get('saml_verify_ssl', True)
+        provider.saml_ca_bundle = data.get('saml_ca_bundle')
     
     elif data['provider_type'] == 'oauth2':
         provider.oauth2_client_id = data.get('oauth2_client_id')
@@ -204,11 +264,15 @@ def create_provider():
         provider.oauth2_token_url = data.get('oauth2_token_url')
         provider.oauth2_userinfo_url = data.get('oauth2_userinfo_url')
         provider.oauth2_scopes = json.dumps(data.get('oauth2_scopes', ['openid', 'profile', 'email']))
+        provider.oauth2_verify_ssl = data.get('oauth2_verify_ssl', True)
+        provider.oauth2_ca_bundle = data.get('oauth2_ca_bundle')
     
     elif data['provider_type'] == 'ldap':
         provider.ldap_server = data.get('ldap_server')
         provider.ldap_port = data.get('ldap_port', 389)
         provider.ldap_use_ssl = data.get('ldap_use_ssl', False)
+        provider.ldap_verify_ssl = data.get('ldap_verify_ssl', True)
+        provider.ldap_ca_bundle = data.get('ldap_ca_bundle')
         provider.ldap_bind_dn = data.get('ldap_bind_dn')
         provider.ldap_bind_password = _encrypt_ldap_password(data.get('ldap_bind_password'))
         provider.ldap_base_dn = data.get('ldap_base_dn')
@@ -291,13 +355,16 @@ def update_provider(provider_id=None, provider_type_name=None):
     
     # Type-specific fields
     if provider.provider_type == 'saml':
-        for field in ['saml_metadata_url', 'saml_entity_id', 'saml_sso_url', 'saml_slo_url', 'saml_certificate', 'saml_sign_requests', 'saml_sp_cert_source']:
+        for field in ['saml_metadata_url', 'saml_entity_id', 'saml_sso_url', 'saml_slo_url', 
+                      'saml_certificate', 'saml_sign_requests', 'saml_sp_cert_source',
+                      'saml_verify_ssl', 'saml_ca_bundle']:
             if field in data:
                 setattr(provider, field, data[field])
     
     elif provider.provider_type == 'oauth2':
         for field in ['oauth2_client_id', 'oauth2_auth_url', 
-                      'oauth2_token_url', 'oauth2_userinfo_url']:
+                      'oauth2_token_url', 'oauth2_userinfo_url',
+                      'oauth2_verify_ssl', 'oauth2_ca_bundle']:
             if field in data:
                 setattr(provider, field, data[field])
         # Only update secret if non-empty (empty = keep existing)
@@ -310,7 +377,7 @@ def update_provider(provider_id=None, provider_type_name=None):
         for field in ['ldap_server', 'ldap_port', 'ldap_use_ssl', 'ldap_bind_dn', 
                       'ldap_base_dn', 'ldap_user_filter',
                       'ldap_group_filter', 'ldap_group_member_attr', 'ldap_username_attr', 'ldap_email_attr', 
-                      'ldap_fullname_attr']:
+                      'ldap_fullname_attr', 'ldap_verify_ssl', 'ldap_ca_bundle']:
             if field in data:
                 setattr(provider, field, data[field])
         # Only update password if non-empty (empty = keep existing)
@@ -407,13 +474,15 @@ def _test_ldap_connection(provider):
     """Test LDAP connection"""
     try:
         import ldap3
-        from ldap3 import Server, Connection, ALL
+        from ldap3 import Server, Connection, ALL, Tls
         from ldap3.utils.conv import escape_filter_chars
         
+        tls_config = _build_ldap_tls(provider)
         server = Server(
             provider.ldap_server,
             port=provider.ldap_port,
             use_ssl=provider.ldap_use_ssl,
+            tls=tls_config,
             get_info=ALL
         )
         
@@ -450,13 +519,15 @@ def _ldap_authenticate_user(provider, username, password):
     """Authenticate user via LDAP with proper filter escaping"""
     try:
         import ldap3
-        from ldap3 import Server, Connection, ALL
+        from ldap3 import Server, Connection, ALL, Tls
         from ldap3.utils.conv import escape_filter_chars
         
+        tls_config = _build_ldap_tls(provider)
         server = Server(
             provider.ldap_server,
             port=provider.ldap_port,
             use_ssl=provider.ldap_use_ssl,
+            tls=tls_config,
             get_info=ALL
         )
         
@@ -585,18 +656,24 @@ def _ldap_authenticate_user(provider, username, password):
 
 def _test_oauth2_connection(provider):
     """Test OAuth2 configuration (checks URLs are reachable)"""
+    verify = _get_ssl_verify(provider, 'oauth2')
     try:
-        # Test auth URL
-        response = http_requests.head(provider.oauth2_auth_url, timeout=5, allow_redirects=True)
+        response = http_requests.head(provider.oauth2_auth_url, timeout=5, allow_redirects=True, verify=verify)
         
         return success_response(data={
             'status': 'success',
             'message': 'OAuth2 endpoints reachable',
             'auth_url_status': response.status_code
         })
+    except http_requests.exceptions.SSLError as e:
+        logger.error(f"OAuth2 connection test SSL error: {e}")
+        return error_response(
+            "SSL certificate verification failed. Enable 'Skip SSL Verification' or upload the CA certificate.", 400)
     except Exception as e:
         logger.error(f"OAuth2 connection test failed: {e}")
         return error_response("OAuth2 test failed. Check authorization URL is reachable.", 400)
+    finally:
+        _cleanup_ssl_verify(verify)
 
 
 def _test_saml_connection(provider):
@@ -645,13 +722,15 @@ def test_mapping(provider_id):
     
     try:
         import ldap3
-        from ldap3 import Server, Connection, ALL
+        from ldap3 import Server, Connection, ALL, Tls
         from ldap3.utils.conv import escape_filter_chars
         
+        tls_config = _build_ldap_tls(provider)
         server = Server(
             provider.ldap_server,
             port=provider.ldap_port,
             use_ssl=provider.ldap_use_ssl,
+            tls=tls_config,
             get_info=ALL
         )
         
@@ -769,18 +848,37 @@ def fetch_idp_metadata():
         return error_response("metadata_url is required", 400)
     
     try:
-        resp = http_requests.get(metadata_url, timeout=10, verify=True)
+        # Use provider SSL settings if provider_id provided, otherwise default to True
+        provider_id = data.get('provider_id')
+        if provider_id:
+            provider = SSOProvider.query.get(provider_id)
+            verify = _get_ssl_verify(provider, 'saml') if provider else True
+        else:
+            # Check if verify_ssl was explicitly passed (for new providers not yet saved)
+            verify = data.get('verify_ssl', True)
+            ca_bundle = data.get('ca_bundle')
+            if not verify:
+                verify = False
+            elif ca_bundle:
+                fd, path = tempfile.mkstemp(suffix='.pem', prefix='ucm_sso_ca_')
+                try:
+                    os.write(fd, ca_bundle.encode('utf-8') if isinstance(ca_bundle, str) else ca_bundle)
+                finally:
+                    os.close(fd)
+                verify = path
+        
+        resp = http_requests.get(metadata_url, timeout=10, verify=verify)
         resp.raise_for_status()
-    except http_requests.exceptions.SSLError:
-        try:
-            resp = http_requests.get(metadata_url, timeout=10, verify=False)
-            resp.raise_for_status()
-        except Exception as e:
-            logger.error(f"Failed to fetch IDP metadata (SSL fallback): {e}")
-            return error_response("Failed to fetch metadata. Check the URL is reachable.", 400)
+    except http_requests.exceptions.SSLError as e:
+        logger.error(f"Failed to fetch IDP metadata (SSL): {e}")
+        return error_response(
+            "SSL certificate verification failed. Enable 'Skip SSL Verification' or upload the CA certificate.", 400)
     except Exception as e:
         logger.error(f"Failed to fetch IDP metadata: {e}")
         return error_response("Failed to fetch metadata. Check the URL is reachable.", 400)
+    finally:
+        if isinstance(verify, str) and verify.startswith(tempfile.gettempdir()):
+            _cleanup_ssl_verify(verify)
     
     try:
         parsed = _parse_saml_metadata(resp.text)
@@ -1166,6 +1264,7 @@ def sso_callback(provider_type):
             # Exchange code for token
             callback_url = request.url_root.rstrip('/') + '/api/v2/sso/callback/oauth2'
             
+            verify = _get_ssl_verify(provider, 'oauth2')
             token_response = http_requests.post(
                 provider.oauth2_token_url,
                 data={
@@ -1175,7 +1274,8 @@ def sso_callback(provider_type):
                     'client_id': provider.oauth2_client_id,
                     'client_secret': provider.oauth2_client_secret
                 },
-                timeout=10
+                timeout=10,
+                verify=verify
             )
             
             if not token_response.ok:
@@ -1192,7 +1292,8 @@ def sso_callback(provider_type):
             userinfo_response = http_requests.get(
                 provider.oauth2_userinfo_url,
                 headers={'Authorization': f'Bearer {access_token}'},
-                timeout=10
+                timeout=10,
+                verify=verify
             )
             
             if not userinfo_response.ok:
@@ -1261,6 +1362,8 @@ def sso_callback(provider_type):
                 success=False
             )
             return redirect('/login?error=callback_error')
+        finally:
+            _cleanup_ssl_verify(verify)
     
     elif provider.provider_type == 'saml':
         try:

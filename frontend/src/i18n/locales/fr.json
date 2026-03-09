@@ -2005,7 +2005,11 @@
     "oauth2PresetGoogle": "Google Workspace",
     "oauth2PresetGithub": "GitHub",
     "oauth2TenantId": "ID du locataire (Tenant ID)",
-    "oauth2TenantIdPlaceholder": "votre-tenant-id"
+    "oauth2TenantIdPlaceholder": "votre-tenant-id",
+    "verifySsl": "Vérifier le certificat SSL",
+    "caBundleLabel": "Certificat CA personnalisé (PEM)",
+    "caBundleHelp": "Collez le certificat CA au format PEM si le fournisseur utilise un certificat privé ou auto-signé.",
+    "sslWarning": "⚠ La vérification SSL est désactivée. Les connexions sont vulnérables aux attaques man-in-the-middle."
   },
   "templates": {
     "template": "Modèle",

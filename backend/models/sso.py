@@ -31,6 +31,8 @@ class SSOProvider(db.Model):
     saml_certificate = db.Column(db.Text)  # Public cert, not secret
     saml_sign_requests = db.Column(db.Boolean, default=True)
     saml_sp_cert_source = db.Column(db.String(50), default='https')  # 'https' or cert ID
+    saml_verify_ssl = db.Column(db.Boolean, default=True)
+    saml_ca_bundle = db.Column(db.Text)  # PEM content
     
     # OAuth2 settings
     oauth2_client_id = db.Column(db.String(500))
@@ -39,11 +41,15 @@ class SSOProvider(db.Model):
     oauth2_token_url = db.Column(db.String(500))
     oauth2_userinfo_url = db.Column(db.String(500))
     oauth2_scopes = db.Column(db.String(500))  # JSON array
+    oauth2_verify_ssl = db.Column(db.Boolean, default=True)
+    oauth2_ca_bundle = db.Column(db.Text)  # PEM content
     
     # LDAP settings
     ldap_server = db.Column(db.String(500))
     ldap_port = db.Column(db.Integer, default=389)
     ldap_use_ssl = db.Column(db.Boolean, default=False)
+    ldap_verify_ssl = db.Column(db.Boolean, default=True)
+    ldap_ca_bundle = db.Column(db.Text)  # PEM content
     ldap_bind_dn = db.Column(db.String(500))
     _ldap_bind_password = db.Column('ldap_bind_password', db.String(500))  # Encrypted
     ldap_base_dn = db.Column(db.String(500))
@@ -145,6 +151,8 @@ class SSOProvider(db.Model):
                 'saml_sign_requests': self.saml_sign_requests,
                 'saml_sp_cert_source': self.saml_sp_cert_source or 'https',
                 'saml_certificate': self.saml_certificate,
+                'saml_verify_ssl': self.saml_verify_ssl if self.saml_verify_ssl is not None else True,
+                'saml_ca_bundle': bool(self.saml_ca_bundle),
             })
         elif self.provider_type == 'oauth2':
             data.update({
@@ -154,6 +162,8 @@ class SSOProvider(db.Model):
                 'oauth2_userinfo_url': self.oauth2_userinfo_url,
                 'oauth2_scopes': json.loads(self.oauth2_scopes) if self.oauth2_scopes else [],
                 'oauth2_client_secret': '***' if self.oauth2_client_secret else None,
+                'oauth2_verify_ssl': self.oauth2_verify_ssl if self.oauth2_verify_ssl is not None else True,
+                'oauth2_ca_bundle': bool(self.oauth2_ca_bundle),
             })
             if include_secrets:
                 data['oauth2_client_secret'] = self.oauth2_client_secret
@@ -162,6 +172,8 @@ class SSOProvider(db.Model):
                 'ldap_server': self.ldap_server,
                 'ldap_port': self.ldap_port,
                 'ldap_use_ssl': self.ldap_use_ssl,
+                'ldap_verify_ssl': self.ldap_verify_ssl if self.ldap_verify_ssl is not None else True,
+                'ldap_ca_bundle': bool(self.ldap_ca_bundle),
                 'ldap_bind_dn': self.ldap_bind_dn,
                 'ldap_base_dn': self.ldap_base_dn,
                 'ldap_user_filter': self.ldap_user_filter,

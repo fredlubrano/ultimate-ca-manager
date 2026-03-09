@@ -2074,7 +2074,11 @@
     "oauth2PresetGithub": "GitHub",
     "oauth2PresetCustom": "Benutzerdefiniert",
     "oauth2TenantId": "Mandanten-ID",
-    "oauth2TenantIdPlaceholder": "ihre-mandanten-id"
+    "oauth2TenantIdPlaceholder": "ihre-mandanten-id",
+    "verifySsl": "SSL-Zertifikat überprüfen",
+    "caBundleLabel": "Benutzerdefiniertes CA-Zertifikat (PEM)",
+    "caBundleHelp": "Fügen Sie das CA-Zertifikat im PEM-Format ein, wenn der Anbieter ein privates oder selbstsigniertes Zertifikat verwendet.",
+    "sslWarning": "⚠ SSL-Überprüfung ist deaktiviert. Verbindungen sind anfällig für Man-in-the-Middle-Angriffe."
   },
   "notifications": {
     "certificateIssued": "Zertifikat ausgestellt: {{name}}",
