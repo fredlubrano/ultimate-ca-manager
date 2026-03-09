@@ -11,6 +11,21 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.65] - 2026-03-09
+
+### Security
+- **Unbounded Compliance Query** — `/api/v2/certificates/compliance` now processes certificates in batches of 200 instead of loading all into memory (DoS prevention)
+- **LIKE Wildcard Injection** — Certificate search now escapes `%` and `_` wildcards in LIKE queries
+- **HTML Injection in Emails** — Discovery notification emails now HTML-escape profile names
+- **per_page Cap** — List certificates endpoint now caps `per_page` at 100
+
+### Fixed
+- **OCSP Stats Logging** — OCSP stats endpoint now logs query failures instead of silently swallowing errors
+- **Compliance Breakdown Null Safety** — Certificate detail compliance breakdown handles malformed data gracefully
+- **Unused Variable Cleanup** — Removed unused result variable in OCSP toggle handler
+
+---
+
 ## [2.64] - 2026-03-08
 
 ### Added
