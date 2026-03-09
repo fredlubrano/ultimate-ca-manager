@@ -407,22 +407,25 @@ export function CertificateDetails({
             </div>
             {cert.compliance.breakdown && (
               <div className="grid gap-1.5">
-                {Object.entries(cert.compliance.breakdown).map(([key, item]) => (
-                  <div key={key} className="flex items-center justify-between text-xs">
-                    <span className="text-text-secondary">{t(`compliance.criteria.${key}`)}</span>
-                    <div className="flex items-center gap-2">
-                      <span className={cn(
-                        "font-mono font-medium",
-                        item.score >= item.max * 0.8 ? "text-emerald-500" :
-                        item.score >= item.max * 0.5 ? "text-amber-500" :
-                        "text-red-500"
-                      )}>
-                        {item.score}/{item.max}
-                      </span>
-                      <span className="text-text-tertiary text-2xs w-20 text-right truncate">{t(`compliance.reasons.${item.reason}`, item.reason)}</span>
+                {Object.entries(cert.compliance.breakdown).map(([key, item]) => {
+                  if (!item || typeof item.score === 'undefined') return null
+                  return (
+                    <div key={key} className="flex items-center justify-between text-xs">
+                      <span className="text-text-secondary">{t(`compliance.criteria.${key}`)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          "font-mono font-medium",
+                          item.score >= (item.max || 1) * 0.8 ? "text-emerald-500" :
+                          item.score >= (item.max || 1) * 0.5 ? "text-amber-500" :
+                          "text-red-500"
+                        )}>
+                          {item.score}/{item.max}
+                        </span>
+                        <span className="text-text-tertiary text-2xs w-20 text-right truncate">{t(`compliance.reasons.${item.reason}`, item.reason)}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>

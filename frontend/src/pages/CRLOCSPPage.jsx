@@ -114,7 +114,7 @@ export default function CRLOCSPPage() {
     if (!canWrite('crl')) return
     try {
       const newVal = !ca.ocsp_enabled
-      const result = await casService.update(ca.id, { ocsp_enabled: newVal })
+      await casService.update(ca.id, { ocsp_enabled: newVal })
       showSuccess(t(newVal ? 'crlOcsp.ocspEnabled' : 'crlOcsp.ocspDisabled', { name: ca.descr }))
       setCas(prev => prev.map(c => c.id === ca.id ? { ...c, ocsp_enabled: newVal } : c))
       if (selectedCA?.id === ca.id) {

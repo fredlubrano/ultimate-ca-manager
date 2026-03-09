@@ -179,7 +179,8 @@ def get_ocsp_stats():
             'total_requests': total,
             'cache_hits': total,
         })
-    except Exception:
+    except Exception as e:
+        logger.error(f"OCSP stats query failed: {e}")
         return success_response(data={
             'total_requests': 0,
             'cache_hits': 0,

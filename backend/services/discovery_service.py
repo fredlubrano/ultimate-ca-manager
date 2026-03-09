@@ -643,9 +643,11 @@ class DiscoveryService:
             if expiring_certs > 0:
                 parts.append(f"{expiring_certs} certificate(s) expiring soon")
 
+            from html import escape as html_escape
+            safe_name = html_escape(profile.name)
             subject = f"[UCM] Discovery scan '{profile.name}': {', '.join(parts)}"
             body = (
-                f"<h2>Discovery Scan Complete — {profile.name}</h2>"
+                f"<h2>Discovery Scan Complete — {safe_name}</h2>"
                 f"<p>Targets scanned: {summary['total_targets']}</p>"
                 f"<p>Certificates found: {summary['certs_found']}</p>"
                 f"<p>New unmanaged: <strong>{new_certs}</strong></p>"

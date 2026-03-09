@@ -53,7 +53,7 @@ def list_certificates():
     """List certificates"""
     
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
+    per_page = min(request.args.get('per_page', 20, type=int), 100)
     status = request.args.get('status')  # valid, revoked, expired, expiring
     ca_id = request.args.get('ca_id', type=int)  # Filter by CA
     search = request.args.get('search', '').strip()
@@ -98,14 +98,15 @@ def list_certificates():
         query = query.filter(Certificate.valid_to > datetime.utcnow())
         query = query.filter_by(revoked=False)
     
-    # Apply search filter
+    # Apply search filter (escape LIKE wildcards)
     if search:
+        safe_search = search.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
         query = query.filter(
             or_(
-                Certificate.subject.ilike(f'%{search}%'),
-                Certificate.issuer.ilike(f'%{search}%'),
-                Certificate.descr.ilike(f'%{search}%'),
-                Certificate.serial_number.ilike(f'%{search}%')
+                Certificate.subject.ilike(f'%{safe_search}%', escape='\\'),
+                Certificate.issuer.ilike(f'%{safe_search}%', escape='\\'),
+                Certificate.descr.ilike(f'%{safe_search}%', escape='\\'),
+                Certificate.serial_number.ilike(f'%{safe_search}%', escape='\\')
             )
         )
     
@@ -191,8 +192,8 @@ def get_certificate_stats():
 def get_compliance_stats():
     """Get aggregate compliance statistics for all certificates"""
 
-    certs = Certificate.query.filter_by(revoked=False).all()
-    if not certs:
+    total_count = Certificate.query.filter_by(revoked=False).count()
+    if not total_count:
         return success_response(data={
             'average_score': 0,
             'distribution': {'A+': 0, 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0},
@@ -201,16 +202,26 @@ def get_compliance_stats():
 
     grades = {'A+': 0, 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0}
     total_score = 0
+    count = 0
 
-    for cert in certs:
-        d = cert.to_dict()
-        result = calculate_compliance_score(d)
-        total_score += result['score']
-        grade = result['grade']
-        if grade in grades:
-            grades[grade] += 1
+    # Batch processing to avoid loading all certs into memory
+    BATCH_SIZE = 200
+    offset = 0
+    while True:
+        batch = Certificate.query.filter_by(revoked=False).limit(BATCH_SIZE).offset(offset).all()
+        if not batch:
+            break
+        for cert in batch:
+            d = cert.to_dict()
+            result = calculate_compliance_score(d)
+            total_score += result['score']
+            grade = result['grade']
+            if grade in grades:
+                grades[grade] += 1
+            count += 1
+        offset += BATCH_SIZE
+        db.session.expire_all()  # Release memory between batches
 
-    count = len(certs)
     return success_response(data={
         'average_score': round(total_score / count) if count else 0,
         'distribution': grades,
