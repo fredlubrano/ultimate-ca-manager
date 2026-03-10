@@ -368,7 +368,9 @@
     "deleted": "正常に削除されました",
     "dismiss": "閉じる",
     "exportFailed": "エクスポートに失敗しました",
-    "generating": "生成中..."
+    "generating": "生成中...",
+    "configure": "設定",
+    "countItems": "{{count}} 件のレコード"
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",
@@ -2700,7 +2702,52 @@
     "testSendDesc": "メール配信を確認するためにテスト「{{type}}」レポートを送信します。",
     "testSent": "テストレポートが送信されました",
     "title": "レポート",
-    "weekly": "毎週"
+    "weekly": "毎週",
+    "executiveReport": "エグゼクティブレポート",
+    "executiveDesc": "チャート、コンプライアンススコア、期限切れ証明書、監査サマリーを含む包括的なPDFレポート。",
+    "downloadPDF": "PDFダウンロード",
+    "pdfGenerated": "エグゼクティブレポートをダウンロードしました",
+    "pdfFailed": "PDFレポートの生成に失敗しました",
+    "dataReports": "データレポート",
+    "types": {
+      "certificate_inventory": {
+        "name": "証明書インベントリ",
+        "description": "すべての証明書の完全なリスト（ステータスとメタデータ付き）"
+      },
+      "expiring_certificates": {
+        "name": "期限切れ間近の証明書",
+        "description": "指定期間内に期限切れになる証明書"
+      },
+      "ca_hierarchy": {
+        "name": "CA階層",
+        "description": "認証局の構造と信頼チェーンの概要"
+      },
+      "audit_summary": {
+        "name": "監査サマリー",
+        "description": "過去30日間のセキュリティイベントとユーザーアクティビティ"
+      },
+      "compliance_status": {
+        "name": "コンプライアンス状況",
+        "description": "コンプライアンススコアと違反の概要"
+      }
+    },
+    "available": "の利用可能",
+    "exportFormats": "エクスポート形式",
+    "frequency": "頻度",
+    "time": "時刻 (UTC)",
+    "dayOfWeek": "曜日",
+    "dayOfMonth": "日",
+    "format": "フォーマット",
+    "monthly": "月次",
+    "days": {
+      "mon": "月曜日",
+      "tue": "火曜日",
+      "wed": "水曜日",
+      "thu": "木曜日",
+      "fri": "金曜日",
+      "sat": "土曜日",
+      "sun": "日曜日"
+    }
   },
   "export": {
     "title": "エクスポート",

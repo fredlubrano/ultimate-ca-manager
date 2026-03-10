@@ -29,4 +29,8 @@ export const reportsService = {
   async sendTest(reportType, recipient) {
     return apiClient.post('/reports/send-test', { report_type: reportType, recipient })
   },
+
+  async downloadExecutivePDF() {
+    return apiClient.get('/reports/executive-pdf', { responseType: 'blob' })
+  },
 }

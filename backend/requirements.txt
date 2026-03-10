@@ -83,3 +83,5 @@ flask-socketio==5.6.0
 python-socketio==5.16.1
 gevent==25.9.1
 gevent-websocket==0.10.1
+fpdf2>=2.8
+matplotlib>=3.8

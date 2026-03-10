@@ -1977,16 +1977,37 @@ Security events and user activity summary. Includes login attempts, certificate 
 ### Compliance Status
 Policy compliance and violation summary. Shows which certificates comply with your policies and which ones violate them. Required for regulatory compliance.
 
+## Executive PDF Report
+
+Click **Download PDF** in the top-right to generate a professional executive report suitable for management reviews, board presentations, and compliance audits.
+
+### Contents
+The PDF report includes 9 sections:
+1. **Cover Page** — Key metrics, risk gauge, and key findings at a glance
+2. **Table of Contents** — Quick navigation
+3. **Executive Summary** — Overall PKI health, certificate distribution, and risk level
+4. **Risk Assessment** — Critical findings, expiring certificates, weak algorithms
+5. **Certificate Inventory** — Breakdown by status, key type, and issuing CA
+6. **Compliance Analysis** — Score distribution, grade breakdown, category scores
+7. **Certificate Lifecycle** — Expiration timeline and automation rate
+8. **CA Infrastructure** — Root and intermediate CA details, hierarchy
+9. **Recommendations** — Actionable items based on current PKI state
+
+### Charts & Visuals
+The report includes visual elements: risk gauge bar, status distribution, compliance grade breakdown, and expiration timeline — designed for non-technical stakeholders.
+
+> 💡 The PDF report is generated from live data. Download it before meetings for the most current snapshot.
+
 ## Generating Reports
 
-1. Find the report card you want to generate
+1. Find the report you want in the list
 2. Click **▶ Generate** to create a preview
-3. The preview appears below the cards as formatted JSON
+3. The preview appears below as a formatted table
 4. Click **Close** to dismiss the preview
 
 ## Downloading Reports
 
-Each report card has two download buttons:
+Each report row has download buttons:
 - **CSV** — Spreadsheet format for Excel, Google Sheets, or LibreOffice
 - **JSON** — Structured data for automation and integration
 
@@ -2007,13 +2028,14 @@ Sends a policy compliance summary every week. Useful for ongoing compliance moni
 4. Click Save
 
 ### Test Send
-Before enabling schedules, use the ✈️ button on any report card to send a test report to a specific email address. This verifies that SMTP is configured correctly and the report format meets your needs.
+Before enabling schedules, use the ✈️ button on any report row to send a test report to a specific email address. This verifies that SMTP is configured correctly and the report format meets your needs.
 
 > ⚠ Scheduled reports require SMTP to be configured in **Settings → Email**. Test send will fail if SMTP is not set up.
 
 ## Permissions
 
 - **read:reports** — Generate and download reports
+- **read:audit + export:audit** — Download PDF executive report
 - **write:settings** — Configure report schedules
 
 > 💡 Schedule the expiry report first — it's the most operationally valuable and helps prevent certificate-related outages.

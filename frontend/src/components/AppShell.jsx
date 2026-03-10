@@ -379,9 +379,9 @@ export function AppShell() {
           
           {/* Grid Menu Panel */}
           <div className="fixed top-10 right-0 left-0 z-50 p-2 animate-in slide-in-from-top-2 duration-200">
-            <div className="bg-bg-secondary border border-border rounded-xl shadow-2xl p-3 max-h-[65vh] overflow-auto">
+            <div className="bg-bg-secondary border border-border rounded-xl shadow-2xl p-2 max-h-[60vh] overflow-auto">
               {/* Dashboard row */}
-              <div className="grid grid-cols-5 gap-1.5 mb-2">
+              <div className="grid grid-cols-5 gap-1 mb-1">
                 {(() => {
                   const DashIcon = mobileNavDashboard.icon
                   const isActive = activePage === ''
@@ -389,12 +389,12 @@ export function AppShell() {
                     <Link
                       to="/"
                       className={cn(
-                        "flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all",
+                        "flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all",
                         "hover:bg-bg-tertiary active:scale-95",
                         isActive ? "bg-accent-primary-op15 text-accent-primary" : "text-text-secondary hover:text-text-primary"
                       )}
                     >
-                      <DashIcon size={20} weight={isActive ? "fill" : "regular"} />
+                      <DashIcon size={18} weight={isActive ? "fill" : "regular"} />
                       <span className="text-3xs font-medium text-center leading-tight">{t('common.dashboardShort')}</span>
                     </Link>
                   )
@@ -403,11 +403,11 @@ export function AppShell() {
 
               {/* Grouped sections */}
               {filteredMobileGroups.map((group) => (
-                <div key={group.id} className="mb-2">
-                  <div className="px-1 py-1 text-3xs font-semibold text-text-tertiary uppercase tracking-wider">
+                <div key={group.id} className="mb-1">
+                  <div className="px-1 py-0.5 text-3xs font-semibold text-text-tertiary uppercase tracking-wider">
                     {t(group.labelKey)}
                   </div>
-                  <div className="grid grid-cols-5 gap-1.5">
+                  <div className="grid grid-cols-5 gap-1">
                     {group.children.map((item) => {
                       const Icon = item.icon
                       const isActive = activePage === item.id
@@ -417,12 +417,12 @@ export function AppShell() {
                           key={item.id}
                           to={item.path}
                           className={cn(
-                            "flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all",
+                            "flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all",
                             "hover:bg-bg-tertiary active:scale-95",
                             isActive ? "bg-accent-primary-op15 text-accent-primary" : "text-text-secondary hover:text-text-primary"
                           )}
                         >
-                          <Icon size={20} weight={isActive ? "fill" : "regular"} />
+                          <Icon size={18} weight={isActive ? "fill" : "regular"} />
                           <span className="text-3xs font-medium text-center leading-tight">{t(shortKey)}</span>
                         </Link>
                       )
@@ -433,17 +433,17 @@ export function AppShell() {
 
               {/* Settings (if permitted) */}
               {showSettings && (
-                <div className="mb-2">
-                  <div className="grid grid-cols-5 gap-1.5">
+                <div className="mb-1">
+                  <div className="grid grid-cols-5 gap-1">
                     <Link
                       to="/settings"
                       className={cn(
-                        "flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all",
+                        "flex flex-col items-center justify-center gap-0.5 p-1.5 rounded-lg transition-all",
                         "hover:bg-bg-tertiary active:scale-95",
                         activePage === 'settings' ? "bg-accent-primary-op15 text-accent-primary" : "text-text-secondary hover:text-text-primary"
                       )}
                     >
-                      <Gear size={20} weight={activePage === 'settings' ? "fill" : "regular"} />
+                      <Gear size={18} weight={activePage === 'settings' ? "fill" : "regular"} />
                       <span className="text-3xs font-medium text-center leading-tight">{t('common.settingsShort')}</span>
                     </Link>
                   </div>
@@ -451,14 +451,14 @@ export function AppShell() {
               )}
               
               {/* Footer: Logout only (language is in user dropdown) */}
-              <div className="mt-3 pt-3 border-t border-border flex items-center justify-end">
+              <div className="mt-2 pt-2 border-t border-border flex items-center justify-end">
                 <button
                   type="button"
                   onClick={() => { setMobileMenuOpen(false); logout(); }}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-status-danger hover:bg-status-danger-op10 transition-colors"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-status-danger hover:bg-status-danger-op10 transition-colors"
                 >
-                  <SignOut size={18} />
-                  <span className="text-sm font-medium">{t('auth.logout')}</span>
+                  <SignOut size={16} />
+                  <span className="text-xs font-medium">{t('auth.logout')}</span>
                 </button>
               </div>
             </div>

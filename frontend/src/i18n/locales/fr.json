@@ -897,7 +897,9 @@
     "deleted": "Supprimé avec succès",
     "dismiss": "Fermer",
     "exportFailed": "Échec de l'export",
-    "generating": "Génération..."
+    "generating": "Génération...",
+    "configure": "Configurer",
+    "countItems": "{{count}} enregistrements"
   },
   "compare": {
     "title": "Comparer les certificats",
@@ -2471,7 +2473,52 @@
     "testSent": "Rapport test envoyé",
     "testFailed": "Échec de l'envoi du rapport test",
     "scheduleUpdated": "Planification mise à jour",
-    "scheduleFailed": "Échec de la mise à jour de la planification"
+    "scheduleFailed": "Échec de la mise à jour de la planification",
+    "executiveReport": "Rapport exécutif",
+    "executiveDesc": "Rapport PDF complet avec graphiques, scores de conformité, certificats expirants et résumé d'audit.",
+    "downloadPDF": "Télécharger PDF",
+    "pdfGenerated": "Rapport exécutif téléchargé",
+    "pdfFailed": "Échec de la génération du rapport PDF",
+    "dataReports": "Rapports de données",
+    "types": {
+      "certificate_inventory": {
+        "name": "Inventaire des certificats",
+        "description": "Liste complète de tous les certificats avec statut et métadonnées"
+      },
+      "expiring_certificates": {
+        "name": "Certificats expirants",
+        "description": "Certificats expirant dans la période spécifiée"
+      },
+      "ca_hierarchy": {
+        "name": "Hiérarchie des CA",
+        "description": "Structure des autorités de certification et chaîne de confiance"
+      },
+      "audit_summary": {
+        "name": "Résumé d'audit",
+        "description": "Événements de sécurité et activité utilisateur des 30 derniers jours"
+      },
+      "compliance_status": {
+        "name": "État de conformité",
+        "description": "Scores de conformité et résumé des violations"
+      }
+    },
+    "available": "disponibles",
+    "exportFormats": "Formats d'export",
+    "frequency": "Fréquence",
+    "time": "Heure (UTC)",
+    "dayOfWeek": "Jour de la semaine",
+    "dayOfMonth": "Jour du mois",
+    "format": "Format",
+    "monthly": "Mensuel",
+    "days": {
+      "mon": "Lundi",
+      "tue": "Mardi",
+      "wed": "Mercredi",
+      "thu": "Jeudi",
+      "fri": "Vendredi",
+      "sat": "Samedi",
+      "sun": "Dimanche"
+    }
   },
   "messages": {
     "errors": {

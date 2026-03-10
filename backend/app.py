@@ -445,6 +445,19 @@ def create_app(config_name=None):
         except ImportError:
             pass
         
+        # Register scheduled reports task (checks every minute for due reports)
+        try:
+            from services.report_service import run_scheduled_reports
+            scheduler.register_task(
+                name="scheduled_reports",
+                func=run_scheduled_reports,
+                interval=60,  # Check every minute (sends only at configured time)
+                description="Send scheduled email reports"
+            )
+            app.logger.info("Registered scheduled reports task (every 60s)")
+        except ImportError:
+            pass
+        
         # Register session cleanup task (every 15 minutes)
         try:
             from services.session_cleanup_task import SessionCleanupTask

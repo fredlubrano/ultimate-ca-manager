@@ -9,7 +9,7 @@ import {
   TreeStructure, Certificate, FileText, ClockCounterClockwise,
   ShieldCheck, Key, Users, Gear, Database, Lock, Globe,
   ListChecks, CloudArrowUp, HardDrive, UsersFour, Fingerprint,
-  ArrowClockwise, Wrench, Stack, Robot, Gavel, CalendarBlank
+  ArrowClockwise, Wrench, Stack, Robot, Gavel, CalendarBlank, FilePdf
 } from '@phosphor-icons/react'
 
 export const helpContent = {
@@ -956,7 +956,7 @@ export const helpContent = {
   reports: {
     title: 'Reports',
     subtitle: 'PKI compliance and inventory reports',
-    overview: 'Generate, download, and schedule reports for compliance auditing. Reports cover certificate inventory, expiring certificates, CA hierarchy, audit activity, and policy compliance status.',
+    overview: 'Generate, download, and schedule reports for compliance auditing. Reports cover certificate inventory, expiring certificates, CA hierarchy, audit activity, and policy compliance status. Download a PDF executive report for management review.',
     sections: [
       {
         title: 'Report Types',
@@ -970,6 +970,15 @@ export const helpContent = {
         ]
       },
       {
+        title: 'Executive PDF Report',
+        icon: FilePdf,
+        items: [
+          { label: 'Download PDF', text: 'One-click professional PDF report for management and auditors' },
+          { label: 'Contents', text: 'Executive summary, risk assessment, certificate inventory, compliance scores, CA infrastructure, audit activity, and recommendations' },
+          { label: 'Charts & Visuals', text: 'Includes risk gauge, status distribution, expiration timeline, and compliance breakdown' },
+        ]
+      },
+      {
         title: 'Scheduling',
         icon: CalendarBlank,
         items: [
@@ -979,6 +988,7 @@ export const helpContent = {
       },
     ],
     tips: [
+      'Use the PDF executive report for management reviews and compliance audits.',
       'Download reports as CSV for spreadsheet analysis or JSON for automation.',
       'Use the test send feature to verify email delivery before enabling schedules.',
     ],

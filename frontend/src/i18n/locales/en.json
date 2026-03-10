@@ -368,7 +368,9 @@
     "deleted": "Successfully deleted",
     "dismiss": "Dismiss",
     "exportFailed": "Export failed",
-    "generating": "Generating..."
+    "generating": "Generating...",
+    "configure": "Configure",
+    "countItems": "{{count}} records"
   },
   "commandPalette": {
     "searchPlaceholder": "Search commands, certificates, CAs, users...",
@@ -2459,7 +2461,52 @@
     "testSent": "Test report sent",
     "testFailed": "Failed to send test report",
     "scheduleUpdated": "Schedule updated",
-    "scheduleFailed": "Failed to update schedule"
+    "scheduleFailed": "Failed to update schedule",
+    "executiveReport": "Executive Report",
+    "executiveDesc": "Comprehensive PDF report with charts, compliance scores, expiring certificates, and audit summary.",
+    "downloadPDF": "Download PDF",
+    "pdfGenerated": "Executive report downloaded",
+    "pdfFailed": "Failed to generate PDF report",
+    "dataReports": "Data Reports",
+    "types": {
+      "certificate_inventory": {
+        "name": "Certificate Inventory",
+        "description": "Complete list of all certificates with status and metadata"
+      },
+      "expiring_certificates": {
+        "name": "Expiring Certificates",
+        "description": "Certificates expiring within the specified period"
+      },
+      "ca_hierarchy": {
+        "name": "CA Hierarchy",
+        "description": "Certificate Authority structure and trust chain overview"
+      },
+      "audit_summary": {
+        "name": "Audit Summary",
+        "description": "Security events and user activity for the last 30 days"
+      },
+      "compliance_status": {
+        "name": "Compliance Status",
+        "description": "Policy compliance scores and violation summary"
+      }
+    },
+    "available": "available",
+    "exportFormats": "Export Formats",
+    "frequency": "Frequency",
+    "time": "Time (UTC)",
+    "dayOfWeek": "Day of week",
+    "dayOfMonth": "Day of month",
+    "format": "Format",
+    "monthly": "Monthly",
+    "days": {
+      "mon": "Monday",
+      "tue": "Tuesday",
+      "wed": "Wednesday",
+      "thu": "Thursday",
+      "fri": "Friday",
+      "sat": "Saturday",
+      "sun": "Sunday"
+    }
   },
   "reconnect": {
     "countdown": "Service is restarting...",

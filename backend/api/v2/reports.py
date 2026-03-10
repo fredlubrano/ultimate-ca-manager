@@ -14,6 +14,26 @@ logger = logging.getLogger(__name__)
 
 bp = Blueprint('reports_pro', __name__)
 
+# All schedulable report types
+SCHEDULABLE_REPORTS = [
+    'certificate_inventory',
+    'expiring_certificates',
+    'ca_hierarchy',
+    'audit_summary',
+    'compliance_status',
+    'executive_pdf',
+]
+
+DEFAULT_SCHEDULE = {
+    'enabled': False,
+    'frequency': 'weekly',
+    'time': '08:00',
+    'day_of_week': 1,  # Monday
+    'day_of_month': 1,
+    'recipients': [],
+    'format': 'csv',
+}
+
 
 @bp.route('/api/v2/reports/types', methods=['GET'])
 @require_auth(['read:audit'])
@@ -83,23 +103,66 @@ def download_report(report_type):
         return error_response("Report generation failed", 500)
 
 
+@bp.route('/api/v2/reports/executive-pdf', methods=['GET'])
+@require_auth(['read:audit', 'export:audit'])
+def download_executive_pdf():
+    """Generate and download executive PDF report with charts."""
+    try:
+        from services.pdf_report_service import PDFReportService
+        pdf_bytes = PDFReportService.generate_executive_report()
+        return Response(
+            pdf_bytes,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename=ucm-executive-report.pdf'
+            }
+        )
+    except ImportError as e:
+        logger.error(f'PDF dependencies missing: {e}')
+        return error_response("PDF generation requires fpdf2. Install with: pip install fpdf2", 500)
+    except Exception as e:
+        logger.error(f'Executive PDF generation failed: {e}', exc_info=True)
+        return error_response("Failed to generate executive report", 500)
+
+
 @bp.route('/api/v2/reports/schedule', methods=['GET'])
 @require_auth(['read:audit'])
 def get_schedule_settings():
-    """Get report schedule settings"""
-    settings = {
-        'expiry_report': {
-            'enabled': _get_config('report_expiry_enabled', 'false') == 'true',
-            'recipients': json.loads(_get_config('report_expiry_recipients', '[]')),
-            'schedule': 'daily',
-        },
-        'compliance_report': {
-            'enabled': _get_config('report_compliance_enabled', 'false') == 'true',
-            'recipients': json.loads(_get_config('report_compliance_recipients', '[]')),
-            'schedule': 'weekly',
-        },
-    }
-    return success_response(data=settings)
+    """Get report schedule settings for all report types"""
+    schedules = {}
+    for report_key in SCHEDULABLE_REPORTS:
+        config_key = f'report_schedule_{report_key}'
+        raw = _get_config(config_key, '')
+        if raw:
+            try:
+                schedules[report_key] = json.loads(raw)
+            except (json.JSONDecodeError, ValueError):
+                schedules[report_key] = dict(DEFAULT_SCHEDULE)
+        else:
+            sched = dict(DEFAULT_SCHEDULE)
+            # Backward compat: migrate old expiry/compliance config
+            if report_key == 'expiring_certificates':
+                if _get_config('report_expiry_enabled', 'false') == 'true':
+                    sched['enabled'] = True
+                    sched['frequency'] = 'daily'
+                    try:
+                        sched['recipients'] = json.loads(_get_config('report_expiry_recipients', '[]'))
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+            elif report_key == 'compliance_status':
+                if _get_config('report_compliance_enabled', 'false') == 'true':
+                    sched['enabled'] = True
+                    sched['frequency'] = 'weekly'
+                    try:
+                        sched['recipients'] = json.loads(_get_config('report_compliance_recipients', '[]'))
+                    except (json.JSONDecodeError, ValueError):
+                        pass
+            elif report_key == 'executive_pdf':
+                sched['format'] = 'pdf'
+                sched['frequency'] = 'monthly'
+            schedules[report_key] = sched
+    
+    return success_response(data=schedules)
 
 
 @bp.route('/api/v2/reports/schedule', methods=['PUT'])
@@ -108,21 +171,26 @@ def update_schedule_settings():
     """Update report schedule settings"""
     data = request.get_json() or {}
     
-    if 'expiry_report' in data:
-        exp = data['expiry_report']
-        _set_config('report_expiry_enabled', 'true' if exp.get('enabled') else 'false')
-        if 'recipients' in exp:
-            _set_config('report_expiry_recipients', json.dumps(exp['recipients']))
-    
-    if 'compliance_report' in data:
-        comp = data['compliance_report']
-        _set_config('report_compliance_enabled', 'true' if comp.get('enabled') else 'false')
-        if 'recipients' in comp:
-            _set_config('report_compliance_recipients', json.dumps(comp['recipients']))
+    for report_key in SCHEDULABLE_REPORTS:
+        if report_key in data:
+            sched = data[report_key]
+            # Validate
+            freq = sched.get('frequency', 'weekly')
+            if freq not in ('daily', 'weekly', 'monthly'):
+                return error_response(f"Invalid frequency for {report_key}: {freq}", 400)
+            
+            config_val = {
+                'enabled': bool(sched.get('enabled', False)),
+                'frequency': freq,
+                'time': sched.get('time', '08:00'),
+                'day_of_week': int(sched.get('day_of_week', 1)),
+                'day_of_month': int(sched.get('day_of_month', 1)),
+                'recipients': sched.get('recipients', []),
+                'format': 'pdf' if report_key == 'executive_pdf' else sched.get('format', 'csv'),
+            }
+            _set_config(f'report_schedule_{report_key}', json.dumps(config_val))
     
     db.session.commit()
-    
-    # Return updated settings
     return get_schedule_settings()
 
 
@@ -139,11 +207,14 @@ def send_test_report():
         return error_response("recipient email is required", 400)
     
     try:
-        ReportService.send_scheduled_report(
-            report_type,
-            [recipient],
-            {'days': 30}
-        )
+        if report_type == 'executive_pdf':
+            ReportService.send_scheduled_pdf_report([recipient])
+        else:
+            ReportService.send_scheduled_report(
+                report_type,
+                [recipient],
+                {'days': 30}
+            )
         return success_response(message=f"Test report sent to {recipient}")
     except Exception as e:
         logger.error(f'Failed to send test report: {e}')

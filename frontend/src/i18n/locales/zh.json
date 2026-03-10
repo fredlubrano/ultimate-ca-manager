@@ -368,7 +368,9 @@
     "deleted": "删除成功",
     "dismiss": "关闭",
     "exportFailed": "导出失败",
-    "generating": "生成中..."
+    "generating": "生成中...",
+    "configure": "配置",
+    "countItems": "{{count}} 条记录"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",
@@ -2700,7 +2702,52 @@
     "testSendDesc": "发送「{{type}}」测试报告以验证邮件投递。",
     "testSent": "测试报告已发送",
     "title": "报告",
-    "weekly": "每周"
+    "weekly": "每周",
+    "executiveReport": "管理报告",
+    "executiveDesc": "包含图表、合规评分、即将过期证书和审计摘要的综合PDF报告。",
+    "downloadPDF": "下载PDF",
+    "pdfGenerated": "管理报告已下载",
+    "pdfFailed": "生成PDF报告失败",
+    "dataReports": "数据报告",
+    "types": {
+      "certificate_inventory": {
+        "name": "证书清单",
+        "description": "所有证书的完整列表，包含状态和元数据"
+      },
+      "expiring_certificates": {
+        "name": "即将过期的证书",
+        "description": "在指定期间内到期的证书"
+      },
+      "ca_hierarchy": {
+        "name": "CA层级结构",
+        "description": "证书颁发机构结构和信任链概览"
+      },
+      "audit_summary": {
+        "name": "审计摘要",
+        "description": "最近30天的安全事件和用户活动"
+      },
+      "compliance_status": {
+        "name": "合规状态",
+        "description": "合规评分和违规摘要"
+      }
+    },
+    "available": "个可用",
+    "exportFormats": "导出格式",
+    "frequency": "频率",
+    "time": "时间 (UTC)",
+    "dayOfWeek": "星期",
+    "dayOfMonth": "日期",
+    "format": "格式",
+    "monthly": "每月",
+    "days": {
+      "mon": "周一",
+      "tue": "周二",
+      "wed": "周三",
+      "thu": "周四",
+      "fri": "周五",
+      "sat": "周六",
+      "sun": "周日"
+    }
   },
   "export": {
     "title": "导出",

@@ -368,7 +368,9 @@
     "deleted": "Eliminado com sucesso",
     "dismiss": "Fechar",
     "exportFailed": "Falha na exportação",
-    "generating": "A gerar..."
+    "generating": "A gerar...",
+    "configure": "Configurar",
+    "countItems": "{{count}} registros"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
@@ -2700,7 +2702,52 @@
     "testSendDesc": "Enviar um relatório de teste \"{{type}}\" para verificar a entrega de e-mail.",
     "testSent": "Relatório de teste enviado",
     "title": "Relatórios",
-    "weekly": "Semanal"
+    "weekly": "Semanal",
+    "executiveReport": "Relatório executivo",
+    "executiveDesc": "Relatório PDF completo com gráficos, pontuações de conformidade, certificados expirando e resumo de auditoria.",
+    "downloadPDF": "Baixar PDF",
+    "pdfGenerated": "Relatório executivo baixado",
+    "pdfFailed": "Falha ao gerar relatório PDF",
+    "dataReports": "Relatórios de dados",
+    "types": {
+      "certificate_inventory": {
+        "name": "Inventário de certificados",
+        "description": "Lista completa de todos os certificados com status e metadados"
+      },
+      "expiring_certificates": {
+        "name": "Certificados expirando",
+        "description": "Certificados expirando no período especificado"
+      },
+      "ca_hierarchy": {
+        "name": "Hierarquia de CA",
+        "description": "Estrutura das autoridades de certificação e cadeia de confiança"
+      },
+      "audit_summary": {
+        "name": "Resumo de auditoria",
+        "description": "Eventos de segurança e atividade de usuários dos últimos 30 dias"
+      },
+      "compliance_status": {
+        "name": "Status de conformidade",
+        "description": "Pontuações de conformidade e resumo de violações"
+      }
+    },
+    "available": "disponíveis",
+    "exportFormats": "Formatos de exportação",
+    "frequency": "Frequência",
+    "time": "Hora (UTC)",
+    "dayOfWeek": "Dia da semana",
+    "dayOfMonth": "Dia do mês",
+    "format": "Formato",
+    "monthly": "Mensal",
+    "days": {
+      "mon": "Segunda",
+      "tue": "Terça",
+      "wed": "Quarta",
+      "thu": "Quinta",
+      "fri": "Sexta",
+      "sat": "Sábado",
+      "sun": "Domingo"
+    }
   },
   "export": {
     "title": "Exportar",

@@ -368,7 +368,9 @@
     "deleted": "Eliminado correctamente",
     "dismiss": "Cerrar",
     "exportFailed": "Error en la exportación",
-    "generating": "Generando..."
+    "generating": "Generando...",
+    "configure": "Configurar",
+    "countItems": "{{count}} registros"
   },
   "commandPalette": {
     "searchPlaceholder": "Buscar comandos, certificados, CAs, usuarios...",
@@ -2700,7 +2702,52 @@
     "testSendDesc": "Enviar un reporte de prueba \"{{type}}\" para verificar la entrega de correo.",
     "testSent": "Reporte de prueba enviado",
     "title": "Reportes",
-    "weekly": "Semanal"
+    "weekly": "Semanal",
+    "executiveReport": "Informe ejecutivo",
+    "executiveDesc": "Informe PDF completo con gráficos, puntuaciones de cumplimiento, certificados por vencer y resumen de auditoría.",
+    "downloadPDF": "Descargar PDF",
+    "pdfGenerated": "Informe ejecutivo descargado",
+    "pdfFailed": "Error al generar el informe PDF",
+    "dataReports": "Informes de datos",
+    "types": {
+      "certificate_inventory": {
+        "name": "Inventario de certificados",
+        "description": "Lista completa de todos los certificados con estado y metadatos"
+      },
+      "expiring_certificates": {
+        "name": "Certificados por expirar",
+        "description": "Certificados que expiran en el período especificado"
+      },
+      "ca_hierarchy": {
+        "name": "Jerarquía de CA",
+        "description": "Estructura de autoridades de certificación y cadena de confianza"
+      },
+      "audit_summary": {
+        "name": "Resumen de auditoría",
+        "description": "Eventos de seguridad y actividad de usuarios de los últimos 30 días"
+      },
+      "compliance_status": {
+        "name": "Estado de cumplimiento",
+        "description": "Puntuaciones de cumplimiento y resumen de violaciones"
+      }
+    },
+    "available": "disponibles",
+    "exportFormats": "Formatos de exportación",
+    "frequency": "Frecuencia",
+    "time": "Hora (UTC)",
+    "dayOfWeek": "Día de la semana",
+    "dayOfMonth": "Día del mes",
+    "format": "Formato",
+    "monthly": "Mensual",
+    "days": {
+      "mon": "Lunes",
+      "tue": "Martes",
+      "wed": "Miércoles",
+      "thu": "Jueves",
+      "fri": "Viernes",
+      "sat": "Sábado",
+      "sun": "Domingo"
+    }
   },
   "export": {
     "title": "Exportar",

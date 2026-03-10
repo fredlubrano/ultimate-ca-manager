@@ -366,7 +366,6 @@ class ReportService:
             
             subject = f"UCM Report: {report['report_name']} - {datetime.utcnow().strftime('%Y-%m-%d')}"
             
-            # Build email body
             body = f"""
 UCM Scheduled Report: {report['report_name']}
 
@@ -382,7 +381,6 @@ The full report is attached as a CSV file.
 Ultimate CA Manager
             """
             
-            # Send to each recipient
             for recipient in recipients:
                 try:
                     EmailService.send_email(
@@ -398,10 +396,94 @@ Ultimate CA Manager
         except Exception as e:
             logger.error(f"Failed to generate scheduled report {report_type}: {e}")
 
+    @classmethod
+    def send_scheduled_pdf_report(cls, recipients: list):
+        """Generate and email the executive PDF report."""
+        try:
+            from services.pdf_report_service import PDFReportService
+            pdf_bytes = PDFReportService.generate_executive_report()
+            
+            subject = f"UCM Executive Report - {datetime.utcnow().strftime('%Y-%m-%d')}"
+            body = """
+UCM Executive Report
 
-# Scheduled task functions for scheduler service
+Please find the attached PDF executive report with a comprehensive overview
+of your PKI infrastructure, compliance status, and recommendations.
+
+--
+Ultimate CA Manager
+            """
+            
+            for recipient in recipients:
+                try:
+                    EmailService.send_email(
+                        to=recipient,
+                        subject=subject,
+                        body=body,
+                        html=f"<pre>{body}</pre>",
+                    )
+                    logger.info(f"Sent executive PDF report to {recipient}")
+                except Exception as e:
+                    logger.error(f"Failed to send PDF report to {recipient}: {e}")
+        except Exception as e:
+            logger.error(f"Failed to generate scheduled PDF report: {e}")
+
+
+def run_scheduled_reports():
+    """Unified scheduler task — checks all report schedules and sends due reports."""
+    from datetime import datetime
+    now = datetime.utcnow()
+    current_hour = now.strftime('%H:%M')
+    current_dow = now.weekday()  # 0=Monday
+    current_dom = now.day
+    
+    for report_key in [
+        'certificate_inventory', 'expiring_certificates', 'ca_hierarchy',
+        'audit_summary', 'compliance_status', 'executive_pdf',
+    ]:
+        config = SystemConfig.query.filter_by(key=f'report_schedule_{report_key}').first()
+        if not config or not config.value:
+            continue
+        
+        try:
+            sched = json.loads(config.value)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        
+        if not sched.get('enabled'):
+            continue
+        
+        recipients = sched.get('recipients', [])
+        if not recipients:
+            continue
+        
+        # Check if this is the right time to run
+        sched_time = sched.get('time', '08:00')
+        if current_hour != sched_time:
+            continue
+        
+        freq = sched.get('frequency', 'weekly')
+        if freq == 'weekly' and current_dow != sched.get('day_of_week', 1):
+            continue
+        if freq == 'monthly' and current_dom != sched.get('day_of_month', 1):
+            continue
+        
+        # Time matches — send the report
+        logger.info(f"Running scheduled report: {report_key} ({freq} at {sched_time})")
+        try:
+            if report_key == 'executive_pdf':
+                ReportService.send_scheduled_pdf_report(recipients)
+            else:
+                ReportService.send_scheduled_report(
+                    report_key, recipients, {'days': 30, 'format': 'csv'}
+                )
+        except Exception as e:
+            logger.error(f"Scheduled report {report_key} failed: {e}")
+
+
+# Legacy functions kept for backward compatibility
 def run_daily_expiry_report():
-    """Run daily expiring certificates report"""
+    """Run daily expiring certificates report (legacy)"""
     config = SystemConfig.query.filter_by(key='report_expiry_enabled').first()
     if not config or config.value != 'true':
         return
@@ -422,7 +504,7 @@ def run_daily_expiry_report():
 
 
 def run_weekly_compliance_report():
-    """Run weekly compliance status report"""
+    """Run weekly compliance status report (legacy)"""
     config = SystemConfig.query.filter_by(key='report_compliance_enabled').first()
     if not config or config.value != 'true':
         return

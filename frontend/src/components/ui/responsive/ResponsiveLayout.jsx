@@ -265,6 +265,13 @@ export function ResponsiveLayout({
           activeStatFilter={activeStatFilter}
         />
       )}
+
+      {/* MOBILE ACTIONS (< 768px): Show page actions below stats */}
+      {!showInlineHeader && actions && (
+        <div className="shrink-0 px-3 py-2 border-b border-border-op50 bg-secondary-op50 flex items-center justify-end gap-2 overflow-x-auto scrollbar-hide">
+          {actions}
+        </div>
+      )}
       
       {/* AFTER STATS (custom content) */}
       {afterStats}
