@@ -370,7 +370,15 @@
     "exportFailed": "Помилка експорту",
     "generating": "Генерація...",
     "configure": "Налаштувати",
-    "countItems": "{{count}} записів"
+    "countItems": "{{count}} записів",
+    "dragToResize": "Перетягніть для зміни розміру панелі",
+    "selectItemToView": "Виберіть елемент для перегляду деталей",
+    "clickToFilterBy": "Натисніть для фільтрації за {{label}}",
+    "clearFilters": "Очистити фільтри",
+    "filters": "Фільтри",
+    "help": "Допомога",
+    "theme": "Тема",
+    "menu": "Меню"
   },
   "commandPalette": {
     "searchPlaceholder": "Пошук команд, сертифікатів, ЦС, користувачів...",

@@ -181,6 +181,14 @@ class ReportService:
         items = []
         stats = {'total': 0, 'root': 0, 'intermediate': 0}
         
+        # Batch query: count certificates per CA in one query (avoid N+1)
+        from sqlalchemy import func
+        cert_counts = dict(
+            db.session.query(Certificate.caref, func.count(Certificate.id))
+            .group_by(Certificate.caref)
+            .all()
+        )
+        
         for ca in cas:
             stats['total'] += 1
             if ca.is_root:
@@ -188,7 +196,7 @@ class ReportService:
             else:
                 stats['intermediate'] += 1
             
-            cert_count = Certificate.query.filter_by(caref=ca.refid).count()
+            cert_count = cert_counts.get(ca.refid, 0)
             
             items.append({
                 'id': ca.id,
@@ -216,41 +224,46 @@ class ReportService:
         days = params.get('days', 7)
         since = datetime.utcnow() - timedelta(days=days)
         
-        logs = AuditLog.query.filter(
-            AuditLog.timestamp >= since
-        ).all()
+        from sqlalchemy import func, case
         
-        # Aggregate by action
-        by_action = {}
-        by_user = {}
-        by_resource = {}
+        # DB-level aggregations instead of loading all rows
+        base_filter = AuditLog.timestamp >= since
         
-        for log in logs:
-            action = log.action or 'unknown'
-            user = log.username or 'system'
-            resource = log.resource_type or 'unknown'
-            
-            by_action[action] = by_action.get(action, 0) + 1
-            by_user[user] = by_user.get(user, 0) + 1
-            by_resource[resource] = by_resource.get(resource, 0) + 1
+        total_events = AuditLog.query.filter(base_filter).count()
         
-        # Top 10 of each
-        top_actions = sorted(by_action.items(), key=lambda x: x[1], reverse=True)[:10]
-        top_users = sorted(by_user.items(), key=lambda x: x[1], reverse=True)[:10]
-        top_resources = sorted(by_resource.items(), key=lambda x: x[1], reverse=True)[:10]
+        # Group by action
+        action_counts = db.session.query(
+            func.coalesce(AuditLog.action, 'unknown'),
+            func.count(AuditLog.id)
+        ).filter(base_filter).group_by(AuditLog.action).order_by(func.count(AuditLog.id).desc()).limit(10).all()
+        
+        # Group by user
+        user_counts = db.session.query(
+            func.coalesce(AuditLog.username, 'system'),
+            func.count(AuditLog.id)
+        ).filter(base_filter).group_by(AuditLog.username).order_by(func.count(AuditLog.id).desc()).limit(10).all()
+        
+        # Group by resource type
+        resource_counts = db.session.query(
+            func.coalesce(AuditLog.resource_type, 'unknown'),
+            func.count(AuditLog.id)
+        ).filter(base_filter).group_by(AuditLog.resource_type).order_by(func.count(AuditLog.id).desc()).limit(10).all()
+        
+        unique_users = db.session.query(func.count(func.distinct(AuditLog.username))).filter(base_filter).scalar() or 0
+        unique_actions = db.session.query(func.count(func.distinct(AuditLog.action))).filter(base_filter).scalar() or 0
         
         return {
             'items': [
-                {'category': 'actions', 'data': dict(top_actions)},
-                {'category': 'users', 'data': dict(top_users)},
-                {'category': 'resources', 'data': dict(top_resources)},
+                {'category': 'actions', 'data': dict(action_counts)},
+                {'category': 'users', 'data': dict(user_counts)},
+                {'category': 'resources', 'data': dict(resource_counts)},
             ],
             'columns': ['category', 'data'],
             'summary': {
-                'total_events': len(logs),
+                'total_events': total_events,
                 'period_days': days,
-                'unique_users': len(by_user),
-                'unique_actions': len(by_action),
+                'unique_users': unique_users,
+                'unique_actions': unique_actions,
             },
         }
     

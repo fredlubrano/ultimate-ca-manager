@@ -370,7 +370,15 @@
     "exportFailed": "エクスポートに失敗しました",
     "generating": "生成中...",
     "configure": "設定",
-    "countItems": "{{count}} 件のレコード"
+    "countItems": "{{count}} 件のレコード",
+    "dragToResize": "パネルのサイズを変更するにはドラッグ",
+    "selectItemToView": "項目を選択して詳細を表示",
+    "clickToFilterBy": "{{label}}でフィルタリングするにはクリック",
+    "clearFilters": "フィルターをクリア",
+    "filters": "フィルター",
+    "help": "ヘルプ",
+    "theme": "テーマ",
+    "menu": "メニュー"
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",

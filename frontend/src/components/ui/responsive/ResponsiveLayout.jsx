@@ -229,6 +229,7 @@ export function ResponsiveLayout({
               const isActive = activeTab === tab.id
               return (
                 <button
+                  type="button"
                   key={tab.id}
                   onClick={() => onTabChange?.(tab.id)}
                   className={cn(
@@ -310,6 +311,7 @@ export function ResponsiveLayout({
         {useSidebar && !showInlineHeader && !mobileMenuOpen && (
           <div className="flex-1 flex flex-col overflow-hidden">
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(true)}
               className="shrink-0 flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-accent-primary border-b border-border-op50 bg-secondary-op30"
             >
@@ -363,7 +365,7 @@ export function ResponsiveLayout({
                 isResizing && "resizing"
               )}
               onMouseDown={handleResizeStart}
-              title="Drag to resize panel"
+              title={t('common.dragToResize', { defaultValue: 'Drag to resize panel' })}
             >
               <div className="absolute left-0 top-0 bottom-0 w-0.5 resize-handle-line" />
             </div>
@@ -380,8 +382,10 @@ export function ResponsiveLayout({
                   )}
                   {onSlideOverClose && (
                     <button
+                      type="button"
                       onClick={onSlideOverClose}
                       className="p-1 rounded hover:bg-bg-tertiary text-text-secondary hover:text-text-primary shrink-0"
+                      aria-label={t('common.close')}
                     >
                       <X size={16} />
                     </button>
@@ -399,7 +403,7 @@ export function ResponsiveLayout({
                   <div className="w-14 h-14 rounded-xl bg-bg-tertiary flex items-center justify-center mb-3">
                     <Question size={24} className="text-text-tertiary" />
                   </div>
-                  <p className="text-sm text-text-secondary">Select an item to view details</p>
+                  <p className="text-sm text-text-secondary">{t('common.selectItemToView', { defaultValue: 'Select an item to view details' })}</p>
                 </div>
               )
             )}
@@ -445,7 +449,7 @@ export function ResponsiveLayout({
         <MobileDrawer
           open={filterDrawerOpen}
           onClose={() => setFilterDrawerOpen(false)}
-          title="Filters"
+          title={t('common.filters', { defaultValue: 'Filters' })}
         >
           <FilterContent 
             filters={filters} 
@@ -484,6 +488,7 @@ function SidebarNav({ tabs, tabGroups, activeTab, onTabChange, t }) {
       const iconColor = toTextColor(groupColor || tab.color)
       return (
         <button
+          type="button"
           key={id}
           onClick={() => onTabChange?.(id)}
           title={tab.label}
@@ -554,6 +559,7 @@ function MobileSidebarMenu({ tabs, tabGroups, activeTab, onTabChange, t }) {
     const isActive = activeTab === tab.id
     return (
       <button
+        type="button"
         key={tab.id}
         onClick={() => onTabChange?.(tab.id)}
         className={cn(
@@ -612,6 +618,7 @@ function MobileSidebarMenu({ tabs, tabGroups, activeTab, onTabChange, t }) {
 // =============================================================================
 
 function StatsBar({ stats, isMobile, onStatClick, activeStatFilter }) {
+  const { t } = useTranslation()
   const iconVariants = {
     primary: 'rich-stat-icon-primary',
     success: 'rich-stat-icon-success',
@@ -645,6 +652,7 @@ function StatsBar({ stats, isMobile, onStatClick, activeStatFilter }) {
           
           return (
             <button
+              type="button"
               key={i}
               onClick={() => isClickable && onStatClick(stat.filterValue)}
               disabled={!isClickable}
@@ -681,7 +689,7 @@ function StatsBar({ stats, isMobile, onStatClick, activeStatFilter }) {
               isActive && "ring-2 ring-accent-primary-op50 bg-accent-primary-op10"
             )}
             onClick={() => isClickable && onStatClick(stat.filterValue)}
-            title={isClickable ? `Click to filter by ${stat.label}` : undefined}
+            title={isClickable ? t('common.clickToFilterBy', { label: stat.label, defaultValue: `Click to filter by ${stat.label}` }) : undefined}
           >
             {Icon && (
               <div className={cn('rich-stat-icon', iconClass)}>
@@ -704,6 +712,7 @@ function StatsBar({ stats, isMobile, onStatClick, activeStatFilter }) {
 // =============================================================================
 
 function DesktopSlideOver({ title, width, onClose, children }) {
+  const { t } = useTranslation()
   // Width classes based on size
   const widthClasses = {
     narrow: 'w-80',
@@ -725,7 +734,9 @@ function DesktopSlideOver({ title, width, onClose, children }) {
           {title}
         </h2>
         <button
+          type="button"
           onClick={onClose}
+          aria-label={t('common.close')}
           className={cn(
             'w-8 h-8 rounded-lg flex items-center justify-center',
             'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary',
@@ -749,6 +760,7 @@ function DesktopSlideOver({ title, width, onClose, children }) {
 // =============================================================================
 
 function MobileSlideOver({ title, onClose, children }) {
+  const { t } = useTranslation()
   const panelRef = useRef(null)
   const [translateX, setTranslateX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
@@ -813,7 +825,9 @@ function MobileSlideOver({ title, onClose, children }) {
         {/* Header */}
         <div className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-border">
           <button
+            type="button"
             onClick={onClose}
+            aria-label={t('common.back')}
             className={cn(
               'w-11 h-11 rounded-lg flex items-center justify-center',
               'text-text-secondary hover:text-text-primary hover:bg-bg-tertiary',
@@ -944,6 +958,7 @@ function MobileDrawer({ open, onClose, title, children }) {
 // =============================================================================
 
 function FilterContent({ filters, onClearFilters, onClose }) {
+  const { t } = useTranslation()
   const hasActiveFilters = filters?.some(f => f.value)
   
   return (
@@ -983,6 +998,7 @@ function FilterContent({ filters, onClearFilters, onClose }) {
       <div className="flex gap-2 pt-2">
         {hasActiveFilters && onClearFilters && (
           <button
+            type="button"
             onClick={() => {
               onClearFilters()
               onClose?.()
@@ -993,17 +1009,18 @@ function FilterContent({ filters, onClearFilters, onClose }) {
               'hover:bg-bg-tertiary transition-colors'
             )}
           >
-            Clear Filters
+            {t('common.clearFilters', { defaultValue: 'Clear Filters' })}
           </button>
         )}
         <button
+          type="button"
           onClick={onClose}
           className={cn(
             'flex-1 h-11 rounded-lg bg-accent-primary text-white',
             'font-medium text-sm hover:bg-accent-primary-op90 transition-colors'
           )}
         >
-          Apply
+          {t('common.apply', { defaultValue: 'Apply' })}
         </button>
       </div>
     </div>
@@ -1015,11 +1032,12 @@ function FilterContent({ filters, onClearFilters, onClose }) {
 // =============================================================================
 
 function LoadingState() {
+  const { t } = useTranslation()
   return (
     <div className="flex items-center justify-center h-full min-h-[200px]">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-accent-primary-op30 border-t-accent-primary rounded-full animate-spin" />
-        <p className="text-sm text-text-secondary">Loading...</p>
+        <p className="text-sm text-text-secondary">{t('common.loading', { defaultValue: 'Loading...' })}</p>
       </div>
     </div>
   )

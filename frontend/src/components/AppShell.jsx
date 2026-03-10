@@ -1,7 +1,7 @@
 /**
  * AppShell Component - Main application layout with mobile support
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom'
 import { 
@@ -147,14 +147,14 @@ export function AppShell() {
   })
 
   // Mobile nav groups filtered by permissions
-  const filteredMobileGroups = navGroups.map(group => ({
+  const filteredMobileGroups = useMemo(() => navGroups.map(group => ({
     ...group,
     children: group.children.filter(item => {
       if (item.adminOnly && !isAdmin()) return false
       if (item.permission && !isAdmin() && !hasPermission(item.permission)) return false
       return true
     })
-  })).filter(g => g.children.length > 0)
+  })).filter(g => g.children.length > 0), [isAdmin, hasPermission])
 
   // Settings item for mobile (admin/operator only)
   const showSettings = isAdmin() || hasPermission('read:settings')
@@ -194,7 +194,9 @@ export function AppShell() {
           {/* Help button - only if page has help */}
           {hasHelp && (
             <button
+              type="button"
               onClick={() => setHelpModalOpen(true)}
+              aria-label={t('common.help')}
               className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:bg-bg-tertiary"
             >
               <Question size={16} />
@@ -203,7 +205,9 @@ export function AppShell() {
           
           {/* Search button (global) */}
           <button
+            type="button"
             onClick={() => setCommandPaletteOpen(true)}
+            aria-label={t('common.search')}
             className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:bg-bg-tertiary"
           >
             <MagnifyingGlass size={16} />
@@ -211,7 +215,9 @@ export function AppShell() {
           
           {/* Theme button */}
           <button
+            type="button"
             onClick={() => setThemeMenuOpen(!themeMenuOpen)}
+            aria-label={t('common.theme')}
             className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:bg-bg-tertiary"
           >
             <Palette size={16} />
@@ -223,7 +229,7 @@ export function AppShell() {
           {/* User dropdown menu */}
           <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-              <button className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:bg-bg-tertiary">
+              <button type="button" aria-label={t('common.account')} className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary hover:bg-bg-tertiary">
                 <UserCircle size={16} />
               </button>
             </DropdownMenu.Trigger>
@@ -306,7 +312,9 @@ export function AppShell() {
           
           {/* Hamburger menu */}
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={t('common.menu')}
             className="w-8 h-8 flex items-center justify-center rounded-md text-text-secondary hover:bg-bg-tertiary shrink-0"
           >
             {mobileMenuOpen ? <X size={18} /> : <List size={18} />}
@@ -326,6 +334,7 @@ export function AppShell() {
             <div className="px-2 py-0.5 text-3xs text-text-tertiary uppercase tracking-wider">{t('settings.color')}</div>
             {themes.map((theme) => (
               <button
+                type="button"
                 key={theme.id}
                 onClick={() => { setThemeFamily(theme.id); setThemeMenuOpen(false) }}
                 className={cn(
@@ -353,6 +362,7 @@ export function AppShell() {
               { id: 'light', labelKey: 'settings.light' }
             ].map(opt => (
               <button
+                type="button"
                 key={opt.id}
                 onClick={() => { setMode(opt.id); setThemeMenuOpen(false) }}
                 className={cn(

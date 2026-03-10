@@ -899,7 +899,15 @@
     "exportFailed": "Échec de l'export",
     "generating": "Génération...",
     "configure": "Configurer",
-    "countItems": "{{count}} enregistrements"
+    "countItems": "{{count}} enregistrements",
+    "dragToResize": "Glisser pour redimensionner le panneau",
+    "selectItemToView": "Sélectionnez un élément pour voir les détails",
+    "clickToFilterBy": "Cliquer pour filtrer par {{label}}",
+    "clearFilters": "Effacer les filtres",
+    "filters": "Filtres",
+    "help": "Aide",
+    "theme": "Thème",
+    "menu": "Menu"
   },
   "compare": {
     "title": "Comparer les certificats",

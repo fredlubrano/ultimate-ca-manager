@@ -370,7 +370,15 @@
     "exportFailed": "导出失败",
     "generating": "生成中...",
     "configure": "配置",
-    "countItems": "{{count}} 条记录"
+    "countItems": "{{count}} 条记录",
+    "dragToResize": "拖动以调整面板大小",
+    "selectItemToView": "选择一个项目以查看详情",
+    "clickToFilterBy": "点击按{{label}}筛选",
+    "clearFilters": "清除筛选",
+    "filters": "筛选",
+    "help": "帮助",
+    "theme": "主题",
+    "menu": "菜单"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",

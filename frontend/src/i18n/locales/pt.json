@@ -370,7 +370,15 @@
     "exportFailed": "Falha na exportação",
     "generating": "A gerar...",
     "configure": "Configurar",
-    "countItems": "{{count}} registros"
+    "countItems": "{{count}} registros",
+    "dragToResize": "Arraste para redimensionar o painel",
+    "selectItemToView": "Selecione um item para ver os detalhes",
+    "clickToFilterBy": "Clique para filtrar por {{label}}",
+    "clearFilters": "Limpar filtros",
+    "filters": "Filtros",
+    "help": "Ajuda",
+    "theme": "Tema",
+    "menu": "Menu"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
