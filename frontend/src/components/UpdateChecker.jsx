@@ -1,7 +1,7 @@
 /**
  * UpdateChecker Component - Check and install updates
  */
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 import { ArrowsClockwise, Download, CheckCircle, Warning, Info, Rocket } from '@phosphor-icons/react'
@@ -22,11 +22,11 @@ export function UpdateChecker() {
   const { showSuccess, showError, showConfirm } = useNotification()
   const { reconnecting, status, attempt, countdown, waitForRestart, cancel } = useServiceReconnect()
 
-  const checkForUpdates = async (showNotification = false) => {
+  const checkForUpdates = async (showNotification = false, force = false) => {
     setChecking(true)
     setError(null)
     try {
-      const response = await apiClient.get(`/system/updates/check?include_prereleases=${includePrereleases}`)
+      const response = await apiClient.get(`/system/updates/check?include_prereleases=${includePrereleases}&force=${force}`)
       setUpdateInfo(response.data)
       if (showNotification) {
         if (response.data.update_available) {
@@ -72,8 +72,15 @@ export function UpdateChecker() {
     }
   }
 
+  const firstRender = React.useRef(true)
   useEffect(() => {
-    checkForUpdates()
+    if (firstRender.current) {
+      firstRender.current = false
+      checkForUpdates()
+    } else {
+      setUpdateInfo(null)
+      checkForUpdates(false, true)
+    }
   }, [includePrereleases])
 
   if (loading) {
@@ -179,7 +186,7 @@ export function UpdateChecker() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => checkForUpdates(true)}
+            onClick={() => checkForUpdates(true, true)}
             disabled={checking}
             className="gap-1.5"
           >

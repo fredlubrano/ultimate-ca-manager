@@ -86,7 +86,13 @@ def compare_versions(v1, v2):
     return 0
 
 
-def check_for_updates(include_prereleases=False):
+def invalidate_update_cache():
+    """Invalidate the releases cache to force a fresh fetch"""
+    _releases_cache['data'] = None
+    _releases_cache['ts'] = 0
+
+
+def check_for_updates(include_prereleases=False, force=False):
     """
     Check GitHub for available updates
     
@@ -104,7 +110,7 @@ def check_for_updates(include_prereleases=False):
     try:
         # Get releases from GitHub API (with cache to avoid rate limits)
         now = time.time()
-        if _releases_cache['data'] and (now - _releases_cache['ts']) < _releases_cache['ttl']:
+        if not force and _releases_cache['data'] and (now - _releases_cache['ts']) < _releases_cache['ttl']:
             releases = _releases_cache['data']
         else:
             url = f"https://api.github.com/repos/{repo}/releases"

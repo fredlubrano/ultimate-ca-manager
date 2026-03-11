@@ -1269,7 +1269,8 @@ def check_updates():
         from services.updates import check_for_updates
         
         include_prereleases = request.args.get('include_prereleases', 'false').lower() == 'true'
-        result = check_for_updates(include_prereleases=include_prereleases)
+        force = request.args.get('force', 'false').lower() == 'true'
+        result = check_for_updates(include_prereleases=include_prereleases, force=force)
         result['can_auto_update'] = os.getenv('UCM_DOCKER') != '1'
         
         return success_response(data=result)
