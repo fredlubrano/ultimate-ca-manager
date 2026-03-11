@@ -93,8 +93,10 @@ export default function CertificatesPage() {
   // Handle re-key prefill from CSRs page navigation
   useEffect(() => {
     if (location.state?.prefill && location.state?.source === 'rekey') {
-      setIssueInitialData(location.state.prefill)
-      setShowIssueModal(true)
+      if (canWrite('certificates')) {
+        setIssueInitialData(location.state.prefill)
+        setShowIssueModal(true)
+      }
       // Clear navigation state to prevent re-triggering on refresh
       navigate(location.pathname, { replace: true, state: {} })
     }
@@ -825,7 +827,10 @@ export default function CertificatesPage() {
       {/* Issue Certificate Modal */}
       <Modal
         open={showIssueModal}
-        onOpenChange={setShowIssueModal}
+        onOpenChange={(open) => {
+          setShowIssueModal(open)
+          if (!open) setIssueInitialData(null)
+        }}
         title={t('certificates.issueCertificate')}
         size="xl"
       >
@@ -970,7 +975,7 @@ function IssueCertificateForm({ cas, initialData, onSubmit, onCancel, t }) {
         key_size: initialData.key_size || '2048',
       }))
       if (initialData.sans?.length > 0) {
-        setSans(initialData.sans)
+        setSans(initialData.sans.filter(s => s && typeof s.type === 'string' && typeof s.value === 'string'))
       }
       setShowSubject(true)
     }

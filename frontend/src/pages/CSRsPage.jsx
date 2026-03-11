@@ -272,7 +272,12 @@ export default function CSRsPage() {
     const sans = []
     const parseSanField = (field, type) => {
       if (!field) return
-      const arr = typeof field === 'string' ? JSON.parse(field) : field
+      let arr
+      try {
+        arr = typeof field === 'string' ? JSON.parse(field) : field
+      } catch {
+        return // skip malformed SAN field
+      }
       if (Array.isArray(arr)) arr.forEach(v => v && sans.push({ type, value: v }))
     }
     parseSanField(csr.san_dns, 'DNS')
@@ -488,7 +493,7 @@ export default function CSRsPage() {
   // Row actions for history
   const historyRowActions = useCallback((row) => [
     { label: t('common.downloadCertificate'), icon: Download, onClick: () => handleDownload(row.id, `${row.cn || 'cert'}.pem`) },
-    { label: t('common.viewInCertificates'), icon: Certificate, onClick: () => window.location.href = `/certificates?id=${row.id}` },
+    { label: t('common.viewInCertificates'), icon: Certificate, onClick: () => navigate(`/certificates?id=${row.id}`) },
     ...(canWrite('csrs') ? [
       { label: t('csrs.rekey'), icon: ArrowsClockwise, onClick: () => handleRekey(row) }
     ] : [])
@@ -1145,9 +1150,10 @@ function SignedCSRDetailsPanel({ cert, onDownload, onRekey, t }) {
           <Download size={14} /> {t('common.download')}
         </Button>
         <Button 
+          type="button"
           size="sm" 
           variant="secondary"
-          onClick={() => window.location.href = `/certificates?id=${cert.id}`}
+          onClick={() => navigate(`/certificates?id=${cert.id}`)}
         >
           <Certificate size={14} /> {t('common.viewCertificate')}
         </Button>
