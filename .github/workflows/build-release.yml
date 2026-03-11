@@ -65,7 +65,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential debhelper fakeroot devscripts dh-python python3-all
+          sudo apt-get install -y build-essential debhelper fakeroot devscripts dh-python python3-all libkrb5-dev
       
       - name: Update changelog version
         run: |
