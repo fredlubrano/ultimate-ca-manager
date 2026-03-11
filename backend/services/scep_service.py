@@ -705,8 +705,7 @@ class SCEPService:
             message_digest = digest_obj.finalize()
         
         # Build SignedAttributes structure with correct message digest
-        from datetime import datetime
-        import pytz
+        from datetime import datetime, timezone
         
         signed_attrs = asn1crypto.cms.CMSAttributes(scep_attrs + [
             {
@@ -719,7 +718,7 @@ class SCEPService:
             },
             {
                 'type': 'signing_time',
-                'values': [asn1crypto.core.UTCTime(datetime.now(pytz.UTC))]
+                'values': [asn1crypto.core.UTCTime(datetime.now(timezone.utc))]
             }
         ])
         
