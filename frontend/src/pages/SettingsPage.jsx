@@ -3749,6 +3749,7 @@ export default function SettingsPage() {
               icon={WindowsLogo}
               title={t('msca.title')}
               subtitle={t('msca.subtitle')}
+              badge={<ExperimentalBadge />}
             />
 
             <HelpCard variant="info" title={t('msca.helpTitle')} className="mb-4">
