@@ -74,7 +74,8 @@ def list_certificates():
         'revoked': Certificate.revoked,
         'descr': Certificate.descr,
         'key_algo': Certificate.key_algo,
-        'status': 'special'  # Handled separately with CASE
+        'status': 'special',  # Handled separately with CASE
+        'compliance_grade': 'special_compliance'  # Handled separately
     }
     
     query = Certificate.query
@@ -131,7 +132,40 @@ def list_certificates():
             query = query.order_by(status_order.desc(), Certificate.subject.asc())
         else:
             query = query.order_by(status_order.asc(), Certificate.subject.asc())
-    elif sort_column != 'special':
+    elif sort_by == 'compliance_grade':
+        # Approximate compliance score in SQL for sorting:
+        # Key strength: RSA 4096/EC = best, RSA 2048 = good, RSA 1024 = bad
+        # Validity: revoked/expired = worst, expiring = medium, valid = best
+        # This gives a rough sort order consistent with the computed score
+        now = datetime.utcnow()
+        expiry_threshold = now + timedelta(days=30)
+        
+        compliance_order = (
+            # Key strength component (0-30)
+            case(
+                (Certificate.key_algo.ilike('%4096%'), 30),
+                (Certificate.key_algo.ilike('%EC%'), 30),
+                (Certificate.key_algo.ilike('%P-256%'), 30),
+                (Certificate.key_algo.ilike('%P-384%'), 30),
+                (Certificate.key_algo.ilike('%Ed25519%'), 30),
+                (Certificate.key_algo.ilike('%2048%'), 20),
+                (Certificate.key_algo.ilike('%1024%'), 5),
+                else_=15
+            ) +
+            # Validity component (0-25)
+            case(
+                (Certificate.revoked == True, 0),
+                (Certificate.valid_to <= now, 0),
+                (Certificate.valid_to <= expiry_threshold, 15),
+                else_=25
+            )
+        )
+        
+        if sort_order == 'desc':
+            query = query.order_by(compliance_order.desc(), _cn_sort.asc())
+        else:
+            query = query.order_by(compliance_order.asc(), _cn_sort.asc())
+    elif sort_column not in ('special', 'special_compliance'):
         if sort_order == 'desc':
             query = query.order_by(sort_column.desc())
         else:

@@ -1655,6 +1655,15 @@
     "expiryCheckResult": "Check complete: {{count}} alert(s) sent",
     "theme": "Тема",
     "timezone": "Часовий пояс",
+    "dateFormat": "Формат дати",
+    "showTime": "Показувати час у датах",
+    "dateFormats": {
+      "short": "Короткий",
+      "long": "Довгий",
+      "iso": "ISO 8601",
+      "eu": "Європейський",
+      "us": "Американський"
+    },
     "totalCertificates": "Всього сертифікатів",
     "updatesSubtitle": "Перевірити та встановити оновлення UCM",
     "updatesTitle": "Оновлення програмного забезпечення",

@@ -1655,6 +1655,15 @@
     "expiryCheckResult": "Check complete: {{count}} alert(s) sent",
     "theme": "テーマ",
     "timezone": "タイムゾーン",
+    "dateFormat": "日付形式",
+    "showTime": "日付に時刻を表示",
+    "dateFormats": {
+      "short": "短い",
+      "long": "長い",
+      "iso": "ISO 8601",
+      "eu": "ヨーロッパ式",
+      "us": "アメリカ式"
+    },
     "totalCertificates": "証明書総数",
     "updatesSubtitle": "UCMアップデートの確認とインストール",
     "updatesTitle": "ソフトウェア更新",

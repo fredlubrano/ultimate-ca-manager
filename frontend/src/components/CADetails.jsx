@@ -7,6 +7,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getAppTimezone } from '../stores/timezoneStore'
+import { formatDate as formatDateUtil } from '../lib/utils'
 import { 
   Certificate, 
   Key, 
@@ -32,26 +33,10 @@ import { Button } from './Button'
 import { CompactSection, CompactGrid, CompactField } from './DetailCard'
 import { cn } from '../lib/utils'
 
-// Format date helper
-function formatDate(dateStr, format = 'full') {
+// Format date helper — delegates to shared util
+function formatDate(dateStr) {
   if (!dateStr) return '—'
-  try {
-    const tz = getAppTimezone()
-    const date = new Date(dateStr)
-    if (format === 'short') {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: tz })
-    }
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: tz
-    })
-  } catch {
-    return dateStr
-  }
+  return formatDateUtil(dateStr)
 }
 
 export function CADetails({ 

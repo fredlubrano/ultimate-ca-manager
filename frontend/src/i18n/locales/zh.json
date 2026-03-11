@@ -1655,6 +1655,15 @@
     "expiryCheckResult": "Check complete: {{count}} alert(s) sent",
     "theme": "主题",
     "timezone": "时区",
+    "dateFormat": "日期格式",
+    "showTime": "在日期中显示时间",
+    "dateFormats": {
+      "short": "简短",
+      "long": "完整",
+      "iso": "ISO 8601",
+      "eu": "欧洲格式",
+      "us": "美国格式"
+    },
     "totalCertificates": "证书总数",
     "updatesSubtitle": "检查并安装UCM更新",
     "updatesTitle": "软件更新",

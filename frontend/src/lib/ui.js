@@ -4,6 +4,7 @@
  */
 
 import { getAppTimezone } from '../stores/timezoneStore'
+import { getDateFormat, getShowTime } from '../stores/dateFormatStore'
 
 // =============================================================================
 // LABELS / i18n
@@ -203,34 +204,81 @@ export function formatDate(date, options = {}) {
   if (!date) return '-'
   
   const tz = getAppTimezone()
-  const defaultOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    timeZone: tz,
-    ...options
-  }
+  const fmt = getDateFormat()
+  const showTime = getShowTime()
+  const d = new Date(date)
   
+  const timeOpts = showTime ? { hour: '2-digit', minute: '2-digit' } : {}
+
   try {
-    return new Intl.DateTimeFormat('en-US', defaultOptions).format(new Date(date))
+    if (fmt === 'iso') {
+      const parts = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: tz }).formatToParts(d)
+      const y = parts.find(p => p.type === 'year')?.value
+      const m = parts.find(p => p.type === 'month')?.value
+      const dd = parts.find(p => p.type === 'day')?.value
+      let result = `${y}-${m}-${dd}`
+      if (showTime) {
+        result += ` ${new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(d)}`
+      }
+      return result
+    }
+
+    if (fmt === 'eu') {
+      const fmtOpts = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: tz, ...timeOpts, ...options }
+      return new Intl.DateTimeFormat('en-GB', fmtOpts).format(d)
+    }
+
+    const baseOpts = {
+      year: 'numeric',
+      month: fmt === 'long' ? 'long' : fmt === 'us' ? '2-digit' : 'short',
+      day: 'numeric',
+      timeZone: tz,
+      ...timeOpts,
+      ...options
+    }
+    
+    return new Intl.DateTimeFormat(fmt === 'us' ? 'en-US' : undefined, baseOpts).format(d)
   } catch {
     return String(date)
   }
 }
 
 /**
- * Format date with time
+ * Format date with time (always includes time regardless of setting)
  * @param {string|Date} date - Date value
  * @returns {string} - Formatted date and time
  */
 export function formatDateTime(date) {
-  return formatDate(date, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  if (!date) return '-'
+  const tz = getAppTimezone()
+  const fmt = getDateFormat()
+  const d = new Date(date)
+
+  try {
+    if (fmt === 'iso') {
+      const parts = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: tz }).formatToParts(d)
+      const y = parts.find(p => p.type === 'year')?.value
+      const m = parts.find(p => p.type === 'month')?.value
+      const dd = parts.find(p => p.type === 'day')?.value
+      const time = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(d)
+      return `${y}-${m}-${dd} ${time}`
+    }
+
+    if (fmt === 'eu') {
+      return new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: tz }).format(d)
+    }
+
+    return new Intl.DateTimeFormat(fmt === 'us' ? 'en-US' : undefined, {
+      year: 'numeric',
+      month: fmt === 'long' ? 'long' : fmt === 'us' ? '2-digit' : 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: tz,
+    }).format(d)
+  } catch {
+    return String(date)
+  }
 }
 
 /**

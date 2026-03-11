@@ -265,6 +265,10 @@ def verify():
     from models import SystemConfig
     tz_row = SystemConfig.query.filter_by(key='timezone').first()
     app_timezone = tz_row.value if tz_row else 'UTC'
+    df_row = SystemConfig.query.filter_by(key='date_format').first()
+    app_date_format = df_row.value if df_row else 'short'
+    st_row = SystemConfig.query.filter_by(key='show_time').first()
+    app_show_time = st_row.value != 'false' if st_row else True
     
     # If authenticated
     return success_response(
@@ -280,7 +284,9 @@ def verify():
                 'role': g.current_user.role
             },
             'csrf_token': csrf_token,
-            'timezone': app_timezone
+            'timezone': app_timezone,
+            'date_format': app_date_format,
+            'show_time': app_show_time
         }
     )
 

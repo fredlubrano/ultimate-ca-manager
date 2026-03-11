@@ -379,7 +379,8 @@ export default function CertificatesPage() {
         'expires': 'valid_to',
         'valid_to': 'valid_to',
         'key_type': 'key_algo',
-        'created_at': 'created_at'
+        'created_at': 'created_at',
+        'compliance_grade': 'compliance_grade'
       }
       const backendKey = keyMap[newSort.key]
       if (backendKey) {

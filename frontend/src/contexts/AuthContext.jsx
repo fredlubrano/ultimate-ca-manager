@@ -9,6 +9,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { authService } from '../services/auth.service'
 import { apiClient } from '../services/apiClient'
 import { setAppTimezone } from '../stores/timezoneStore'
+import { setDateFormat, setShowTime } from '../stores/dateFormatStore'
 
 const AuthContext = createContext()
 
@@ -44,6 +45,8 @@ export function AuthProvider({ children }) {
       setPermissions(userData.permissions || [])
       setRole(userData.role || null)
       if (userData.timezone) setAppTimezone(userData.timezone)
+      if (userData.date_format) setDateFormat(userData.date_format)
+      if (userData.show_time !== undefined) setShowTime(userData.show_time !== false)
       debug('✅ Session valid:', userData.user?.username)
       return true
     } catch (error) {

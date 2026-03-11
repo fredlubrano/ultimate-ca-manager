@@ -1576,6 +1576,15 @@
     "systemURL": "URL du système",
     "timezone": "Fuseau horaire",
     "dateFormat": "Format de date",
+    "showTime": "Afficher l'heure dans les dates",
+    "dateFormats": {
+      "short": "Court",
+      "long": "Long",
+      "iso": "ISO 8601",
+      "eu": "Européen",
+      "us": "Américain"
+    },
+    "dateFormat": "Format de date",
     "theme": "Thème",
     "language": "Langue",
     "smtpPort": "Port SMTP",

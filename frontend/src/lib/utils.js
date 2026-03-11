@@ -1,6 +1,7 @@
 import { clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { getAppTimezone } from '../stores/timezoneStore'
+import { getDateFormat, getShowTime } from '../stores/dateFormatStore'
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs))
@@ -49,13 +50,39 @@ export function formatDate(date, options = {}) {
   if (!date) return '-'
   try {
     const tz = getAppTimezone()
-    return new Date(date).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      timeZone: tz,
-      ...options
-    })
+    const fmt = getDateFormat()
+    const showTime = getShowTime()
+    const d = new Date(date)
+
+    const timeOpts = showTime ? { hour: '2-digit', minute: '2-digit' } : {}
+
+    const formatMap = {
+      short: { year: 'numeric', month: 'short', day: 'numeric', timeZone: tz, ...timeOpts, ...options },
+      long: { year: 'numeric', month: 'long', day: 'numeric', timeZone: tz, ...timeOpts, ...options },
+      us: { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: tz, ...timeOpts, ...options },
+      eu: { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: tz, ...timeOpts, ...options },
+      iso: { timeZone: tz },
+    }
+
+    if (fmt === 'iso') {
+      const parts = new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: tz }).formatToParts(d)
+      const y = parts.find(p => p.type === 'year')?.value
+      const m = parts.find(p => p.type === 'month')?.value
+      const dd = parts.find(p => p.type === 'day')?.value
+      let result = `${y}-${m}-${dd}`
+      if (showTime) {
+        const timeParts = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: tz }).format(d)
+        result += ` ${timeParts}`
+      }
+      return result
+    }
+
+    if (fmt === 'eu') {
+      const parts = new Intl.DateTimeFormat('en-GB', formatMap.eu).formatToParts(d)
+      return parts.map(p => p.value).join('')
+    }
+
+    return new Intl.DateTimeFormat(fmt === 'us' ? 'en-US' : undefined, formatMap[fmt] || formatMap.short).format(d)
   } catch {
     return '-'
   }

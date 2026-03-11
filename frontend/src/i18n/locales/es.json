@@ -1655,6 +1655,15 @@
     "expiryCheckResult": "Check complete: {{count}} alert(s) sent",
     "theme": "Tema",
     "timezone": "Zona horaria",
+    "dateFormat": "Formato de fecha",
+    "showTime": "Mostrar hora en las fechas",
+    "dateFormats": {
+      "short": "Corto",
+      "long": "Largo",
+      "iso": "ISO 8601",
+      "eu": "Europeo",
+      "us": "Americano"
+    },
     "totalCertificates": "Total de certificados",
     "updatesSubtitle": "Buscar e instalar actualizaciones de UCM",
     "updatesTitle": "Actualizaciones de software",

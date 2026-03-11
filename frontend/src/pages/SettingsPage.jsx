@@ -35,6 +35,7 @@ import TagsInput from '../components/ui/TagsInput'
 import EmailTemplateWindow from '../components/EmailTemplateWindow'
 import { apiClient } from '../services/apiClient'
 import { getAppTimezone, setAppTimezone } from '../stores/timezoneStore'
+import { setDateFormat, setShowTime } from '../stores/dateFormatStore'
 
 // Settings categories with colors for visual distinction
 const BASE_SETTINGS_CATEGORIES = [
@@ -2369,6 +2370,8 @@ export default function SettingsPage() {
       }
       showSuccess(t('messages.success.update.settings'))
       if (settings.timezone) setAppTimezone(settings.timezone)
+      if (settings.date_format) setDateFormat(settings.date_format)
+      if (settings.show_time !== undefined) setShowTime(settings.show_time !== 'false' && settings.show_time !== false)
       await loadSettings()
     } catch (error) {
       showError(error.message || t('messages.errors.updateFailed.settings'))
@@ -2679,6 +2682,27 @@ export default function SettingsPage() {
                   value={settings.timezone || 'UTC'}
                   onChange={(val) => updateSetting('timezone', val)}
                 />
+                <Select
+                  label={t('settings.dateFormat')}
+                  options={[
+                    { value: 'short', label: `${t('settings.dateFormats.short')} — Jan 6, 2026` },
+                    { value: 'long', label: `${t('settings.dateFormats.long')} — January 6, 2026` },
+                    { value: 'iso', label: `${t('settings.dateFormats.iso')} — 2026-01-06` },
+                    { value: 'eu', label: `${t('settings.dateFormats.eu')} — 06/01/2026` },
+                    { value: 'us', label: `${t('settings.dateFormats.us')} — 01/06/2026` },
+                  ]}
+                  value={settings.date_format || 'short'}
+                  onChange={(val) => updateSetting('date_format', val)}
+                />
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={settings.show_time !== 'false' && settings.show_time !== false}
+                    onChange={(e) => updateSetting('show_time', e.target.checked)}
+                    className="rounded"
+                  />
+                  {t('settings.showTime')}
+                </label>
                 {canWrite('settings') && (
                   <div className="pt-2">
                     <Button type="button" onClick={() => handleSave('general')} disabled={saving}>
