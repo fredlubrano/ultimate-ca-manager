@@ -157,8 +157,6 @@ def check_for_updates(include_prereleases=False, include_dev=False, force=False)
                 if suffix.startswith('dev'):
                     if not include_dev:
                         continue
-                elif not any(suffix.startswith(p) for p in ('alpha', 'beta', 'rc')):
-                    continue
             candidates.append(release)
         
         # Sort by parsed version, highest first

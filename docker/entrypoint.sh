@@ -173,6 +173,7 @@ if [ -d "$old_path" ] && [ "$(ls -A $old_path 2>/dev/null)" ]; then
     echo -e "${YELLOW}   Checking for data migration from $old_path...${NC}"
     # Copy everything that doesn't already exist in new path
     for item in "$old_path"/*; do
+        [ -e "$item" ] || continue
         basename_item=$(basename "$item")
         # Rename 'cas' → 'ca' (old Docker naming mismatch)
         target_name="$basename_item"
@@ -184,6 +185,7 @@ if [ -d "$old_path" ] && [ "$(ls -A $old_path 2>/dev/null)" ]; then
             cp -a "$item" "$DATA_PATH/$target_name" 2>/dev/null || true
         elif [ -d "$item" ] && [ -d "$DATA_PATH/$target_name" ]; then
             for subitem in "$item"/*; do
+                [ -e "$subitem" ] || continue
                 sub_basename=$(basename "$subitem")
                 if [ ! -e "$DATA_PATH/$target_name/$sub_basename" ]; then
                     echo -e "${YELLOW}   Migrating $target_name/$sub_basename...${NC}"
