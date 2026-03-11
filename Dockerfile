@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libssl-dev \
     libffi-dev \
+    libkrb5-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create virtual environment
@@ -35,6 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     openssl \
     softhsm2 \
+    libkrb5-3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security

@@ -13,6 +13,8 @@ AutoReqProv:    no
 Requires:       python3 >= 3.9
 Requires:       systemd
 Requires:       openssl >= 1.1.1
+Requires:       krb5-libs
+Requires:       krb5-devel
 Recommends:     softhsm
 Suggests:       openldap-clients
 
