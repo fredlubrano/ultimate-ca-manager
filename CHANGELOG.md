@@ -9,12 +9,25 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+---
+
+## [2.70] - 2026-03-11
+
 ### Added
 - **Microsoft AD CS Integration** (Experimental) — Sign CSRs via Microsoft Certificate Authority through certsrv Web Enrollment. Supports client certificate (mTLS), Kerberos, and Basic Auth over HTTPS. Dynamic template loading, permission detection, pending approval tracking with auto-import
 - **Re-key from CSR** — Create new CSR/certificate from an existing CSR whose private key was lost, preserving subject and SAN fields with a fresh key pair
+- **Update Channel Selector** — Replace checkboxes with a channel selector (Stable / Pre-release / Development) in Settings, with warning banner for unstable channels
+- **Compliance Grade Sorting** — Sort certificates by compliance grade, configurable date format with time display
 
 ### Fixed
-- **Code review fixes** — Security hardening for re-key feature (input validation, error handling)
+- **Docker Path Alignment** — Align Docker container paths with DEB/RPM layout (`/app/` → `/opt/ucm/`), backward-compatible data migration for existing users
+- **OCI/Incus Container Startup** — Fix gunicorn crash in non-Docker OCI containers (Incus/LXD) by checking `UCM_DOCKER` env var alongside `/.dockerenv` (fixes #36)
+- **Update Cache Invalidation** — Force-refresh update cache when switching channels or clicking "Check Now"
+- **Package Dependency Resolution** — DEB: always run `apt-get -f install` after dpkg; RPM: use dnf/yum for automatic dependency resolution
+- **CI Build Dependencies** — Add `libkrb5-dev` for requests-kerberos/gssapi compilation in DEB builds
+- **Prerelease Filter** — Accept all non-dev prerelease formats (not just alpha/beta/rc)
+- **Docker Migration Glob Safety** — Skip glob loops on empty directories in entrypoint
+- **Code Review Fixes** — Security hardening for re-key feature (input validation, error handling)
 
 ---
 
