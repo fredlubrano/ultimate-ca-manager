@@ -11,6 +11,17 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.74-dev] - 2026-03-13
+
+### Fixed
+- **MS CA Template Listing** — Implemented template scraping via certrqxt.asp (certsrv library has no template listing method)
+- **MS CA Client Error Handler** — Fixed NameError (`verify` → `cafile`) in connection error cleanup
+- **Certificate/CA Export Decryption** — Export endpoints now properly decrypt private keys before export (was exporting encrypted data)
+- **Managed Cert Selection** — CertificateInput managed mode correctly fetches cert PEM + key via export endpoint
+- **Cryptography Deprecation Warnings** — Replaced `not_valid_before`/`not_valid_after` with UTC-aware variants across all services
+
+---
+
 ## [2.73] - 2026-03-13
 
 ### Added
