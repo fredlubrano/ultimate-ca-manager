@@ -24,6 +24,7 @@ import {
   UpdateChecker, ServiceReconnectOverlay
 } from '../components'
 import { SmartImportModal } from '../components/SmartImport'
+import CertificateInput from '../components/CertificateInput'
 import LanguageSelector from '../components/ui/LanguageSelector'
 import { settingsService, systemService, casService, certificatesService, ssoService, mtlsService, mscaService } from '../services'
 import { useNotification, useMobile } from '../contexts'
@@ -835,16 +836,15 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                     <p className="text-xs text-amber-500">{t('sso.sslWarning')}</p>
                   )}
                   {formData.ldap_verify_ssl && (
-                    <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-1">{t('sso.caBundleLabel')}</label>
-                      <textarea
-                        className="w-full h-24 px-3 py-2 text-xs font-mono bg-bg-secondary border border-border rounded-md"
+                      <Textarea
+                        label={t('sso.caBundleLabel')}
                         value={formData.ldap_ca_bundle}
                         onChange={e => handleChange('ldap_ca_bundle', e.target.value)}
                         placeholder="-----BEGIN CERTIFICATE-----&#10;..."
+                        rows={4}
+                        mono
+                        helperText={t('sso.caBundleHelp')}
                       />
-                      <p className="text-xs text-text-tertiary mt-1">{t('sso.caBundleHelp')}</p>
-                    </div>
                   )}
                 </>
               )}
@@ -1132,16 +1132,15 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                 <p className="text-xs text-amber-500">{t('sso.sslWarning')}</p>
               )}
               {formData.oauth2_verify_ssl && (
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1">{t('sso.caBundleLabel')}</label>
-                  <textarea
-                    className="w-full h-24 px-3 py-2 text-xs font-mono bg-bg-secondary border border-border rounded-md"
+                  <Textarea
+                    label={t('sso.caBundleLabel')}
                     value={formData.oauth2_ca_bundle}
                     onChange={e => handleChange('oauth2_ca_bundle', e.target.value)}
                     placeholder="-----BEGIN CERTIFICATE-----&#10;..."
+                    rows={4}
+                    mono
+                    helperText={t('sso.caBundleHelp')}
                   />
-                  <p className="text-xs text-text-tertiary mt-1">{t('sso.caBundleHelp')}</p>
-                </div>
               )}
               {provider?.id && (
                 <Button
@@ -1313,16 +1312,15 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                 <p className="text-xs text-amber-500">{t('sso.sslWarning')}</p>
               )}
               {formData.saml_verify_ssl && (
-                <div>
-                  <label className="block text-sm font-medium text-text-secondary mb-1">{t('sso.caBundleLabel')}</label>
-                  <textarea
-                    className="w-full h-24 px-3 py-2 text-xs font-mono bg-bg-secondary border border-border rounded-md"
+                  <Textarea
+                    label={t('sso.caBundleLabel')}
                     value={formData.saml_ca_bundle}
                     onChange={e => handleChange('saml_ca_bundle', e.target.value)}
                     placeholder="-----BEGIN CERTIFICATE-----&#10;..."
+                    rows={4}
+                    mono
+                    helperText={t('sso.caBundleHelp')}
                   />
-                  <p className="text-xs text-text-tertiary mt-1">{t('sso.caBundleHelp')}</p>
-                </div>
               )}
               {provider?.id && (
                 <Button
@@ -1695,24 +1693,16 @@ function MscaConnectionForm({ connection, onSave, onCancel }) {
       )}
 
       {formData.auth_method === 'certificate' && (
-        <>
-          <Textarea
-            label={t('msca.clientCert')}
-            value={formData.client_cert_pem}
-            onChange={(e) => updateField('client_cert_pem', e.target.value)}
-            rows={4}
-            placeholder="-----BEGIN CERTIFICATE-----"
-            className="font-mono text-xs"
-          />
-          <Textarea
-            label={t('msca.clientKey')}
-            value={formData.client_key_pem}
-            onChange={(e) => updateField('client_key_pem', e.target.value)}
-            rows={4}
-            placeholder={connection ? '••••••••' : '-----BEGIN PRIVATE KEY-----'}
-            className="font-mono text-xs"
-          />
-        </>
+        <CertificateInput
+          label={t('msca.clientCert')}
+          keyLabel={t('msca.clientKey')}
+          requireKey
+          value={{ cert_pem: formData.client_cert_pem, key_pem: formData.client_key_pem }}
+          onChange={({ cert_pem, key_pem }) => {
+            updateField('client_cert_pem', cert_pem)
+            updateField('client_key_pem', key_pem)
+          }}
+        />
       )}
 
       {formData.auth_method === 'kerberos' && (

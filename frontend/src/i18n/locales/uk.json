@@ -3150,5 +3150,23 @@
     "notConfigured": "Не налаштовано",
     "configured": "Налаштовано",
     "kerberosOptionalNote": "Kerberos потребує пакет requests-kerberos (pip install requests-kerberos), а машина має бути приєднана до домену Active Directory або мати налаштований Kerberos keytab."
+  },
+  "certInput": {
+    "modePaste": "Вставити",
+    "modeUpload": "Завантажити",
+    "modeManaged": "Наявний",
+    "certificate": "Сертифікат",
+    "privateKey": "Приватний ключ",
+    "dropOrClick": "Перетягніть файл або натисніть для вибору",
+    "analyzing": "Аналіз...",
+    "filePassword": "Пароль файлу",
+    "enterPassword": "Введіть пароль",
+    "parseError": "Не вдалося витягти сертифікат з файлу",
+    "keyExtracted": "Приватний ключ витягнуто",
+    "selectCertificate": "Обрати сертифікат",
+    "chooseCertificate": "Оберіть сертифікат...",
+    "certLoaded": "Сертифікат завантажено",
+    "keyLoaded": "Приватний ключ завантажено",
+    "noCertsWithKey": "Сертифікатів з приватним ключем не знайдено"
   }
 }

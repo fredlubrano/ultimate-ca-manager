@@ -3150,5 +3150,23 @@
     "notConfigured": "Non configurato",
     "configured": "Configurato",
     "kerberosOptionalNote": "Kerberos richiede il pacchetto requests-kerberos (pip install requests-kerberos) e la macchina deve essere unita al dominio Active Directory o avere un keytab Kerberos configurato."
+  },
+  "certInput": {
+    "modePaste": "Incolla",
+    "modeUpload": "Carica",
+    "modeManaged": "Esistente",
+    "certificate": "Certificato",
+    "privateKey": "Chiave privata",
+    "dropOrClick": "Trascina un file o clicca per sfogliare",
+    "analyzing": "Analisi in corso...",
+    "filePassword": "Password del file",
+    "enterPassword": "Inserisci la password",
+    "parseError": "Impossibile estrarre un certificato dal file",
+    "keyExtracted": "Chiave privata estratta",
+    "selectCertificate": "Seleziona certificato",
+    "chooseCertificate": "Scegli un certificato...",
+    "certLoaded": "Certificato caricato",
+    "keyLoaded": "Chiave privata caricata",
+    "noCertsWithKey": "Nessun certificato con chiave privata trovato"
   }
 }

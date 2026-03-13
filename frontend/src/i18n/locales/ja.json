@@ -3150,5 +3150,23 @@
     "notConfigured": "未設定",
     "configured": "設定済み",
     "kerberosOptionalNote": "KerberosにはパッケージRequests-kerberos（pip install requests-kerberos）が必要で、マシンがActive Directoryドメインに参加しているか、Kerberos keytabが設定されている必要があります。"
+  },
+  "certInput": {
+    "modePaste": "貼り付け",
+    "modeUpload": "アップロード",
+    "modeManaged": "管理済み",
+    "certificate": "証明書",
+    "privateKey": "秘密鍵",
+    "dropOrClick": "ファイルをドロップまたはクリックして参照",
+    "analyzing": "分析中...",
+    "filePassword": "ファイルパスワード",
+    "enterPassword": "パスワードを入力",
+    "parseError": "ファイルから証明書を抽出できませんでした",
+    "keyExtracted": "秘密鍵を抽出しました",
+    "selectCertificate": "証明書を選択",
+    "chooseCertificate": "証明書を選択...",
+    "certLoaded": "証明書を読み込みました",
+    "keyLoaded": "秘密鍵を読み込みました",
+    "noCertsWithKey": "秘密鍵付きの証明書が見つかりません"
   }
 }

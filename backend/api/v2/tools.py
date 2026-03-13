@@ -559,19 +559,17 @@ def match_keys():
 def convert_certificate():
     """Convert certificate/key between formats
     
-    Supports input formats: PEM, DER, PKCS12/PFX, PKCS7/P7B
-    Supports output formats: PEM, DER, PKCS12, PKCS7
-    
-    Input can be:
-    - PEM text (-----BEGIN ... -----)
-    - Base64-encoded binary with 'BASE64:' prefix
+    Uses SmartParser for input detection (same as Smart Import).
+    Supports input: PEM, DER, PKCS12/PFX, PKCS7/P7B
+    Supports output: PEM, DER, PKCS12, PKCS7
     """
+    from services.smart_import.parser import SmartParser, ObjectType
+    
     data = request.get_json() or {}
     input_data = data.get('pem', '').strip()
-    input_type = data.get('input_type', 'auto')  # auto, certificate, private_key, csr, pkcs12, pkcs7
-    output_format = data.get('output_format', 'pem')  # pem, der, pkcs12, pkcs7
-    password = data.get('password', '')  # Input file password (for encrypted keys or P12)
-    pkcs12_password = data.get('pkcs12_password', '')  # Output P12 password
+    output_format = data.get('output_format', 'pem')
+    password = data.get('password', '')
+    pkcs12_password = data.get('pkcs12_password', '')
     chain_pem = data.get('chain', '').strip()
     key_pem = data.get('private_key', '').strip()
     
@@ -581,147 +579,64 @@ def convert_certificate():
     try:
         import subprocess
         
-        # Check if input is base64-encoded binary
-        raw_bytes = None
+        parser = SmartParser()
+        
+        # Parse input using SmartParser
         if input_data.startswith('BASE64:'):
             raw_bytes = base64.b64decode(input_data[7:])
-            input_data = None
+            objects = parser.parse(raw_bytes, password=password or None)
+        else:
+            objects = parser.parse(input_data, password=password or None)
         
-        # Auto-detect format and parse
+        # Also parse additional key if provided separately
+        if key_pem:
+            key_objects = parser.parse(key_pem, password=password or None)
+            objects.extend([o for o in key_objects if o.type == ObjectType.PRIVATE_KEY])
+        
+        # Separate by type and load crypto objects from PEM
         certs = []
         keys = []
         csrs = []
-        detected_format = 'unknown'
         
-        # Try to parse the input
-        if raw_bytes:
-            # Binary data - try different formats
-            
-            # Try PKCS12 first
+        for obj in objects:
+            pem = obj.raw_pem.encode() if obj.raw_pem else obj.raw_der
+            if not pem:
+                continue
             try:
-                p12_pwd = password.encode() if password else None
-                private_key, cert, additional_certs = serialization.pkcs12.load_key_and_certificates(
-                    raw_bytes, p12_pwd, default_backend()
-                )
-                detected_format = 'pkcs12'
-                if cert:
-                    certs.append(cert)
-                if additional_certs:
-                    certs.extend(additional_certs)
-                if private_key:
-                    keys.append(private_key)
-            except Exception:
-                pass
-            
-            # Try DER certificate
-            if detected_format == 'unknown':
-                try:
-                    cert = x509.load_der_x509_certificate(raw_bytes, default_backend())
-                    certs.append(cert)
-                    detected_format = 'der_cert'
-                except Exception:
-                    pass
-            
-            # Try DER private key
-            if detected_format == 'unknown':
-                try:
-                    key = serialization.load_der_private_key(raw_bytes, password=password.encode() if password else None, backend=default_backend())
-                    keys.append(key)
-                    detected_format = 'der_key'
-                except Exception:
-                    pass
-            
-            # Try DER CSR
-            if detected_format == 'unknown':
-                try:
-                    csr = x509.load_der_x509_csr(raw_bytes, default_backend())
-                    csrs.append(csr)
-                    detected_format = 'der_csr'
-                except Exception:
-                    pass
-            
-            # Try PKCS7/P7B (use OpenSSL)
-            if detected_format == 'unknown':
-                try:
-                    with tempfile.NamedTemporaryFile(suffix='.p7b', delete=False) as f:
-                        f.write(raw_bytes)
-                        temp_p7b = f.name
-                    try:
-                        # Extract certs from P7B
-                        pem_output = subprocess.check_output([
-                            'openssl', 'pkcs7', '-print_certs', '-in', temp_p7b, '-inform', 'DER'
-                        ], stderr=subprocess.DEVNULL, timeout=30)
-                        # Parse extracted PEM certs
-                        for c in x509.load_pem_x509_certificates(pem_output):
-                            certs.append(c)
-                        detected_format = 'pkcs7'
-                    finally:
-                        os.unlink(temp_p7b)
-                except Exception:
-                    pass
-        
-        else:
-            # Text data (PEM format)
-            detected_format = 'pem'
-            
-            # Parse certificates
-            if '-----BEGIN CERTIFICATE-----' in input_data:
-                try:
-                    for cert in x509.load_pem_x509_certificates(input_data.encode()):
-                        certs.append(cert)
-                except Exception:
-                    pass
-            
-            # Parse private keys
-            if '-----BEGIN' in input_data and 'PRIVATE KEY-----' in input_data:
-                try:
+                if obj.type == ObjectType.CERTIFICATE:
+                    if obj.raw_pem:
+                        certs.append(x509.load_pem_x509_certificate(pem, default_backend()))
+                    elif obj.raw_der:
+                        certs.append(x509.load_der_x509_certificate(obj.raw_der, default_backend()))
+                elif obj.type == ObjectType.PRIVATE_KEY:
                     pwd = password.encode() if password else None
-                    key = serialization.load_pem_private_key(input_data.encode(), password=pwd, backend=default_backend())
-                    keys.append(key)
-                except Exception:
-                    pass
-            
-            # Parse CSRs
-            if '-----BEGIN CERTIFICATE REQUEST-----' in input_data:
-                try:
-                    csr = x509.load_pem_x509_csr(input_data.encode(), default_backend())
-                    csrs.append(csr)
-                except Exception:
-                    pass
-            
-            # If nothing parsed, try as certificate only
-            if not certs and not keys and not csrs:
-                try:
-                    # Try adding PEM headers
-                    clean = input_data.replace(' ', '').replace('\n', '')
-                    pem_cert = f"-----BEGIN CERTIFICATE-----\n{clean}\n-----END CERTIFICATE-----"
-                    cert = x509.load_pem_x509_certificate(pem_cert.encode(), default_backend())
-                    certs.append(cert)
-                except Exception:
-                    pass
-        
-        # Also parse additional key from key_pem if provided
-        if key_pem:
-            try:
-                pwd = password.encode() if password else None
-                key = serialization.load_pem_private_key(key_pem.encode(), password=pwd, backend=default_backend())
-                keys.append(key)
+                    if obj.raw_pem:
+                        keys.append(serialization.load_pem_private_key(pem, password=pwd, backend=default_backend()))
+                    elif obj.raw_der:
+                        keys.append(serialization.load_der_private_key(obj.raw_der, password=pwd, backend=default_backend()))
+                elif obj.type == ObjectType.CSR:
+                    if obj.raw_pem:
+                        csrs.append(x509.load_pem_x509_csr(pem, default_backend()))
+                    elif obj.raw_der:
+                        csrs.append(x509.load_der_x509_csr(obj.raw_der, default_backend()))
             except Exception:
                 pass
         
         # Parse chain
         chain_certs = []
         if chain_pem:
-            try:
-                for c in x509.load_pem_x509_certificates(chain_pem.encode()):
-                    chain_certs.append(c)
-            except Exception:
-                pass
+            chain_objects = parser.parse(chain_pem)
+            for obj in chain_objects:
+                if obj.type == ObjectType.CERTIFICATE and obj.raw_pem:
+                    try:
+                        chain_certs.append(x509.load_pem_x509_certificate(obj.raw_pem.encode(), default_backend()))
+                    except Exception:
+                        pass
         
-        # Validate we have something to convert
         if not certs and not keys and not csrs:
             return error_response('Could not parse input data. Supported formats: PEM, DER, PKCS12, PKCS7', 400)
         
+        detected_format = 'pem' if not input_data.startswith('BASE64:') else 'binary'
         result = {}
         
         # Convert to requested output format

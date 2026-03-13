@@ -61,8 +61,8 @@ export function ExportModal({
   const isPkcs12 = format === 'pkcs12'
   const isKeyOnly = format === 'key'
   const effectiveIncludeKey = (isPkcs12 || isKeyOnly) ? true : includeKey
-  const needsPassword = isPkcs12  // Only PKCS12 requires password
-  const showPasswordField = isPkcs12 || isKeyOnly || includeKey  // Show optional password for key exports
+  const needsPassword = isPkcs12
+  const showPasswordField = isPkcs12
 
   // Available formats: hide PKCS12 if no key or no permission
   const availableFormats = FORMATS.filter(f => {
@@ -77,7 +77,7 @@ export function ExportModal({
       await onExport(format, {
         includeChain,
         includeKey: effectiveIncludeKey,
-        password: (needsPassword || (effectiveIncludeKey && password)) ? password : undefined,
+        password: isPkcs12 ? password : undefined,
       })
       onClose()
     } catch {
@@ -193,7 +193,7 @@ export function ExportModal({
         </div>
         )}
 
-        {/* Password field — required for PKCS12, optional for key export */}
+        {/* Password field — required for PKCS12 only */}
         {showPasswordField && (
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-text-secondary uppercase tracking-wide">

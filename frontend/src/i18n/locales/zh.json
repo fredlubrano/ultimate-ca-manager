@@ -3150,5 +3150,23 @@
     "notConfigured": "未配置",
     "configured": "已配置",
     "kerberosOptionalNote": "Kerberos 需要 requests-kerberos 包（pip install requests-kerberos），且机器必须加入 Active Directory 域或配置 Kerberos keytab。"
+  },
+  "certInput": {
+    "modePaste": "粘贴",
+    "modeUpload": "上传",
+    "modeManaged": "已有",
+    "certificate": "证书",
+    "privateKey": "私钥",
+    "dropOrClick": "拖放文件或点击浏览",
+    "analyzing": "分析中...",
+    "filePassword": "文件密码",
+    "enterPassword": "输入密码",
+    "parseError": "无法从文件中提取证书",
+    "keyExtracted": "已提取私钥",
+    "selectCertificate": "选择证书",
+    "chooseCertificate": "选择证书...",
+    "certLoaded": "证书已加载",
+    "keyLoaded": "私钥已加载",
+    "noCertsWithKey": "未找到包含私钥的证书"
   }
 }
