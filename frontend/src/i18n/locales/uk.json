@@ -1388,7 +1388,10 @@
     "helpCsrDecoder": "Paste a CSR (Сертифікат Signing Request) in PEM format to see its contents including subject, public key type/size, and any requested extensions like SANs.",
     "helpCertDecoder": "Paste a certificate in PEM format to see all details: subject, issuer, дійснийity dates, extensions, key usage, fingerprints, and more.",
     "helpKeyMatcher": "Переконайтеся, що приватний ключ, сертифікат та/або CSR належать один одному, порівнявши їх публічні ключі. Корисно перед встановленням сертифікатів.",
-    "helpConverter": "Конвертуйте сертифікати та ключі між форматами: PEM ↔ DER, PEM → PKCS12 (потрібен ключ), PEM → PKCS7. Завантажуйте конвертований файл безпосередньо."
+    "helpConverter": "Конвертуйте сертифікати та ключі між форматами: PEM ↔ DER, PEM → PKCS12 (потрібен ключ), PEM → PKCS7. Завантажуйте конвертований файл безпосередньо.",
+    "pkcs12PasswordRequired": "Пароль обов'язковий для файлів PKCS12/PFX",
+    "pkcs12OutputPasswordRequired": "Пароль обов'язковий для виводу PKCS12",
+    "pkcs12PasswordPlaceholder": "Пароль файлу PKCS12/PFX"
   },
   "audit": {
     "event": "Подія",

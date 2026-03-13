@@ -93,13 +93,15 @@ export default function CertificateToolsPage() {
   const [convertPem, setConvertPem] = useState('')
   const [convertFile, setConvertFile] = useState(null)
   const [convertFileData, setConvertFileData] = useState(null)
-  const [convertType, setConvertType] = useState('certificate')
   const [convertFormat, setConvertFormat] = useState('der')
   const [convertKey, setConvertKey] = useState('')
   const [convertKeyFile, setConvertKeyFile] = useState(null)
   const [convertChain, setConvertChain] = useState('')
   const [convertPassword, setConvertPassword] = useState('')
   const [pkcs12Password, setPkcs12Password] = useState('')
+
+  // Detect if uploaded file needs a password (binary: p12, pfx, encrypted key)
+  const needsInputPassword = convertFile && /\.(p12|pfx)$/i.test(convertFile.name)
 
   const resetResult = () => setResult(null)
 
@@ -196,8 +198,18 @@ export default function CertificateToolsPage() {
       showError(t('tools.pleaseUploadOrPaste'))
       return
     }
+    // Guard: PKCS12/PFX input requires password
+    if (needsInputPassword && !convertPassword) {
+      showError(t('tools.pkcs12PasswordRequired'))
+      return
+    }
+    // Guard: PKCS12 output requires key + password
     if (convertFormat === 'pkcs12' && !keyContent) {
       showError(t('tools.privateKeyRequired'))
+      return
+    }
+    if (convertFormat === 'pkcs12' && !pkcs12Password) {
+      showError(t('tools.pkcs12OutputPasswordRequired'))
       return
     }
     setLoading(true)
@@ -205,7 +217,6 @@ export default function CertificateToolsPage() {
     try {
       const response = await toolsService.convert({
         pem: content,
-        input_type: convertType,
         output_format: convertFormat,
         private_key: keyContent,
         chain: convertChain.trim(),
@@ -513,6 +524,7 @@ export default function CertificateToolsPage() {
             setConvertFile(file)
             const content = await readFileContent(file)
             setConvertFileData(content)
+            setConvertPassword('')
           }}
           helperText={t('tools.supportsFormats')}
         />
@@ -524,32 +536,48 @@ export default function CertificateToolsPage() {
             <Button 
               variant="ghost"
               size="xs"
-              onClick={() => { setConvertFile(null); setConvertFileData(null) }}
+              onClick={() => { setConvertFile(null); setConvertFileData(null); setConvertPassword('') }}
             >
               <XCircle size={16} />
             </Button>
           </div>
         )}
+
+        {/* Password field — shown when PKCS12/PFX file is uploaded */}
+        {needsInputPassword && (
+          <Input
+            label={t('tools.inputPassword')}
+            type="password"
+            noAutofill
+            required
+            placeholder={t('tools.pkcs12PasswordPlaceholder')}
+            value={convertPassword}
+            onChange={(e) => setConvertPassword(e.target.value)}
+          />
+        )}
         
-        {/* Or paste */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-text-secondary">{t('common.orPastePem')}</span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
-        
-        <Textarea
-          placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
-          value={convertPem}
-          onChange={(e) => setConvertPem(e.target.value)}
-          rows={4}
-          className="font-mono text-xs"
-          disabled={!!convertFileData}
-        />
+        {/* Or paste PEM */}
+        {!convertFile && (
+          <>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-text-secondary">{t('common.orPastePem')}</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+            
+            <Textarea
+              placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"
+              value={convertPem}
+              onChange={(e) => setConvertPem(e.target.value)}
+              rows={4}
+              className="font-mono text-xs"
+            />
+          </>
+        )}
       </div>
 
-      {/* Output format and passwords */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+      {/* Output format */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
         <Select
           label={t('tools.outputFormat')}
           value={convertFormat}
@@ -561,19 +589,12 @@ export default function CertificateToolsPage() {
             { value: 'pkcs7', label: t('tools.pkcs7') },
           ]}
         />
-        <Input
-          label={t('tools.inputPassword')}
-          type="password"
-          noAutofill
-          placeholder={t('tools.forEncryptedFiles')}
-          value={convertPassword}
-          onChange={(e) => setConvertPassword(e.target.value)}
-        />
         {convertFormat === 'pkcs12' && (
           <Input
             label={t('tools.outputPkcs12Password')}
             type="password"
             noAutofill
+            required
             placeholder={t('tools.passwordForP12')}
             value={pkcs12Password}
             onChange={(e) => setPkcs12Password(e.target.value)}

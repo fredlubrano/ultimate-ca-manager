@@ -1388,7 +1388,10 @@
     "helpCsrDecoder": "PEM形式のCSR（証明書署名リクエスト）を貼り付けると、サブジェクト、公開鍵のタイプ/サイズ、SANなどの要求された拡張機能を含む内容が表示されます。",
     "helpCertDecoder": "PEM形式の証明書を貼り付けると、サブジェクト、発行者、有効期間、拡張機能、キー使用法、フィンガープリントなどの詳細が表示されます。",
     "helpKeyMatcher": "秘密鍵、証明書、CSRの公開鍵を比較して、それらが対になっていることを確認します。証明書をインストールする前に役立ちます。",
-    "helpConverter": "証明書とキーの形式を変換します：PEM ↔ DER、PEM → PKCS12（キーが必要）、PEM → PKCS7。変換されたファイルを直接ダウンロードできます。"
+    "helpConverter": "証明書とキーの形式を変換します：PEM ↔ DER、PEM → PKCS12（キーが必要）、PEM → PKCS7。変換されたファイルを直接ダウンロードできます。",
+    "pkcs12PasswordRequired": "PKCS12/PFXファイルにはパスワードが必要です",
+    "pkcs12OutputPasswordRequired": "PKCS12出力にはパスワードが必要です",
+    "pkcs12PasswordPlaceholder": "PKCS12/PFXファイルのパスワード"
   },
   "audit": {
     "event": "イベント",

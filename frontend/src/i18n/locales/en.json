@@ -1388,7 +1388,10 @@
     "helpCsrDecoder": "Paste a CSR (Certificate Signing Request) in PEM format to see its contents including subject, public key type/size, and any requested extensions like SANs.",
     "helpCertDecoder": "Paste a certificate in PEM format to see all details: subject, issuer, validity dates, extensions, key usage, fingerprints, and more.",
     "helpKeyMatcher": "Verify that a private key, certificate, and/or CSR belong together by comparing their public keys. Useful before installing certificates.",
-    "helpConverter": "Convert certificates and keys between formats: PEM ↔ DER, PEM → PKCS12 (requires key), PEM → PKCS7. Download the converted file directly."
+    "helpConverter": "Convert certificates and keys between formats: PEM ↔ DER, PEM → PKCS12 (requires key), PEM → PKCS7. Download the converted file directly.",
+    "pkcs12PasswordRequired": "Password is required for PKCS12/PFX files",
+    "pkcs12OutputPasswordRequired": "Password is required for PKCS12 output",
+    "pkcs12PasswordPlaceholder": "PKCS12/PFX file password"
   },
   "audit": {
     "event": "Event",

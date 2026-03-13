@@ -1388,7 +1388,10 @@
     "helpCsrDecoder": "Fügen Sie eine CSR (Certificate Signing Request) im PEM-Format ein, um deren Inhalt zu sehen einschließlich Betreff, öffentlicher Schlüssel-Typ/Größe und angeforderte Erweiterungen wie SANs.",
     "helpCertDecoder": "Fügen Sie ein Zertifikat im PEM-Format ein, um alle Details zu sehen: Betreff, Aussteller, Gültigkeitsdaten, Erweiterungen, Schlüssel-Verwendung, Fingerprints und mehr.",
     "helpKeyMatcher": "Verifizieren Sie, dass ein privater Schlüssel, Zertifikat und/oder CSR zusammengehören, indem Sie deren öffentliche Schlüssel vergleichen. Nützlich vor der Installation von Zertifikaten.",
-    "helpConverter": "Zertifikate und Schlüssel zwischen Formaten konvertieren: PEM ↔ DER, PEM → PKCS12 (erfordert Schlüssel), PEM → PKCS7. Die konvertierte Datei direkt herunterladen."
+    "helpConverter": "Zertifikate und Schlüssel zwischen Formaten konvertieren: PEM ↔ DER, PEM → PKCS12 (erfordert Schlüssel), PEM → PKCS7. Die konvertierte Datei direkt herunterladen.",
+    "pkcs12PasswordRequired": "Passwort ist für PKCS12/PFX-Dateien erforderlich",
+    "pkcs12OutputPasswordRequired": "Passwort ist für PKCS12-Ausgabe erforderlich",
+    "pkcs12PasswordPlaceholder": "PKCS12/PFX-Dateipasswort"
   },
   "audit": {
     "event": "Ereignis",

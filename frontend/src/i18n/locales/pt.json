@@ -1388,7 +1388,10 @@
     "helpCsrDecoder": "Colar uma Pedido de Certificado (Certificate Signing Request) em PEM format para see its contents including subject, public key type/size, e any requested extensions like SANs.",
     "helpCertDecoder": "Colar uma certificate em PEM format para see all details: subject, issuer, validity dates, extensions, key usage, fingerprints, e more.",
     "helpKeyMatcher": "Verificar esse uma private key, certificate, and/or Pedido de Certificado belong together por comparing their public keys. Useful before a instalar certificates.",
-    "helpConverter": "Convert certificates e keys between formats: PEM ↔ DER, PEM → PKCS12 (requires key), PEM → PKCS7. Transferir o converted file directly."
+    "helpConverter": "Convert certificates e keys between formats: PEM ↔ DER, PEM → PKCS12 (requires key), PEM → PKCS7. Transferir o converted file directly.",
+    "pkcs12PasswordRequired": "Senha é obrigatória para arquivos PKCS12/PFX",
+    "pkcs12OutputPasswordRequired": "Senha é obrigatória para saída PKCS12",
+    "pkcs12PasswordPlaceholder": "Senha do arquivo PKCS12/PFX"
   },
   "audit": {
     "event": "Evento",

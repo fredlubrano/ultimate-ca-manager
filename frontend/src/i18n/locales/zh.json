@@ -1388,7 +1388,10 @@
     "helpCsrDecoder": "粘贴 PEM 格式的 CSR (证书签名请求) 以查看其内容，包括主体、公钥类型/大小以及任何请求的扩展 (如 SAN)。",
     "helpCertDecoder": "粘贴 PEM 格式的证书以查看所有详细信息：主体、颁发者、有效期、扩展、密钥用法、指纹等。",
     "helpKeyMatcher": "通过比较公钥验证私钥、证书和/或 CSR 是否属于同一组。安装证书前很有用。",
-    "helpConverter": "在不同格式之间转换证书和密钥：PEM ↔ DER, PEM → PKCS12 (需要密钥), PEM → PKCS7。直接下载转换后的文件。"
+    "helpConverter": "在不同格式之间转换证书和密钥：PEM ↔ DER, PEM → PKCS12 (需要密钥), PEM → PKCS7。直接下载转换后的文件。",
+    "pkcs12PasswordRequired": "PKCS12/PFX文件需要密码",
+    "pkcs12OutputPasswordRequired": "PKCS12输出需要密码",
+    "pkcs12PasswordPlaceholder": "PKCS12/PFX文件密码"
   },
   "audit": {
     "event": "事件",

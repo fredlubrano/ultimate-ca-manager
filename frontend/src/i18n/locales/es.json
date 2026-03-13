@@ -1388,7 +1388,10 @@
     "helpCsrDecoder": "Paste a CSR (Certificado Signing Request) in PEM formatoo to see its contents including subject, public clave tipo/tamaño, and cualquier requested extensions like SANs.",
     "helpCertDecoder": "Paste a certificado in PEM formatoo to see todos dettodoses: subject, issuer, válidoity fechas, extensions, clave usage, fingerprints, and more.",
     "helpKeyMatcher": "Verificar that a private clave, certificado, and/or CSR belong together by comparing their public claves. Useful before insttodosing certificados.",
-    "helpConverter": "Convert certificados and claves between formatoos: PEM ↔ DER, PEM → PKCS12 (requires clave), PEM → PKCS7. Descargar the converted file directly."
+    "helpConverter": "Convert certificados and claves between formatoos: PEM ↔ DER, PEM → PKCS12 (requires clave), PEM → PKCS7. Descargar the converted file directly.",
+    "pkcs12PasswordRequired": "Se requiere contraseña para archivos PKCS12/PFX",
+    "pkcs12OutputPasswordRequired": "Se requiere contraseña para la salida PKCS12",
+    "pkcs12PasswordPlaceholder": "Contraseña del archivo PKCS12/PFX"
   },
   "audit": {
     "event": "Evento",

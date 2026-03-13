@@ -559,7 +559,7 @@ def match_keys():
 def convert_certificate():
     """Convert certificate/key between formats
     
-    Uses SmartParser for input detection (same as Smart Import).
+    Uses SmartParser (same engine as Smart Import) for input detection.
     Supports input: PEM, DER, PKCS12/PFX, PKCS7/P7B
     Supports output: PEM, DER, PKCS12, PKCS7
     """
@@ -568,7 +568,7 @@ def convert_certificate():
     data = request.get_json() or {}
     input_data = data.get('pem', '').strip()
     output_format = data.get('output_format', 'pem')
-    password = data.get('password', '')
+    password = data.get('password', '') or None
     pkcs12_password = data.get('pkcs12_password', '')
     chain_pem = data.get('chain', '').strip()
     key_pem = data.get('private_key', '').strip()
@@ -581,52 +581,65 @@ def convert_certificate():
         
         parser = SmartParser()
         
-        # Parse input using SmartParser
-        if input_data.startswith('BASE64:'):
-            raw_bytes = base64.b64decode(input_data[7:])
-            objects = parser.parse(raw_bytes, password=password or None)
+        # Decode binary input if BASE64: prefixed (from file upload)
+        is_binary = input_data.startswith('BASE64:')
+        if is_binary:
+            raw_input = base64.b64decode(input_data[7:])
         else:
-            objects = parser.parse(input_data, password=password or None)
+            raw_input = input_data
         
-        # Also parse additional key if provided separately
+        # Guard rail: binary files (PKCS12/PFX) require a password
+        if is_binary and not password:
+            # Check if it looks like PKCS12 (starts with ASN.1 SEQUENCE)
+            is_likely_pkcs12 = isinstance(raw_input, bytes) and len(raw_input) > 4 and raw_input[0] == 0x30
+            # Try DER cert/key first — those don't need passwords
+            test_objects = parser.parse(raw_input, password=None)
+            if not test_objects and is_likely_pkcs12:
+                return error_response('Password is required for PKCS12/PFX files', 400)
+        
+        # Parse with SmartParser — same engine as certificate import page
+        objects = parser.parse(raw_input, password=password)
+        if not objects and password:
+            objects = parser.parse(raw_input, password=None)
+        
+        # Parse additional key if provided separately
         if key_pem:
-            key_objects = parser.parse(key_pem, password=password or None)
+            if key_pem.startswith('BASE64:'):
+                key_input = base64.b64decode(key_pem[7:])
+            else:
+                key_input = key_pem
+            key_objects = parser.parse(key_input, password=password)
             objects.extend([o for o in key_objects if o.type == ObjectType.PRIVATE_KEY])
         
-        # Separate by type and load crypto objects from PEM
+        # Load crypto objects from parsed PEM/DER
         certs = []
         keys = []
         csrs = []
         
         for obj in objects:
-            pem = obj.raw_pem.encode() if obj.raw_pem else obj.raw_der
-            if not pem:
-                continue
             try:
                 if obj.type == ObjectType.CERTIFICATE:
                     if obj.raw_pem:
-                        certs.append(x509.load_pem_x509_certificate(pem, default_backend()))
+                        certs.append(x509.load_pem_x509_certificate(obj.raw_pem.encode(), default_backend()))
                     elif obj.raw_der:
                         certs.append(x509.load_der_x509_certificate(obj.raw_der, default_backend()))
                 elif obj.type == ObjectType.PRIVATE_KEY:
-                    pwd = password.encode() if password else None
                     if obj.raw_pem:
-                        keys.append(serialization.load_pem_private_key(pem, password=pwd, backend=default_backend()))
+                        keys.append(serialization.load_pem_private_key(obj.raw_pem.encode(), password=None, backend=default_backend()))
                     elif obj.raw_der:
-                        keys.append(serialization.load_der_private_key(obj.raw_der, password=pwd, backend=default_backend()))
+                        keys.append(serialization.load_der_private_key(obj.raw_der, password=None, backend=default_backend()))
                 elif obj.type == ObjectType.CSR:
                     if obj.raw_pem:
-                        csrs.append(x509.load_pem_x509_csr(pem, default_backend()))
+                        csrs.append(x509.load_pem_x509_csr(obj.raw_pem.encode(), default_backend()))
                     elif obj.raw_der:
                         csrs.append(x509.load_der_x509_csr(obj.raw_der, default_backend()))
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f'Converter: failed to load {obj.type} object: {e}')
         
-        # Parse chain
+        # Parse chain certs
         chain_certs = []
         if chain_pem:
-            chain_objects = parser.parse(chain_pem)
-            for obj in chain_objects:
+            for obj in parser.parse(chain_pem):
                 if obj.type == ObjectType.CERTIFICATE and obj.raw_pem:
                     try:
                         chain_certs.append(x509.load_pem_x509_certificate(obj.raw_pem.encode(), default_backend()))
@@ -636,7 +649,7 @@ def convert_certificate():
         if not certs and not keys and not csrs:
             return error_response('Could not parse input data. Supported formats: PEM, DER, PKCS12, PKCS7', 400)
         
-        detected_format = 'pem' if not input_data.startswith('BASE64:') else 'binary'
+        detected_format = 'pem' if isinstance(raw_input, str) else 'binary'
         result = {}
         
         # Convert to requested output format
@@ -693,9 +706,11 @@ def convert_certificate():
         
         elif output_format == 'pkcs12':
             if not certs:
-                return error_response('Certificate is required for PKCS12', 400)
+                return error_response('Certificate is required for PKCS12 output', 400)
             if not keys:
-                return error_response('Private key is required for PKCS12', 400)
+                return error_response('Private key is required for PKCS12 output', 400)
+            if not pkcs12_password:
+                return error_response('Password is required for PKCS12 output', 400)
             
             # Use first cert and key
             cert = certs[0]
