@@ -31,10 +31,11 @@ export function UpdateChecker() {
     try {
       const params = `include_prereleases=${includeChannel !== 'stable'}&include_dev=${includeChannel === 'dev'}&force=${force}`
       const response = await apiClient.get(`/system/updates/check?${params}`)
-      setUpdateInfo(response.data)
+      const data = response?.data || response || {}
+      setUpdateInfo(data)
       if (showNotification) {
-        if (response.data.update_available) {
-          showSuccess(t('settings.updateAvailable', { version: response.data.latest_version }))
+        if (data.update_available) {
+          showSuccess(t('settings.updateAvailable', { version: data.latest_version }))
         } else {
           showSuccess(t('settings.upToDate'))
         }

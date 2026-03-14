@@ -77,8 +77,8 @@ export default function HSMPage() {
     try {
       const response = await hsmService.getStatus()
       setHsmStatus(response.data)
-    } catch {
-      // Non-critical — ignore
+    } catch (error) {
+      // Non-critical — HSM may not be configured
     }
   }
 
@@ -86,8 +86,7 @@ export default function HSMPage() {
     try {
       const response = await hsmService.getKeys(providerId)
       setKeys(response.data || [])
-    } catch (error) {
-    }
+    } catch { /* non-critical */ }
   }
 
   const handleCreate = () => {

@@ -308,7 +308,7 @@ export default function OperationsPage() {
         setOpnsenseApiSecret(config.api_secret || '')
         setOpnsenseVerifySsl(config.verify_ssl || false)
       }
-    } catch (e) {}
+    } catch { /* non-critical */ }
     loadCAs()
   }, [])
 
@@ -342,7 +342,7 @@ export default function OperationsPage() {
     try {
       const response = await casService.getAll()
       setCas(response.data || [])
-    } catch (e) {}
+    } catch { /* non-critical */ }
   }
 
   const loadBulkData = async () => {
@@ -384,7 +384,7 @@ export default function OperationsPage() {
         verify_ssl: opnsenseVerifySsl
       }))
       showSuccess(t('importExport.opnsense.configSaved'))
-    } catch (e) {}
+    } catch { /* non-critical */ }
   }
 
   const handleTestConf = async () => {

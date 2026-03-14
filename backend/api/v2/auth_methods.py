@@ -643,27 +643,4 @@ def webauthn_verify():
         return error_response('WebAuthn verification failed', 401)
 
 
-@bp.route('/api/v2/auth/logout', methods=['POST'])
-def logout():
-    """
-    Logout - Clear session
-    """
-    from services.audit_service import AuditService
-    
-    auth_method = session.get('auth_method', 'unknown')
-    username = session.get('username', 'unknown')
-    
-    # Audit log logout
-    AuditService.log_action(
-        action='logout',
-        resource_type='user',
-        details=f'User {username} logged out (method: {auth_method})',
-        success=True,
-        username=username
-    )
-    
-    logger.info(f"🔓 Logout: {username} (method: {auth_method})")
-    
-    session.clear()
-    
-    return success_response(message='Logout successful')
+# NOTE: Logout endpoint is in auth.py (with @require_auth and WebSocket events)

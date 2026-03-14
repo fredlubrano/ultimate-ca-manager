@@ -112,24 +112,21 @@ export default function AccountPage() {
     try {
       const response = await accountService.getApiKeys()
       setApiKeys(response.data || response || [])
-    } catch (error) {
-    }
+    } catch { /* non-critical: API keys tab may not be available */ }
   }
 
   const loadWebAuthnCredentials = async () => {
     try {
       const response = await accountService.getWebAuthnCredentials()
       setWebauthnCredentials(response.data || [])
-    } catch (error) {
-    }
+    } catch { /* non-critical: WebAuthn may not be configured */ }
   }
 
   const loadMTLSCertificates = async () => {
     try {
       const response = await accountService.getMTLSCertificates()
       setMtlsCertificates(response.data || [])
-    } catch (error) {
-    }
+    } catch { /* non-critical: mTLS may not be enabled */ }
   }
 
   // Profile handlers
