@@ -562,7 +562,6 @@ export default function ReportsPage() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         tabLayout="sidebar"
-        sidebarContentClass=""
         tabGroups={[
           { labelKey: 'reports.groups.management', tabs: ['reports', 'pdf'], color: 'icon-bg-blue' },
           { labelKey: 'reports.groups.settings', tabs: ['schedule'], color: 'icon-bg-emerald' },
