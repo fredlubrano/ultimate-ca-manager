@@ -9,6 +9,7 @@ from collections import defaultdict
 import json
 import hashlib
 from typing import Optional, Dict, List
+from utils.datetime_utils import utc_now
 
 try:
     from models import db, User, AuditLog
@@ -50,7 +51,7 @@ class AnomalyDetector:
         Returns list of anomalies detected (empty if none)
         """
         anomalies = []
-        now = datetime.utcnow()
+        now = utc_now()
         
         if success:
             # Check for unusual time login
@@ -110,7 +111,7 @@ class AnomalyDetector:
         
         Returns anomaly if threshold exceeded
         """
-        now = datetime.utcnow()
+        now = utc_now()
         
         # Add current operation
         self._cache['bulk_ops'][user_id].append((now, operation, count))
@@ -158,7 +159,7 @@ class AnomalyDetector:
         if not AuditLog:
             return []
         
-        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        cutoff = utc_now() - timedelta(hours=hours)
         
         logs = AuditLog.query.filter(
             AuditLog.action == 'security_anomaly',

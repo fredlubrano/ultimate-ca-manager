@@ -28,6 +28,7 @@ from webauthn.helpers.cose import COSEAlgorithmIdentifier
 from models import db, User
 from models.webauthn import WebAuthnCredential, WebAuthnChallenge
 import logging
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ class WebAuthnService:
         WebAuthnChallenge.query.filter(
             WebAuthnChallenge.user_id == user.id,
             WebAuthnChallenge.challenge_type == 'registration',
-            (WebAuthnChallenge.used == True) | (WebAuthnChallenge.expires_at < datetime.utcnow())
+            (WebAuthnChallenge.used == True) | (WebAuthnChallenge.expires_at < utc_now())
         ).delete()
         
         # Store challenge in database
@@ -89,7 +90,7 @@ class WebAuthnService:
             user_id=user.id,
             challenge=challenge_b64,
             challenge_type='registration',
-            expires_at=datetime.utcnow() + timedelta(minutes=WebAuthnService.CHALLENGE_TIMEOUT_MINUTES)
+            expires_at=utc_now() + timedelta(minutes=WebAuthnService.CHALLENGE_TIMEOUT_MINUTES)
         )
         db.session.add(challenge_record)
         db.session.commit()
@@ -217,7 +218,7 @@ class WebAuthnService:
         WebAuthnChallenge.query.filter(
             WebAuthnChallenge.user_id == user.id,
             WebAuthnChallenge.challenge_type == 'authentication',
-            (WebAuthnChallenge.used == True) | (WebAuthnChallenge.expires_at < datetime.utcnow())
+            (WebAuthnChallenge.used == True) | (WebAuthnChallenge.expires_at < utc_now())
         ).delete()
         
         # Store challenge
@@ -225,7 +226,7 @@ class WebAuthnService:
             user_id=user.id,
             challenge=challenge_b64,
             challenge_type='authentication',
-            expires_at=datetime.utcnow() + timedelta(minutes=WebAuthnService.CHALLENGE_TIMEOUT_MINUTES)
+            expires_at=utc_now() + timedelta(minutes=WebAuthnService.CHALLENGE_TIMEOUT_MINUTES)
         )
         db.session.add(challenge_record)
         db.session.commit()
@@ -310,7 +311,7 @@ class WebAuthnService:
             
             # Update credential
             credential.sign_count = max(verification.new_sign_count, credential.sign_count + 1)
-            credential.last_used_at = datetime.utcnow()
+            credential.last_used_at = utc_now()
             
             # Delete used challenge
             db.session.delete(challenge_record)

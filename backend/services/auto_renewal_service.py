@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from models import db, Certificate, CA, SystemConfig, AuditLog
 from services.ca_service import CAService
 import logging
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +69,7 @@ class AutoRenewalService:
         if not config['enabled']:
             return []
         
-        threshold = datetime.utcnow() + timedelta(days=config['days_before_expiry'])
+        threshold = utc_now() + timedelta(days=config['days_before_expiry'])
         
         certs = Certificate.query.filter(
             Certificate.status.in_(['valid', 'active']),
@@ -94,7 +95,7 @@ class AutoRenewalService:
                 return False, "Issuing CA not found"
             
             # Check CA is still valid
-            if ca.not_after and ca.not_after < datetime.utcnow():
+            if ca.not_after and ca.not_after < utc_now():
                 return False, "Issuing CA has expired"
             
             # Calculate new validity (same as original or default)

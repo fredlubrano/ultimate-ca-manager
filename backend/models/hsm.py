@@ -5,6 +5,7 @@ Supports PKCS#11, Azure Key Vault, Google Cloud KMS, AWS CloudHSM
 
 from datetime import datetime
 import json
+from utils.datetime_utils import utc_now
 
 try:
     from models import db
@@ -36,8 +37,8 @@ class HsmProvider(db.Model if db else object):
     error_message = db.Column(db.Text, nullable=True)
     
     # Audit fields
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
     # Relationships
@@ -132,7 +133,7 @@ class HsmKey(db.Model if db else object):
     is_extractable = db.Column(db.Boolean, default=False)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     
     # Extra HSM-specific metadata as JSON
     extra_data = db.Column(db.Text, nullable=True)

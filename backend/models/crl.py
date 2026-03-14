@@ -4,6 +4,7 @@ RFC 5280 compliant CRL metadata storage
 """
 from datetime import datetime
 from . import db
+from utils.datetime_utils import utc_now
 
 
 class CRLMetadata(db.Model):
@@ -28,8 +29,8 @@ class CRLMetadata(db.Model):
     revoked_count = db.Column(db.Integer, default=0)
     
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now, index=True)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     generated_by = db.Column(db.String(80))  # Username who triggered generation
     
     # Relationship to CA
@@ -43,14 +44,14 @@ class CRLMetadata(db.Model):
         """Check if CRL is past next_update time"""
         if not self.next_update:
             return True
-        return datetime.utcnow() > self.next_update
+        return utc_now() > self.next_update
     
     @property
     def days_until_expiry(self) -> int:
         """Calculate days until next_update"""
         if not self.next_update:
             return 0
-        delta = self.next_update - datetime.utcnow()
+        delta = self.next_update - utc_now()
         return max(0, delta.days)
     
     def to_dict(self, include_crl_data=False):

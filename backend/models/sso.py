@@ -7,6 +7,7 @@ Secrets are encrypted at rest using Fernet encryption
 from models import db
 from datetime import datetime
 import json
+from utils.datetime_utils import utc_now
 
 
 class SSOProvider(db.Model):
@@ -72,8 +73,8 @@ class SSOProvider(db.Model):
     auto_update_users = db.Column(db.Boolean, default=True)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     last_used_at = db.Column(db.DateTime)
     
     # Encrypted property accessors for secrets
@@ -210,7 +211,7 @@ class SSOSession(db.Model):
     provider_id = db.Column(db.Integer, db.ForeignKey('pro_sso_providers.id'), nullable=False)
     session_id = db.Column(db.String(500), unique=True)  # SSO session identifier
     sso_name_id = db.Column(db.String(500))  # SAML NameID or OAuth subject
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     expires_at = db.Column(db.DateTime)
     
     # Relationships

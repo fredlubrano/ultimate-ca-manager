@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 
 from models import db, CA
 from services.ocsp_service import OCSPService
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +128,7 @@ def _add_cache_headers(resp: Response, request_nonce):
         # No nonce — response can be cached (24h matches nextUpdate)
         resp.headers['Cache-Control'] = 'max-age=3600, public'
         from datetime import datetime, timedelta
-        expires = datetime.utcnow() + timedelta(hours=1)
+        expires = utc_now() + timedelta(hours=1)
         resp.headers['Expires'] = expires.strftime('%a, %d %b %Y %H:%M:%S GMT')
 
 

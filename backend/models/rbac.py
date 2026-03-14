@@ -4,6 +4,7 @@ Custom Role Model - UCM Pro
 
 from models import db
 from datetime import datetime
+from utils.datetime_utils import utc_now
 
 class CustomRole(db.Model):
     """Custom role for fine-grained RBAC"""
@@ -15,8 +16,8 @@ class CustomRole(db.Model):
     permissions = db.Column(db.JSON, default=list)  # List of permission strings
     inherits_from = db.Column(db.Integer, db.ForeignKey('pro_custom_roles.id'), nullable=True)
     is_system = db.Column(db.Boolean, default=False)  # Built-in roles can't be deleted
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     
     # Self-referential relationship for inheritance
     parent = db.relationship('CustomRole', remote_side=[id], backref='children')

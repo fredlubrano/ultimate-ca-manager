@@ -10,6 +10,7 @@ from models import db, SystemConfig
 from services.audit_service import AuditService
 from datetime import datetime, timezone
 import logging
+from utils.datetime_utils import utc_now
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('settings_v2', __name__)
@@ -122,7 +123,7 @@ def create_backup():
         backup_bytes = service.create_backup(password)
         
         # Save to disk
-        filename = f"ucm_backup_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.ucmbkp"
+        filename = f"ucm_backup_{utc_now().strftime('%Y%m%d_%H%M%S')}.ucmbkp"
         backup_dir = "/opt/ucm/data/backups"
         os.makedirs(backup_dir, exist_ok=True)
         

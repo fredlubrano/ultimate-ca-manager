@@ -24,6 +24,7 @@ from config.settings import get_config, BASE_DIR
 from config.https_manager import HTTPSManager
 from models import db, User, SystemConfig
 from websocket import socketio, init_websocket
+from utils.datetime_utils import utc_now
 
 # Initialize cache globally
 cache = Cache()
@@ -1023,8 +1024,8 @@ def init_database(app):
             cert_builder = cert_builder.issuer_name(issuer)
             cert_builder = cert_builder.public_key(private_key.public_key())
             cert_builder = cert_builder.serial_number(x509.random_serial_number())
-            cert_builder = cert_builder.not_valid_before(datetime.utcnow())
-            cert_builder = cert_builder.not_valid_after(datetime.utcnow() + timedelta(days=3650))
+            cert_builder = cert_builder.not_valid_before(utc_now())
+            cert_builder = cert_builder.not_valid_after(utc_now() + timedelta(days=3650))
             
             # Add Subject Alternative Names
             san_list = [

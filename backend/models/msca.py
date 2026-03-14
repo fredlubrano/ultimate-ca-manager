@@ -6,6 +6,7 @@ Secrets are encrypted at rest using Fernet encryption.
 
 from models import db
 from datetime import datetime
+from utils.datetime_utils import utc_now
 
 
 class MicrosoftCA(db.Model):
@@ -44,8 +45,8 @@ class MicrosoftCA(db.Model):
     last_test_result = db.Column(db.String(500))
 
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     created_by = db.Column(db.String(80))
 
     # Relationships
@@ -145,7 +146,7 @@ class MSCARequest(db.Model):
     disposition_message = db.Column(db.Text)
     template = db.Column(db.String(200), nullable=False)
     status = db.Column(db.String(20), default='submitted')
-    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    submitted_at = db.Column(db.DateTime, default=utc_now)
     issued_at = db.Column(db.DateTime)
     error_message = db.Column(db.Text)
     cert_pem = db.Column(db.Text)

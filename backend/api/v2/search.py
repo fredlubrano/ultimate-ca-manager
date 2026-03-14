@@ -6,6 +6,7 @@ from sqlalchemy import or_
 from auth.unified import require_auth
 from models import Certificate, CA, User, CertificateTemplate
 from utils.response import success_response
+from utils.datetime_utils import utc_now
 
 bp = Blueprint('search', __name__)
 
@@ -57,7 +58,7 @@ def global_search():
     def get_cert_status(cert):
         if cert.revoked:
             return 'revoked'
-        if cert.valid_to and cert.valid_to < datetime.utcnow():
+        if cert.valid_to and cert.valid_to < utc_now():
             return 'expired'
         return 'valid'
     

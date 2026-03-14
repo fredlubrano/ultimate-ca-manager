@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 from typing import Dict, Callable, Optional, Any
 from threading import Lock
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ class ScheduledTask:
         self.run_count = 0
         self.last_error: Optional[str] = None
         self.last_duration_ms = 0.0
-        self._created_at = datetime.utcnow()
+        self._created_at = utc_now()
     
     def should_run(self) -> bool:
         """Check if task should run based on interval"""
@@ -54,9 +55,9 @@ class ScheduledTask:
         if self.last_run is None:
             # Grace period: wait 30s after creation before first run
             # to let SSL/network stack initialize after worker fork
-            age = (datetime.utcnow() - self._created_at).total_seconds()
+            age = (utc_now() - self._created_at).total_seconds()
             return age >= 30
-        elapsed = (datetime.utcnow() - self.last_run).total_seconds()
+        elapsed = (utc_now() - self.last_run).total_seconds()
         return elapsed >= self.interval
     
     def to_dict(self) -> Dict[str, Any]:
@@ -219,8 +220,8 @@ class SchedulerService:
             task.last_duration_ms = duration_ms
             task.last_error = None
             task.run_count += 1
-            task.last_run = datetime.utcnow()
-            task.next_run = datetime.utcnow() + __import__('datetime').timedelta(seconds=task.interval)
+            task.last_run = utc_now()
+            task.next_run = utc_now() + __import__('datetime').timedelta(seconds=task.interval)
             logger.info(
                 f"Task '{task.name}' completed successfully "
                 f"(duration: {duration_ms:.1f}ms, runs: {task.run_count})"
@@ -230,7 +231,7 @@ class SchedulerService:
             task.last_duration_ms = duration_ms
             error_msg = f"{type(e).__name__}: {str(e)}"
             task.last_error = error_msg
-            task.last_run = datetime.utcnow()
+            task.last_run = utc_now()
             logger.error(
                 f"Task '{task.name}' failed: {error_msg} (duration: {duration_ms:.1f}ms)",
                 exc_info=True

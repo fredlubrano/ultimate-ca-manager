@@ -14,6 +14,7 @@ from services.hsm.base_provider import (
     BaseHsmProvider, HsmKeyInfo,
     HsmError, HsmConnectionError, HsmOperationError, HsmConfigError
 )
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +172,7 @@ class HsmService:
             provider.status = 'unknown'
             provider.error_message = None
         
-        provider.updated_at = datetime.utcnow()
+        provider.updated_at = utc_now()
         db.session.commit()
         
         logger.info(f"Updated HSM provider: {provider.name}")
@@ -223,7 +224,7 @@ class HsmService:
             
             # Update provider status
             provider.status = 'connected' if result.get('success') else 'error'
-            provider.last_tested_at = datetime.utcnow()
+            provider.last_tested_at = utc_now()
             provider.error_message = None if result.get('success') else result.get('message')
             db.session.commit()
             
@@ -231,7 +232,7 @@ class HsmService:
             
         except HsmError as e:
             provider.status = 'error'
-            provider.last_tested_at = datetime.utcnow()
+            provider.last_tested_at = utc_now()
             provider.error_message = str(e)
             db.session.commit()
             
@@ -241,7 +242,7 @@ class HsmService:
             }
         except Exception as e:
             provider.status = 'error'
-            provider.last_tested_at = datetime.utcnow()
+            provider.last_tested_at = utc_now()
             provider.error_message = f"Unexpected error: {str(e)}"
             db.session.commit()
             

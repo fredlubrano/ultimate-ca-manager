@@ -8,6 +8,7 @@ from models import db, User
 from models.auth_certificate import AuthCertificate
 from services.certificate_parser import CertificateParser
 import logging
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -67,14 +68,14 @@ class MTLSAuthService:
         # Check validity dates if available
         if cert_info.get('valid_until'):
             valid_until = cert_info['valid_until']
-            now = datetime.now(timezone.utc) if valid_until.tzinfo else datetime.utcnow()
+            now = datetime.now(timezone.utc) if valid_until.tzinfo else utc_now()
             if now > valid_until:
                 logger.warning(f"Certificate expired: serial={serial}")
                 return None, None, "Certificate has expired"
         
         if cert_info.get('valid_from'):
             valid_from = cert_info['valid_from']
-            now = datetime.now(timezone.utc) if valid_from.tzinfo else datetime.utcnow()
+            now = datetime.now(timezone.utc) if valid_from.tzinfo else utc_now()
             if now < valid_from:
                 logger.warning(f"Certificate not yet valid: serial={serial}")
                 return None, None, "Certificate is not yet valid"
@@ -91,7 +92,7 @@ class MTLSAuthService:
             return None, None, "User account is disabled"
         
         # Update last used timestamp
-        auth_cert.last_used_at = datetime.utcnow()
+        auth_cert.last_used_at = utc_now()
         db.session.commit()
         
         logger.info(f"Certificate authentication successful: user={user.username}, serial={serial}")

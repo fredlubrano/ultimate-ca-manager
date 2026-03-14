@@ -4,6 +4,7 @@ Store client certificates for mTLS authentication
 """
 from datetime import datetime
 from models import db
+from utils.datetime_utils import utc_now
 
 
 class AuthCertificate(db.Model):
@@ -31,7 +32,7 @@ class AuthCertificate(db.Model):
     valid_until = db.Column(db.DateTime)
     
     # Usage tracking
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     last_used_at = db.Column(db.DateTime)
     
     # Relationship

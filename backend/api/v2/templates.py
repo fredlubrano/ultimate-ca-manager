@@ -17,6 +17,7 @@ import traceback
 
 logger = logging.getLogger(__name__)
 import json
+from utils.datetime_utils import utc_now
 
 bp = Blueprint('templates_v2', __name__)
 
@@ -239,7 +240,7 @@ def update_template(template_id):
         template.is_active = bool(data['is_active'])
     
     template.updated_by = g.current_user.username
-    template.updated_at = datetime.utcnow()
+    template.updated_at = utc_now()
     
     try:
         db.session.commit()

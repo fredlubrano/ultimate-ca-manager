@@ -19,6 +19,7 @@ from models import db, User, CA, Certificate, SystemConfig
 from models.acme_models import AcmeAccount
 from models.webauthn import WebAuthnCredential
 from config.settings import Config
+from utils.datetime_utils import utc_now
 
 
 class BackupService:
@@ -191,7 +192,7 @@ class BackupService:
             'version': '1.0',
             'ucm_version': self.app_version,
             'database_type': 'sqlite',  # TODO: detect from config
-            'created_at': datetime.utcnow().isoformat() + 'Z',
+            'created_at': utc_now().isoformat() + 'Z',
             'hostname': os.environ.get('FQDN', 'unknown'),
             'backup_type': backup_type,
             'format_version': '2.0'

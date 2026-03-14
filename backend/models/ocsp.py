@@ -4,6 +4,7 @@ Stores pre-signed OCSP responses for performance
 """
 from . import db
 from datetime import datetime
+from utils.datetime_utils import utc_now
 
 class OCSPResponse(db.Model):
     __tablename__ = 'ocsp_responses'
@@ -25,8 +26,8 @@ class OCSPResponse(db.Model):
     revocation_reason = db.Column(db.Integer)  # RFC 5280 CRLReason
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now, nullable=False)
     
     # Relationships
     ca = db.relationship('CA', backref='ocsp_responses')

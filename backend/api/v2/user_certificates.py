@@ -19,6 +19,7 @@ from services.audit_service import AuditService
 from services.cert_service import CertificateService
 from utils.response import error_response, no_content_response, success_response
 from utils.sanitize import sanitize_filename
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ def _build_cert_response(auth_cert, certificate, owner_user=None):
         result['key_size'] = getattr(certificate, 'key_size', None)
         result['signature_algorithm'] = getattr(certificate, 'signature_algorithm', None)
         # Compute status + days_remaining
-        now = datetime.utcnow()
+        now = utc_now()
         if certificate.revoked:
             result['status'] = 'revoked'
         elif certificate.valid_to and certificate.valid_to <= now:
@@ -166,7 +167,7 @@ def list_user_certificates():
 
         # Status filter (post-query since status is computed)
         if status_filter and cert:
-            now = datetime.utcnow()
+            now = utc_now()
             if status_filter == 'revoked' and not cert.revoked:
                 continue
             if status_filter == 'expired' and not (cert.valid_to and cert.valid_to <= now and not cert.revoked):
@@ -199,7 +200,7 @@ def list_user_certificates():
 def get_user_certificate_stats():
     """Get user certificate statistics."""
     user = g.current_user
-    now = datetime.utcnow()
+    now = utc_now()
     expiry_threshold = now + timedelta(days=30)
 
     # Base query with access control

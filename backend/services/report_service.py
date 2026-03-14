@@ -11,6 +11,7 @@ import base64
 from models import db, Certificate, CA, User, AuditLog, SystemConfig
 from services.email_service import EmailService
 import logging
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ class ReportService:
         return {
             'report_type': report_type,
             'report_name': cls.REPORT_TYPES[report_type]['name'],
-            'generated_at': datetime.utcnow().isoformat(),
+            'generated_at': utc_now().isoformat(),
             'parameters': params,
             'format': format_type,
             'content': content,
@@ -95,7 +96,7 @@ class ReportService:
         if cert.revoked:
             return 'revoked'
         if cert.valid_to:
-            now = datetime.utcnow()
+            now = utc_now()
             if cert.valid_to < now:
                 return 'expired'
             if cert.valid_to < now + timedelta(days=30):
@@ -140,7 +141,7 @@ class ReportService:
     def _generate_expiring_certificates(cls, params: dict) -> dict:
         """Generate expiring certificates report"""
         days = params.get('days', 30)
-        now = datetime.utcnow()
+        now = utc_now()
         threshold = now + timedelta(days=days)
         
         certs = Certificate.query.filter(
@@ -222,7 +223,7 @@ class ReportService:
     def _generate_audit_summary(cls, params: dict) -> dict:
         """Generate audit log summary report"""
         days = params.get('days', 7)
-        since = datetime.utcnow() - timedelta(days=days)
+        since = utc_now() - timedelta(days=days)
         
         from sqlalchemy import func, case
         
@@ -276,12 +277,12 @@ class ReportService:
         # Check certificates without proper extensions
         total_active = Certificate.query.filter(
             Certificate.revoked == False,
-            Certificate.valid_to > datetime.utcnow()
+            Certificate.valid_to > utc_now()
         ).count()
         
         # Check expired CAs
         expired_cas = CA.query.filter(
-            CA.valid_to < datetime.utcnow()
+            CA.valid_to < utc_now()
         ).count()
         
         # Check weak keys (RSA < 2048)
@@ -303,8 +304,8 @@ class ReportService:
         })
         
         # Check for certificates expiring soon (< 30 days)
-        threshold = datetime.utcnow() + timedelta(days=30)
-        now = datetime.utcnow()
+        threshold = utc_now() + timedelta(days=30)
+        now = utc_now()
         expiring_soon = Certificate.query.filter(
             Certificate.valid_to != None,
             Certificate.valid_to <= threshold,
@@ -376,7 +377,7 @@ class ReportService:
             
             report = cls.generate_report(report_type, params)
             
-            subject = f"UCM Report: {report['report_name']} - {datetime.utcnow().strftime('%Y-%m-%d')}"
+            subject = f"UCM Report: {report['report_name']} - {utc_now().strftime('%Y-%m-%d')}"
             
             body = f"""
 UCM Scheduled Report: {report['report_name']}
@@ -416,7 +417,7 @@ Ultimate Certificate Manager
             from services.pdf_report_service import PDFReportService
             pdf_bytes = PDFReportService.generate_executive_report()
             
-            subject = f"UCM Executive Report - {datetime.utcnow().strftime('%Y-%m-%d')}"
+            subject = f"UCM Executive Report - {utc_now().strftime('%Y-%m-%d')}"
             body = """
 UCM Executive Report
 
@@ -446,7 +447,7 @@ Ultimate Certificate Manager
 def run_scheduled_reports():
     """Unified scheduler task — checks all report schedules and sends due reports."""
     from datetime import datetime
-    now = datetime.utcnow()
+    now = utc_now()
     current_hour = now.strftime('%H:%M')
     current_dow = now.weekday()  # 0=Monday
     current_dom = now.day

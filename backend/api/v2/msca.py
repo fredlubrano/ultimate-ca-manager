@@ -10,6 +10,7 @@ from utils.response import success_response, error_response, created_response, n
 from models import db
 from models.msca import MicrosoftCA, MSCARequest
 from services.msca_service import MicrosoftCAService
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -385,7 +386,7 @@ def _import_signed_cert(csr, cert_pem, msca, template, msca_request_id):
         if msca_req:
             msca_req.cert_id = cert.id
             msca_req.status = 'issued'
-            msca_req.issued_at = datetime.utcnow()
+            msca_req.issued_at = utc_now()
 
         # Update CSR status
         csr.status = 'signed'

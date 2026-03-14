@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Any
 from datetime import datetime
 
 from models import db, CertificateTemplate
+from utils.datetime_utils import utc_now
 
 
 class TemplateService:
@@ -227,7 +228,7 @@ class TemplateService:
             is_system=False,  # Custom templates are never system
             is_active=True,
             created_by=username,
-            created_at=datetime.utcnow()
+            created_at=utc_now()
         )
         
         db.session.add(template)
@@ -279,7 +280,7 @@ class TemplateService:
             template.is_active = data['is_active']
         
         template.updated_by = username
-        template.updated_at = datetime.utcnow()
+        template.updated_at = utc_now()
         
         db.session.commit()
         
@@ -370,7 +371,7 @@ class TemplateService:
             existing = CertificateTemplate.query.filter_by(name=template_data['name']).first()
             if not existing:
                 template = CertificateTemplate(**template_data)
-                template.created_at = datetime.utcnow()
+                template.created_at = utc_now()
                 template.created_by = 'system'
                 db.session.add(template)
                 count += 1

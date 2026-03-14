@@ -8,6 +8,7 @@ from flask import request, g
 from models import db, AuditLog
 import logging
 import json
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ class AuditService:
             
             # Create audit log entry
             audit_log = AuditLog(
-                timestamp=datetime.utcnow(),
+                timestamp=utc_now(),
                 username=username or 'anonymous',
                 action=action,
                 resource_type=resource_type,
@@ -362,7 +363,7 @@ class AuditService:
     @staticmethod
     def get_stats(days: int = 30) -> Dict[str, Any]:
         """Get audit log statistics"""
-        since = datetime.utcnow() - timedelta(days=days)
+        since = utc_now() - timedelta(days=days)
         
         # Total logs in period
         total = AuditLog.query.filter(AuditLog.timestamp >= since).count()
@@ -418,7 +419,7 @@ class AuditService:
     @staticmethod
     def cleanup_old_logs(retention_days: int = 90) -> int:
         """Delete logs older than retention period"""
-        cutoff = datetime.utcnow() - timedelta(days=retention_days)
+        cutoff = utc_now() - timedelta(days=retention_days)
         deleted = AuditLog.query.filter(AuditLog.timestamp < cutoff).delete()
         db.session.commit()
         logger.info(f"Cleaned up {deleted} audit logs older than {retention_days} days")

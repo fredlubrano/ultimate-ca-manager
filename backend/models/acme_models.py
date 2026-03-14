@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from . import db
 import secrets
 import json
+from utils.datetime_utils import utc_now
 
 
 class AcmeAccount(db.Model):
@@ -20,8 +21,8 @@ class AcmeAccount(db.Model):
     status = db.Column(db.String(20), default='valid', nullable=False)  # valid, deactivated, revoked
     terms_of_service_agreed = db.Column(db.Boolean, default=False)
     external_account_binding = db.Column(db.Text)  # EAB for external account binding
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     orders = db.relationship('AcmeOrder', back_populates='account', lazy='dynamic', cascade='all, delete-orphan')
@@ -71,8 +72,8 @@ class AcmeOrder(db.Model):
     certificate_id = db.Column(db.Integer, db.ForeignKey('certificates.id'))
     certificate_url = db.Column(db.String(512))  # URL to download certificate
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    expires = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(days=7), nullable=False)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
+    expires = db.Column(db.DateTime, default=lambda: utc_now() + timedelta(days=7), nullable=False)
     
     # Relationships
     account = db.relationship('AcmeAccount', back_populates='orders')
@@ -136,10 +137,10 @@ class AcmeAuthorization(db.Model):
     status = db.Column(db.String(20), default='pending', nullable=False)
     # Status: pending → valid/invalid/deactivated/expired/revoked
     
-    expires = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(days=7), nullable=False)
+    expires = db.Column(db.DateTime, default=lambda: utc_now() + timedelta(days=7), nullable=False)
     wildcard = db.Column(db.Boolean, default=False)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
     
     # Relationships
     order = db.relationship('AcmeOrder', back_populates='authorizations')
@@ -183,7 +184,7 @@ class AcmeChallenge(db.Model):
     validated = db.Column(db.DateTime)
     error = db.Column(db.Text)  # JSON error object
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
     
     # Relationships
     authorization = db.relationship('AcmeAuthorization', back_populates='challenges')
@@ -214,7 +215,7 @@ class AcmeNonce(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     token = db.Column(db.String(64), unique=True, nullable=False, index=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
     used_at = db.Column(db.DateTime)
@@ -227,7 +228,7 @@ class AcmeNonce(db.Model):
     @staticmethod
     def cleanup_expired():
         """Remove expired nonces"""
-        expired = AcmeNonce.query.filter(AcmeNonce.expires_at < datetime.utcnow()).delete()
+        expired = AcmeNonce.query.filter(AcmeNonce.expires_at < utc_now()).delete()
         db.session.commit()
         return expired
     
@@ -250,8 +251,8 @@ class DnsProvider(db.Model):
     zones = db.Column(db.Text)  # JSON array of managed zones/domains
     is_default = db.Column(db.Boolean, default=False)
     enabled = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     client_orders = db.relationship('AcmeClientOrder', back_populates='dns_provider', lazy='dynamic')
@@ -345,8 +346,8 @@ class AcmeClientOrder(db.Model):
     
     # Timestamps
     expires_at = db.Column(db.DateTime)  # Order expiration
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     dns_provider = db.relationship('DnsProvider', back_populates='client_orders')
@@ -426,8 +427,8 @@ class AcmeDomain(db.Model):
     issuing_ca_id = db.Column(db.Integer, db.ForeignKey('certificate_authorities.id'), nullable=True)
     is_wildcard_allowed = db.Column(db.Boolean, default=True)
     auto_approve = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     created_by = db.Column(db.String(80))
     
     # Relationships
@@ -463,8 +464,8 @@ class AcmeLocalDomain(db.Model):
     domain = db.Column(db.String(255), unique=True, nullable=False, index=True)
     issuing_ca_id = db.Column(db.Integer, db.ForeignKey('certificate_authorities.id'), nullable=False)
     auto_approve = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     created_by = db.Column(db.String(80))
     
     issuing_ca = db.relationship('CA', foreign_keys='AcmeLocalDomain.issuing_ca_id')

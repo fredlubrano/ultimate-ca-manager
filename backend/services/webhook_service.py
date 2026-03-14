@@ -9,6 +9,7 @@ import json
 import hmac
 import hashlib
 import logging
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class WebhookEndpoint(db.Model):
     # Headers (JSON)
     custom_headers = db.Column(db.Text, default='{}')
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     
     def get_events(self):
         try:
@@ -119,7 +120,7 @@ class WebhookService:
             # Build request body
             body = {
                 'event': event_type,
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': utc_now().isoformat(),
                 'data': payload
             }
             body_json = json.dumps(body, default=str)
@@ -152,18 +153,18 @@ class WebhookService:
             )
             
             if response.ok:
-                endpoint.last_success = datetime.utcnow()
+                endpoint.last_success = utc_now()
                 endpoint.failure_count = 0
                 logger.info(f"Webhook sent to {endpoint.name}: {event_type}")
             else:
-                endpoint.last_failure = datetime.utcnow()
+                endpoint.last_failure = utc_now()
                 endpoint.failure_count += 1
                 logger.warning(f"Webhook failed for {endpoint.name}: {response.status_code}")
             
             db.session.commit()
             
         except requests.RequestException as e:
-            endpoint.last_failure = datetime.utcnow()
+            endpoint.last_failure = utc_now()
             endpoint.failure_count += 1
             db.session.commit()
             logger.error(f"Webhook error for {endpoint.name}: {e}")
@@ -185,13 +186,13 @@ class WebhookService:
         test_payload = {
             'message': 'This is a test webhook from UCM',
             'endpoint_name': endpoint.name,
-            'test_timestamp': datetime.utcnow().isoformat()
+            'test_timestamp': utc_now().isoformat()
         }
         
         try:
             body = {
                 'event': 'test',
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': utc_now().isoformat(),
                 'data': test_payload
             }
             body_json = json.dumps(body)

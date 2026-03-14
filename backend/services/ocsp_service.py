@@ -13,6 +13,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa, padding, utils
 from cryptography.hazmat.backends import default_backend
 
 from models import db, CA, Certificate, OCSPResponse
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +172,7 @@ class OCSPService:
             elif certificate.revoked:
                 status = ocsp.OCSPCertStatus.REVOKED
                 cert_status = 'revoked'
-                revocation_time = certificate.revoked_at or datetime.utcnow()
+                revocation_time = certificate.revoked_at or utc_now()
                 revocation_reason = _REASON_MAP.get(
                     certificate.revoke_reason, x509.ReasonFlags.unspecified
                 )
@@ -182,7 +183,7 @@ class OCSPService:
                 revocation_reason = None
             
             # Build OCSP response
-            this_update = datetime.utcnow()
+            this_update = utc_now()
             next_update = this_update + timedelta(hours=24)
             
             builder = ocsp.OCSPResponseBuilder()
@@ -290,7 +291,7 @@ class OCSPService:
                 existing.next_update = next_update
                 existing.revocation_time = revocation_time
                 existing.revocation_reason = revocation_reason
-                existing.updated_at = datetime.utcnow()
+                existing.updated_at = utc_now()
             else:
                 # Create new
                 new_response = OCSPResponse(
@@ -333,7 +334,7 @@ class OCSPService:
                 return None
             
             # Check if still valid
-            if cached.next_update and cached.next_update < datetime.utcnow():
+            if cached.next_update and cached.next_update < utc_now():
                 logger.debug(f"Cached OCSP response expired for serial {cert_serial}")
                 return None
             
@@ -348,7 +349,7 @@ class OCSPService:
         """Remove expired OCSP responses from cache"""
         try:
             expired_count = OCSPResponse.query.filter(
-                OCSPResponse.next_update < datetime.utcnow()
+                OCSPResponse.next_update < utc_now()
             ).delete()
             
             db.session.commit()

@@ -4,6 +4,7 @@ Store FIDO2/U2F authentication credentials
 """
 from datetime import datetime
 from models import db
+from utils.datetime_utils import utc_now
 
 
 class WebAuthnCredential(db.Model):
@@ -36,7 +37,7 @@ class WebAuthnCredential(db.Model):
     enabled = db.Column(db.Boolean, default=True, nullable=False)
     
     # Usage tracking
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     last_used_at = db.Column(db.DateTime)
     
     # Relationship
@@ -75,7 +76,7 @@ class WebAuthnChallenge(db.Model):
     challenge_type = db.Column(db.String(20), nullable=False)  # 'registration' or 'authentication'
     
     # Expires after a short time (typically 2-5 minutes)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     expires_at = db.Column(db.DateTime, nullable=False)
     used = db.Column(db.Boolean, default=False)
     
@@ -84,4 +85,4 @@ class WebAuthnChallenge(db.Model):
     
     def is_valid(self) -> bool:
         """Check if challenge is still valid"""
-        return not self.used and datetime.utcnow() < self.expires_at
+        return not self.used and utc_now() < self.expires_at

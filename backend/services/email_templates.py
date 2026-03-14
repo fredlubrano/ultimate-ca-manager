@@ -1,3 +1,4 @@
+from utils.datetime_utils import utc_now
 """
 Email Templates for UCM
 Provides default and custom template rendering with variable substitution
@@ -114,7 +115,7 @@ def render_template(template_html: str, title: str, title_color: str, content: s
     html = html.replace('{{title}}', title)
     html = html.replace('{{title_color}}', title_color)
     html = html.replace('{{content}}', content)
-    html = html.replace('{{datetime}}', dt.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'))
+    html = html.replace('{{datetime}}', utc_now().strftime('%Y-%m-%d %H:%M:%S UTC'))
     html = html.replace('{{instance_url}}', instance_url)
     
     return html
@@ -133,7 +134,7 @@ def render_text_template(template_text: str, title: str, content: str,
     
     text = text.replace('{{title}}', title)
     text = text.replace('{{content}}', clean_content)
-    text = text.replace('{{datetime}}', dt.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'))
+    text = text.replace('{{datetime}}', utc_now().strftime('%Y-%m-%d %H:%M:%S UTC'))
     text = text.replace('{{instance_url}}', instance_url)
     
     return text

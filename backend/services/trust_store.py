@@ -15,6 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import pkcs12
 import ipaddress
+from utils.datetime_utils import utc_now
 
 
 class TrustStoreService:
@@ -144,9 +145,9 @@ class TrustStoreService:
         builder = builder.serial_number(
             serial if serial else x509.random_serial_number()
         )
-        builder = builder.not_valid_before(datetime.utcnow())
+        builder = builder.not_valid_before(utc_now())
         builder = builder.not_valid_after(
-            datetime.utcnow() + timedelta(days=validity_days)
+            utc_now() + timedelta(days=validity_days)
         )
         
         # CA extensions
@@ -263,9 +264,9 @@ class TrustStoreService:
         builder = builder.issuer_name(ca_cert.subject)
         builder = builder.public_key(private_key.public_key())
         builder = builder.serial_number(x509.random_serial_number())
-        builder = builder.not_valid_before(datetime.utcnow())
+        builder = builder.not_valid_before(utc_now())
         builder = builder.not_valid_after(
-            datetime.utcnow() + timedelta(days=validity_days)
+            utc_now() + timedelta(days=validity_days)
         )
         
         # Basic Constraints - not a CA by default
@@ -562,9 +563,9 @@ class TrustStoreService:
         builder = builder.issuer_name(ca_cert.subject)
         builder = builder.public_key(csr.public_key())
         builder = builder.serial_number(x509.random_serial_number())
-        builder = builder.not_valid_before(datetime.utcnow())
+        builder = builder.not_valid_before(utc_now())
         builder = builder.not_valid_after(
-            datetime.utcnow() + timedelta(days=validity_days)
+            utc_now() + timedelta(days=validity_days)
         )
         
         # Copy extensions from CSR
@@ -740,9 +741,9 @@ class TrustStoreService:
         """
         builder = x509.CertificateRevocationListBuilder()
         builder = builder.issuer_name(ca_cert.subject)
-        builder = builder.last_update(datetime.utcnow())
+        builder = builder.last_update(utc_now())
         builder = builder.next_update(
-            datetime.utcnow() + timedelta(days=validity_days)
+            utc_now() + timedelta(days=validity_days)
         )
         
         # Add revoked certificates

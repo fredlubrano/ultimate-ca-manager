@@ -15,6 +15,7 @@ from models import db, CA, Certificate, AuditLog
 from models.crl import CRLMetadata
 
 import logging
+from utils.datetime_utils import utc_now
 logger = logging.getLogger(__name__)
 
 # Import key decryption (optional - fallback if not available)
@@ -102,7 +103,7 @@ class CRLService:
         crl_number = 1 if not last_crl else last_crl.crl_number + 1
         
         # Build CRL
-        now = datetime.utcnow()
+        now = utc_now()
         builder = x509.CertificateRevocationListBuilder()
         builder = builder.issuer_name(ca_cert.subject)
         builder = builder.last_update(now)

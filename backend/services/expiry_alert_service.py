@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from models import db, Certificate
 from services.email_service import EmailService
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ def get_expiring_certificates(days: int = 30, include_revoked: bool = False) -> 
     Returns:
         List of certificate info dicts
     """
-    now = datetime.utcnow()
+    now = utc_now()
     cutoff = now + timedelta(days=days)
     
     query = Certificate.query.filter(
@@ -151,7 +152,7 @@ def check_and_send_alerts() -> Dict[str, Any]:
                     errors.append(f"Cert {cert['id']}: {msg}")
     
     # Update stats
-    ExpiryAlertSettings._settings['last_run'] = datetime.utcnow().isoformat()
+    ExpiryAlertSettings._settings['last_run'] = utc_now().isoformat()
     ExpiryAlertSettings._settings['total_alerts_sent'] += alerts_sent
     
     result = {

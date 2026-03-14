@@ -12,6 +12,7 @@ from auth.unified import require_auth
 from utils.response import success_response
 from models import db, CA, Certificate
 from sqlalchemy import text
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ def get_dashboard_stats():
     total_certs = Certificate.query.count()
     
     # Count expired (past valid_to, not revoked)
-    now = datetime.utcnow()
+    now = utc_now()
     expired = Certificate.query.filter(
         Certificate.valid_to < now,
         Certificate.revoked == False
@@ -98,7 +99,7 @@ def get_dashboard_stats():
     # Count ACME renewals (last 30 days)
     acme_renewals = 0
     try:
-        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        thirty_days_ago = (utc_now() - timedelta(days=30)).isoformat()
         acme_renewals = db.session.execute(
             text("SELECT COUNT(*) FROM acme_orders WHERE created_at >= :date"),
             {'date': thirty_days_ago}
@@ -147,7 +148,7 @@ def get_expiring_certificates():
     # Only certs that haven't expired yet, sorted by soonest expiration
     certs = Certificate.query.filter(
         Certificate.valid_to != None,
-        Certificate.valid_to > datetime.utcnow(),
+        Certificate.valid_to > utc_now(),
         Certificate.revoked == False
     ).order_by(Certificate.valid_to.asc()).limit(limit).all()
     

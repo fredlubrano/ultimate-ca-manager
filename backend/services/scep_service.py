@@ -24,6 +24,7 @@ from pyasn1_modules import rfc5652
 
 from models import db, CA, Certificate, SCEPRequest
 from config.settings import Config
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -319,7 +320,7 @@ class SCEPService:
                 scep_req.status = "approved"
                 scep_req.cert_refid = cert_refid
                 scep_req.approved_by = "auto"
-                scep_req.approved_at = datetime.utcnow()
+                scep_req.approved_at = utc_now()
                 
                 db.session.commit()
                 
@@ -380,7 +381,7 @@ class SCEPService:
         scep_req.status = "approved"
         scep_req.cert_refid = cert_refid
         scep_req.approved_by = approved_by
-        scep_req.approved_at = datetime.utcnow()
+        scep_req.approved_at = utc_now()
         db.session.commit()
         
         return cert_refid
@@ -433,9 +434,9 @@ class SCEPService:
         builder = builder.issuer_name(self.ca_cert.subject)
         builder = builder.public_key(public_key)
         builder = builder.serial_number(x509.random_serial_number())
-        builder = builder.not_valid_before(datetime.utcnow())
+        builder = builder.not_valid_before(utc_now())
         builder = builder.not_valid_after(
-            datetime.utcnow() + timedelta(days=validity_days)
+            utc_now() + timedelta(days=validity_days)
         )
         
         # Add extensions from CSR

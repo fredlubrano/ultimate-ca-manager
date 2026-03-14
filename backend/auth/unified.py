@@ -12,6 +12,7 @@ import json
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify, g, session, current_app
+from utils.datetime_utils import utc_now
 
 # Import models (will be created)
 try:
@@ -85,11 +86,11 @@ class AuthManager:
             return None
         
         # Check expiration
-        if api_key.expires_at and api_key.expires_at < datetime.utcnow():
+        if api_key.expires_at and api_key.expires_at < utc_now():
             return None
         
         # Update last_used timestamp
-        api_key.last_used_at = datetime.utcnow()
+        api_key.last_used_at = utc_now()
         db.session.commit()
         
         # Parse permissions from JSON
@@ -125,7 +126,7 @@ class AuthManager:
         if not user or not user.active:
             return None
         
-        now = datetime.utcnow()
+        now = utc_now()
         
         # Check absolute session lifetime (default 24h)
         login_time_str = session.get('login_time')
@@ -223,7 +224,7 @@ class AuthManager:
             key_hash=key_hash,
             name=name,
             permissions=json.dumps(permissions),
-            expires_at=datetime.utcnow() + timedelta(days=expires_days)
+            expires_at=utc_now() + timedelta(days=expires_days)
         )
         
         db.session.add(api_key)
@@ -252,7 +253,7 @@ def create_session_for_user(user):
     Returns:
         dict: {'user': dict}
     """
-    now = datetime.utcnow()
+    now = utc_now()
     session['user_id'] = user.id
     session['username'] = user.username
     session['login_time'] = now.isoformat()

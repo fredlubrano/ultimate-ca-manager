@@ -8,6 +8,7 @@ from functools import wraps
 from services.certificate_parser import CertificateParser
 from services.mtls_auth_service import MTLSAuthService
 import logging
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +96,8 @@ def process_client_certificate():
         session['auth_method'] = 'certificate'
         session['cert_id'] = auth_cert.id
         session['cert_serial'] = auth_cert.cert_serial
-        session['login_time'] = datetime.utcnow().isoformat()
-        session['last_activity'] = datetime.utcnow().isoformat()
+        session['login_time'] = utc_now().isoformat()
+        session['last_activity'] = utc_now().isoformat()
         session.permanent = True
 
         g.user = user

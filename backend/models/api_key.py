@@ -5,6 +5,7 @@ Simple and secure API key storage
 
 from datetime import datetime
 import json
+from utils.datetime_utils import utc_now
 
 try:
     from models import db
@@ -32,7 +33,7 @@ class APIKey(db.Model if db else object):
     permissions = db.Column(db.Text, nullable=False)
     
     # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     expires_at = db.Column(db.DateTime, nullable=True)
     last_used_at = db.Column(db.DateTime, nullable=True)
     

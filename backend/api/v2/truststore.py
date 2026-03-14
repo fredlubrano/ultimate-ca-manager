@@ -20,6 +20,7 @@ import os
 
 bp = Blueprint('truststore_v2', __name__)
 import logging
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ def parse_der_certificate(der_data):
 @require_auth(['read:truststore'])
 def get_truststore_stats():
     """Get trust store statistics"""
-    now = datetime.utcnow()
+    now = utc_now()
     
     total = TrustedCertificate.query.count()
     root_cas = TrustedCertificate.query.filter_by(purpose='root_ca').count()
@@ -545,7 +546,7 @@ def get_expiring_trusted_certs():
     days = request.args.get('days', 90, type=int)
     
     try:
-        now = datetime.utcnow()
+        now = utc_now()
         from datetime import timedelta
         threshold = now + timedelta(days=days)
         

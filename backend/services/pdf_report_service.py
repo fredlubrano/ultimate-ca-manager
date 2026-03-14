@@ -12,6 +12,7 @@ from collections import Counter
 from fpdf import FPDF
 from models import db, Certificate, CA, AuditLog, SystemConfig
 from services.compliance_service import calculate_compliance_score
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ class UCMReport(FPDF):
     def __init__(self):
         super().__init__(orientation='P', unit='mm', format='A4')
         self.set_auto_page_break(auto=True, margin=20)
-        self._generated_at = datetime.utcnow()
+        self._generated_at = utc_now()
         import matplotlib
         font_dir = os.path.join(os.path.dirname(matplotlib.__file__), 'mpl-data', 'fonts', 'ttf')
         self.add_font('DejaVu', '', os.path.join(font_dir, 'DejaVuSans.ttf'), uni=True)
@@ -157,7 +158,7 @@ class PDFReportService:
 
     @classmethod
     def _collect_all_data(cls):
-        now = datetime.utcnow()
+        now = utc_now()
 
         all_certs = Certificate.query.all()
         active, expired, expiring_30, expiring_7, revoked = [], [], [], [], []
@@ -926,7 +927,7 @@ class PDFReportService:
         pdf.section_title('5. Expiring Certificates',
                           '%d certificate(s) expiring within 30 days' % len(data['expiring_30']))
 
-        now = datetime.utcnow()
+        now = utc_now()
         widths = [65, 45, 20, 30, 30]
         headers = ['Certificate', 'Issuer', 'Days', 'Expires', 'Algorithm']
         pdf.table_header(widths, headers)

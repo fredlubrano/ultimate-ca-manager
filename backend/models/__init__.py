@@ -23,6 +23,7 @@ from models.hsm import HsmProvider, HsmKey
 from models.rbac import CustomRole, RolePermission
 from models.sso import SSOProvider, SSOSession
 from models.policy import CertificatePolicy, ApprovalRequest
+from utils.datetime_utils import utc_now
 
 
 class UserSession(db.Model):
@@ -35,8 +36,8 @@ class UserSession(db.Model):
     ip_address = db.Column(db.String(45))  # IPv6-compatible
     user_agent = db.Column(db.String(500))
     auth_method = db.Column(db.String(50), default='password')  # password, webauthn, mtls
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_activity = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
+    last_activity = db.Column(db.DateTime, default=utc_now)
     expires_at = db.Column(db.DateTime)
     
     def to_dict(self):
@@ -76,7 +77,7 @@ class User(db.Model):
     password_reset_expires = db.Column(db.DateTime, nullable=True)  # Token expiry
     
     # Login tracking
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     last_login = db.Column(db.DateTime)
     login_count = db.Column(db.Integer, default=0)  # Total successful logins
     failed_logins = db.Column(db.Integer, default=0)  # Failed login attempts
@@ -136,7 +137,7 @@ class SystemConfig(db.Model):
     value = db.Column(db.Text)
     encrypted = db.Column(db.Boolean, default=False)
     description = db.Column(db.String(255))
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     updated_by = db.Column(db.String(80))
     
     def to_dict(self):
@@ -174,7 +175,7 @@ class CA(db.Model):
     
     # Metadata
     imported_from = db.Column(db.String(50))  # 'opnsense', 'manual', 'generated'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     created_by = db.Column(db.String(80))
     
     # Ownership (Pro feature - group-based access control)
@@ -319,7 +320,7 @@ class CA(db.Model):
         # Determine status based on expiry
         status = "Active"
         if self.valid_to:
-            if self.valid_to < datetime.utcnow():
+            if self.valid_to < utc_now():
                 status = "Expired"
         
         # Format dates for frontend
@@ -438,7 +439,7 @@ class Certificate(db.Model):
     
     # Metadata
     imported_from = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     created_by = db.Column(db.String(80))
     
     # Source tracking: 'manual', 'acme', 'scep', 'import', 'csr'
@@ -717,7 +718,7 @@ class Certificate(db.Model):
         """Days until expiration"""
         if not self.valid_to:
             return -1
-        delta = self.valid_to - datetime.utcnow()
+        delta = self.valid_to - utc_now()
         return max(0, delta.days)
     
     @property
@@ -770,7 +771,7 @@ class Certificate(db.Model):
         if self.revoked:
             status = "revoked"
         elif self.valid_to:
-            now = datetime.utcnow()
+            now = utc_now()
             if self.valid_to < now:
                 status = "expired"
             elif self.valid_to < now + timedelta(days=30):
@@ -865,8 +866,8 @@ class CRL(db.Model):
     serial = db.Column(db.Integer, default=0)
     lifetime = db.Column(db.Integer, default=9999)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     
     def to_dict(self, include_crl=False):
         """Convert to dictionary"""
@@ -903,7 +904,7 @@ class SCEPRequest(db.Model):
     subject = db.Column(db.Text)
     client_ip = db.Column(db.String(45))
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     
     def to_dict(self):
         """Convert to dictionary"""
@@ -926,7 +927,7 @@ class AuditLog(db.Model):
     __tablename__ = "audit_logs"
     
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    timestamp = db.Column(db.DateTime, default=utc_now, index=True)
     username = db.Column(db.String(80), index=True)
     action = db.Column(db.String(100), nullable=False)  # create_ca, revoke_cert, etc.
     resource_type = db.Column(db.String(50))  # ca, certificate, user, etc.

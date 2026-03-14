@@ -14,6 +14,7 @@ from typing import Optional
 
 from models import db
 from models.msca import MicrosoftCA, MSCARequest
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -195,7 +196,7 @@ class MicrosoftCAService:
                     f"MS CA '{msca.name}': auth OK but template listing failed: {tpl_err}"
                 )
 
-            msca.last_test_at = datetime.utcnow()
+            msca.last_test_at = utc_now()
             msca.last_test_result = 'success' if permissions_ok else 'partial'
             db.session.commit()
 
@@ -211,7 +212,7 @@ class MicrosoftCAService:
             return result
         except Exception as e:
             logger.error(f"MS CA connection test failed for '{msca.name}': {e}")
-            msca.last_test_at = datetime.utcnow()
+            msca.last_test_at = utc_now()
             msca.last_test_result = f'failed: {str(e)[:200]}'
             db.session.commit()
             return {'success': False, 'error': str(e)}
@@ -342,8 +343,8 @@ class MicrosoftCAService:
                     csr_id=csr_id,
                     template=template,
                     status='issued',
-                    submitted_at=datetime.utcnow(),
-                    issued_at=datetime.utcnow(),
+                    submitted_at=utc_now(),
+                    issued_at=utc_now(),
                     cert_pem=cert_pem,
                     submitted_by=submitted_by,
                 )
@@ -371,7 +372,7 @@ class MicrosoftCAService:
                         template=template,
                         status='pending',
                         disposition_message=str(submit_err)[:500],
-                        submitted_at=datetime.utcnow(),
+                        submitted_at=utc_now(),
                         submitted_by=submitted_by,
                     )
                     db.session.add(request)
@@ -396,7 +397,7 @@ class MicrosoftCAService:
                         template=template,
                         status='denied',
                         error_message=str(submit_err)[:500],
-                        submitted_at=datetime.utcnow(),
+                        submitted_at=utc_now(),
                         submitted_by=submitted_by,
                     )
                     db.session.add(request)
@@ -410,7 +411,7 @@ class MicrosoftCAService:
                     template=template,
                     status='failed',
                     error_message=str(submit_err)[:500],
-                    submitted_at=datetime.utcnow(),
+                    submitted_at=utc_now(),
                     submitted_by=submitted_by,
                 )
                 db.session.add(request)
@@ -445,7 +446,7 @@ class MicrosoftCAService:
             cert_pem = client.get_existing_cert(req.request_id, encoding='b64')
 
             req.status = 'issued'
-            req.issued_at = datetime.utcnow()
+            req.issued_at = utc_now()
             req.cert_pem = cert_pem
             db.session.commit()
 

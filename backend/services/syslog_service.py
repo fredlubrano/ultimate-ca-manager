@@ -9,6 +9,7 @@ import logging
 import logging.handlers
 import json
 from datetime import datetime
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,7 @@ class SyslogForwarder:
         severity_code = SEVERITY_MAP['info'] if audit_log.success else SEVERITY_MAP['warning']
         pri = (facility_code * 8) + severity_code
 
-        timestamp = audit_log.timestamp.strftime('%Y-%m-%dT%H:%M:%S.%fZ') if audit_log.timestamp else datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        timestamp = audit_log.timestamp.strftime('%Y-%m-%dT%H:%M:%S.%fZ') if audit_log.timestamp else utc_now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         hostname = '-'
 
         # Structured data
@@ -196,7 +197,7 @@ class SyslogForwarder:
 
             facility_code = FACILITY_MAP['local0']
             pri = (facility_code * 8) + SEVERITY_MAP['info']
-            timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+            timestamp = utc_now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
             message = f'<{pri}>1 {timestamp} - UCM - - [ucm@0 action="test"] UCM syslog test message'
 
             if self._protocol == 'tcp':

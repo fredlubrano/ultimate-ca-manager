@@ -20,6 +20,7 @@ from services.webauthn_service import WebAuthnService
 from services.certificate_parser import CertificateParser
 from datetime import datetime
 import logging
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +45,9 @@ def _check_2fa_lockout(key: str, tracker: dict) -> bool:
     entry = tracker.get(key)
     if not entry:
         return False
-    if entry.get('locked_until') and datetime.utcnow() < entry['locked_until']:
+    if entry.get('locked_until') and utc_now() < entry['locked_until']:
         return True
-    if entry.get('locked_until') and datetime.utcnow() >= entry['locked_until']:
+    if entry.get('locked_until') and utc_now() >= entry['locked_until']:
         tracker.pop(key, None)
     return False
 
@@ -57,7 +58,7 @@ def _record_2fa_failure(key: str, tracker: dict):
     entry = tracker.setdefault(key, {'count': 0, 'locked_until': None})
     entry['count'] += 1
     if entry['count'] >= _MAX_2FA_ATTEMPTS:
-        entry['locked_until'] = datetime.utcnow() + timedelta(seconds=_2FA_LOCKOUT_SECONDS)
+        entry['locked_until'] = utc_now() + timedelta(seconds=_2FA_LOCKOUT_SECONDS)
 
 
 def _clear_2fa_failures(key: str, tracker: dict):
@@ -198,7 +199,7 @@ def login_password():
         return error_response('Invalid credentials', 401)
     
     # Update login stats
-    user.last_login = datetime.utcnow()
+    user.last_login = utc_now()
     user.login_count = (user.login_count or 0) + 1
     user.failed_logins = 0  # Reset failed logins on successful login
     db.session.commit()
@@ -435,7 +436,7 @@ def login_mtls():
         return error_response(error or 'Certificate authentication failed', 401)
     
     # Update login stats
-    user.last_login = datetime.utcnow()
+    user.last_login = utc_now()
     user.login_count = (user.login_count or 0) + 1
     user.failed_logins = 0  # Reset failed logins on successful login
     db.session.commit()
@@ -585,7 +586,7 @@ def webauthn_verify():
         
         # Update login stats
         _clear_2fa_failures(username, _WEBAUTHN_FAILED)
-        user.last_login = datetime.utcnow()
+        user.last_login = utc_now()
         user.login_count = (user.login_count or 0) + 1
         user.failed_logins = 0  # Reset failed logins on successful login
         db.session.commit()

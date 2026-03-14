@@ -5,6 +5,7 @@ Includes SMTP configuration, notification rules, and logs
 import json
 from datetime import datetime
 from models import db
+from utils.datetime_utils import utc_now
 
 
 class SMTPConfig(db.Model):
@@ -25,7 +26,7 @@ class SMTPConfig(db.Model):
     email_template = db.Column(db.Text)  # Custom HTML template (null = use default)
     email_text_template = db.Column(db.Text)  # Custom plain text template (null = use default)
     enabled = db.Column(db.Boolean, default=False)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     updated_by = db.Column(db.String(80))
     
     # SECURITY: Encrypted password property
@@ -93,8 +94,8 @@ class NotificationConfig(db.Model):
     description = db.Column(db.String(512))
     # Deduplication: don't send same notification within this many hours
     cooldown_hours = db.Column(db.Integer, default=24)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     
     def to_dict(self):
         """Convert to dictionary"""
@@ -126,7 +127,7 @@ class NotificationLog(db.Model):
     resource_type = db.Column(db.String(50))  # certificate, ca, crl, user
     resource_id = db.Column(db.String(100))  # refid or ID
     retry_count = db.Column(db.Integer, default=0)
-    sent_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    sent_at = db.Column(db.DateTime, default=utc_now, index=True)
     
     # Composite index for deduplication queries
     __table_args__ = (
@@ -153,7 +154,7 @@ class NotificationLog(db.Model):
     def was_recently_sent(cls, notification_type: str, resource_type: str, resource_id: str, hours: int = 24) -> bool:
         """Check if this notification was already sent recently (for deduplication)"""
         from datetime import timedelta
-        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        cutoff = utc_now() - timedelta(hours=hours)
         existing = cls.query.filter(
             cls.type == notification_type,
             cls.resource_type == resource_type,

@@ -21,6 +21,7 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from security.encryption import encrypt_private_key
+from utils.datetime_utils import utc_now
 
 bp = Blueprint('csrs_v2', __name__)
 logger = logging.getLogger(__name__)
@@ -373,7 +374,7 @@ def import_csr():
             san_ip=str(san_ip) if san_ip else None,
             san_email=str(san_email) if san_email else None,
             created_by='import',
-            created_at=datetime.datetime.utcnow()
+            created_at=utc_now()
         )
         
         db.session.add(cert)

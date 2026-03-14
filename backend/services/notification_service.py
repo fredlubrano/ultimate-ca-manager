@@ -10,6 +10,7 @@ from models import db, CA, Certificate, User
 from models.crl import CRLMetadata
 from models.email_notification import NotificationConfig, NotificationLog
 from services.email_service import EmailService
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -279,11 +280,11 @@ class NotificationService:
         if not config or not config.enabled or not config.days_before:
             return []
         
-        threshold_date = datetime.utcnow() + timedelta(days=config.days_before)
+        threshold_date = utc_now() + timedelta(days=config.days_before)
         
         certs = Certificate.query.filter(
             Certificate.valid_to <= threshold_date,
-            Certificate.valid_to > datetime.utcnow(),
+            Certificate.valid_to > utc_now(),
             Certificate.revoked == False
         ).all()
         
@@ -293,7 +294,7 @@ class NotificationService:
             if NotificationService.should_send(
                 NotificationService.CERT_EXPIRING, 'certificate', cert.refid
             ):
-                days_remaining = (cert.valid_to - datetime.utcnow()).days
+                days_remaining = (cert.valid_to - utc_now()).days
                 expiring.append({
                     'cert': cert,
                     'days_remaining': days_remaining
@@ -308,11 +309,11 @@ class NotificationService:
         if not config or not config.enabled or not config.days_before:
             return []
         
-        threshold_date = datetime.utcnow() + timedelta(days=config.days_before)
+        threshold_date = utc_now() + timedelta(days=config.days_before)
         
         crls = CRLMetadata.query.filter(
             CRLMetadata.next_update <= threshold_date,
-            CRLMetadata.next_update > datetime.utcnow()
+            CRLMetadata.next_update > utc_now()
         ).all()
         
         expiring = []
@@ -320,7 +321,7 @@ class NotificationService:
             if NotificationService.should_send(
                 NotificationService.CRL_EXPIRING, 'crl', str(crl.id)
             ):
-                days_remaining = (crl.next_update - datetime.utcnow()).days
+                days_remaining = (crl.next_update - utc_now()).days
                 expiring.append({
                     'crl': crl,
                     'days_remaining': days_remaining
@@ -501,7 +502,7 @@ class NotificationService:
                 {f'<tr style="background-color: #f9f9f9;"><td style="padding: 8px; font-weight: bold;">Details:</td><td style="padding: 8px;">{details}</td></tr>' if details else ''}
                 <tr>
                     <td style="padding: 8px; font-weight: bold;">Time:</td>
-                    <td style="padding: 8px;">{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</td>
+                    <td style="padding: 8px;">{utc_now().strftime('%Y-%m-%d %H:%M:%S UTC')}</td>
                 </tr>
             </table>
         </div>
@@ -526,7 +527,7 @@ class NotificationService:
                 </tr>
                 <tr style="background-color: #f9f9f9;">
                     <td style="padding: 8px; font-weight: bold;">Changed At:</td>
-                    <td style="padding: 8px;">{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</td>
+                    <td style="padding: 8px;">{utc_now().strftime('%Y-%m-%d %H:%M:%S UTC')}</td>
                 </tr>
                 {f'<tr><td style="padding: 8px; font-weight: bold;">Changed By:</td><td style="padding: 8px;">{changed_by}</td></tr>' if changed_by else ''}
             </table>

@@ -9,6 +9,7 @@ from typing import List, Optional, Dict
 from datetime import datetime
 from models import db
 from models.email_notification import SMTPConfig, NotificationLog
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +122,7 @@ class EmailService:
             msg['Subject'] = subject
             msg['From'] = f"{config.smtp_from_name} <{config.smtp_from}>" if config.smtp_from_name else config.smtp_from
             msg['To'] = ", ".join(recipients)
-            msg['Date'] = datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S +0000')
+            msg['Date'] = utc_now().strftime('%a, %d %b %Y %H:%M:%S +0000')
             
             # Connect and send
             if config.smtp_use_ssl:
@@ -149,7 +150,7 @@ class EmailService:
                     status='sent',
                     resource_type=resource_type,
                     resource_id=resource_id,
-                    sent_at=datetime.utcnow()
+                    sent_at=utc_now()
                 )
                 db.session.add(log)
             
@@ -173,7 +174,7 @@ class EmailService:
                     error_message=error_msg,
                     resource_type=resource_type,
                     resource_id=resource_id,
-                    sent_at=datetime.utcnow()
+                    sent_at=utc_now()
                 )
                 db.session.add(log)
             

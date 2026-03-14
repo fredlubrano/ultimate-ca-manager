@@ -42,6 +42,7 @@ from services.import_service import (
 )
 from security.encryption import encrypt_private_key, decrypt_private_key
 from websocket.emitters import on_certificate_issued, on_certificate_revoked, on_certificate_deleted, on_certificate_renewed
+from utils.datetime_utils import utc_now
 
 bp = Blueprint('certificates_v2', __name__)
 
@@ -90,14 +91,14 @@ def list_certificates():
         query = query.filter_by(revoked=True)
     elif status == 'valid':
         query = query.filter_by(revoked=False)
-        query = query.filter(Certificate.valid_to > datetime.utcnow())
+        query = query.filter(Certificate.valid_to > utc_now())
     elif status == 'expired':
-        query = query.filter(Certificate.valid_to <= datetime.utcnow())
+        query = query.filter(Certificate.valid_to <= utc_now())
     elif status == 'expiring':
         # Expiring in next 30 days
-        expiry_threshold = datetime.utcnow() + timedelta(days=30)
+        expiry_threshold = utc_now() + timedelta(days=30)
         query = query.filter(Certificate.valid_to <= expiry_threshold)
-        query = query.filter(Certificate.valid_to > datetime.utcnow())
+        query = query.filter(Certificate.valid_to > utc_now())
         query = query.filter_by(revoked=False)
     
     # Apply search filter (escape LIKE wildcards)
@@ -118,7 +119,7 @@ def list_certificates():
     if sort_by == 'status':
         # Special handling: sort by computed status (revoked > expired > expiring > valid)
         # Then alphabetically by subject within each group
-        now = datetime.utcnow()
+        now = utc_now()
         expiry_threshold = now + timedelta(days=30)
         
         # Status priority: 1=revoked, 2=expired, 3=expiring, 4=valid
@@ -138,7 +139,7 @@ def list_certificates():
         # Key strength: RSA 4096/EC = best, RSA 2048 = good, RSA 1024 = bad
         # Validity: revoked/expired = worst, expiring = medium, valid = best
         # This gives a rough sort order consistent with the computed score
-        now = datetime.utcnow()
+        now = utc_now()
         expiry_threshold = now + timedelta(days=30)
         
         compliance_order = (
@@ -194,7 +195,7 @@ def list_certificates():
 def get_certificate_stats():
     """Get certificate statistics"""
     
-    now = datetime.utcnow()
+    now = utc_now()
     expiry_threshold = now + timedelta(days=30)
     
     total = Certificate.query.count()
@@ -377,7 +378,7 @@ def create_certificate():
         
         # Validity
         validity_days = data.get('validity_days', 365)
-        now = datetime.utcnow()
+        now = utc_now()
         not_before = now
         not_after = now + timedelta(days=validity_days)
         
@@ -1308,7 +1309,7 @@ def renew_certificate(cert_id):
         orig_duration = orig_cert.not_valid_after_utc - orig_cert.not_valid_before_utc
         validity_days = orig_duration.days if orig_duration.days > 0 else 365
         
-        now = datetime.utcnow()
+        now = utc_now()
         not_before = now
         not_after = now + timedelta(days=validity_days)
         
@@ -1719,7 +1720,7 @@ def bulk_renew_certificates():
 
             orig_duration = orig_cert.not_valid_after_utc - orig_cert.not_valid_before_utc
             validity_days = orig_duration.days if orig_duration.days > 0 else 365
-            now = datetime.utcnow()
+            now = utc_now()
 
             builder = (x509.CertificateBuilder()
                 .subject_name(orig_cert.subject)

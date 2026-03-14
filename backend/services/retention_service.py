@@ -6,6 +6,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from models import db, AuditLog
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class RetentionPolicy:
     @classmethod
     def get_stats(cls) -> Dict[str, Any]:
         """Get retention statistics"""
-        cutoff = datetime.utcnow() - timedelta(days=cls._settings['retention_days'])
+        cutoff = utc_now() - timedelta(days=cls._settings['retention_days'])
         
         total_logs = db.session.query(db.func.count(AuditLog.id)).scalar() or 0
         logs_to_delete = db.session.query(db.func.count(AuditLog.id)).filter(
@@ -99,7 +100,7 @@ def cleanup_audit_logs(retention_days: Optional[int] = None) -> Dict[str, Any]:
     if retention_days is None:
         retention_days = RetentionPolicy._settings['retention_days']
     
-    cutoff = datetime.utcnow() - timedelta(days=retention_days)
+    cutoff = utc_now() - timedelta(days=retention_days)
     
     try:
         # Count logs to delete
@@ -132,7 +133,7 @@ def cleanup_audit_logs(retention_days: Optional[int] = None) -> Dict[str, Any]:
                 break
         
         # Update stats
-        RetentionPolicy._settings['last_cleanup'] = datetime.utcnow().isoformat()
+        RetentionPolicy._settings['last_cleanup'] = utc_now().isoformat()
         RetentionPolicy._settings['total_deleted'] += total_deleted
         
         logger.info(f"Cleaned up {total_deleted} audit logs older than {retention_days} days")

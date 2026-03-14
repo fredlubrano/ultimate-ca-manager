@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 import socket
 import ipaddress
+from utils.datetime_utils import utc_now
 
 
 class HTTPSManager:
@@ -65,9 +66,9 @@ class HTTPSManager:
         cert_builder = cert_builder.issuer_name(issuer)
         cert_builder = cert_builder.public_key(private_key.public_key())
         cert_builder = cert_builder.serial_number(x509.random_serial_number())
-        cert_builder = cert_builder.not_valid_before(datetime.utcnow())
+        cert_builder = cert_builder.not_valid_before(utc_now())
         cert_builder = cert_builder.not_valid_after(
-            datetime.utcnow() + timedelta(days=validity_days)
+            utc_now() + timedelta(days=validity_days)
         )
         
         # Add extensions

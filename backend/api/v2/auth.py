@@ -13,6 +13,7 @@ from utils.response import success_response, error_response
 from models import User, db
 from datetime import datetime
 import hashlib
+from utils.datetime_utils import utc_now
 
 # Import CSRF protection
 try:
@@ -49,7 +50,7 @@ def _check_account_lockout(username):
         return False
     
     if user.locked_until:
-        if datetime.utcnow() < user.locked_until:
+        if utc_now() < user.locked_until:
             return True
         else:
             # Lockout expired, reset
@@ -70,7 +71,7 @@ def _record_failed_attempt(username):
     
     if user.failed_logins >= MAX_FAILED_ATTEMPTS:
         from datetime import timedelta
-        user.locked_until = datetime.utcnow() + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+        user.locked_until = utc_now() + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
         current_app.logger.warning(f"Account locked for {username} after {MAX_FAILED_ATTEMPTS} failed attempts")
         
         # Send security alert notification
@@ -159,7 +160,7 @@ def login():
     session.clear()
     
     # Create new session with regenerated ID
-    now = datetime.utcnow()
+    now = utc_now()
     session['user_id'] = user.id
     session['username'] = user.username
     session['login_time'] = now.isoformat()
@@ -333,7 +334,7 @@ def forgot_password():
         # Generate secure token
         token = secrets.token_urlsafe(48)
         user.password_reset_token = hashlib.sha256(token.encode()).hexdigest()
-        user.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
+        user.password_reset_expires = utc_now() + timedelta(hours=1)
         db.session.commit()
         
         # Send email
@@ -392,7 +393,7 @@ def reset_password():
     if not user:
         return error_response('Invalid or expired reset token', 400)
     
-    if user.password_reset_expires < datetime.utcnow():
+    if user.password_reset_expires < utc_now():
         # Clear expired token
         user.password_reset_token = None
         user.password_reset_expires = None

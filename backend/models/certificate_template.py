@@ -4,6 +4,7 @@ Pre-configured certificate profiles for common use cases
 """
 from datetime import datetime
 from models import db
+from utils.datetime_utils import utc_now
 
 
 class CertificateTemplate(db.Model):
@@ -38,9 +39,9 @@ class CertificateTemplate(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     created_by = db.Column(db.String(80))
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, onupdate=utc_now)
     updated_by = db.Column(db.String(80))
     
     def to_dict(self):

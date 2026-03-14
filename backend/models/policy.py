@@ -5,6 +5,7 @@ Defines certificate policies and approval workflows for compliance.
 from datetime import datetime
 from models import db
 import json
+from utils.datetime_utils import utc_now
 
 
 class CertificatePolicy(db.Model):
@@ -53,9 +54,9 @@ class CertificatePolicy(db.Model):
     priority = db.Column(db.Integer, default=100)  # Lower = higher priority
     
     # Metadata
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     created_by = db.Column(db.String(80))
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, onupdate=utc_now)
     
     # Relationships
     ca = db.relationship('CA', backref='policies', lazy='joined')
@@ -123,7 +124,7 @@ class ApprovalRequest(db.Model):
     required_approvals = db.Column(db.Integer, default=1)
     
     # Timing
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
     expires_at = db.Column(db.DateTime)  # Auto-reject after this
     resolved_at = db.Column(db.DateTime)
     
@@ -145,7 +146,7 @@ class ApprovalRequest(db.Model):
             'username': username,
             'action': action,  # 'approve' or 'reject'
             'comment': comment,
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': utc_now().isoformat()
         })
         self.approvals = json.dumps(approvals)
         
@@ -155,10 +156,10 @@ class ApprovalRequest(db.Model):
         
         if approve_count >= self.required_approvals:
             self.status = 'approved'
-            self.resolved_at = datetime.utcnow()
+            self.resolved_at = utc_now()
         elif reject_count > 0:  # Any rejection stops the request
             self.status = 'rejected'
-            self.resolved_at = datetime.utcnow()
+            self.resolved_at = utc_now()
     
     def to_dict(self):
         return {

@@ -20,6 +20,7 @@ from services.trust_store import TrustStoreService
 from services.template_service import TemplateService
 from config.settings import Config
 from utils.file_naming import cert_cert_path, cert_key_path, cert_csr_path, cleanup_old_files
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -568,7 +569,7 @@ class CertificateService:
             raise ValueError("Certificate already revoked")
         
         certificate.revoked = True
-        certificate.revoked_at = datetime.utcnow()
+        certificate.revoked_at = utc_now()
         certificate.revoke_reason = reason
         
         db.session.commit()

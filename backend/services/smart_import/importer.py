@@ -23,6 +23,7 @@ from .parser import ParsedObject, ObjectType, SmartParser
 from .chain_builder import ChainBuilder, ChainInfo
 from .matcher import KeyMatcher
 from .validator import ImportValidator, ValidationResult
+from utils.datetime_utils import utc_now
 
 
 @dataclass
@@ -447,7 +448,7 @@ class SmartImporter:
         """Create audit log entry"""
         try:
             log = AuditLog(
-                timestamp=datetime.utcnow(),
+                timestamp=utc_now(),
                 username=username,
                 action=action,
                 resource_type="certificate" if "csr" in action or "certificate" in action else "ca",

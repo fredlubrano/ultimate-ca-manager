@@ -19,6 +19,7 @@ from models.acme_models import (
     AcmeAccount, AcmeOrder, AcmeAuthorization, 
     AcmeChallenge, AcmeNonce
 )
+from utils.datetime_utils import utc_now
 
 
 class AcmeService:
@@ -57,7 +58,7 @@ class AcmeService:
         # Store in database with 1 hour expiry
         nonce = AcmeNonce(
             token=nonce_token,
-            expires_at=datetime.utcnow() + timedelta(hours=1)
+            expires_at=utc_now() + timedelta(hours=1)
         )
         db.session.add(nonce)
         db.session.commit()
@@ -82,7 +83,7 @@ class AcmeService:
             # Already used - replay attack attempt
             return False
         
-        if datetime.utcnow() > nonce.expires_at:
+        if utc_now() > nonce.expires_at:
             # Expired nonce
             db.session.delete(nonce)
             db.session.commit()
@@ -90,7 +91,7 @@ class AcmeService:
         
         # Mark as used
         nonce.used = True
-        nonce.used_at = datetime.utcnow()
+        nonce.used_at = utc_now()
         db.session.commit()
         
         return True
@@ -102,7 +103,7 @@ class AcmeService:
             Number of nonces deleted
         """
         expired = AcmeNonce.query.filter(
-            AcmeNonce.expires_at < datetime.utcnow()
+            AcmeNonce.expires_at < utc_now()
         ).all()
         
         count = len(expired)
@@ -151,7 +152,7 @@ class AcmeService:
             contact=json.dumps(contact) if contact else None,
             status="valid",
             terms_of_service_agreed=terms_of_service_agreed,
-            created_at=datetime.utcnow()
+            created_at=utc_now()
         )
         
         db.session.add(account)
@@ -214,7 +215,7 @@ class AcmeService:
             identifiers=json.dumps(identifiers),
             not_before=not_before,
             not_after=not_after,
-            expires=datetime.utcnow() + timedelta(days=7)
+            expires=utc_now() + timedelta(days=7)
         )
         
         db.session.add(order)
@@ -266,7 +267,7 @@ class AcmeService:
                     AcmeOrder.account_id == account_id,
                     AcmeAuthorization.identifier == identifier_json,
                     AcmeAuthorization.status == 'valid',
-                    AcmeAuthorization.expires > datetime.utcnow()
+                    AcmeAuthorization.expires > utc_now()
                 ).order_by(AcmeAuthorization.expires.desc()).first()
                 
                 if valid_auth:
@@ -282,7 +283,7 @@ class AcmeService:
                     db.session.flush()
                     
                     # Create pre-validated challenges (clients may check them)
-                    self._create_challenges(auth, status="valid", validated=datetime.utcnow())
+                    self._create_challenges(auth, status="valid", validated=utc_now())
                     
                     return auth
             except Exception as e:
@@ -294,7 +295,7 @@ class AcmeService:
             order_id=order_id,
             status="pending",
             identifier=json.dumps(identifier),
-            expires=datetime.utcnow() + timedelta(days=7)
+            expires=utc_now() + timedelta(days=7)
         )
         
         db.session.add(auth)
@@ -393,7 +394,7 @@ class AcmeService:
             
             if response.text.strip() == key_authz:
                 challenge.status = "valid"
-                challenge.validated = datetime.utcnow()
+                challenge.validated = utc_now()
                 
                 # Update authorization status
                 self._update_authorization_status(auth)
@@ -459,7 +460,7 @@ class AcmeService:
             for rdata in answers:
                 if txt_value in str(rdata):
                     challenge.status = "valid"
-                    challenge.validated = datetime.utcnow()
+                    challenge.validated = utc_now()
                     
                     # Update authorization status
                     self._update_authorization_status(auth)

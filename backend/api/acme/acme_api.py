@@ -13,6 +13,7 @@ from services.acme import AcmeService
 from models.acme_models import AcmeAccount, AcmeOrder, AcmeChallenge
 from config.settings import Config
 import logging
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -1013,7 +1014,7 @@ def health():
         "status": "healthy",
         "service": "ACME Server",
         "version": Config.APP_VERSION,
-        "timestamp": datetime.utcnow().isoformat() + 'Z'
+        "timestamp": utc_now().isoformat() + 'Z'
     })
 
 

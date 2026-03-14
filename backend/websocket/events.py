@@ -12,6 +12,7 @@ from flask import request, current_app
 from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 
 from .event_types import EventType
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +87,7 @@ def handle_connect(auth=None):
     
     connected_clients[sid] = {
         'user_id': user_id,
-        'connected_at': datetime.utcnow().isoformat(),
+        'connected_at': utc_now().isoformat(),
         'rooms': ['global']
     }
     
@@ -102,7 +103,7 @@ def handle_connect(auth=None):
     emit('connected', {
         'status': 'ok',
         'user_id': user_id,
-        'timestamp': datetime.utcnow().isoformat()
+        'timestamp': utc_now().isoformat()
     })
 
 
@@ -153,7 +154,7 @@ def handle_unsubscribe(data):
 @socketio.on('ping')
 def handle_ping():
     """Handle ping for connection keep-alive."""
-    emit('pong', {'timestamp': datetime.utcnow().isoformat()})
+    emit('pong', {'timestamp': utc_now().isoformat()})
 
 
 # ================== Event Emitter Functions ==================
@@ -178,7 +179,7 @@ def emit_event(
     payload = {
         'type': event_type.value if isinstance(event_type, EventType) else event_type,
         'data': data,
-        'timestamp': datetime.utcnow().isoformat()
+        'timestamp': utc_now().isoformat()
     }
     
     target_room = room or 'global'

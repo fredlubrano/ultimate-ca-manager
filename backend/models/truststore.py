@@ -4,6 +4,7 @@ Store of trusted root/intermediate certificates
 """
 from datetime import datetime
 from models import db
+from utils.datetime_utils import utc_now
 
 
 class TrustedCertificate(db.Model):
@@ -31,7 +32,7 @@ class TrustedCertificate(db.Model):
     
     # Metadata
     added_by = db.Column(db.String(80))
-    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    added_at = db.Column(db.DateTime, default=utc_now)
     notes = db.Column(db.Text)
     
     def to_dict(self):

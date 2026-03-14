@@ -22,6 +22,7 @@ from lxml import etree
 import logging
 import os
 import tempfile
+from utils.datetime_utils import utc_now
 logger = logging.getLogger(__name__)
 
 VALID_ROLES = {'admin', 'operator', 'auditor', 'viewer'}
@@ -140,7 +141,7 @@ def _check_ldap_lockout(username):
     if not user:
         return False
     if user.locked_until:
-        if datetime.utcnow() < user.locked_until:
+        if utc_now() < user.locked_until:
             return True
         user.locked_until = None
         user.failed_logins = 0
@@ -155,7 +156,7 @@ def _record_ldap_failed_attempt(username):
         return
     user.failed_logins = (user.failed_logins or 0) + 1
     if user.failed_logins >= LDAP_MAX_FAILED_ATTEMPTS:
-        user.locked_until = datetime.utcnow() + timedelta(minutes=LDAP_LOCKOUT_MINUTES)
+        user.locked_until = utc_now() + timedelta(minutes=LDAP_LOCKOUT_MINUTES)
         logger.warning(f"LDAP account locked for {username} after {LDAP_MAX_FAILED_ATTEMPTS} failed attempts")
     db.session.commit()
 
@@ -843,7 +844,7 @@ def test_mapping(provider_id):
 def list_sessions():
     """List active SSO sessions"""
     sessions = SSOSession.query.filter(
-        SSOSession.expires_at > datetime.utcnow()
+        SSOSession.expires_at > utc_now()
     ).all()
     return success_response(data=[s.to_dict() for s in sessions])
 
@@ -940,7 +941,7 @@ def list_saml_certificates():
     try:
         db_certs = Certificate.query.filter(
             Certificate.revoked == False,
-            Certificate.valid_to > datetime.utcnow(),
+            Certificate.valid_to > utc_now(),
             Certificate.crt.isnot(None)
         ).order_by(Certificate.subject_cn).all()
         
@@ -997,7 +998,7 @@ def get_sp_metadata():
             db_cert = Certificate.query.filter(
                 Certificate.id == int(cert_source),
                 Certificate.revoked == False,
-                Certificate.valid_to > dt.utcnow(),
+                Certificate.valid_to > utc_now(),
                 Certificate.crt.isnot(None)
             ).first()
             if db_cert:
@@ -1332,14 +1333,14 @@ def sso_callback(provider_type):
             session_id = userinfo.get('sub', username)
             sso_session = SSOSession.query.filter_by(session_id=session_id).first()
             if sso_session:
-                sso_session.expires_at = datetime.utcnow() + timedelta(hours=8)
+                sso_session.expires_at = utc_now() + timedelta(hours=8)
             else:
                 sso_session = SSOSession(
                     user_id=user.id,
                     provider_id=provider.id,
                     session_id=session_id,
                     sso_name_id=session_id,
-                    expires_at=datetime.utcnow() + timedelta(hours=8)
+                    expires_at=utc_now() + timedelta(hours=8)
                 )
                 db.session.add(sso_session)
             db.session.commit()
@@ -1434,14 +1435,14 @@ def sso_callback(provider_type):
             # Track SSO session
             sso_session = SSOSession.query.filter_by(session_id=name_id).first()
             if sso_session:
-                sso_session.expires_at = datetime.utcnow() + timedelta(hours=8)
+                sso_session.expires_at = utc_now() + timedelta(hours=8)
             else:
                 sso_session = SSOSession(
                     user_id=user.id,
                     provider_id=provider.id,
                     session_id=name_id,
                     sso_name_id=name_id,
-                    expires_at=datetime.utcnow() + timedelta(hours=8)
+                    expires_at=utc_now() + timedelta(hours=8)
                 )
                 db.session.add(sso_session)
             db.session.commit()
@@ -1547,14 +1548,14 @@ def ldap_login():
     session_id = user_info['dn']
     sso_session = SSOSession.query.filter_by(session_id=session_id).first()
     if sso_session:
-        sso_session.expires_at = datetime.utcnow() + timedelta(hours=8)
+        sso_session.expires_at = utc_now() + timedelta(hours=8)
     else:
         sso_session = SSOSession(
             user_id=user.id,
             provider_id=provider.id,
             session_id=session_id,
             sso_name_id=user_info.get('uid', session_id),
-            expires_at=datetime.utcnow() + timedelta(hours=8)
+            expires_at=utc_now() + timedelta(hours=8)
         )
         db.session.add(sso_session)
     db.session.commit()
@@ -1676,7 +1677,7 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
             if fullname:
                 user.full_name = fullname
             user.role = _resolve_role(provider, external_data)
-            user.last_login = datetime.utcnow()
+            user.last_login = utc_now()
             db.session.commit()
         return user, None
     
@@ -1693,7 +1694,7 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
         full_name=fullname or username,
         role=role,
         active=True,
-        last_login=datetime.utcnow()
+        last_login=utc_now()
     )
     
     # SSO users don't have a password (they auth via SSO)

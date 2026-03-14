@@ -4,6 +4,7 @@ Group Model - User groups for permission management
 
 from models import db
 from datetime import datetime
+from utils.datetime_utils import utc_now
 
 
 class Group(db.Model):
@@ -14,8 +15,8 @@ class Group(db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
     description = db.Column(db.Text, default='')
     permissions = db.Column(db.JSON, default=list)  # List of permission strings
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=utc_now)
+    updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     members = db.relationship('GroupMember', backref='group', lazy='dynamic', cascade='all, delete-orphan')
@@ -43,7 +44,7 @@ class GroupMember(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     role = db.Column(db.String(20), default='member')  # member, admin
-    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+    joined_at = db.Column(db.DateTime, default=utc_now)
     
     # Unique constraint: user can only be in a group once
     __table_args__ = (db.UniqueConstraint('group_id', 'user_id'),)

@@ -5,6 +5,7 @@ Automatically renews Let's Encrypt certificates before expiry.
 import logging
 from datetime import datetime, timedelta
 from typing import Optional
+from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ def scheduled_acme_renewal():
         renewal_days = DEFAULT_RENEWAL_DAYS
         
         # Calculate threshold date
-        threshold_date = datetime.utcnow() + timedelta(days=renewal_days)
+        threshold_date = utc_now() + timedelta(days=renewal_days)
         
         # Find orders that need renewal:
         # - renewal_enabled = True
@@ -55,7 +56,7 @@ def scheduled_acme_renewal():
             except Exception as e:
                 logger.error(f"Failed to renew order {order.id}: {e}")
                 order.renewal_failures += 1
-                order.last_error_at = datetime.utcnow()
+                order.last_error_at = utc_now()
                 order.error_message = str(e)
                 db.session.commit()
         
@@ -189,7 +190,7 @@ def renew_certificate(order) -> bool:
     # Update order with new certificate
     order.certificate_id = cert_id
     order.order_url = new_order_url
-    order.last_renewal_at = datetime.utcnow()
+    order.last_renewal_at = utc_now()
     order.renewal_failures = 0
     order.error_message = None
     order.last_error_at = None
