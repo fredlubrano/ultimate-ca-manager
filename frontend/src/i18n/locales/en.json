@@ -2567,6 +2567,15 @@
       "fri": "Friday",
       "sat": "Saturday",
       "sun": "Sunday"
+    },
+    "groups": {
+      "management": "Management",
+      "settings": "Configuration"
+    },
+    "tabs": {
+      "reports": "Data Reports",
+      "schedule": "Schedule",
+      "executive": "Executive Report"
     }
   },
   "reconnect": {

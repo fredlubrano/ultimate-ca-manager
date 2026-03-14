@@ -2808,6 +2808,15 @@
       "fri": "金曜日",
       "sat": "土曜日",
       "sun": "日曜日"
+    },
+    "groups": {
+      "management": "管理",
+      "settings": "設定"
+    },
+    "tabs": {
+      "reports": "データレポート",
+      "schedule": "スケジュール",
+      "executive": "エグゼクティブレポート"
     }
   },
   "export": {

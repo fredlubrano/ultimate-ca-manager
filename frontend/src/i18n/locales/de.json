@@ -2808,6 +2808,15 @@
       "fri": "Freitag",
       "sat": "Samstag",
       "sun": "Sonntag"
+    },
+    "groups": {
+      "management": "Verwaltung",
+      "settings": "Konfiguration"
+    },
+    "tabs": {
+      "reports": "Datenberichte",
+      "schedule": "Zeitplan",
+      "executive": "Führungsbericht"
     }
   },
   "export": {

@@ -2579,6 +2579,15 @@
       "fri": "Vendredi",
       "sat": "Samedi",
       "sun": "Dimanche"
+    },
+    "groups": {
+      "management": "Gestion",
+      "settings": "Configuration"
+    },
+    "tabs": {
+      "reports": "Rapports",
+      "schedule": "Planification",
+      "executive": "Rapport Exécutif"
     }
   },
   "messages": {

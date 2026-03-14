@@ -2808,6 +2808,15 @@
       "fri": "周五",
       "sat": "周六",
       "sun": "周日"
+    },
+    "groups": {
+      "management": "管理",
+      "settings": "配置"
+    },
+    "tabs": {
+      "reports": "数据报告",
+      "schedule": "计划",
+      "executive": "执行报告"
     }
   },
   "export": {
