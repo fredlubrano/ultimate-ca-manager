@@ -635,7 +635,7 @@ export default function DashboardPage() {
                         const barColor = {
                           danger: 'var(--accent-danger)',
                           warning: 'var(--accent-warning)', 
-                          yellow: '#EAB308',
+                          yellow: 'var(--accent-warning)',
                           success: 'var(--accent-success)',
                           gray: 'var(--text-tertiary)'
                         }[urgency]
@@ -1042,7 +1042,7 @@ export default function DashboardPage() {
                       const totalLifespan = (cert.valid_from && cert.valid_to) ? Math.max(1, Math.ceil((new Date(cert.valid_to) - new Date(cert.valid_from)) / (1000 * 60 * 60 * 24))) : 365
                       const progress = daysLeft !== null ? Math.min(100, (daysLeft / totalLifespan) * 100) : 0
                       const urgency = daysLeft === null ? 'gray' : daysLeft <= 7 ? 'danger' : daysLeft <= 15 ? 'warning' : daysLeft <= 30 ? 'yellow' : 'success'
-                      const barColor = { danger: 'var(--accent-danger)', warning: 'var(--accent-warning)', yellow: '#EAB308', success: 'var(--accent-success)', gray: 'var(--text-tertiary)' }[urgency]
+                      const barColor = { danger: 'var(--accent-danger)', warning: 'var(--accent-warning)', yellow: 'var(--accent-warning)', success: 'var(--accent-success)', gray: 'var(--text-tertiary)' }[urgency]
                       return (
                         <div key={cert.id || i} onClick={() => navigate(`/certificates/${cert.id}`)} className="p-2 rounded-lg hover:bg-tertiary-op50 cursor-pointer transition-colors">
                           <div className="flex items-center justify-between gap-2 mb-1">

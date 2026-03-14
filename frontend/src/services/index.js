@@ -4,6 +4,7 @@
 
 export { apiClient } from './apiClient'
 export { authService } from './auth.service'
+export { authMethodsService } from './auth-methods.service'
 export { accountService } from './account.service'
 export { dashboardService } from './dashboard.service'
 export { certificatesService } from './certificates.service'
