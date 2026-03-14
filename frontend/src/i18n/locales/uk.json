@@ -117,8 +117,8 @@
     "signCSR": "Підписати CSR",
     "change": "Змінити",
     "done": "Готово",
-    "selectAll": "Оберіть усі",
-    "deselectAll": "Deselect Усі",
+    "selectAll": "Вибрати все",
+    "deselectAll": "Скасувати вибір",
     "warnings": "Попередження",
     "errors": "Помилки",
     "live": "Активний",
@@ -2816,7 +2816,47 @@
     "tabs": {
       "reports": "Звіти",
       "schedule": "Розклад",
-      "executive": "Виконавчий звіт"
+      "pdf": "PDF звіти"
+    },
+    "pdf": {
+      "templates": "Шаблони звітів",
+      "sections": "Розділи",
+      "customBuilder": "Налаштований звіт",
+      "customDesc": "Виберіть розділи для включення у ваш PDF звіт.",
+      "generateCustom": "Згенерувати PDF",
+      "template": {
+        "executive": {
+          "name": "Виконавче резюме",
+          "description": "Повний огляд з усіма розділами"
+        },
+        "certificate_inventory": {
+          "name": "Інвентар сертифікатів",
+          "description": "Статус сертифікатів, терміни та аналіз життєвого циклу"
+        },
+        "compliance": {
+          "name": "Звіт відповідності",
+          "description": "Оцінки відповідності, оцінка ризиків та рекомендації"
+        },
+        "ca_overview": {
+          "name": "Огляд ЦС",
+          "description": "Ієрархія центрів сертифікації та ланцюг довіри"
+        },
+        "security_audit": {
+          "name": "Безпека та аудит",
+          "description": "Підсумок журналу аудиту та стан безпеки"
+        }
+      },
+      "section": {
+        "executive_summary": "Виконавче резюме",
+        "risk_assessment": "Оцінка ризиків",
+        "certificate_status": "Статус сертифікатів",
+        "compliance_overview": "Огляд відповідності",
+        "expiry": "Сертифікати з терміном",
+        "lifecycle": "Життєвий цикл",
+        "ca_hierarchy": "Ієрархія ЦС",
+        "audit": "Безпека та аудит",
+        "recommendations": "Рекомендації"
+      }
     }
   },
   "export": {

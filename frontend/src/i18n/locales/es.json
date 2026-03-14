@@ -117,8 +117,8 @@
     "signCSR": "Firmar CSR",
     "change": "Cambiar",
     "done": "Hecho",
-    "selectAll": "Seleccionar All",
-    "deselectAll": "DeSeleccionar All",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
     "warnings": "Advertencias",
     "errors": "Errores",
     "live": "En vivo",
@@ -2816,7 +2816,47 @@
     "tabs": {
       "reports": "Informes",
       "schedule": "Programación",
-      "executive": "Informe Ejecutivo"
+      "pdf": "Informes PDF"
+    },
+    "pdf": {
+      "templates": "Plantillas de informe",
+      "sections": "Secciones",
+      "customBuilder": "Informe personalizado",
+      "customDesc": "Seleccione las secciones a incluir en su informe PDF personalizado.",
+      "generateCustom": "Generar PDF",
+      "template": {
+        "executive": {
+          "name": "Resumen ejecutivo",
+          "description": "Vista completa con todas las secciones"
+        },
+        "certificate_inventory": {
+          "name": "Inventario de certificados",
+          "description": "Estado de certificados, línea de vencimiento y análisis del ciclo de vida"
+        },
+        "compliance": {
+          "name": "Informe de cumplimiento",
+          "description": "Puntuaciones de cumplimiento, evaluación de riesgos y recomendaciones"
+        },
+        "ca_overview": {
+          "name": "Vista general de CA",
+          "description": "Jerarquía de autoridades de certificación y cadena de confianza"
+        },
+        "security_audit": {
+          "name": "Seguridad y auditoría",
+          "description": "Resumen de registro de auditoría y postura de seguridad"
+        }
+      },
+      "section": {
+        "executive_summary": "Resumen ejecutivo",
+        "risk_assessment": "Evaluación de riesgos",
+        "certificate_status": "Estado de certificados",
+        "compliance_overview": "Vista de cumplimiento",
+        "expiry": "Certificados por vencer",
+        "lifecycle": "Ciclo de vida",
+        "ca_hierarchy": "Jerarquía de CA",
+        "audit": "Seguridad y auditoría",
+        "recommendations": "Recomendaciones"
+      }
     }
   },
   "export": {

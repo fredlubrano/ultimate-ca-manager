@@ -117,8 +117,8 @@
     "signCSR": "Assinar CSR",
     "change": "Alterar",
     "done": "Concluído",
-    "selectAll": "Seleccionar Tudo",
-    "deselectAll": "Desmarcar Tudo",
+    "selectAll": "Selecionar tudo",
+    "deselectAll": "Desmarcar tudo",
     "warnings": "Avisos",
     "errors": "Erros",
     "live": "Ao Vivo",
@@ -2816,7 +2816,47 @@
     "tabs": {
       "reports": "Relatórios",
       "schedule": "Agendamento",
-      "executive": "Relatório Executivo"
+      "pdf": "Relatórios PDF"
+    },
+    "pdf": {
+      "templates": "Modelos de relatório",
+      "sections": "Seções",
+      "customBuilder": "Relatório personalizado",
+      "customDesc": "Selecione as seções para incluir no seu relatório PDF personalizado.",
+      "generateCustom": "Gerar PDF",
+      "template": {
+        "executive": {
+          "name": "Resumo executivo",
+          "description": "Visão geral completa com todas as seções"
+        },
+        "certificate_inventory": {
+          "name": "Inventário de certificados",
+          "description": "Status dos certificados, linha do tempo e análise do ciclo de vida"
+        },
+        "compliance": {
+          "name": "Relatório de conformidade",
+          "description": "Pontuações de conformidade, avaliação de riscos e recomendações"
+        },
+        "ca_overview": {
+          "name": "Visão geral da CA",
+          "description": "Hierarquia de autoridades de certificação e cadeia de confiança"
+        },
+        "security_audit": {
+          "name": "Segurança e auditoria",
+          "description": "Resumo do log de auditoria e postura de segurança"
+        }
+      },
+      "section": {
+        "executive_summary": "Resumo executivo",
+        "risk_assessment": "Avaliação de riscos",
+        "certificate_status": "Status dos certificados",
+        "compliance_overview": "Visão de conformidade",
+        "expiry": "Certificados expirando",
+        "lifecycle": "Ciclo de vida",
+        "ca_hierarchy": "Hierarquia da CA",
+        "audit": "Segurança e auditoria",
+        "recommendations": "Recomendações"
+      }
     }
   },
   "export": {

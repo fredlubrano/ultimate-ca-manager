@@ -117,8 +117,8 @@
     "signCSR": "Firma CSR",
     "change": "Cambia",
     "done": "Fatto",
-    "selectAll": "Seleziona Tutto",
-    "deselectAll": "Deseleziona Tutto",
+    "selectAll": "Seleziona tutto",
+    "deselectAll": "Deseleziona tutto",
     "warnings": "Avvisi",
     "errors": "Errori",
     "live": "Live",
@@ -2816,7 +2816,47 @@
     "tabs": {
       "reports": "Rapporti",
       "schedule": "Pianificazione",
-      "executive": "Report Esecutivo"
+      "pdf": "Report PDF"
+    },
+    "pdf": {
+      "templates": "Modelli di report",
+      "sections": "Sezioni",
+      "customBuilder": "Report personalizzato",
+      "customDesc": "Seleziona le sezioni da includere nel tuo report PDF personalizzato.",
+      "generateCustom": "Genera PDF",
+      "template": {
+        "executive": {
+          "name": "Riepilogo esecutivo",
+          "description": "Panoramica completa con tutte le sezioni"
+        },
+        "certificate_inventory": {
+          "name": "Inventario certificati",
+          "description": "Stato certificati, scadenze e analisi del ciclo di vita"
+        },
+        "compliance": {
+          "name": "Report di conformità",
+          "description": "Punteggi di conformità, valutazione dei rischi e raccomandazioni"
+        },
+        "ca_overview": {
+          "name": "Panoramica CA",
+          "description": "Gerarchia delle autorità di certificazione e catena di fiducia"
+        },
+        "security_audit": {
+          "name": "Sicurezza e audit",
+          "description": "Riepilogo registro di audit e postura di sicurezza"
+        }
+      },
+      "section": {
+        "executive_summary": "Riepilogo esecutivo",
+        "risk_assessment": "Valutazione dei rischi",
+        "certificate_status": "Stato certificati",
+        "compliance_overview": "Panoramica conformità",
+        "expiry": "Certificati in scadenza",
+        "lifecycle": "Ciclo di vita",
+        "ca_hierarchy": "Gerarchia CA",
+        "audit": "Sicurezza e audit",
+        "recommendations": "Raccomandazioni"
+      }
     }
   },
   "export": {

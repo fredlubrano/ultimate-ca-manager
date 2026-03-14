@@ -2587,7 +2587,47 @@
     "tabs": {
       "reports": "Rapports",
       "schedule": "Planification",
-      "executive": "Rapport Exécutif"
+      "pdf": "Rapports PDF"
+    },
+    "pdf": {
+      "templates": "Modèles de rapport",
+      "sections": "Sections",
+      "customBuilder": "Rapport personnalisé",
+      "customDesc": "Sélectionnez les sections à inclure dans votre rapport PDF personnalisé.",
+      "generateCustom": "Générer le PDF",
+      "template": {
+        "executive": {
+          "name": "Résumé exécutif",
+          "description": "Vue d'ensemble complète avec toutes les sections"
+        },
+        "certificate_inventory": {
+          "name": "Inventaire des certificats",
+          "description": "Statut des certificats, échéances et analyse du cycle de vie"
+        },
+        "compliance": {
+          "name": "Rapport de conformité",
+          "description": "Scores de conformité, évaluation des risques et recommandations"
+        },
+        "ca_overview": {
+          "name": "Vue d'ensemble des AC",
+          "description": "Hiérarchie des autorités de certification et chaîne de confiance"
+        },
+        "security_audit": {
+          "name": "Sécurité et audit",
+          "description": "Résumé du journal d'audit, évaluation des risques et posture de sécurité"
+        }
+      },
+      "section": {
+        "executive_summary": "Résumé exécutif",
+        "risk_assessment": "Évaluation des risques",
+        "certificate_status": "Statut des certificats",
+        "compliance_overview": "Vue de conformité",
+        "expiry": "Certificats expirants",
+        "lifecycle": "Cycle de vie",
+        "ca_hierarchy": "Hiérarchie des AC",
+        "audit": "Sécurité et audit",
+        "recommendations": "Recommandations"
+      }
     }
   },
   "messages": {

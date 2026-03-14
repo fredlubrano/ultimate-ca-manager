@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next'
 import {
   ChartBar, Download, PaperPlaneTilt, CalendarBlank, FileText,
   FileCsv, FileJs, Play, CheckCircle, Clock, Gear, FilePdf,
-  Certificate, ShieldCheck, ClockCounterClockwise, Gavel, TreeStructure
+  Certificate, ShieldCheck, ClockCounterClockwise, Gavel, TreeStructure,
+  Checks, SlidersHorizontal, FileArrowDown
 } from '@phosphor-icons/react'
 import {
   ResponsiveLayout, Card, Button, Badge, Input, Modal,
@@ -64,6 +65,12 @@ export default function ReportsPage() {
   const [recipientInputs, setRecipientInputs] = useState({})
   const [generatingPdf, setGeneratingPdf] = useState(false)
 
+  // PDF Reports tab
+  const [pdfTemplates, setPdfTemplates] = useState({})
+  const [pdfSections, setPdfSections] = useState([])
+  const [selectedSections, setSelectedSections] = useState([])
+  const [generatingCustomPdf, setGeneratingCustomPdf] = useState(null)
+
   // All schedulable report configs
   const SCHEDULE_REPORTS = useMemo(() => [
     { key: 'certificate_inventory', icon: Certificate, label: t('reports.types.certificate_inventory.name', { defaultValue: 'Certificate Inventory' }), variant: 'info' },
@@ -79,12 +86,17 @@ export default function ReportsPage() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true)
-      const [typesRes, scheduleRes] = await Promise.all([
+      const [typesRes, scheduleRes, pdfRes] = await Promise.all([
         reportsService.getTypes(),
         hasWriteSettings ? reportsService.getSchedule().catch(() => ({ data: null })) : Promise.resolve({ data: null }),
+        reportsService.getPdfTemplates().catch(() => ({ data: null })),
       ])
       setReportTypes(typesRes.data || {})
       if (scheduleRes.data) setSchedule(scheduleRes.data)
+      if (pdfRes.data) {
+        setPdfTemplates(pdfRes.data.templates || {})
+        setPdfSections(pdfRes.data.sections || [])
+      }
     } catch (err) {
       showError(t('reports.loadFailed'))
     } finally {
@@ -245,13 +257,41 @@ export default function ReportsPage() {
     }
   }, [showSuccess, showError, t])
 
+  const handleGeneratePdf = useCallback(async (templateKey) => {
+    try {
+      setGeneratingCustomPdf(templateKey || 'custom')
+      const options = templateKey ? { template: templateKey } : { sections: selectedSections }
+      const response = await reportsService.generateCustomPDF(options)
+      const blob = response instanceof Blob ? response : new Blob([response], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `ucm-report-${templateKey || 'custom'}-${new Date().toISOString().slice(0, 10)}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      showSuccess(t('reports.pdfGenerated'))
+    } catch (err) {
+      showError(t('reports.pdfFailed'))
+    } finally {
+      setGeneratingCustomPdf(null)
+    }
+  }, [selectedSections, showSuccess, showError, t])
+
+  const toggleSection = useCallback((sectionId) => {
+    setSelectedSections(prev =>
+      prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
+    )
+  }, [])
+
   const reportEntries = Object.entries(reportTypes)
   const enabledSchedules = schedule ? SCHEDULE_REPORTS.filter(r => schedule[r.key]?.enabled).length : 0
 
   const tabs = useMemo(() => [
     { id: 'reports', label: t('reports.tabs.reports'), icon: ChartBar },
+    { id: 'pdf', label: t('reports.tabs.pdf'), icon: FilePdf },
     { id: 'schedule', label: t('reports.tabs.schedule'), icon: CalendarBlank },
-    { id: 'executive', label: t('reports.tabs.executive'), icon: FilePdf },
   ], [t])
 
   const headerStats = useMemo(() => [
@@ -405,7 +445,7 @@ export default function ReportsPage() {
         tabLayout="sidebar"
         sidebarContentClass=""
         tabGroups={[
-          { labelKey: 'reports.groups.management', tabs: ['reports', 'executive'], color: 'icon-bg-blue' },
+          { labelKey: 'reports.groups.management', tabs: ['reports', 'pdf'], color: 'icon-bg-blue' },
           { labelKey: 'reports.groups.settings', tabs: ['schedule'], color: 'icon-bg-emerald' },
         ]}
       >
@@ -674,25 +714,160 @@ export default function ReportsPage() {
         )}
 
         {/* Executive Report tab */}
-        {activeTab === 'executive' && (
-          <Card>
-            <div className="px-4 py-3 border-b border-border">
-              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <FilePdf size={16} className="text-accent-primary" />
-                {t('reports.executiveReport')}
-              </h3>
-            </div>
-            <div className="p-4 space-y-4">
-              <p className="text-sm text-text-secondary">
-                {t('reports.executiveDesc')}
-              </p>
-              <Button type="button" onClick={handleDownloadPDF} disabled={generatingPdf}>
-                {generatingPdf ? <LoadingSpinner size="sm" /> : (
-                  <><FilePdf size={16} className="mr-1.5" /> {t('reports.downloadPDF')}</>
-                )}
-              </Button>
-            </div>
-          </Card>
+        {/* PDF Reports tab */}
+        {activeTab === 'pdf' && (
+          <div className="space-y-6">
+            {/* Pre-defined templates */}
+            <Card>
+              <div className="px-4 py-3 border-b border-border">
+                <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                  <FileText size={16} className="text-accent-primary" />
+                  {t('reports.pdf.templates')}
+                </h3>
+              </div>
+              <div className="divide-y divide-border">
+                {Object.entries(pdfTemplates).map(([key, tmpl]) => {
+                  const isGen = generatingCustomPdf === key
+                  const iconMap = {
+                    executive: ChartBar,
+                    certificate_inventory: Certificate,
+                    compliance: Gavel,
+                    ca_overview: TreeStructure,
+                    security_audit: ShieldCheck,
+                  }
+                  const variantMap = {
+                    executive: 'info',
+                    certificate_inventory: 'warning',
+                    compliance: 'danger',
+                    ca_overview: 'success',
+                    security_audit: 'default',
+                  }
+                  const Icon = iconMap[key] || FileText
+                  const variant = variantMap[key] || 'default'
+                  return (
+                    <div key={key} className="flex items-center gap-4 px-4 py-3 hover:bg-secondary-op50 transition-colors">
+                      <div className={cn(
+                        'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                        variant === 'info' ? 'icon-bg-blue' :
+                        variant === 'warning' ? 'icon-bg-yellow' :
+                        variant === 'success' ? 'icon-bg-green' :
+                        variant === 'danger' ? 'icon-bg-red' : 'icon-bg-gray'
+                      )}>
+                        <Icon size={18} weight="duotone" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-text-primary">
+                          {t(`reports.pdf.template.${key}.name`, { defaultValue: tmpl.name })}
+                        </div>
+                        <div className="text-xs text-text-muted mt-0.5">
+                          {t(`reports.pdf.template.${key}.description`, { defaultValue: tmpl.description })}
+                          <span className="ml-2 text-text-tertiary">
+                            ({tmpl.sections?.length || 0} {t('reports.pdf.sections').toLowerCase()})
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => handleGeneratePdf(key)}
+                        disabled={!!generatingCustomPdf}
+                      >
+                        {isGen ? <LoadingSpinner size="sm" /> : (
+                          <><FilePdf size={14} className="mr-1" /> {t('reports.downloadPDF')}</>
+                        )}
+                      </Button>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+
+            {/* Custom Report Builder */}
+            <Card>
+              <div className="px-4 py-3 border-b border-border">
+                <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                  <SlidersHorizontal size={16} className="text-accent-primary" />
+                  {t('reports.pdf.customBuilder')}
+                </h3>
+              </div>
+              <div className="p-4 space-y-4">
+                <p className="text-sm text-text-secondary">
+                  {t('reports.pdf.customDesc')}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {pdfSections.map(sectionId => {
+                    const checked = selectedSections.includes(sectionId)
+                    const sectionIcons = {
+                      executive_summary: ChartBar,
+                      risk_assessment: ShieldCheck,
+                      certificate_status: Certificate,
+                      compliance_overview: Gavel,
+                      expiry: Clock,
+                      lifecycle: ClockCounterClockwise,
+                      ca_hierarchy: TreeStructure,
+                      audit: FileText,
+                      recommendations: Checks,
+                    }
+                    const SIcon = sectionIcons[sectionId] || FileText
+                    return (
+                      <label
+                        key={sectionId}
+                        className={cn(
+                          'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors',
+                          checked
+                            ? 'border-accent-primary bg-accent-primary-op5'
+                            : 'border-border hover:bg-bg-tertiary'
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleSection(sectionId)}
+                          className="rounded border-border"
+                        />
+                        <SIcon size={16} className={checked ? 'text-accent-primary' : 'text-text-muted'} />
+                        <span className="text-sm text-text-primary">
+                          {t(`reports.pdf.section.${sectionId}`, { defaultValue: sectionId.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) })}
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center gap-3 pt-2">
+                  <Button
+                    type="button"
+                    onClick={() => handleGeneratePdf(null)}
+                    disabled={selectedSections.length === 0 || !!generatingCustomPdf}
+                  >
+                    {generatingCustomPdf === 'custom' ? <LoadingSpinner size="sm" /> : (
+                      <><FileArrowDown size={16} className="mr-1.5" /> {t('reports.pdf.generateCustom')}</>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setSelectedSections([...pdfSections])}
+                  >
+                    {t('common.selectAll')}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setSelectedSections([])}
+                  >
+                    {t('common.deselectAll')}
+                  </Button>
+                  {selectedSections.length > 0 && (
+                    <span className="text-xs text-text-muted">
+                      {selectedSections.length} / {pdfSections.length} {t('reports.pdf.sections').toLowerCase()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </div>
         )}
       </ResponsiveLayout>
 

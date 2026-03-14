@@ -143,12 +143,54 @@ class UCMReport(FPDF):
 class PDFReportService:
     """Generate executive PDF reports with charts and stats."""
 
+    ALL_SECTIONS = [
+        'executive_summary',
+        'risk_assessment',
+        'certificate_status',
+        'compliance_overview',
+        'expiry',
+        'lifecycle',
+        'ca_hierarchy',
+        'audit',
+        'recommendations',
+    ]
+
+    TEMPLATES = {
+        'executive': {
+            'name': 'Executive Summary',
+            'description': 'Complete overview with all sections',
+            'sections': ['executive_summary', 'risk_assessment', 'certificate_status',
+                         'compliance_overview', 'expiry', 'lifecycle', 'ca_hierarchy',
+                         'audit', 'recommendations'],
+        },
+        'certificate_inventory': {
+            'name': 'Certificate Inventory',
+            'description': 'Certificate status, expiry timeline and lifecycle analysis',
+            'sections': ['certificate_status', 'expiry', 'lifecycle'],
+        },
+        'compliance': {
+            'name': 'Compliance Report',
+            'description': 'Compliance scores, risk assessment and recommendations',
+            'sections': ['compliance_overview', 'risk_assessment', 'recommendations'],
+        },
+        'ca_overview': {
+            'name': 'CA Overview',
+            'description': 'Certificate Authority hierarchy and trust chain details',
+            'sections': ['ca_hierarchy', 'certificate_status'],
+        },
+        'security_audit': {
+            'name': 'Security & Audit',
+            'description': 'Audit log summary, risk assessment and security posture',
+            'sections': ['audit', 'risk_assessment', 'recommendations'],
+        },
+    }
+
     @classmethod
-    def generate_executive_report(cls):
-        """Generate the full executive PDF report. Returns bytes."""
+    def generate_executive_report(cls, sections=None):
+        """Generate PDF report. Optionally limit to specific sections. Returns bytes."""
         try:
             data = cls._collect_all_data()
-            pdf = cls._build_pdf(data)
+            pdf = cls._build_pdf(data, sections=sections)
             return pdf
         except Exception as e:
             logger.error('Failed to generate PDF report: %s', e, exc_info=True)
@@ -337,22 +379,35 @@ class PDFReportService:
     # -- PDF builder ---------------------------------------------------
 
     @classmethod
-    def _build_pdf(cls, data):
+    def _build_pdf(cls, data, sections=None):
         pdf = UCMReport()
         pdf.alias_nb_pages()
 
+        # Always include cover and TOC
         cls._add_cover_page(pdf, data)
         cls._add_toc(pdf, data)
         pdf.add_page()
-        cls._add_executive_summary(pdf, data)
-        cls._add_risk_assessment(pdf, data)
-        cls._add_certificate_status(pdf, data)
-        cls._add_compliance_overview(pdf, data)
-        cls._add_expiry_section(pdf, data)
-        cls._add_lifecycle_section(pdf, data)
-        cls._add_ca_section(pdf, data)
-        cls._add_audit_section(pdf, data)
-        cls._add_recommendations(pdf, data)
+
+        # Section mapping
+        section_map = {
+            'executive_summary': cls._add_executive_summary,
+            'risk_assessment': cls._add_risk_assessment,
+            'certificate_status': cls._add_certificate_status,
+            'compliance_overview': cls._add_compliance_overview,
+            'expiry': cls._add_expiry_section,
+            'lifecycle': cls._add_lifecycle_section,
+            'ca_hierarchy': cls._add_ca_section,
+            'audit': cls._add_audit_section,
+            'recommendations': cls._add_recommendations,
+        }
+
+        # If no sections specified, include all (backward compatible)
+        selected = sections if sections else list(section_map.keys())
+
+        for section_id in selected:
+            builder = section_map.get(section_id)
+            if builder:
+                builder(pdf, data)
 
         buf = io.BytesIO()
         pdf.output(buf)

@@ -2816,7 +2816,47 @@
     "tabs": {
       "reports": "データレポート",
       "schedule": "スケジュール",
-      "executive": "エグゼクティブレポート"
+      "pdf": "PDFレポート"
+    },
+    "pdf": {
+      "templates": "レポートテンプレート",
+      "sections": "セクション",
+      "customBuilder": "カスタムレポート",
+      "customDesc": "カスタムPDFレポートに含めるセクションを選択してください。",
+      "generateCustom": "PDF生成",
+      "template": {
+        "executive": {
+          "name": "エグゼクティブサマリー",
+          "description": "すべてのセクションを含む完全な概要"
+        },
+        "certificate_inventory": {
+          "name": "証明書インベントリ",
+          "description": "証明書のステータス、有効期限、ライフサイクル分析"
+        },
+        "compliance": {
+          "name": "コンプライアンスレポート",
+          "description": "コンプライアンススコア、リスク評価、推奨事項"
+        },
+        "ca_overview": {
+          "name": "CA概要",
+          "description": "認証局の階層と信頼チェーン"
+        },
+        "security_audit": {
+          "name": "セキュリティと監査",
+          "description": "監査ログの概要とセキュリティ体制"
+        }
+      },
+      "section": {
+        "executive_summary": "エグゼクティブサマリー",
+        "risk_assessment": "リスク評価",
+        "certificate_status": "証明書ステータス",
+        "compliance_overview": "コンプライアンス概要",
+        "expiry": "期限切れ証明書",
+        "lifecycle": "ライフサイクル",
+        "ca_hierarchy": "CA階層",
+        "audit": "セキュリティと監査",
+        "recommendations": "推奨事項"
+      }
     }
   },
   "export": {

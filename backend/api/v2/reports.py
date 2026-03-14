@@ -138,6 +138,58 @@ def download_executive_pdf():
         return error_response("Failed to generate executive report", 500)
 
 
+@bp.route('/api/v2/reports/pdf/templates', methods=['GET'])
+@require_auth(['read:audit'])
+def get_pdf_templates():
+    """Get available PDF report templates and sections."""
+    from services.pdf_report_service import PDFReportService
+    return success_response(data={
+        'templates': PDFReportService.TEMPLATES,
+        'sections': PDFReportService.ALL_SECTIONS,
+    })
+
+
+@bp.route('/api/v2/reports/pdf/generate', methods=['POST'])
+@require_auth(['read:audit', 'export:audit'])
+def generate_custom_pdf():
+    """Generate a custom PDF report with selected sections."""
+    try:
+        from services.pdf_report_service import PDFReportService
+
+        data = request.get_json(silent=True) or {}
+        template = data.get('template')
+        sections = data.get('sections')
+
+        # If template is specified, use its sections
+        if template and template in PDFReportService.TEMPLATES:
+            sections = PDFReportService.TEMPLATES[template]['sections']
+        elif sections:
+            # Validate sections
+            valid = set(PDFReportService.ALL_SECTIONS)
+            sections = [s for s in sections if s in valid]
+            if not sections:
+                return error_response("No valid sections specified", 400)
+        else:
+            # Default to all sections
+            sections = None
+
+        pdf_bytes = PDFReportService.generate_executive_report(sections=sections)
+        filename = f'ucm-report-{template or "custom"}-{__import__("datetime").date.today().isoformat()}.pdf'
+        return Response(
+            pdf_bytes,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename={sanitize_filename(filename)}'
+            }
+        )
+    except ImportError as e:
+        logger.error(f'PDF dependencies missing: {e}')
+        return error_response("PDF generation is not available", 500)
+    except Exception as e:
+        logger.error(f'PDF generation failed: {e}', exc_info=True)
+        return error_response("Failed to generate PDF report", 500)
+
+
 @bp.route('/api/v2/reports/schedule', methods=['GET'])
 @require_auth(['read:audit'])
 def get_schedule_settings():

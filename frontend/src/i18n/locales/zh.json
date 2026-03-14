@@ -2816,7 +2816,47 @@
     "tabs": {
       "reports": "数据报告",
       "schedule": "计划",
-      "executive": "执行报告"
+      "pdf": "PDF报告"
+    },
+    "pdf": {
+      "templates": "报告模板",
+      "sections": "章节",
+      "customBuilder": "自定义报告",
+      "customDesc": "选择要包含在自定义PDF报告中的章节。",
+      "generateCustom": "生成PDF",
+      "template": {
+        "executive": {
+          "name": "执行摘要",
+          "description": "包含所有章节的完整概述"
+        },
+        "certificate_inventory": {
+          "name": "证书清单",
+          "description": "证书状态、到期时间表和生命周期分析"
+        },
+        "compliance": {
+          "name": "合规报告",
+          "description": "合规评分、风险评估和建议"
+        },
+        "ca_overview": {
+          "name": "CA概览",
+          "description": "证书颁发机构层次结构和信任链"
+        },
+        "security_audit": {
+          "name": "安全与审计",
+          "description": "审计日志摘要和安全态势"
+        }
+      },
+      "section": {
+        "executive_summary": "执行摘要",
+        "risk_assessment": "风险评估",
+        "certificate_status": "证书状态",
+        "compliance_overview": "合规概览",
+        "expiry": "即将过期的证书",
+        "lifecycle": "生命周期",
+        "ca_hierarchy": "CA层次结构",
+        "audit": "安全与审计",
+        "recommendations": "建议"
+      }
     }
   },
   "export": {

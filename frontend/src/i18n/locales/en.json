@@ -2575,7 +2575,47 @@
     "tabs": {
       "reports": "Data Reports",
       "schedule": "Schedule",
-      "executive": "Executive Report"
+      "pdf": "PDF Reports"
+    },
+    "pdf": {
+      "templates": "Report Templates",
+      "sections": "Sections",
+      "customBuilder": "Custom Report Builder",
+      "customDesc": "Select the sections you want to include in your custom PDF report.",
+      "generateCustom": "Generate Custom PDF",
+      "template": {
+        "executive": {
+          "name": "Executive Summary",
+          "description": "Complete overview with all sections"
+        },
+        "certificate_inventory": {
+          "name": "Certificate Inventory",
+          "description": "Certificate status, expiry timeline and lifecycle analysis"
+        },
+        "compliance": {
+          "name": "Compliance Report",
+          "description": "Compliance scores, risk assessment and recommendations"
+        },
+        "ca_overview": {
+          "name": "CA Overview",
+          "description": "Certificate Authority hierarchy and trust chain"
+        },
+        "security_audit": {
+          "name": "Security & Audit",
+          "description": "Audit log summary, risk assessment and security posture"
+        }
+      },
+      "section": {
+        "executive_summary": "Executive Summary",
+        "risk_assessment": "Risk Assessment",
+        "certificate_status": "Certificate Status",
+        "compliance_overview": "Compliance Overview",
+        "expiry": "Expiring Certificates",
+        "lifecycle": "Certificate Lifecycle",
+        "ca_hierarchy": "CA Hierarchy",
+        "audit": "Security & Audit",
+        "recommendations": "Recommendations"
+      }
     }
   },
   "reconnect": {

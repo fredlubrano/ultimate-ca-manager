@@ -2816,7 +2816,47 @@
     "tabs": {
       "reports": "Datenberichte",
       "schedule": "Zeitplan",
-      "executive": "Führungsbericht"
+      "pdf": "PDF-Berichte"
+    },
+    "pdf": {
+      "templates": "Berichtsvorlagen",
+      "sections": "Abschnitte",
+      "customBuilder": "Benutzerdefinierter Bericht",
+      "customDesc": "Wählen Sie die Abschnitte aus, die in Ihrem benutzerdefinierten PDF-Bericht enthalten sein sollen.",
+      "generateCustom": "PDF generieren",
+      "template": {
+        "executive": {
+          "name": "Zusammenfassung",
+          "description": "Vollständige Übersicht mit allen Abschnitten"
+        },
+        "certificate_inventory": {
+          "name": "Zertifikatsinventar",
+          "description": "Zertifikatsstatus, Ablaufzeitplan und Lebenszyklusanalyse"
+        },
+        "compliance": {
+          "name": "Compliance-Bericht",
+          "description": "Compliance-Bewertungen, Risikobewertung und Empfehlungen"
+        },
+        "ca_overview": {
+          "name": "CA-Übersicht",
+          "description": "Zertifizierungsstellenhierarchie und Vertrauenskette"
+        },
+        "security_audit": {
+          "name": "Sicherheit & Audit",
+          "description": "Audit-Protokollzusammenfassung und Sicherheitslage"
+        }
+      },
+      "section": {
+        "executive_summary": "Zusammenfassung",
+        "risk_assessment": "Risikobewertung",
+        "certificate_status": "Zertifikatsstatus",
+        "compliance_overview": "Compliance-Übersicht",
+        "expiry": "Ablaufende Zertifikate",
+        "lifecycle": "Lebenszyklus",
+        "ca_hierarchy": "CA-Hierarchie",
+        "audit": "Sicherheit & Audit",
+        "recommendations": "Empfehlungen"
+      }
     }
   },
   "export": {

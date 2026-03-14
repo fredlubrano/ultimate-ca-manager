@@ -33,4 +33,12 @@ export const reportsService = {
   async downloadExecutivePDF() {
     return apiClient.get('/reports/executive-pdf', { responseType: 'blob' })
   },
+
+  async getPdfTemplates() {
+    return apiClient.get('/reports/pdf/templates')
+  },
+
+  async generateCustomPDF(options = {}) {
+    return apiClient.post('/reports/pdf/generate', options, { responseType: 'blob' })
+  },
 }
