@@ -71,14 +71,20 @@ export default function ReportsPage() {
   const [selectedSections, setSelectedSections] = useState([])
   const [generatingCustomPdf, setGeneratingCustomPdf] = useState(null)
 
-  // All schedulable report configs
+  // All schedulable report configs — data reports + PDF templates
   const SCHEDULE_REPORTS = useMemo(() => [
-    { key: 'certificate_inventory', icon: Certificate, label: t('reports.types.certificate_inventory.name', { defaultValue: 'Certificate Inventory' }), variant: 'info' },
-    { key: 'expiring_certificates', icon: Clock, label: t('reports.types.expiring_certificates.name', { defaultValue: 'Expiring Certificates' }), variant: 'warning' },
-    { key: 'ca_hierarchy', icon: TreeStructure, label: t('reports.types.ca_hierarchy.name', { defaultValue: 'CA Hierarchy' }), variant: 'success' },
-    { key: 'audit_summary', icon: ClockCounterClockwise, label: t('reports.types.audit_summary.name', { defaultValue: 'Audit Summary' }), variant: 'default' },
-    { key: 'compliance_status', icon: Gavel, label: t('reports.types.compliance_status.name', { defaultValue: 'Compliance Status' }), variant: 'danger' },
-    { key: 'executive_pdf', icon: FilePdf, label: t('reports.executiveReport'), variant: 'info', formatLocked: 'pdf' },
+    // Data reports (CSV/JSON)
+    { key: 'certificate_inventory', icon: Certificate, label: t('reports.types.certificate_inventory.name', { defaultValue: 'Certificate Inventory' }), variant: 'info', group: 'data' },
+    { key: 'expiring_certificates', icon: Clock, label: t('reports.types.expiring_certificates.name', { defaultValue: 'Expiring Certificates' }), variant: 'warning', group: 'data' },
+    { key: 'ca_hierarchy', icon: TreeStructure, label: t('reports.types.ca_hierarchy.name', { defaultValue: 'CA Hierarchy' }), variant: 'success', group: 'data' },
+    { key: 'audit_summary', icon: ClockCounterClockwise, label: t('reports.types.audit_summary.name', { defaultValue: 'Audit Summary' }), variant: 'default', group: 'data' },
+    { key: 'compliance_status', icon: Gavel, label: t('reports.types.compliance_status.name', { defaultValue: 'Compliance Status' }), variant: 'danger', group: 'data' },
+    // PDF templates
+    { key: 'pdf_executive', icon: FilePdf, label: t('reports.pdf.template.executive.name', { defaultValue: 'Executive Summary' }), variant: 'purple', formatLocked: 'pdf', group: 'pdf' },
+    { key: 'pdf_certificate_inventory', icon: FilePdf, label: t('reports.pdf.template.certificate_inventory.name', { defaultValue: 'Certificate Inventory' }), variant: 'purple', formatLocked: 'pdf', group: 'pdf' },
+    { key: 'pdf_compliance', icon: FilePdf, label: t('reports.pdf.template.compliance.name', { defaultValue: 'Compliance Report' }), variant: 'purple', formatLocked: 'pdf', group: 'pdf' },
+    { key: 'pdf_ca_overview', icon: FilePdf, label: t('reports.pdf.template.ca_overview.name', { defaultValue: 'CA Overview' }), variant: 'purple', formatLocked: 'pdf', group: 'pdf' },
+    { key: 'pdf_security_audit', icon: FilePdf, label: t('reports.pdf.template.security_audit.name', { defaultValue: 'Security & Audit' }), variant: 'purple', formatLocked: 'pdf', group: 'pdf' },
   ], [t])
 
   const hasWriteSettings = canWrite('settings')
@@ -284,6 +290,119 @@ export default function ReportsPage() {
       prev.includes(sectionId) ? prev.filter(s => s !== sectionId) : [...prev, sectionId]
     )
   }, [])
+
+  const renderScheduleFields = useCallback((r, form) => {
+    if (!form.enabled) return null
+    return (
+      <div className="pl-8 space-y-3">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="text-xs text-text-muted mb-1 block">{t('reports.frequency')}</label>
+            <select
+              value={form.frequency || 'weekly'}
+              onChange={(e) => updateScheduleField(r.key, 'frequency', e.target.value)}
+              className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
+            >
+              <option value="daily">{t('reports.daily')}</option>
+              <option value="weekly">{t('reports.weekly')}</option>
+              <option value="monthly">{t('reports.monthly')}</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-text-muted mb-1 block">{t('reports.time')}</label>
+            <input
+              type="time"
+              value={form.time || '08:00'}
+              onChange={(e) => updateScheduleField(r.key, 'time', e.target.value)}
+              className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
+            />
+          </div>
+          {form.frequency === 'weekly' && (
+            <div>
+              <label className="text-xs text-text-muted mb-1 block">{t('reports.dayOfWeek')}</label>
+              <select
+                value={form.day_of_week ?? 1}
+                onChange={(e) => updateScheduleField(r.key, 'day_of_week', parseInt(e.target.value))}
+                className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
+              >
+                {[t('reports.days.mon'), t('reports.days.tue'), t('reports.days.wed'), t('reports.days.thu'), t('reports.days.fri'), t('reports.days.sat'), t('reports.days.sun')].map((day, i) => (
+                  <option key={i} value={i}>{day}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {form.frequency === 'monthly' && (
+            <div>
+              <label className="text-xs text-text-muted mb-1 block">{t('reports.dayOfMonth')}</label>
+              <select
+                value={form.day_of_month ?? 1}
+                onChange={(e) => updateScheduleField(r.key, 'day_of_month', parseInt(e.target.value))}
+                className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
+              >
+                {Array.from({ length: 28 }, (_, i) => i + 1).map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {!r.formatLocked && (
+            <div>
+              <label className="text-xs text-text-muted mb-1 block">{t('reports.format')}</label>
+              <select
+                value={form.format || 'csv'}
+                onChange={(e) => updateScheduleField(r.key, 'format', e.target.value)}
+                className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
+              >
+                <option value="csv">CSV</option>
+                <option value="json">JSON</option>
+              </select>
+            </div>
+          )}
+          {r.formatLocked && (
+            <div>
+              <label className="text-xs text-text-muted mb-1 block">{t('reports.format')}</label>
+              <span className="inline-block bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-muted">PDF</span>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="text-xs text-text-muted mb-1 block">{t('reports.recipients')}</label>
+          <div className="flex gap-2 mb-2">
+            <Input
+              value={recipientInputs[r.key] || ''}
+              onChange={(e) => setRecipientInputs(prev => ({ ...prev, [r.key]: e.target.value }))}
+              placeholder="email@example.com"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  addRecipient(r.key)
+                }
+              }}
+              className="flex-1"
+            />
+            <Button type="button" size="sm" variant="secondary" onClick={() => addRecipient(r.key)}>
+              {t('common.add')}
+            </Button>
+          </div>
+          {form.recipients?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {form.recipients.map(email => (
+                <Badge key={email} variant="default" size="sm" className="pr-1">
+                  {email}
+                  <button
+                    type="button"
+                    onClick={() => removeRecipient(r.key, email)}
+                    className="ml-1.5 text-text-muted hover:text-status-danger"
+                  >×</button>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }, [t, recipientInputs, updateScheduleField, addRecipient, removeRecipient])
 
   const reportEntries = Object.entries(reportTypes)
   const enabledSchedules = schedule ? SCHEDULE_REPORTS.filter(r => schedule[r.key]?.enabled).length : 0
@@ -573,7 +692,11 @@ export default function ReportsPage() {
               </h3>
             </div>
             <div className="p-4 space-y-4">
-              {SCHEDULE_REPORTS.map((r, idx) => {
+              {/* Data Reports group */}
+              <div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                {t('reports.tabs.reports')}
+              </div>
+              {SCHEDULE_REPORTS.filter(r => r.group === 'data').map((r, idx) => {
                 const form = scheduleForm[r.key] || {}
                 const Icon = r.icon
                 return (
@@ -590,120 +713,39 @@ export default function ReportsPage() {
                         <span className="text-sm font-medium text-text-primary truncate">{r.label}</span>
                       </label>
                     </div>
-
-                    {form.enabled && (
-                      <div className="pl-8 space-y-3">
-                        <div className="flex flex-wrap gap-3 items-end">
-                          <div>
-                            <label className="text-xs text-text-muted mb-1 block">{t('reports.frequency')}</label>
-                            <select
-                              value={form.frequency || 'weekly'}
-                              onChange={(e) => updateScheduleField(r.key, 'frequency', e.target.value)}
-                              className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
-                            >
-                              <option value="daily">{t('reports.daily')}</option>
-                              <option value="weekly">{t('reports.weekly')}</option>
-                              <option value="monthly">{t('reports.monthly')}</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="text-xs text-text-muted mb-1 block">{t('reports.time')}</label>
-                            <input
-                              type="time"
-                              value={form.time || '08:00'}
-                              onChange={(e) => updateScheduleField(r.key, 'time', e.target.value)}
-                              className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
-                            />
-                          </div>
-                          {form.frequency === 'weekly' && (
-                            <div>
-                              <label className="text-xs text-text-muted mb-1 block">{t('reports.dayOfWeek')}</label>
-                              <select
-                                value={form.day_of_week ?? 1}
-                                onChange={(e) => updateScheduleField(r.key, 'day_of_week', parseInt(e.target.value))}
-                                className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
-                              >
-                                {[t('reports.days.mon'), t('reports.days.tue'), t('reports.days.wed'), t('reports.days.thu'), t('reports.days.fri'), t('reports.days.sat'), t('reports.days.sun')].map((day, i) => (
-                                  <option key={i} value={i}>{day}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                          {form.frequency === 'monthly' && (
-                            <div>
-                              <label className="text-xs text-text-muted mb-1 block">{t('reports.dayOfMonth')}</label>
-                              <select
-                                value={form.day_of_month ?? 1}
-                                onChange={(e) => updateScheduleField(r.key, 'day_of_month', parseInt(e.target.value))}
-                                className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
-                              >
-                                {Array.from({ length: 28 }, (_, i) => i + 1).map(d => (
-                                  <option key={d} value={d}>{d}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                          {!r.formatLocked && (
-                            <div>
-                              <label className="text-xs text-text-muted mb-1 block">{t('reports.format')}</label>
-                              <select
-                                value={form.format || 'csv'}
-                                onChange={(e) => updateScheduleField(r.key, 'format', e.target.value)}
-                                className="bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-primary"
-                              >
-                                <option value="csv">CSV</option>
-                                <option value="json">JSON</option>
-                              </select>
-                            </div>
-                          )}
-                          {r.formatLocked && (
-                            <div>
-                              <label className="text-xs text-text-muted mb-1 block">{t('reports.format')}</label>
-                              <span className="inline-block bg-bg-secondary border border-border rounded-md px-2.5 py-1.5 text-sm text-text-muted">PDF</span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="text-xs text-text-muted mb-1 block">{t('reports.recipients')}</label>
-                          <div className="flex gap-2 mb-2">
-                            <Input
-                              value={recipientInputs[r.key] || ''}
-                              onChange={(e) => setRecipientInputs(prev => ({ ...prev, [r.key]: e.target.value }))}
-                              placeholder="email@example.com"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault()
-                                  addRecipient(r.key)
-                                }
-                              }}
-                              className="flex-1"
-                            />
-                            <Button type="button" size="sm" variant="secondary" onClick={() => addRecipient(r.key)}>
-                              {t('common.add')}
-                            </Button>
-                          </div>
-                          {form.recipients?.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5">
-                              {form.recipients.map(email => (
-                                <Badge key={email} variant="default" size="sm" className="pr-1">
-                                  {email}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeRecipient(r.key, email)}
-                                    className="ml-1.5 text-text-muted hover:text-status-danger"
-                                  >×</button>
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+                    {renderScheduleFields(r, form)}
                   </div>
                 )
               })}
 
+              {/* PDF Reports group */}
+              <div className="border-t border-border pt-4 mt-4">
+                <div className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
+                  {t('reports.tabs.pdf')}
+                </div>
+              </div>
+              {SCHEDULE_REPORTS.filter(r => r.group === 'pdf').map((r, idx) => {
+                const form = scheduleForm[r.key] || {}
+                const Icon = r.icon
+                return (
+                  <div key={r.key} className={idx > 0 ? 'border-t border-border pt-4' : ''}>
+                    <div className="flex items-center gap-3 mb-2">
+                      <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={form.enabled || false}
+                          onChange={(e) => updateScheduleField(r.key, 'enabled', e.target.checked)}
+                          className="rounded border-border"
+                        />
+                        <Icon size={18} className="text-purple-500 shrink-0" />
+                        <span className="text-sm font-medium text-text-primary truncate">{r.label}</span>
+                        <Badge variant="default" size="sm" className="ml-1">PDF</Badge>
+                      </label>
+                    </div>
+                    {renderScheduleFields(r, form)}
+                  </div>
+                )
+              })}
               <div className="flex justify-end gap-2 pt-4 border-t border-border">
                 <Button type="button" onClick={handleSaveSchedule} disabled={scheduleSaving}>
                   {scheduleSaving ? <LoadingSpinner size="sm" /> : t('common.save')}
@@ -721,64 +763,52 @@ export default function ReportsPage() {
             <Card>
               <div className="px-4 py-3 border-b border-border">
                 <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                  <FileText size={16} className="text-accent-primary" />
+                  <FilePdf size={16} className="text-purple-500" />
                   {t('reports.pdf.templates')}
                 </h3>
               </div>
-              <div className="divide-y divide-border">
-                {Object.entries(pdfTemplates).map(([key, tmpl]) => {
-                  const isGen = generatingCustomPdf === key
-                  const iconMap = {
-                    executive: ChartBar,
-                    certificate_inventory: Certificate,
-                    compliance: Gavel,
-                    ca_overview: TreeStructure,
-                    security_audit: ShieldCheck,
-                  }
-                  const variantMap = {
-                    executive: 'info',
-                    certificate_inventory: 'warning',
-                    compliance: 'danger',
-                    ca_overview: 'success',
-                    security_audit: 'default',
-                  }
-                  const Icon = iconMap[key] || FileText
-                  const variant = variantMap[key] || 'default'
-                  return (
-                    <div key={key} className="flex items-center gap-4 px-4 py-3 hover:bg-secondary-op50 transition-colors">
-                      <div className={cn(
-                        'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
-                        variant === 'info' ? 'icon-bg-blue' :
-                        variant === 'warning' ? 'icon-bg-yellow' :
-                        variant === 'success' ? 'icon-bg-green' :
-                        variant === 'danger' ? 'icon-bg-red' : 'icon-bg-gray'
-                      )}>
-                        <Icon size={18} weight="duotone" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-text-primary">
-                          {t(`reports.pdf.template.${key}.name`, { defaultValue: tmpl.name })}
-                        </div>
-                        <div className="text-xs text-text-muted mt-0.5">
-                          {t(`reports.pdf.template.${key}.description`, { defaultValue: tmpl.description })}
-                          <span className="ml-2 text-text-tertiary">
-                            ({tmpl.sections?.length || 0} {t('reports.pdf.sections').toLowerCase()})
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={() => handleGeneratePdf(key)}
-                        disabled={!!generatingCustomPdf}
+              <div className="p-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Object.entries(pdfTemplates).map(([key, tmpl]) => {
+                    const isGen = generatingCustomPdf === key
+                    return (
+                      <div
+                        key={key}
+                        className="p-4 rounded-lg border-2 border-border hover:border-purple-400 bg-tertiary-50 transition-all flex flex-col gap-3"
                       >
-                        {isGen ? <LoadingSpinner size="sm" /> : (
-                          <><FilePdf size={14} className="mr-1" /> {t('reports.downloadPDF')}</>
-                        )}
-                      </Button>
-                    </div>
-                  )
-                })}
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 icon-bg-purple">
+                            <FilePdf size={20} weight="duotone" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium text-text-primary">
+                              {t(`reports.pdf.template.${key}.name`, { defaultValue: tmpl.name })}
+                            </div>
+                            <div className="text-xs text-text-muted mt-0.5">
+                              {tmpl.sections?.length || 0} {t('reports.pdf.sections').toLowerCase()}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-xs text-text-secondary leading-relaxed">
+                          {t(`reports.pdf.template.${key}.description`, { defaultValue: tmpl.description })}
+                        </p>
+                        <div className="mt-auto pt-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="w-full"
+                            onClick={() => handleGeneratePdf(key)}
+                            disabled={!!generatingCustomPdf}
+                          >
+                            {isGen ? <LoadingSpinner size="sm" /> : (
+                              <><FilePdf size={14} className="mr-1.5" /> {t('reports.downloadPDF')}</>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </Card>
 
