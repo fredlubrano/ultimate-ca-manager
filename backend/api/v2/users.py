@@ -205,15 +205,19 @@ def create_user():
     if User.query.filter_by(email=data['email']).first():
         return error_response('Email already exists', 409)
     
-    # Validate role
+    # Validate role — only admins can assign non-viewer roles
     valid_roles = ['admin', 'operator', 'auditor', 'viewer']
     role = data.get('role', 'viewer')
     if role not in valid_roles:
         return error_response(f'Invalid role. Must be one of: {", ".join(valid_roles)}', 400)
+    if role != 'viewer' and g.current_user.role != 'admin':
+        return error_response('Only admins can assign elevated roles', 403)
     
-    # Validate custom_role_id if provided
+    # Validate custom_role_id if provided — admin only
     custom_role_id = data.get('custom_role_id')
     if custom_role_id:
+        if g.current_user.role != 'admin':
+            return error_response('Only admins can assign custom roles', 403)
         try:
             from models.rbac import CustomRole
             if not CustomRole.query.get(int(custom_role_id)):

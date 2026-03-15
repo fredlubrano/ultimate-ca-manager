@@ -6,21 +6,21 @@ Role-based permissions for UCM
 ROLE_PERMISSIONS = {
     'admin': ['*'],  # Full access
     'operator': [
-        'read:certificates', 'write:certificates', 'delete:certificates',
+        'read:certificates', 'write:certificates',
         'read:user_certificates', 'write:user_certificates', 'delete:user_certificates',
         'read:cas', 'write:cas',
         'read:csrs', 'write:csrs', 'delete:csrs',
         'read:templates',
         'read:truststore', 'write:truststore',
         'read:crl', 'write:crl',
-        'read:acme', 'write:acme', 'delete:acme',
+        'read:acme', 'write:acme',
         'read:scep',
         'read:est',
         'read:hsm',
         'read:policies', 'read:approvals', 'write:approvals',
         'read:audit',
-        'read:settings', 'write:settings', 'delete:settings',
-        'read:groups', 'write:groups', 'delete:groups',
+        'read:settings', 'write:settings',
+        'read:groups', 'write:groups',
     ],
     'auditor': [
         'read:certificates',

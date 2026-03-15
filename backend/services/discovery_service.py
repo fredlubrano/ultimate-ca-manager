@@ -20,6 +20,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from models import db, Certificate, ScanProfile, ScanRun, DiscoveredCertificate
 
 # Private/reserved IP ranges — block SSRF via scan targets
+# Note: RFC1918 private ranges (10/8, 172.16/12, 192.168/16) are intentionally
+# allowed — scanning internal networks for certificates is a core use case.
 _BLOCKED_NETWORKS = [
     ipaddress.ip_network('127.0.0.0/8'),       # Loopback
     ipaddress.ip_network('169.254.0.0/16'),     # Link-local
@@ -29,6 +31,10 @@ _BLOCKED_NETWORKS = [
     ipaddress.ip_network('fe80::/10'),          # IPv6 link-local
     ipaddress.ip_network('ff00::/8'),           # IPv6 multicast
 ]
+
+# Concurrent scan rate limiting — prevents resource exhaustion
+_MAX_CONCURRENT_SCANS = 3
+_scan_semaphore = threading.Semaphore(_MAX_CONCURRENT_SCANS)
 
 
 def _is_blocked_ip(host: str) -> bool:
@@ -231,6 +237,24 @@ class DiscoveryService:
                    timeout: int = None, max_workers: int = None,
                    resolve_dns: bool = False) -> int:
         """Start an async scan. Returns scan_run_id immediately."""
+        if not _scan_semaphore.acquire(blocking=False):
+            raise ValueError(
+                f"Too many concurrent scans (max {_MAX_CONCURRENT_SCANS}). "
+                "Please wait for existing scans to complete."
+            )
+        try:
+            return self._prepare_and_launch_scan(
+                targets, ports, profile_id, triggered_by,
+                triggered_by_user, app, timeout, max_workers, resolve_dns
+            )
+        except Exception:
+            _scan_semaphore.release()
+            raise
+
+    def _prepare_and_launch_scan(self, targets, ports, profile_id, triggered_by,
+                                  triggered_by_user, app, timeout, max_workers,
+                                  resolve_dns) -> int:
+        """Build job list and launch scan thread. Caller holds _scan_semaphore."""
         if ports is None:
             ports = [443]
         # Validate ports
@@ -317,6 +341,8 @@ class DiscoveryService:
                     self._fail_run(run_id, str(e))
             except Exception:
                 pass
+        finally:
+            _scan_semaphore.release()
 
     def _do_scan(self, run_id: int, jobs: List[Tuple[str, int]], profile_id: int,
                  timeout: int = 5, max_workers: int = 20, resolve_dns: bool = False):

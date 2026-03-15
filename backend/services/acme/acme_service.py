@@ -69,7 +69,7 @@ class AcmeService:
         return nonce_token
     
     def validate_nonce(self, nonce_token: str) -> bool:
-        """Validate and consume a nonce (one-time use)
+        """Validate and consume a nonce atomically (one-time use)
         
         Args:
             nonce_token: The nonce to validate
@@ -77,27 +77,20 @@ class AcmeService:
         Returns:
             True if valid, False otherwise
         """
-        nonce = AcmeNonce.query.filter_by(token=nonce_token).first()
-        
-        if not nonce:
-            return False
-        
-        if nonce.used:
-            # Already used - replay attack attempt
-            return False
-        
-        if utc_now() > nonce.expires_at:
-            # Expired nonce
-            db.session.delete(nonce)
-            db.session.commit()
-            return False
-        
-        # Mark as used
-        nonce.used = True
-        nonce.used_at = utc_now()
+        from sqlalchemy import and_
+        # Atomic: update used=True WHERE token=X AND used=False AND not expired
+        result = AcmeNonce.query.filter(
+            and_(
+                AcmeNonce.token == nonce_token,
+                AcmeNonce.used == False,
+                AcmeNonce.expires_at > utc_now()
+            )
+        ).update({
+            'used': True,
+            'used_at': utc_now()
+        })
         db.session.commit()
-        
-        return True
+        return result > 0
     
     def cleanup_expired_nonces(self) -> int:
         """Remove expired nonces from database

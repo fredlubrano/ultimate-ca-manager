@@ -261,9 +261,8 @@ def verify_jws(jws_data: Dict[str, Any], expected_url: str, account_key: Optiona
             return True, payload, jwk, None
             
         except ImportError:
-            # josepy not available - fall back to structure validation only
-            # This allows the system to work without josepy, but with reduced security
-            return True, payload, jwk, None
+            logger.error("josepy library not installed — ACME JWS verification unavailable")
+            return False, None, None, "JWS verification unavailable: josepy not installed"
         except Exception as e:
             logger.error(f"Signature verification error: {e}")
             return False, None, None, "Signature verification error"
@@ -982,6 +981,11 @@ def key_change():
         account = service.get_account_by_kid(account_id)
         if not account:
             return acme_error('accountDoesNotExist', 'Account not found', 404)
+        
+        # Verify oldKey matches account's current JWK
+        current_jwk = json.loads(account.jwk) if isinstance(account.jwk, str) else account.jwk
+        if not old_key or old_key != current_jwk:
+            return acme_error('malformed', 'Old key does not match account key')
         
         # Update account JWK
         if jwk:
