@@ -341,6 +341,11 @@ def create_certificate():
         key_type = data.get('key_type', 'RSA')
         key_size = data.get('key_size', '2048')
         
+        # Validate RSA key size
+        if key_type.upper() not in ('EC', 'ECDSA'):
+            if int(key_size) < 2048:
+                return error_response('RSA key size must be at least 2048 bits', 400)
+        
         if key_type.upper() in ('EC', 'ECDSA'):
             # Map key_size to curve name if needed
             curve_map = {

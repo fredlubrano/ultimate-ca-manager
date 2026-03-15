@@ -7,6 +7,7 @@ from models import db, CA, Certificate
 from services.ca_service import CAService
 from datetime import datetime
 import base64
+import hmac
 import logging
 
 logger = logging.getLogger(__name__)
@@ -48,7 +49,7 @@ def _authenticate_est_client():
         est_password = SystemConfig.query.filter_by(key='est_password').first()
         
         if est_username and est_password:
-            if auth.username == est_username.value and auth.password == est_password.value:
+            if hmac.compare_digest(auth.username, est_username.value) and hmac.compare_digest(auth.password, est_password.value):
                 return True, auth.username
     
     return False, None
@@ -209,6 +210,19 @@ def simple_reenroll():
             csr = x509.load_der_x509_csr(csr_der, default_backend())
         else:
             csr = x509.load_pem_x509_csr(csr_data.encode(), default_backend())
+        
+        # Verify client cert subject matches CSR subject (RFC 7030 §3.3.2)
+        try:
+            client_cert_obj = x509.load_pem_x509_certificate(
+                client_cert.encode() if isinstance(client_cert, str) else client_cert,
+                default_backend()
+            )
+            if client_cert_obj.subject != csr.subject:
+                logger.warning(f"EST reenroll: client cert subject {client_cert_obj.subject} does not match CSR subject {csr.subject}")
+                return Response('CSR subject does not match client certificate', status=403)
+        except Exception as e:
+            logger.error(f"EST reenroll: failed to parse client cert: {e}")
+            return Response('Invalid client certificate', status=400)
         
         from models import SystemConfig
         validity_days = SystemConfig.query.filter_by(key='est_validity_days').first()
@@ -373,8 +387,8 @@ def server_keygen():
                 key_der = aes_iv + enc_key_len + encrypted_aes_key + encrypted_key_data
                 logger.info("EST serverkeygen: private key encrypted with client public key")
             except Exception as e:
-                logger.warning(f"EST serverkeygen: could not encrypt key with client cert, using TLS-only: {e}")
-                key_der = key_plain
+                logger.error(f"EST serverkeygen: failed to encrypt private key: {e}")
+                return Response('Server key generation failed: unable to encrypt private key', status=500)
         key_b64 = base64.b64encode(key_der).decode()
         
         # Create multipart response

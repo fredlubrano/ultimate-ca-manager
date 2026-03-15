@@ -23,8 +23,6 @@ class TrustStoreService:
     
     # Supported key types
     KEY_TYPES = {
-        '512': ('rsa', 512),
-        '1024': ('rsa', 1024),
         '2048': ('rsa', 2048),
         '3072': ('rsa', 3072),
         '4096': ('rsa', 4096),
@@ -544,6 +542,8 @@ class TrustStoreService:
         """
         # Load CSR
         csr = x509.load_pem_x509_csr(csr_pem, default_backend())
+        if not csr.is_signature_valid:
+            raise ValueError("CSR has invalid signature")
         
         # If CSR has empty subject, populate CN from first SAN DNS name
         subject = csr.subject

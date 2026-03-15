@@ -140,6 +140,14 @@ class CertificateService:
         if ca.ocsp_enabled and ca.ocsp_url:
             ocsp_url = ca.ocsp_url  # OCSP URL doesn't need ca_refid, it's a global endpoint
         
+        # Clamp certificate validity to CA's expiry
+        from datetime import timedelta, timezone as _tz
+        ca_not_after = ca_cert.not_valid_after_utc
+        cert_not_after = datetime.now(_tz.utc) + timedelta(days=validity_days)
+        if cert_not_after > ca_not_after:
+            validity_days = max(1, (ca_not_after - datetime.now(_tz.utc)).days)
+            logger.warning(f"Certificate validity clamped to {validity_days} days (CA expires sooner)")
+        
         # Create certificate
         cert_pem, key_pem = TrustStoreService.create_certificate(
             subject=subject,

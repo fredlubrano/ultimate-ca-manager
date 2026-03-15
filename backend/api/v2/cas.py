@@ -12,7 +12,7 @@ import tempfile
 import os
 import traceback
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from auth.unified import require_auth, has_permission
 from utils.response import success_response, error_response, created_response, no_content_response
 from utils.pagination import paginate
@@ -136,7 +136,10 @@ def create_ca():
         # Determine key type
         key_type = '2048' # Default
         if data.get('keyAlgo') == 'RSA':
-            key_type = str(data.get('keySize') or 2048)
+            key_size = int(data.get('keySize') or 2048)
+            if key_size < 2048:
+                return error_response('RSA key size must be at least 2048 bits', 400)
+            key_type = str(key_size)
         elif data.get('keyAlgo') == 'ECDSA':
             key_type = data.get('keySize') or 'prime256v1'
         
@@ -148,6 +151,14 @@ def create_ca():
                 return error_response('Parent CA not found', 400)
             if not parent_ca.prv:
                 return error_response('Parent CA has no private key', 400)
+            # Check parent CA is not expired
+            from cryptography import x509 as crypto_x509
+            from cryptography.hazmat.backends import default_backend as _default_backend
+            parent_cert = crypto_x509.load_pem_x509_certificate(
+                base64.b64decode(parent_ca.crt), _default_backend()
+            )
+            if datetime.now(timezone.utc) > parent_cert.not_valid_after_utc:
+                return error_response('Parent CA certificate has expired', 400)
             caref = parent_ca.refid
         
         username = g.user.username if hasattr(g, 'user') else (g.current_user.username if hasattr(g, 'current_user') else 'system')

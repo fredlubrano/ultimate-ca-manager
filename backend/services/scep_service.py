@@ -220,11 +220,8 @@ class SCEPService:
                     csr_data = encrypted_bytes
                     
             except Exception as e:
-                # If decryption fails, try using the data as-is
-                import traceback
-                logger.warning(f"SCEP: Could not decrypt envelopedData: {e}")
-                traceback.print_exc()
-                csr_data = encrypted_bytes
+                logger.error(f"SCEP: Failed to decrypt envelopedData: {e}")
+                raise ValueError("Failed to decrypt SCEP message envelope")
             
             # Parse CSR
             csr = x509.load_der_x509_csr(csr_data, default_backend())
@@ -851,7 +848,7 @@ class SCEPService:
                 'rid': {
                     'issuer_and_serial_number': {
                         'issuer': recipient_name,
-                        'serial_number': 1
+                        'serial_number': self.ca_cert.serial_number
                     }
                 },
                 'key_encryption_algorithm': {
