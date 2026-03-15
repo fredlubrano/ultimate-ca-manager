@@ -11,6 +11,31 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.75] - 2026-03-15
+
+### Added
+- **Delta CRL Support (RFC 5280 §5.2.4)** — Generate delta CRLs containing only recent revocations, with DeltaCRLIndicator (CRITICAL), FreshestCRL on base CRLs, dedicated CDP endpoint, scheduler auto-generation, and full frontend management (toggle, detail, interval selector)
+- **PDF Reports Tab** — PDF report templates with custom builder, purple icons, grid card layout, and scheduling support
+- **Roadmap** — Added market comparison gaps (Clustering/HA, K8s/Helm, PQC, SSH, CMP, Key Archival, Code Signing) to README
+
+### Fixed
+- **Security Audit (76 findings)** — Fixed 38 issues across 6 audit phases: XXE/SSRF protection, str(e) leak prevention, RSA-512/1024 removal, ACME JWS bypass, EST timing-safe auth, SCEP decrypt fix, RBAC operator permission trimming, discovery rate limiting
+- **PKI Protocol Hardening** — CSR signature verification, cert validity clamping to CA, parent CA expiry check, atomic ACME nonces, SCEP serial fix, EST reenroll subject check, serverkeygen fail-safe
+- **RBAC** — Correct delete: permissions on DELETE endpoints, operator role trimmed to 23 permissions
+- **Frontend Quality** — ARIA overlays, dashboard valid count, pie chart backend data, barrel exports, theme-safe colors, i18n completeness
+- **Reports** — Sidebar tab layout, centered content matching Settings pattern
+- **CDP** — Cache-Control and Last-Modified headers on CRL/delta CRL distribution points
+- **SAN Normalization** — Certificate SAN field accepts both string and array formats
+- **Black CVE** — Bumped black 26.1.0 → 26.3.1 (CVE-2026-32274)
+
+### Security
+- Content-Disposition filename sanitization
+- Generic error messages (no internal detail leakage)
+- Rate limiting on discovery scans
+- Unique index on CRL numbers (race condition prevention)
+
+---
+
 ## [2.74-dev] - 2026-03-13
 
 ### Fixed
