@@ -55,19 +55,20 @@ function formatDate(dateStr) {
 }
 
 const CERT_TYPE_LABELS = {
-  server_cert: 'Server',
-  client_cert: 'Client',
-  code_signing: 'Code Signing',
-  email_cert: 'Email / S/MIME',
-  ca_cert: 'CA',
-  intermediate_ca: 'Intermediate CA',
-  root_ca: 'Root CA',
-  self_signed: 'Self-Signed',
+  server_cert: 'certificates.sourceTypes.server',
+  client_cert: 'certificates.sourceTypes.client',
+  code_signing: 'certificates.sourceTypes.codeSigning',
+  email_cert: 'certificates.sourceTypes.emailSmime',
+  ca_cert: 'certificates.sourceTypes.ca',
+  intermediate_ca: 'certificates.sourceTypes.intermediateCA',
+  root_ca: 'certificates.sourceTypes.rootCA',
+  self_signed: 'certificates.sourceTypes.selfSigned',
 }
 
-function formatCertType(type) {
+function formatCertType(type, t) {
   if (!type) return null
-  return CERT_TYPE_LABELS[type] || type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+  const key = CERT_TYPE_LABELS[type]
+  return key ? t(key) : type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
 // Expiry indicator - uses t from parent
@@ -277,7 +278,7 @@ export function CertificateDetails({
           <CompactField icon={Hash} label={t('common.serial')} value={cert.serial_number} mono copyable />
           <CompactField autoIcon="keyType" label={t('common.keyType')} value={cert.key_type} />
           <CompactField autoIcon="signatureAlgorithm" label={t('common.signatureAlgorithm')} value={cert.signature_algorithm} />
-          <CompactField autoIcon="certType" label={t('details.certType')} value={formatCertType(cert.cert_type)} />
+          <CompactField autoIcon="certType" label={t('details.certType')} value={formatCertType(cert.cert_type, t)} />
         </CompactGrid>
       </CompactSection>
       

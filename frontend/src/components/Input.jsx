@@ -20,12 +20,12 @@ const getPasswordStrength = (password) => {
   if (/[^a-zA-Z0-9]/.test(password)) score++
   
   const levels = [
-    { label: 'Weak', color: 'bg-accent-danger' },
-    { label: 'Weak', color: 'bg-accent-danger' },
-    { label: 'Fair', color: 'bg-accent-warning' },
-    { label: 'Good', color: 'bg-accent-warning' },
-    { label: 'Strong', color: 'bg-accent-success' },
-    { label: 'Strong', color: 'bg-accent-success' }
+    { labelKey: 'passwordStrength.weak', color: 'bg-accent-danger' },
+    { labelKey: 'passwordStrength.weak', color: 'bg-accent-danger' },
+    { labelKey: 'passwordStrength.fair', color: 'bg-accent-warning' },
+    { labelKey: 'passwordStrength.good', color: 'bg-accent-warning' },
+    { labelKey: 'passwordStrength.strong', color: 'bg-accent-success' },
+    { labelKey: 'passwordStrength.strong', color: 'bg-accent-success' }
   ]
   
   return { score, ...levels[score] }
@@ -151,7 +151,7 @@ export const Input = forwardRef(function Input({
             ))}
           </div>
           <p className={cn("text-xs", strength.score >= 4 ? "text-accent-success" : strength.score >= 2 ? "text-accent-warning" : "text-accent-danger")}>
-            {strength.label}
+            {t(strength.labelKey)}
           </p>
         </div>
       )}

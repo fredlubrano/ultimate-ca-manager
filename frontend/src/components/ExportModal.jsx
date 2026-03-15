@@ -27,7 +27,7 @@ const FORMATS = [
   { key: 'der', label: 'DER', description: 'export.formatDerDesc', ext: '.der' },
   { key: 'pkcs7', label: 'P7B / PKCS#7', description: 'export.formatP7bDesc', ext: '.p7b' },
   { key: 'pkcs12', label: 'P12 / PKCS#12', description: 'export.formatP12Desc', ext: '.p12', requiresKey: true },
-  { key: 'key', label: 'Private Key', description: 'export.formatKeyDesc', ext: '.key', requiresKey: true, keyOnly: true },
+  { key: 'key', labelKey: 'export.formats.privateKey', description: 'export.formatKeyDesc', ext: '.key', requiresKey: true, keyOnly: true },
 ]
 
 export function ExportModal({
@@ -128,7 +128,7 @@ export function ExportModal({
                   'text-sm font-semibold',
                   format === f.key ? 'text-accent-primary' : 'text-text-primary'
                 )}>
-                  {f.label}
+                  {f.labelKey ? t(f.labelKey) : f.label}
                 </span>
                 <span className="text-xs text-text-tertiary mt-0.5">
                   {t(f.description)}

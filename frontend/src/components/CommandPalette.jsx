@@ -17,34 +17,34 @@ import { searchService } from '../services'
 
 const COMMANDS = [
   // Navigation
-  { id: 'dashboard', label: 'Go to Dashboard', icon: House, path: '/', category: 'Navigation' },
-  { id: 'certificates', label: 'Go to Certificates', icon: Certificate, path: '/certificates', category: 'Navigation' },
-  { id: 'cas', label: 'Go to CAs', icon: ShieldCheck, path: '/cas', category: 'Navigation' },
-  { id: 'csrs', label: 'Go to CSRs', icon: FileText, path: '/csrs', category: 'Navigation' },
-  { id: 'templates', label: 'Go to Templates', icon: List, path: '/templates', category: 'Navigation' },
-  { id: 'users', label: 'Go to Users', icon: User, path: '/users', category: 'Navigation' },
-  { id: 'acme', label: 'Go to ACME', icon: Key, path: '/acme', category: 'Navigation' },
-  { id: 'scep', label: 'Go to SCEP', icon: Robot, path: '/scep-config', category: 'Navigation' },
-  { id: 'est', label: 'Go to EST', icon: Globe, path: '/est-config', category: 'Navigation' },
-  { id: 'import', label: 'Go to Operations', icon: Lightning, path: '/operations', category: 'Navigation' },
-  { id: 'tools', label: 'Go to Certificate Tools', icon: Wrench, path: '/tools', category: 'Navigation' },
-  { id: 'audit', label: 'Go to Audit Logs', icon: ClockCounterClockwise, path: '/audit', category: 'Navigation' },
-  { id: 'settings', label: 'Go to Settings', icon: Gear, path: '/settings', category: 'Navigation' },
-  { id: 'account', label: 'Go to Account', icon: UserCircle, path: '/account', category: 'Navigation' },
-  { id: 'groups', label: 'Go to Groups', icon: UsersThree, path: '/users?tab=groups', category: 'Navigation' },
+  { id: 'dashboard', labelKey: 'commands.nav.dashboard', icon: House, path: '/', categoryKey: 'commands.categories.navigation' },
+  { id: 'certificates', labelKey: 'commands.nav.certificates', icon: Certificate, path: '/certificates', categoryKey: 'commands.categories.navigation' },
+  { id: 'cas', labelKey: 'commands.nav.cas', icon: ShieldCheck, path: '/cas', categoryKey: 'commands.categories.navigation' },
+  { id: 'csrs', labelKey: 'commands.nav.csrs', icon: FileText, path: '/csrs', categoryKey: 'commands.categories.navigation' },
+  { id: 'templates', labelKey: 'commands.nav.templates', icon: List, path: '/templates', categoryKey: 'commands.categories.navigation' },
+  { id: 'users', labelKey: 'commands.nav.users', icon: User, path: '/users', categoryKey: 'commands.categories.navigation' },
+  { id: 'acme', labelKey: 'commands.nav.acme', icon: Key, path: '/acme', categoryKey: 'commands.categories.navigation' },
+  { id: 'scep', labelKey: 'commands.nav.scep', icon: Robot, path: '/scep-config', categoryKey: 'commands.categories.navigation' },
+  { id: 'est', labelKey: 'commands.nav.est', icon: Globe, path: '/est-config', categoryKey: 'commands.categories.navigation' },
+  { id: 'import', labelKey: 'commands.nav.operations', icon: Lightning, path: '/operations', categoryKey: 'commands.categories.navigation' },
+  { id: 'tools', labelKey: 'commands.nav.tools', icon: Wrench, path: '/tools', categoryKey: 'commands.categories.navigation' },
+  { id: 'audit', labelKey: 'commands.nav.audit', icon: ClockCounterClockwise, path: '/audit', categoryKey: 'commands.categories.navigation' },
+  { id: 'settings', labelKey: 'commands.nav.settings', icon: Gear, path: '/settings', categoryKey: 'commands.categories.navigation' },
+  { id: 'account', labelKey: 'commands.nav.account', icon: UserCircle, path: '/account', categoryKey: 'commands.categories.navigation' },
+  { id: 'groups', labelKey: 'commands.nav.groups', icon: UsersThree, path: '/users?tab=groups', categoryKey: 'commands.categories.navigation' },
   
   // Pro Navigation
-  { id: 'rbac', label: 'Go to RBAC', icon: Shield, path: '/rbac', category: 'Pro', pro: true },
-  { id: 'sso', label: 'Go to SSO', icon: Key, path: '/sso', category: 'Pro', pro: true },
-  { id: 'hsm', label: 'Go to HSM', icon: Lock, path: '/hsm', category: 'Pro', pro: true },
-  { id: 'policies', label: 'Go to Policies', icon: Gavel, path: '/policies', category: 'Governance' },
-  { id: 'approvals', label: 'Go to Approvals', icon: Stamp, path: '/approvals', category: 'Governance' },
-  { id: 'reports', label: 'Go to Reports', icon: ChartBar, path: '/reports', category: 'Governance' },
+  { id: 'rbac', labelKey: 'commands.nav.rbac', icon: Shield, path: '/rbac', categoryKey: 'commands.categories.proFeatures', pro: true },
+  { id: 'sso', labelKey: 'commands.nav.sso', icon: Key, path: '/sso', categoryKey: 'commands.categories.proFeatures', pro: true },
+  { id: 'hsm', labelKey: 'commands.nav.hsm', icon: Lock, path: '/hsm', categoryKey: 'commands.categories.proFeatures', pro: true },
+  { id: 'policies', labelKey: 'commands.nav.policies', icon: Gavel, path: '/policies', categoryKey: 'commands.categories.governance' },
+  { id: 'approvals', labelKey: 'commands.nav.approvals', icon: Stamp, path: '/approvals', categoryKey: 'commands.categories.governance' },
+  { id: 'reports', labelKey: 'commands.nav.reports', icon: ChartBar, path: '/reports', categoryKey: 'commands.categories.governance' },
   
   // Actions
-  { id: 'new-cert', label: 'Issue New Certificate', icon: Certificate, path: '/certificates', action: 'new', category: 'Actions' },
-  { id: 'new-ca', label: 'Create New CA', icon: ShieldCheck, path: '/cas', action: 'new', category: 'Actions' },
-  { id: 'upload-csr', label: 'Upload CSR', icon: FileText, path: '/csrs', action: 'upload', category: 'Actions' },
+  { id: 'new-cert', labelKey: 'commands.actions.newCertificate', icon: Certificate, path: '/certificates', action: 'new', categoryKey: 'commands.categories.actions' },
+  { id: 'new-ca', labelKey: 'commands.actions.newCA', icon: ShieldCheck, path: '/cas', action: 'new', categoryKey: 'commands.categories.actions' },
+  { id: 'upload-csr', labelKey: 'commands.actions.uploadCSR', icon: FileText, path: '/csrs', action: 'upload', categoryKey: 'commands.categories.actions' },
 ]
 
 export function CommandPalette({ open, onOpenChange }) {
@@ -140,10 +140,10 @@ export function CommandPalette({ open, onOpenChange }) {
     
     const lower = search.toLowerCase()
     return COMMANDS.filter(cmd => 
-      cmd.label.toLowerCase().includes(lower) ||
-      cmd.category.toLowerCase().includes(lower)
+      t(cmd.labelKey).toLowerCase().includes(lower) ||
+      t(cmd.categoryKey).toLowerCase().includes(lower)
     )
-  }, [search])
+  }, [search, t])
   
   // Filter recent items based on search
   const filteredRecent = useMemo(() => {
@@ -171,15 +171,16 @@ export function CommandPalette({ open, onOpenChange }) {
     ).slice(0, 5)
   }, [search, allFavorites])
 
-  // Group by category
+  // Group by category (using translated category key as group key)
   const groupedCommands = useMemo(() => {
     const groups = {}
     filteredCommands.forEach(cmd => {
-      if (!groups[cmd.category]) groups[cmd.category] = []
-      groups[cmd.category].push(cmd)
+      const catLabel = t(cmd.categoryKey)
+      if (!groups[catLabel]) groups[catLabel] = []
+      groups[catLabel].push(cmd)
     })
     return groups
-  }, [filteredCommands])
+  }, [filteredCommands, t])
 
   // Reset selection when search changes
   useEffect(() => {
@@ -272,7 +273,7 @@ export function CommandPalette({ open, onOpenChange }) {
                   <div className="mb-2">
                     <div className="px-3 py-1.5 text-2xs font-semibold text-text-tertiary uppercase tracking-wider flex items-center gap-1.5">
                       <Certificate size={10} />
-                      Certificates ({searchResults.certificates.length})
+                      {t('commandPalette.searchSections.certificates')} ({searchResults.certificates.length})
                     </div>
                     {searchResults.certificates.map(item => (
                       <button
@@ -304,7 +305,7 @@ export function CommandPalette({ open, onOpenChange }) {
                   <div className="mb-2">
                     <div className="px-3 py-1.5 text-2xs font-semibold text-text-tertiary uppercase tracking-wider flex items-center gap-1.5">
                       <ShieldCheck size={10} />
-                      Certificate Authorities ({searchResults.cas.length})
+                      {t('commandPalette.searchSections.certificateAuthorities')} ({searchResults.cas.length})
                     </div>
                     {searchResults.cas.map(item => (
                       <button
@@ -333,7 +334,7 @@ export function CommandPalette({ open, onOpenChange }) {
                   <div className="mb-2">
                     <div className="px-3 py-1.5 text-2xs font-semibold text-text-tertiary uppercase tracking-wider flex items-center gap-1.5">
                       <User size={10} />
-                      Users ({searchResults.users.length})
+                      {t('commandPalette.searchSections.users')} ({searchResults.users.length})
                     </div>
                     {searchResults.users.map(item => (
                       <button
@@ -360,7 +361,7 @@ export function CommandPalette({ open, onOpenChange }) {
                   <div className="mb-2">
                     <div className="px-3 py-1.5 text-2xs font-semibold text-text-tertiary uppercase tracking-wider flex items-center gap-1.5">
                       <List size={10} />
-                      Templates ({searchResults.templates.length})
+                      {t('commandPalette.searchSections.templates')} ({searchResults.templates.length})
                     </div>
                     {searchResults.templates.map(item => (
                       <button
@@ -386,7 +387,7 @@ export function CommandPalette({ open, onOpenChange }) {
                   <div className="mb-2">
                     <div className="px-3 py-1.5 text-2xs font-semibold text-text-tertiary uppercase tracking-wider flex items-center gap-1.5">
                       <FileText size={10} />
-                      CSRs ({searchResults.csrs.length})
+                      {t('commandPalette.searchSections.csrs')} ({searchResults.csrs.length})
                     </div>
                     {searchResults.csrs.map(item => (
                       <button
@@ -521,7 +522,7 @@ export function CommandPalette({ open, onOpenChange }) {
                         )}
                       >
                         <Icon size={16} weight="duotone" />
-                        <span className="flex-1 text-sm">{cmd.label}</span>
+                        <span className="flex-1 text-sm">{t(cmd.labelKey)}</span>
                         {currentIndex === selectedIndex && (
                           <ArrowRight size={14} className="text-accent-primary" />
                         )}

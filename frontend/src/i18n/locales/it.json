@@ -378,7 +378,28 @@
     "filters": "Filtri",
     "help": "Aiuto",
     "theme": "Tema",
-    "menu": "Menu"
+    "menu": "Menu",
+    "keyTypes": {
+      "rsa2048": "RSA 2048 bit",
+      "rsa4096": "RSA 4096 bit",
+      "ecdsaP256": "ECDSA P-256",
+      "ecdsaP384": "ECDSA P-384",
+      "ecdsaP521": "ECDSA P-521"
+    },
+    "dnFields": {
+      "cn": "Nome comune",
+      "o": "Organizzazione",
+      "ou": "Unità org.",
+      "l": "Località",
+      "st": "Stato/Provincia",
+      "c": "Paese",
+      "sn": "Cognome",
+      "gn": "Nome",
+      "dc": "Componente di dominio",
+      "email": "E-mail",
+      "street": "Via",
+      "serial": "Numero di serie"
+    }
   },
   "commandPalette": {
     "searchPlaceholder": "Cerca comandi, certificati, CA, utenti...",
@@ -387,7 +408,14 @@
     "favorites": "Preferiti",
     "recent": "Recenti",
     "navigate": "Naviga",
-    "select": "Seleziona"
+    "select": "Seleziona",
+    "searchSections": {
+      "certificates": "Certificati",
+      "certificateAuthorities": "Autorità di certificazione",
+      "users": "Utenti",
+      "templates": "Modelli",
+      "csrs": "CSR"
+    }
   },
   "operations": {
     "title": "Operazioni",
@@ -663,7 +691,17 @@
     },
     "cnRequired": "Il nome comune è obbligatorio",
     "localityPlaceholder": "es. Roma",
-    "statePlaceholder": "es. Lazio"
+    "statePlaceholder": "es. Lazio",
+    "sourceTypes": {
+      "codeSigning": "Firma del codice",
+      "intermediateCA": "CA intermedia",
+      "rootCA": "CA radice",
+      "server": "Server",
+      "client": "Client",
+      "emailSmime": "Email / S/MIME",
+      "ca": "CA",
+      "selfSigned": "Autofirmato"
+    }
   },
   "cas": {
     "parentCA": "CA padre",
@@ -1155,7 +1193,8 @@
     "groups": {
       "management": "Gestione",
       "settings": "Impostazioni"
-    }
+    },
+    "enrollmentRequest": "Richiesta di registrazione SCEP"
   },
   "crlOcsp": {
     "subtitle": "{{count}} CRL attive",
@@ -1944,14 +1983,29 @@
       "settings": "Impostazioni di Sistema",
       "acme": "Protocollo ACME",
       "scep": "Protocollo SCEP",
-      "templates": "Template Certificati"
+      "templates": "Template Certificati",
+      "certificates": "Certificati",
+      "certificateAuthorities": "Autorità di certificazione",
+      "userManagement": "Gestione utenti",
+      "auditLogs": "Registri di audit",
+      "trustStore": "Archivio di fiducia",
+      "hsmManagement": "Gestione HSM",
+      "singleSignOn": "Single Sign-On"
     },
     "subtitle_one": "{{count}} ruolo",
     "subtitle_other": "{{count}} ruoli",
     "subtitle": "{{count}} ruoli personalizzati",
     "customRole": "Ruolo Personalizzato",
     "noCustomRole": "Nessuno (solo ruolo base)",
-    "userCount": "{{count}} utenti"
+    "userCount": "{{count}} utenti",
+    "allResources": "Tutte le risorse",
+    "noPermissions": "Nessun permesso",
+    "fullAccess": "Accesso completo",
+    "readAccess": "Accesso in lettura",
+    "writeAccess": "Accesso in scrittura",
+    "deleteAccess": "Accesso in eliminazione",
+    "noDescription": "Nessuna descrizione",
+    "roleDetails": "Dettagli del ruolo"
   },
   "hsm": {
     "statusUnavailable": "Le funzioni HSM non sono disponibili",
@@ -2021,7 +2075,8 @@
     },
     "subtitle_one": "{{count}} fornitore",
     "subtitle_other": "{{count}} fornitori",
-    "subtitle": "{{count}} provider HSM"
+    "subtitle": "{{count}} provider HSM",
+    "providerDetails": "Dettagli del fornitore"
   },
   "sso": {
     "subtitle": "Configura provider LDAP, OAuth2 o SAML per autenticazione centralizzata",
@@ -2156,7 +2211,26 @@
     "verifySsl": "Verifica certificato SSL",
     "caBundleLabel": "Certificato CA personalizzato (PEM)",
     "caBundleHelp": "Incolla il certificato CA in formato PEM se il provider utilizza un certificato privato o autofirmato.",
-    "sslWarning": "⚠ La verifica SSL è disattivata. Le connessioni sono vulnerabili agli attacchi man-in-the-middle."
+    "sslWarning": "⚠ La verifica SSL è disattivata. Le connessioni sono vulnerabili agli attacchi man-in-the-middle.",
+    "ldapTypes": {
+      "openldap": "OpenLDAP",
+      "activeDirectory": "Active Directory"
+    },
+    "ldapGroupAttrs": {
+      "memberOf": "memberOf (Active Directory)",
+      "member": "member (OpenLDAP / RFC 2307)",
+      "uniqueMember": "uniqueMember (OpenLDAP groupOfUniqueNames)"
+    },
+    "providerDescriptions": {
+      "ldap": "Active Directory, OpenLDAP",
+      "oauth2": "Azure AD, Google, GitHub, OIDC",
+      "saml": "Okta, ADFS, Keycloak"
+    },
+    "oauthProviders": {
+      "azure": "🟦 Microsoft Entra",
+      "google": "🔵 Google",
+      "github": "⚫ GitHub"
+    }
   },
   "notifications": {
     "certificateIssued": "Certificato emesso: {{name}}",
@@ -2748,7 +2822,12 @@
     "toggleFailed": "Impossibile attivare/disattivare la policy",
     "total": "Totale",
     "updated": "Policy aggiornata",
-    "withApproval": "Con approvazione"
+    "withApproval": "Con approvazione",
+    "policyType": {
+      "issuance": "Emissione",
+      "renewal": "Rinnovo",
+      "revocation": "Revoca"
+    }
   },
   "reports": {
     "complianceReport": "Report di conformità",
@@ -2891,7 +2970,18 @@
     "formatDerDesc": "Formato binario, compatto",
     "formatP7bDesc": "Bundle catena di certificati",
     "formatP12Desc": "Certificato + chiave in contenitore cifrato",
-    "formatKeyDesc": "Solo la chiave privata in formato PEM"
+    "formatKeyDesc": "Solo la chiave privata in formato PEM",
+    "formats": {
+      "privateKey": "Chiave privata"
+    },
+    "formatOptions": {
+      "pemOnly": "PEM (Solo certificato)",
+      "pemWithKey": "PEM + Chiave privata",
+      "pemWithChain": "PEM + Catena CA",
+      "fullBundle": "Bundle completo (Cert + Chiave + Catena)",
+      "derBinary": "DER (Binario)",
+      "pkcs12": "PKCS#12 (.p12)"
+    }
   },
   "userCertificates": {
     "title": "Certificati Utente",
@@ -3261,5 +3351,60 @@
     "certLoaded": "Certificato caricato",
     "keyLoaded": "Chiave privata caricata",
     "noCertsWithKey": "Nessun certificato con chiave privata trovato"
+  },
+  "commands": {
+    "nav": {
+      "dashboard": "Vai alla Dashboard",
+      "certificates": "Vai ai Certificati",
+      "cas": "Vai alle CA",
+      "csrs": "Vai ai CSR",
+      "templates": "Vai ai Modelli",
+      "users": "Vai agli Utenti",
+      "acme": "Vai a ACME",
+      "scep": "Vai a SCEP",
+      "est": "Vai a EST",
+      "operations": "Vai alle Operazioni",
+      "tools": "Vai agli Strumenti certificati",
+      "audit": "Vai ai Log di audit",
+      "settings": "Vai alle Impostazioni",
+      "account": "Vai all'Account",
+      "groups": "Vai ai Gruppi",
+      "rbac": "Vai a RBAC",
+      "sso": "Vai a SSO",
+      "hsm": "Vai a HSM",
+      "policies": "Vai alle Politiche",
+      "approvals": "Vai alle Approvazioni",
+      "reports": "Vai ai Report",
+      "discovery": "Vai a Discovery",
+      "crlOcsp": "Vai a CRL/OCSP",
+      "msca": "Vai a MS CA"
+    },
+    "actions": {
+      "newCertificate": "Emetti nuovo certificato",
+      "newCA": "Crea nuova CA",
+      "uploadCSR": "Carica CSR"
+    },
+    "categories": {
+      "navigation": "Navigazione",
+      "actions": "Azioni",
+      "proFeatures": "Funzionalità Pro",
+      "governance": "Governance"
+    }
+  },
+  "passwordStrength": {
+    "weak": "Debole",
+    "fair": "Discreto",
+    "good": "Buono",
+    "strong": "Forte"
+  },
+  "websocket": {
+    "status": {
+      "active": "Aggiornamenti in tempo reale attivi",
+      "connecting": "Connessione...",
+      "disabled": "Aggiornamenti in tempo reale disabilitati",
+      "error": "Errore di connessione",
+      "live": "In diretta",
+      "offline": "Offline"
+    }
   }
 }

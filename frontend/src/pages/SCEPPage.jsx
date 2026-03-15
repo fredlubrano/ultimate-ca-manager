@@ -339,7 +339,7 @@ export default function SCEPPage() {
         icon={Robot}
         iconClass={selectedRequest.status === 'approved' ? "bg-status-success-op20" : selectedRequest.status === 'rejected' ? "bg-status-danger-op20" : "bg-status-warning-op20"}
         title={`Request #${selectedRequest.id}`}
-        subtitle={selectedRequest.subject || 'SCEP Enrollment Request'}
+        subtitle={selectedRequest.subject || t('scep.enrollmentRequest')}
         badge={getStatusBadge(selectedRequest.status)}
       />
 

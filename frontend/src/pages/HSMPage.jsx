@@ -458,7 +458,7 @@ export default function HSMPage() {
           </div>
         }
         slideOverOpen={!!selectedProvider}
-        slideOverTitle={selectedProvider?.name || 'Provider Details'}
+        slideOverTitle={selectedProvider?.name || t('hsm.providerDetails')}
         slideOverContent={selectedProvider && renderDetails(selectedProvider)}
         slideOverWidth="lg"
         onSlideOverClose={() => setSelectedProvider(null)}

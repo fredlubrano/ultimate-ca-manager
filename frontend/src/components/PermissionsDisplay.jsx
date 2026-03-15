@@ -4,10 +4,13 @@
  */
 import { Badge } from './Badge'
 import { Lock, LockOpen, ShieldCheck } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 
 export function PermissionsDisplay({ role, permissions = [], description }) {
+  const { t } = useTranslation()
+
   if (!permissions || permissions.length === 0) {
-    return <div className="text-sm text-text-secondary">No permissions</div>
+    return <div className="text-sm text-text-secondary">{t('rbac.noPermissions')}</div>
   }
 
   // Check if admin (full access)
@@ -19,7 +22,7 @@ export function PermissionsDisplay({ role, permissions = [], description }) {
         )}
         <div className="flex items-center gap-2 p-3 status-primary-bg status-primary-border border rounded-lg">
           <ShieldCheck size={20} className="status-primary-text" weight="fill" />
-          <span className="text-sm font-semibold status-primary-text">Full Access</span>
+          <span className="text-sm font-semibold status-primary-text">{t('rbac.fullAccess')}</span>
         </div>
       </div>
     )
@@ -35,11 +38,11 @@ export function PermissionsDisplay({ role, permissions = [], description }) {
 
   permissions.forEach(perm => {
     if (perm === 'read:*') {
-      grouped.read.push('All Resources')
+      grouped.read.push(t('rbac.allResources'))
     } else if (perm === 'write:*') {
-      grouped.write.push('All Resources')
+      grouped.write.push(t('rbac.allResources'))
     } else if (perm === 'delete:*') {
-      grouped.delete.push('All Resources')
+      grouped.delete.push(t('rbac.allResources'))
     } else if (perm.includes(':')) {
       const [action, resource] = perm.split(':')
       if (grouped[action]) {
@@ -60,7 +63,7 @@ export function PermissionsDisplay({ role, permissions = [], description }) {
           <div className="p-3 stat-card-success border rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <LockOpen size={16} className="status-success-text" />
-              <span className="text-xs font-semibold status-success-text uppercase">Read Access</span>
+              <span className="text-xs font-semibold status-success-text uppercase">{t('rbac.readAccess')}</span>
             </div>
             <div className="flex flex-wrap gap-1">
               {grouped.read.map((resource, idx) => (
@@ -77,7 +80,7 @@ export function PermissionsDisplay({ role, permissions = [], description }) {
           <div className="p-3 stat-card-primary border rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Lock size={16} className="status-primary-text" />
-              <span className="text-xs font-semibold status-primary-text uppercase">Write Access</span>
+              <span className="text-xs font-semibold status-primary-text uppercase">{t('rbac.writeAccess')}</span>
             </div>
             <div className="flex flex-wrap gap-1">
               {grouped.write.map((resource, idx) => (
@@ -94,7 +97,7 @@ export function PermissionsDisplay({ role, permissions = [], description }) {
           <div className="p-3 stat-card-warning border rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Lock size={16} className="status-warning-text" />
-              <span className="text-xs font-semibold status-warning-text uppercase">Delete Access</span>
+              <span className="text-xs font-semibold status-warning-text uppercase">{t('rbac.deleteAccess')}</span>
             </div>
             <div className="flex flex-wrap gap-1">
               {grouped.delete.map((resource, idx) => (

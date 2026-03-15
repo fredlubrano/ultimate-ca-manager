@@ -549,7 +549,17 @@
     },
     "cnRequired": "Le nom commun est requis",
     "localityPlaceholder": "ex. Paris",
-    "statePlaceholder": "ex. Île-de-France"
+    "statePlaceholder": "ex. Île-de-France",
+    "sourceTypes": {
+      "codeSigning": "Signature de code",
+      "intermediateCA": "AC intermédiaire",
+      "rootCA": "AC racine",
+      "server": "Serveur",
+      "client": "Client",
+      "emailSmime": "Email / S/MIME",
+      "ca": "AC",
+      "selfSigned": "Auto-signé"
+    }
   },
   "common": {
     "saved": "Paramètres enregistrés",
@@ -930,7 +940,28 @@
     "filters": "Filtres",
     "help": "Aide",
     "theme": "Thème",
-    "menu": "Menu"
+    "menu": "Menu",
+    "keyTypes": {
+      "rsa2048": "RSA 2048 bits",
+      "rsa4096": "RSA 4096 bits",
+      "ecdsaP256": "ECDSA P-256",
+      "ecdsaP384": "ECDSA P-384",
+      "ecdsaP521": "ECDSA P-521"
+    },
+    "dnFields": {
+      "cn": "Nom commun",
+      "o": "Organisation",
+      "ou": "Unité org.",
+      "l": "Localité",
+      "st": "État/Province",
+      "c": "Pays",
+      "sn": "Nom de famille",
+      "gn": "Prénom",
+      "dc": "Composant de domaine",
+      "email": "E-mail",
+      "street": "Rue",
+      "serial": "Numéro de série"
+    }
   },
   "compare": {
     "title": "Comparer les certificats",
@@ -1290,7 +1321,8 @@
     },
     "subtitle_one": "{{count}} fournisseur",
     "subtitle_other": "{{count}} fournisseurs",
-    "subtitle": "{{count}} fournisseurs HSM"
+    "subtitle": "{{count}} fournisseurs HSM",
+    "providerDetails": "Détails du fournisseur"
   },
   "import": {
     "smartImport": "Import intelligent",
@@ -1418,7 +1450,14 @@
     "favorites": "Favoris",
     "recent": "Récents",
     "navigate": "Naviguer",
-    "select": "Sélectionner"
+    "select": "Sélectionner",
+    "searchSections": {
+      "certificates": "Certificats",
+      "certificateAuthorities": "Autorités de certification",
+      "users": "Utilisateurs",
+      "templates": "Modèles",
+      "csrs": "CSR"
+    }
   },
   "operations": {
     "title": "Opérations",
@@ -1523,7 +1562,14 @@
       "settings": "Paramètres système",
       "acme": "Protocole ACME",
       "scep": "Protocole SCEP",
-      "templates": "Modèles de certificats"
+      "templates": "Modèles de certificats",
+      "certificates": "Certificats",
+      "certificateAuthorities": "Autorités de certification",
+      "userManagement": "Gestion des utilisateurs",
+      "auditLogs": "Journaux d'audit",
+      "trustStore": "Magasin de confiance",
+      "hsmManagement": "Gestion HSM",
+      "singleSignOn": "Authentification unique"
     },
     "stats": {},
     "subtitle_one": "{{count}} rôle",
@@ -1531,7 +1577,15 @@
     "subtitle": "{{count}} rôles personnalisés",
     "customRole": "Rôle personnalisé",
     "noCustomRole": "Aucun (rôle de base uniquement)",
-    "userCount": "{{count}} utilisateurs"
+    "userCount": "{{count}} utilisateurs",
+    "allResources": "Toutes les ressources",
+    "noPermissions": "Aucune permission",
+    "fullAccess": "Accès complet",
+    "readAccess": "Accès en lecture",
+    "writeAccess": "Accès en écriture",
+    "deleteAccess": "Accès en suppression",
+    "noDescription": "Aucune description",
+    "roleDetails": "Détails du rôle"
   },
   "scep": {
     "title": "Protocole SCEP",
@@ -1587,7 +1641,8 @@
     "groups": {
       "management": "Gestion",
       "settings": "Paramètres"
-    }
+    },
+    "enrollmentRequest": "Demande d'inscription SCEP"
   },
   "session": {
     "expiring": "Session en cours d'expiration",
@@ -2084,7 +2139,26 @@
     "verifySsl": "Vérifier le certificat SSL",
     "caBundleLabel": "Certificat CA personnalisé (PEM)",
     "caBundleHelp": "Collez le certificat CA au format PEM si le fournisseur utilise un certificat privé ou auto-signé.",
-    "sslWarning": "⚠ La vérification SSL est désactivée. Les connexions sont vulnérables aux attaques man-in-the-middle."
+    "sslWarning": "⚠ La vérification SSL est désactivée. Les connexions sont vulnérables aux attaques man-in-the-middle.",
+    "ldapTypes": {
+      "openldap": "OpenLDAP",
+      "activeDirectory": "Active Directory"
+    },
+    "ldapGroupAttrs": {
+      "memberOf": "memberOf (Active Directory)",
+      "member": "member (OpenLDAP / RFC 2307)",
+      "uniqueMember": "uniqueMember (OpenLDAP groupOfUniqueNames)"
+    },
+    "providerDescriptions": {
+      "ldap": "Active Directory, OpenLDAP",
+      "oauth2": "Azure AD, Google, GitHub, OIDC",
+      "saml": "Okta, ADFS, Keycloak"
+    },
+    "oauthProviders": {
+      "azure": "🟦 Microsoft Entra",
+      "google": "🔵 Google",
+      "github": "⚫ GitHub"
+    }
   },
   "templates": {
     "template": "Modèle",
@@ -2486,7 +2560,12 @@
     "saveFailed": "Échec de l'enregistrement de la politique",
     "deleteFailed": "Échec de la suppression de la politique",
     "toggleFailed": "Échec du changement d'état",
-    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer la politique \"{{name}}\" ? Cette action est irréversible."
+    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer la politique \"{{name}}\" ? Cette action est irréversible.",
+    "policyType": {
+      "issuance": "Émission",
+      "renewal": "Renouvellement",
+      "revocation": "Révocation"
+    }
   },
   "approvals": {
     "title": "Demandes d'approbation",
@@ -2894,7 +2973,18 @@
     "formatDerDesc": "Format binaire, compact",
     "formatP7bDesc": "Bundle de chaîne de certificats",
     "formatP12Desc": "Certificat + clé dans un conteneur chiffré",
-    "formatKeyDesc": "Clé privée seule au format PEM"
+    "formatKeyDesc": "Clé privée seule au format PEM",
+    "formats": {
+      "privateKey": "Clé privée"
+    },
+    "formatOptions": {
+      "pemOnly": "PEM (Certificat uniquement)",
+      "pemWithKey": "PEM + Clé privée",
+      "pemWithChain": "PEM + Chaîne AC",
+      "fullBundle": "Bundle complet (Cert + Clé + Chaîne)",
+      "derBinary": "DER (Binaire)",
+      "pkcs12": "PKCS#12 (.p12)"
+    }
   },
   "userCertificates": {
     "title": "Certificats Utilisateurs",
@@ -3264,5 +3354,60 @@
     "certLoaded": "Certificat chargé",
     "keyLoaded": "Clé privée chargée",
     "noCertsWithKey": "Aucun certificat avec clé privée trouvé"
+  },
+  "commands": {
+    "nav": {
+      "dashboard": "Aller au Tableau de bord",
+      "certificates": "Aller aux Certificats",
+      "cas": "Aller aux AC",
+      "csrs": "Aller aux CSR",
+      "templates": "Aller aux Modèles",
+      "users": "Aller aux Utilisateurs",
+      "acme": "Aller à ACME",
+      "scep": "Aller à SCEP",
+      "est": "Aller à EST",
+      "operations": "Aller aux Opérations",
+      "tools": "Aller aux Outils de certificats",
+      "audit": "Aller aux Journaux d'audit",
+      "settings": "Aller aux Paramètres",
+      "account": "Aller au Compte",
+      "groups": "Aller aux Groupes",
+      "rbac": "Aller à RBAC",
+      "sso": "Aller à SSO",
+      "hsm": "Aller à HSM",
+      "policies": "Aller aux Politiques",
+      "approvals": "Aller aux Approbations",
+      "reports": "Aller aux Rapports",
+      "discovery": "Aller à Découverte",
+      "crlOcsp": "Aller à CRL/OCSP",
+      "msca": "Aller à MS CA"
+    },
+    "actions": {
+      "newCertificate": "Émettre un nouveau certificat",
+      "newCA": "Créer une nouvelle AC",
+      "uploadCSR": "Télécharger un CSR"
+    },
+    "categories": {
+      "navigation": "Navigation",
+      "actions": "Actions",
+      "proFeatures": "Fonctionnalités Pro",
+      "governance": "Gouvernance"
+    }
+  },
+  "passwordStrength": {
+    "weak": "Faible",
+    "fair": "Passable",
+    "good": "Bon",
+    "strong": "Fort"
+  },
+  "websocket": {
+    "status": {
+      "active": "Mises à jour en temps réel actives",
+      "connecting": "Connexion...",
+      "disabled": "Mises à jour en temps réel désactivées",
+      "error": "Erreur de connexion",
+      "live": "En direct",
+      "offline": "Hors ligne"
+    }
   }
 }

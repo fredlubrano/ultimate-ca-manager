@@ -1468,25 +1468,26 @@ function DiscoveryFilterBar({ statusFilter, setStatusFilter, profileFilter, prof
 // Detail Panels
 // ════════════════════════════════════════════════════════
 
-// OID-to-label mapping for DN fields
-const DN_LABELS = {
-  'CN': 'Common Name',
-  'O': 'Organization',
-  'OU': 'Org. Unit',
-  'L': 'Locality',
-  'ST': 'State',
-  'C': 'Country',
-  'SN': 'Surname',
-  'GN': 'Given Name',
-  'DC': 'Domain Component',
-  '1.2.840.113549.1.9.1': 'Email',
-  'emailAddress': 'Email',
-  'E': 'Email',
-  'STREET': 'Street',
-  'SERIALNUMBER': 'Serial',
+// OID-to-i18n-key mapping for DN fields
+const DN_LABEL_KEYS = {
+  'CN': 'common.dnFields.cn',
+  'O': 'common.dnFields.o',
+  'OU': 'common.dnFields.ou',
+  'L': 'common.dnFields.l',
+  'ST': 'common.dnFields.st',
+  'C': 'common.dnFields.c',
+  'SN': 'common.dnFields.sn',
+  'GN': 'common.dnFields.gn',
+  'DC': 'common.dnFields.dc',
+  '1.2.840.113549.1.9.1': 'common.dnFields.email',
+  'emailAddress': 'common.dnFields.email',
+  'E': 'common.dnFields.email',
+  'STREET': 'common.dnFields.street',
+  'SERIALNUMBER': 'common.dnFields.serial',
 }
 
 function FormattedDN({ dn }) {
+  const { t } = useTranslation()
   if (!dn) return <span className="text-xs text-text-tertiary">—</span>
   // Parse DN: handles both KEY=value and OID=value formats
   const parts = []
@@ -1502,7 +1503,7 @@ function FormattedDN({ dn }) {
       {parts.map((p, i) => (
         <Fragment key={i}>
           <span className="text-2xs text-text-tertiary whitespace-nowrap py-0.5 text-right">
-            {DN_LABELS[p.key] || p.key}
+            {DN_LABEL_KEYS[p.key] ? t(DN_LABEL_KEYS[p.key]) : p.key}
           </span>
           <span className="text-xs font-medium text-text-primary break-all py-0.5">
             {p.value}

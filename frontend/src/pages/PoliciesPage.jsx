@@ -18,20 +18,20 @@ import { useNotification } from '../contexts'
 import { usePermission } from '../hooks'
 import { formatDate, cn } from '../lib/utils'
 
-// Policy type options
+// Policy type options — labels resolved via t() inside component
 const POLICY_TYPES = [
-  { value: 'issuance', label: 'Issuance' },
-  { value: 'renewal', label: 'Renewal' },
-  { value: 'revocation', label: 'Revocation' },
+  { value: 'issuance', labelKey: 'policies.policyType.issuance' },
+  { value: 'renewal', labelKey: 'policies.policyType.renewal' },
+  { value: 'revocation', labelKey: 'policies.policyType.revocation' },
 ]
 
-// Key type options
+// Key type options — labels resolved via t() inside component
 const KEY_TYPE_OPTIONS = [
-  { value: 'RSA-2048', label: 'RSA 2048-bit' },
-  { value: 'RSA-4096', label: 'RSA 4096-bit' },
-  { value: 'EC-P256', label: 'ECDSA P-256' },
-  { value: 'EC-P384', label: 'ECDSA P-384' },
-  { value: 'EC-P521', label: 'ECDSA P-521' },
+  { value: 'RSA-2048', labelKey: 'common.keyTypes.rsa2048' },
+  { value: 'RSA-4096', labelKey: 'common.keyTypes.rsa4096' },
+  { value: 'EC-P256', labelKey: 'common.keyTypes.ecdsaP256' },
+  { value: 'EC-P384', labelKey: 'common.keyTypes.ecdsaP384' },
+  { value: 'EC-P521', labelKey: 'common.keyTypes.ecdsaP521' },
 ]
 
 const DEFAULT_FORM = {
@@ -63,6 +63,10 @@ export default function PoliciesPage() {
   const { t } = useTranslation()
   const { showSuccess, showError } = useNotification()
   const { canRead, canWrite, canDelete } = usePermission()
+
+  // Resolve i18n labels for module-level option arrays
+  const policyTypeOptions = useMemo(() => POLICY_TYPES.map(o => ({ value: o.value, label: t(o.labelKey) })), [t])
+  const keyTypeOptions = useMemo(() => KEY_TYPE_OPTIONS.map(o => ({ value: o.value, label: t(o.labelKey) })), [t])
 
   // Data state
   const [policies, setPolicies] = useState([])
@@ -459,7 +463,7 @@ export default function PoliciesPage() {
       placeholder: t('policies.allTypes'),
       options: [
         { value: '', label: t('policies.allTypes') },
-        ...POLICY_TYPES,
+        ...policyTypeOptions,
       ],
     },
     {
@@ -541,7 +545,7 @@ export default function PoliciesPage() {
               label={t('common.type')}
               value={formData.policy_type}
               onChange={(val) => setFormData(p => ({ ...p, policy_type: val }))}
-              options={POLICY_TYPES}
+              options={policyTypeOptions}
             />
           </div>
 
@@ -618,7 +622,7 @@ export default function PoliciesPage() {
                 {t('policies.allowedKeyTypes')}
               </label>
               <div className="flex flex-wrap gap-2">
-                {KEY_TYPE_OPTIONS.map(opt => (
+                {keyTypeOptions.map(opt => (
                   <button
                     key={opt.value}
                     type="button"

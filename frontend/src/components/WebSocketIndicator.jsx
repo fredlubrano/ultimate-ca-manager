@@ -6,36 +6,38 @@
 import { useWebSocket, ConnectionState } from '../hooks/useWebSocket';
 import { WifiHigh, WifiSlash, CircleNotch } from '@phosphor-icons/react';
 import { cn } from '../lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const stateConfig = {
   [ConnectionState.CONNECTED]: {
     icon: WifiHigh,
     color: 'status-success-text',
-    label: 'Real-time updates active',
+    labelKey: 'websocket.status.active',
     pulse: false,
   },
   [ConnectionState.CONNECTING]: {
     icon: CircleNotch,
     color: 'status-warning-text',
-    label: 'Connecting...',
+    labelKey: 'websocket.status.connecting',
     pulse: true,
   },
   [ConnectionState.DISCONNECTED]: {
     icon: WifiSlash,
     color: 'text-text-tertiary',
-    label: 'Real-time updates disabled',
+    labelKey: 'websocket.status.disabled',
     pulse: false,
   },
   [ConnectionState.ERROR]: {
     icon: WifiSlash,
     color: 'status-danger-text',
-    label: 'Connection error',
+    labelKey: 'websocket.status.error',
     pulse: false,
   },
 };
 
 export function WebSocketIndicator({ className, showLabel = false, variant = 'default' }) {
   const { connectionState, isConnected, connect } = useWebSocket({ showToasts: false });
+  const { t } = useTranslation();
   
   const config = stateConfig[connectionState] || stateConfig[ConnectionState.DISCONNECTED];
   const Icon = config.icon;
@@ -52,7 +54,7 @@ export function WebSocketIndicator({ className, showLabel = false, variant = 'de
     if (!isConnected) return null
     return (
       <span
-        title={config.label}
+        title={t(config.labelKey)}
         className={cn('w-2.5 h-2.5 rounded-full border-2 border-bg-secondary bg-status-success', className)}
       />
     )
@@ -61,7 +63,7 @@ export function WebSocketIndicator({ className, showLabel = false, variant = 'de
   return (
     <button
       onClick={handleClick}
-      title={config.label}
+      title={t(config.labelKey)}
       className={cn(
         'flex items-center gap-1.5 p-1 rounded hover:bg-bg-tertiary transition-colors',
         className
@@ -77,7 +79,7 @@ export function WebSocketIndicator({ className, showLabel = false, variant = 'de
       />
       {showLabel && (
         <span className={cn('text-xs', config.color)}>
-          {isConnected ? 'Live' : 'Offline'}
+          {isConnected ? t('websocket.status.live') : t('websocket.status.offline')}
         </span>
       )}
     </button>

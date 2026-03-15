@@ -378,7 +378,28 @@
     "filters": "Фільтри",
     "help": "Допомога",
     "theme": "Тема",
-    "menu": "Меню"
+    "menu": "Меню",
+    "keyTypes": {
+      "rsa2048": "RSA 2048 біт",
+      "rsa4096": "RSA 4096 біт",
+      "ecdsaP256": "ECDSA P-256",
+      "ecdsaP384": "ECDSA P-384",
+      "ecdsaP521": "ECDSA P-521"
+    },
+    "dnFields": {
+      "cn": "Загальне ім'я",
+      "o": "Організація",
+      "ou": "Підрозділ",
+      "l": "Місцевість",
+      "st": "Область",
+      "c": "Країна",
+      "sn": "Прізвище",
+      "gn": "Ім'я",
+      "dc": "Компонент домену",
+      "email": "Електронна пошта",
+      "street": "Вулиця",
+      "serial": "Серійний номер"
+    }
   },
   "commandPalette": {
     "searchPlaceholder": "Пошук команд, сертифікатів, ЦС, користувачів...",
@@ -387,7 +408,14 @@
     "favorites": "Обрані",
     "recent": "Останні",
     "navigate": "Навігація",
-    "select": "Вибрати"
+    "select": "Вибрати",
+    "searchSections": {
+      "certificates": "Сертифікати",
+      "certificateAuthorities": "Центри сертифікації",
+      "users": "Користувачі",
+      "templates": "Шаблони",
+      "csrs": "CSR"
+    }
   },
   "operations": {
     "title": "Операції",
@@ -663,7 +691,17 @@
     },
     "cnRequired": "Загальне ім'я є обов'язковим",
     "localityPlaceholder": "напр. Київ",
-    "statePlaceholder": "напр. Київська область"
+    "statePlaceholder": "напр. Київська область",
+    "sourceTypes": {
+      "codeSigning": "Підпис коду",
+      "intermediateCA": "Проміжний ЦС",
+      "rootCA": "Кореневий ЦС",
+      "server": "Сервер",
+      "client": "Клієнт",
+      "emailSmime": "Email / S/MIME",
+      "ca": "ЦС",
+      "selfSigned": "Самопідписаний"
+    }
   },
   "cas": {
     "parentCA": "Батьківський ЦС",
@@ -1155,7 +1193,8 @@
     "groups": {
       "management": "Керування",
       "settings": "Налаштування"
-    }
+    },
+    "enrollmentRequest": "Запит на реєстрацію SCEP"
   },
   "crlOcsp": {
     "subtitle": "{{count}} активних CRL",
@@ -1944,14 +1983,29 @@
       "settings": "System Налаштування",
       "acme": "Протокол ACME",
       "scep": "Протокол SCEP",
-      "templates": "Сертифікат Templates"
+      "templates": "Сертифікат Templates",
+      "certificates": "Сертифікати",
+      "certificateAuthorities": "Центри сертифікації",
+      "userManagement": "Керування користувачами",
+      "auditLogs": "Журнали аудиту",
+      "trustStore": "Сховище довіри",
+      "hsmManagement": "Керування HSM",
+      "singleSignOn": "Єдиний вхід"
     },
     "subtitle_one": "{{count}} роль",
     "subtitle_other": "{{count}} ролей",
     "subtitle": "{{count}} користувацьких ролей",
     "customRole": "Користувацька Роль",
     "noCustomRole": "Немає (лише базова роль)",
-    "userCount": "{{count}} користувачів"
+    "userCount": "{{count}} користувачів",
+    "allResources": "Усі ресурси",
+    "noPermissions": "Немає дозволів",
+    "fullAccess": "Повний доступ",
+    "readAccess": "Доступ на читання",
+    "writeAccess": "Доступ на запис",
+    "deleteAccess": "Доступ на видалення",
+    "noDescription": "Без опису",
+    "roleDetails": "Деталі ролі"
   },
   "hsm": {
     "statusUnavailable": "Функції HSM недоступні",
@@ -2021,7 +2075,8 @@
     },
     "subtitle_one": "{{count}} постачальник",
     "subtitle_other": "{{count}} постачальників",
-    "subtitle": "{{count}} постачальників HSM"
+    "subtitle": "{{count}} постачальників HSM",
+    "providerDetails": "Деталі провайдера"
   },
   "sso": {
     "subtitle": "Налаштуйте провайдерів LDAP, OAuth2 або SAML для централізованої автентифікації",
@@ -2156,7 +2211,26 @@
     "verifySsl": "Перевірити сертифікат SSL",
     "caBundleLabel": "Користувацький сертифікат CA (PEM)",
     "caBundleHelp": "Вставте сертифікат CA у форматі PEM, якщо провайдер використовує приватний або самопідписаний сертифікат.",
-    "sslWarning": "⚠ Перевірку SSL вимкнено. З'єднання вразливі до атак типу man-in-the-middle."
+    "sslWarning": "⚠ Перевірку SSL вимкнено. З'єднання вразливі до атак типу man-in-the-middle.",
+    "ldapTypes": {
+      "openldap": "OpenLDAP",
+      "activeDirectory": "Active Directory"
+    },
+    "ldapGroupAttrs": {
+      "memberOf": "memberOf (Active Directory)",
+      "member": "member (OpenLDAP / RFC 2307)",
+      "uniqueMember": "uniqueMember (OpenLDAP groupOfUniqueNames)"
+    },
+    "providerDescriptions": {
+      "ldap": "Active Directory, OpenLDAP",
+      "oauth2": "Azure AD, Google, GitHub, OIDC",
+      "saml": "Okta, ADFS, Keycloak"
+    },
+    "oauthProviders": {
+      "azure": "🟦 Microsoft Entra",
+      "google": "🔵 Google",
+      "github": "⚫ GitHub"
+    }
   },
   "notifications": {
     "certificateIssued": "Сертифікат видано: {{name}}",
@@ -2748,7 +2822,12 @@
     "toggleFailed": "Не вдалося змінити стан політики",
     "total": "Усього",
     "updated": "Політику оновлено",
-    "withApproval": "З затвердженням"
+    "withApproval": "З затвердженням",
+    "policyType": {
+      "issuance": "Видача",
+      "renewal": "Поновлення",
+      "revocation": "Відкликання"
+    }
   },
   "reports": {
     "complianceReport": "Звіт відповідності",
@@ -2891,7 +2970,18 @@
     "formatDerDesc": "Двійковий формат, компактний",
     "formatP7bDesc": "Пакет ланцюжка сертифікатів",
     "formatP12Desc": "Сертифікат + ключ у зашифрованому контейнері",
-    "formatKeyDesc": "Лише приватний ключ у форматі PEM"
+    "formatKeyDesc": "Лише приватний ключ у форматі PEM",
+    "formats": {
+      "privateKey": "Приватний ключ"
+    },
+    "formatOptions": {
+      "pemOnly": "PEM (Лише сертифікат)",
+      "pemWithKey": "PEM + Приватний ключ",
+      "pemWithChain": "PEM + Ланцюг ЦС",
+      "fullBundle": "Повний пакет (Серт + Ключ + Ланцюг)",
+      "derBinary": "DER (Бінарний)",
+      "pkcs12": "PKCS#12 (.p12)"
+    }
   },
   "userCertificates": {
     "title": "Сертифікати користувачів",
@@ -3261,5 +3351,60 @@
     "certLoaded": "Сертифікат завантажено",
     "keyLoaded": "Приватний ключ завантажено",
     "noCertsWithKey": "Сертифікатів з приватним ключем не знайдено"
+  },
+  "commands": {
+    "nav": {
+      "dashboard": "Перейти до Панелі",
+      "certificates": "Перейти до Сертифікатів",
+      "cas": "Перейти до ЦС",
+      "csrs": "Перейти до CSR",
+      "templates": "Перейти до Шаблонів",
+      "users": "Перейти до Користувачів",
+      "acme": "Перейти до ACME",
+      "scep": "Перейти до SCEP",
+      "est": "Перейти до EST",
+      "operations": "Перейти до Операцій",
+      "tools": "Перейти до Інструментів сертифікатів",
+      "audit": "Перейти до Журналу аудиту",
+      "settings": "Перейти до Налаштувань",
+      "account": "Перейти до Облікового запису",
+      "groups": "Перейти до Груп",
+      "rbac": "Перейти до RBAC",
+      "sso": "Перейти до SSO",
+      "hsm": "Перейти до HSM",
+      "policies": "Перейти до Політик",
+      "approvals": "Перейти до Затверджень",
+      "reports": "Перейти до Звітів",
+      "discovery": "Перейти до Виявлення",
+      "crlOcsp": "Перейти до CRL/OCSP",
+      "msca": "Перейти до MS CA"
+    },
+    "actions": {
+      "newCertificate": "Видати новий сертифікат",
+      "newCA": "Створити новий ЦС",
+      "uploadCSR": "Завантажити CSR"
+    },
+    "categories": {
+      "navigation": "Навігація",
+      "actions": "Дії",
+      "proFeatures": "Pro функції",
+      "governance": "Управління"
+    }
+  },
+  "passwordStrength": {
+    "weak": "Слабкий",
+    "fair": "Задовільний",
+    "good": "Добрий",
+    "strong": "Сильний"
+  },
+  "websocket": {
+    "status": {
+      "active": "Оновлення в реальному часі активні",
+      "connecting": "Підключення...",
+      "disabled": "Оновлення в реальному часі вимкнені",
+      "error": "Помилка з'єднання",
+      "live": "Наживо",
+      "offline": "Офлайн"
+    }
   }
 }

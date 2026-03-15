@@ -378,7 +378,28 @@
     "filters": "Filtros",
     "help": "Ajuda",
     "theme": "Tema",
-    "menu": "Menu"
+    "menu": "Menu",
+    "keyTypes": {
+      "rsa2048": "RSA 2048 bits",
+      "rsa4096": "RSA 4096 bits",
+      "ecdsaP256": "ECDSA P-256",
+      "ecdsaP384": "ECDSA P-384",
+      "ecdsaP521": "ECDSA P-521"
+    },
+    "dnFields": {
+      "cn": "Nome comum",
+      "o": "Organização",
+      "ou": "Unidade org.",
+      "l": "Localidade",
+      "st": "Estado/Província",
+      "c": "País",
+      "sn": "Apelido",
+      "gn": "Nome próprio",
+      "dc": "Componente de domínio",
+      "email": "E-mail",
+      "street": "Rua",
+      "serial": "Número de série"
+    }
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
@@ -387,7 +408,14 @@
     "favorites": "Favoritos",
     "recent": "Recentes",
     "navigate": "Navegar",
-    "select": "Selecionar"
+    "select": "Selecionar",
+    "searchSections": {
+      "certificates": "Certificados",
+      "certificateAuthorities": "Autoridades de certificação",
+      "users": "Utilizadores",
+      "templates": "Modelos",
+      "csrs": "CSRs"
+    }
   },
   "operations": {
     "title": "Operações",
@@ -663,7 +691,17 @@
     },
     "cnRequired": "O nome comum é obrigatório",
     "localityPlaceholder": "ex. Lisboa",
-    "statePlaceholder": "ex. Lisboa"
+    "statePlaceholder": "ex. Lisboa",
+    "sourceTypes": {
+      "codeSigning": "Assinatura de código",
+      "intermediateCA": "CA intermediária",
+      "rootCA": "CA raiz",
+      "server": "Servidor",
+      "client": "Cliente",
+      "emailSmime": "Email / S/MIME",
+      "ca": "CA",
+      "selfSigned": "Autoassinado"
+    }
   },
   "cas": {
     "parentCA": "CA pai",
@@ -1155,7 +1193,8 @@
     "groups": {
       "management": "Gestão",
       "settings": "Configurações"
-    }
+    },
+    "enrollmentRequest": "Pedido de inscrição SCEP"
   },
   "crlOcsp": {
     "subtitle": "{{count}} CRLs ativas",
@@ -1944,14 +1983,29 @@
       "settings": "Sistema Configurações",
       "acme": "ACME Protocolo",
       "scep": "SCEP Protocolo",
-      "templates": "Certificate Modelos"
+      "templates": "Certificate Modelos",
+      "certificates": "Certificados",
+      "certificateAuthorities": "Autoridades de certificação",
+      "userManagement": "Gestão de utilizadores",
+      "auditLogs": "Registos de auditoria",
+      "trustStore": "Armazém de confiança",
+      "hsmManagement": "Gestão de HSM",
+      "singleSignOn": "Início de sessão único"
     },
     "subtitle_one": "{{count}} função",
     "subtitle_other": "{{count}} funções",
     "subtitle": "{{count}} funções personalizadas",
     "customRole": "Papel Personalizado",
     "noCustomRole": "Nenhum (apenas função base)",
-    "userCount": "{{count}} utilizadores"
+    "userCount": "{{count}} utilizadores",
+    "allResources": "Todos os recursos",
+    "noPermissions": "Sem permissões",
+    "fullAccess": "Acesso total",
+    "readAccess": "Acesso de leitura",
+    "writeAccess": "Acesso de escrita",
+    "deleteAccess": "Acesso de eliminação",
+    "noDescription": "Sem descrição",
+    "roleDetails": "Detalhes da função"
   },
   "hsm": {
     "statusUnavailable": "Funcionalidades HSM não estão disponíveis",
@@ -2021,7 +2075,8 @@
     },
     "subtitle_one": "{{count}} provedor",
     "subtitle_other": "{{count}} provedores",
-    "subtitle": "{{count}} provedores HSM"
+    "subtitle": "{{count}} provedores HSM",
+    "providerDetails": "Detalhes do fornecedor"
   },
   "sso": {
     "subtitle": "Configure provedores LDAP, OAuth2 ou SAML para autenticação centralizada",
@@ -2156,7 +2211,26 @@
     "verifySsl": "Verificar certificado SSL",
     "caBundleLabel": "Certificado CA personalizado (PEM)",
     "caBundleHelp": "Cole o certificado CA no formato PEM se o provedor usar um certificado privado ou autoassinado.",
-    "sslWarning": "⚠ A verificação SSL está desativada. As conexões são vulneráveis a ataques man-in-the-middle."
+    "sslWarning": "⚠ A verificação SSL está desativada. As conexões são vulneráveis a ataques man-in-the-middle.",
+    "ldapTypes": {
+      "openldap": "OpenLDAP",
+      "activeDirectory": "Active Directory"
+    },
+    "ldapGroupAttrs": {
+      "memberOf": "memberOf (Active Directory)",
+      "member": "member (OpenLDAP / RFC 2307)",
+      "uniqueMember": "uniqueMember (OpenLDAP groupOfUniqueNames)"
+    },
+    "providerDescriptions": {
+      "ldap": "Active Directory, OpenLDAP",
+      "oauth2": "Azure AD, Google, GitHub, OIDC",
+      "saml": "Okta, ADFS, Keycloak"
+    },
+    "oauthProviders": {
+      "azure": "🟦 Microsoft Entra",
+      "google": "🔵 Google",
+      "github": "⚫ GitHub"
+    }
   },
   "notifications": {
     "certificateIssued": "Certificado emitido: {{name}}",
@@ -2748,7 +2822,12 @@
     "toggleFailed": "Falha ao alternar política",
     "total": "Total",
     "updated": "Política atualizada",
-    "withApproval": "Com Aprovação"
+    "withApproval": "Com Aprovação",
+    "policyType": {
+      "issuance": "Emissão",
+      "renewal": "Renovação",
+      "revocation": "Revogação"
+    }
   },
   "reports": {
     "complianceReport": "Relatório de Conformidade",
@@ -2891,7 +2970,18 @@
     "formatDerDesc": "Formato binário, compacto",
     "formatP7bDesc": "Pacote de cadeia de certificados",
     "formatP12Desc": "Certificado + chave em contêiner criptografado",
-    "formatKeyDesc": "Apenas a chave privada em formato PEM"
+    "formatKeyDesc": "Apenas a chave privada em formato PEM",
+    "formats": {
+      "privateKey": "Chave privada"
+    },
+    "formatOptions": {
+      "pemOnly": "PEM (Apenas certificado)",
+      "pemWithKey": "PEM + Chave privada",
+      "pemWithChain": "PEM + Cadeia CA",
+      "fullBundle": "Pacote completo (Cert + Chave + Cadeia)",
+      "derBinary": "DER (Binário)",
+      "pkcs12": "PKCS#12 (.p12)"
+    }
   },
   "userCertificates": {
     "title": "Certificados de Utilizador",
@@ -3261,5 +3351,60 @@
     "certLoaded": "Certificado carregado",
     "keyLoaded": "Chave privada carregada",
     "noCertsWithKey": "Nenhum certificado com chave privada encontrado"
+  },
+  "commands": {
+    "nav": {
+      "dashboard": "Ir para o Painel",
+      "certificates": "Ir para Certificados",
+      "cas": "Ir para CAs",
+      "csrs": "Ir para CSRs",
+      "templates": "Ir para Modelos",
+      "users": "Ir para Utilizadores",
+      "acme": "Ir para ACME",
+      "scep": "Ir para SCEP",
+      "est": "Ir para EST",
+      "operations": "Ir para Operações",
+      "tools": "Ir para Ferramentas de certificados",
+      "audit": "Ir para Registos de auditoria",
+      "settings": "Ir para Definições",
+      "account": "Ir para Conta",
+      "groups": "Ir para Grupos",
+      "rbac": "Ir para RBAC",
+      "sso": "Ir para SSO",
+      "hsm": "Ir para HSM",
+      "policies": "Ir para Políticas",
+      "approvals": "Ir para Aprovações",
+      "reports": "Ir para Relatórios",
+      "discovery": "Ir para Descoberta",
+      "crlOcsp": "Ir para CRL/OCSP",
+      "msca": "Ir para MS CA"
+    },
+    "actions": {
+      "newCertificate": "Emitir novo certificado",
+      "newCA": "Criar nova CA",
+      "uploadCSR": "Carregar CSR"
+    },
+    "categories": {
+      "navigation": "Navegação",
+      "actions": "Ações",
+      "proFeatures": "Funcionalidades Pro",
+      "governance": "Governança"
+    }
+  },
+  "passwordStrength": {
+    "weak": "Fraco",
+    "fair": "Razoável",
+    "good": "Bom",
+    "strong": "Forte"
+  },
+  "websocket": {
+    "status": {
+      "active": "Atualizações em tempo real ativas",
+      "connecting": "A conectar...",
+      "disabled": "Atualizações em tempo real desativadas",
+      "error": "Erro de conexão",
+      "live": "Ao vivo",
+      "offline": "Offline"
+    }
   }
 }

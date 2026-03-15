@@ -5,6 +5,7 @@
 import { Export, Key, Link, Lock } from '@phosphor-icons/react'
 import { Dropdown } from './Dropdown'
 import { useNotification } from '../contexts/NotificationContext'
+import { useTranslation } from 'react-i18next'
 
 export function ExportDropdown({ 
   onExport, 
@@ -13,42 +14,43 @@ export function ExportDropdown({
   hasPrivateKey = true 
 }) {
   const { showPrompt } = useNotification()
+  const { t } = useTranslation()
   
   const formatConfig = {
     'pem': { 
-      label: 'PEM (Certificate only)', 
+      labelKey: 'export.formatOptions.pemOnly', 
       icon: <Export size={16} />,
       format: 'pem',
       options: {}
     },
     'pem-key': { 
-      label: 'PEM + Private Key', 
+      labelKey: 'export.formatOptions.pemWithKey', 
       icon: <Key size={16} />,
       format: 'pem',
       options: { includeKey: true },
       requiresKey: true
     },
     'pem-chain': { 
-      label: 'PEM + CA Chain', 
+      labelKey: 'export.formatOptions.pemWithChain', 
       icon: <Link size={16} />,
       format: 'pem',
       options: { includeChain: true }
     },
     'pem-full': { 
-      label: 'Full Bundle (Cert + Key + Chain)', 
+      labelKey: 'export.formatOptions.fullBundle', 
       icon: <Lock size={16} />,
       format: 'pem',
       options: { includeKey: true, includeChain: true },
       requiresKey: true
     },
     'der': { 
-      label: 'DER (Binary)', 
+      labelKey: 'export.formatOptions.derBinary', 
       icon: <Export size={16} />,
       format: 'der',
       options: {}
     },
     'pkcs12': { 
-      label: 'PKCS#12 (.p12)', 
+      labelKey: 'export.formatOptions.pkcs12', 
       icon: <Lock size={16} />,
       format: 'pkcs12',
       options: { password: true }, // Will prompt for password
@@ -67,7 +69,7 @@ export function ExportDropdown({
     .map(f => {
       const config = formatConfig[f]
       return {
-        label: config.label,
+        label: t(config.labelKey),
         icon: config.icon,
         onClick: async () => {
           if (config.options.password) {
@@ -93,7 +95,7 @@ export function ExportDropdown({
       trigger={
         <div className="flex items-center gap-1.5">
           <Export size={16} />
-          Export
+          {t('export.title')}
         </div>
       }
       items={items}

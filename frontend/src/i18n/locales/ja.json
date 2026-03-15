@@ -378,7 +378,28 @@
     "filters": "フィルター",
     "help": "ヘルプ",
     "theme": "テーマ",
-    "menu": "メニュー"
+    "menu": "メニュー",
+    "keyTypes": {
+      "rsa2048": "RSA 2048ビット",
+      "rsa4096": "RSA 4096ビット",
+      "ecdsaP256": "ECDSA P-256",
+      "ecdsaP384": "ECDSA P-384",
+      "ecdsaP521": "ECDSA P-521"
+    },
+    "dnFields": {
+      "cn": "コモンネーム",
+      "o": "組織",
+      "ou": "組織単位",
+      "l": "市区町村",
+      "st": "都道府県",
+      "c": "国",
+      "sn": "姓",
+      "gn": "名",
+      "dc": "ドメインコンポーネント",
+      "email": "メール",
+      "street": "番地",
+      "serial": "シリアル番号"
+    }
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",
@@ -387,7 +408,14 @@
     "favorites": "お気に入り",
     "recent": "最近",
     "navigate": "ナビゲート",
-    "select": "選択"
+    "select": "選択",
+    "searchSections": {
+      "certificates": "証明書",
+      "certificateAuthorities": "認証局",
+      "users": "ユーザー",
+      "templates": "テンプレート",
+      "csrs": "CSR"
+    }
   },
   "operations": {
     "title": "オペレーション",
@@ -663,7 +691,17 @@
     },
     "cnRequired": "コモンネームは必須です",
     "localityPlaceholder": "例: 東京",
-    "statePlaceholder": "例: 東京都"
+    "statePlaceholder": "例: 東京都",
+    "sourceTypes": {
+      "codeSigning": "コード署名",
+      "intermediateCA": "中間CA",
+      "rootCA": "ルートCA",
+      "server": "サーバー",
+      "client": "クライアント",
+      "emailSmime": "メール / S/MIME",
+      "ca": "CA",
+      "selfSigned": "自己署名"
+    }
   },
   "cas": {
     "parentCA": "親CA",
@@ -1155,7 +1193,8 @@
     "groups": {
       "management": "管理",
       "settings": "設定"
-    }
+    },
+    "enrollmentRequest": "SCEP登録リクエスト"
   },
   "crlOcsp": {
     "subtitle": "{{count}}個のアクティブなCRL",
@@ -1944,14 +1983,29 @@
       "settings": "システム設定",
       "acme": "ACMEプロトコル",
       "scep": "SCEPプロトコル",
-      "templates": "証明書テンプレート"
+      "templates": "証明書テンプレート",
+      "certificates": "証明書",
+      "certificateAuthorities": "認証局",
+      "userManagement": "ユーザー管理",
+      "auditLogs": "監査ログ",
+      "trustStore": "トラストストア",
+      "hsmManagement": "HSM管理",
+      "singleSignOn": "シングルサインオン"
     },
     "subtitle_one": "{{count}} 件のロール",
     "subtitle_other": "{{count}} 件のロール",
     "subtitle": "{{count}} 件のカスタムロール",
     "customRole": "カスタムロール",
     "noCustomRole": "None (base role only)",
-    "userCount": "{{count}} users"
+    "userCount": "{{count}} users",
+    "allResources": "すべてのリソース",
+    "noPermissions": "権限なし",
+    "fullAccess": "フルアクセス",
+    "readAccess": "読み取りアクセス",
+    "writeAccess": "書き込みアクセス",
+    "deleteAccess": "削除アクセス",
+    "noDescription": "説明なし",
+    "roleDetails": "ロール詳細"
   },
   "hsm": {
     "statusUnavailable": "HSM機能は利用できません",
@@ -2021,7 +2075,8 @@
     },
     "subtitle_one": "{{count}} 件のプロバイダー",
     "subtitle_other": "{{count}} 件のプロバイダー",
-    "subtitle": "{{count}} 件の HSM プロバイダー"
+    "subtitle": "{{count}} 件の HSM プロバイダー",
+    "providerDetails": "プロバイダー詳細"
   },
   "sso": {
     "subtitle": "LDAP、OAuth2、SAMLプロバイダーを設定して一元認証",
@@ -2156,7 +2211,26 @@
     "verifySsl": "SSL証明書を検証",
     "caBundleLabel": "カスタムCA証明書（PEM）",
     "caBundleHelp": "プロバイダーがプライベートまたは自己署名証明書を使用している場合、PEM形式のCA証明書を貼り付けてください。",
-    "sslWarning": "⚠ SSL検証が無効です。接続は中間者攻撃に対して脆弱です。"
+    "sslWarning": "⚠ SSL検証が無効です。接続は中間者攻撃に対して脆弱です。",
+    "ldapTypes": {
+      "openldap": "OpenLDAP",
+      "activeDirectory": "Active Directory"
+    },
+    "ldapGroupAttrs": {
+      "memberOf": "memberOf (Active Directory)",
+      "member": "member (OpenLDAP / RFC 2307)",
+      "uniqueMember": "uniqueMember (OpenLDAP groupOfUniqueNames)"
+    },
+    "providerDescriptions": {
+      "ldap": "Active Directory, OpenLDAP",
+      "oauth2": "Azure AD, Google, GitHub, OIDC",
+      "saml": "Okta, ADFS, Keycloak"
+    },
+    "oauthProviders": {
+      "azure": "🟦 Microsoft Entra",
+      "google": "🔵 Google",
+      "github": "⚫ GitHub"
+    }
   },
   "notifications": {
     "certificateIssued": "証明書が発行されました：{{name}}",
@@ -2748,7 +2822,12 @@
     "toggleFailed": "ポリシーの切り替えに失敗しました",
     "total": "合計",
     "updated": "ポリシーが更新されました",
-    "withApproval": "承認あり"
+    "withApproval": "承認あり",
+    "policyType": {
+      "issuance": "発行",
+      "renewal": "更新",
+      "revocation": "失効"
+    }
   },
   "reports": {
     "complianceReport": "コンプライアンスレポート",
@@ -2891,7 +2970,18 @@
     "formatDerDesc": "バイナリ形式、コンパクト",
     "formatP7bDesc": "証明書チェーンバンドル",
     "formatP12Desc": "証明書+鍵を暗号化コンテナに格納",
-    "formatKeyDesc": "PEM形式の秘密鍵のみ"
+    "formatKeyDesc": "PEM形式の秘密鍵のみ",
+    "formats": {
+      "privateKey": "秘密鍵"
+    },
+    "formatOptions": {
+      "pemOnly": "PEM（証明書のみ）",
+      "pemWithKey": "PEM + 秘密鍵",
+      "pemWithChain": "PEM + CAチェーン",
+      "fullBundle": "フルバンドル（証明書 + 鍵 + チェーン）",
+      "derBinary": "DER（バイナリ）",
+      "pkcs12": "PKCS#12 (.p12)"
+    }
   },
   "userCertificates": {
     "title": "ユーザー証明書",
@@ -3261,5 +3351,60 @@
     "certLoaded": "証明書を読み込みました",
     "keyLoaded": "秘密鍵を読み込みました",
     "noCertsWithKey": "秘密鍵付きの証明書が見つかりません"
+  },
+  "commands": {
+    "nav": {
+      "dashboard": "ダッシュボードへ",
+      "certificates": "証明書へ",
+      "cas": "CAへ",
+      "csrs": "CSRへ",
+      "templates": "テンプレートへ",
+      "users": "ユーザーへ",
+      "acme": "ACMEへ",
+      "scep": "SCEPへ",
+      "est": "ESTへ",
+      "operations": "オペレーションへ",
+      "tools": "証明書ツールへ",
+      "audit": "監査ログへ",
+      "settings": "設定へ",
+      "account": "アカウントへ",
+      "groups": "グループへ",
+      "rbac": "RBACへ",
+      "sso": "SSOへ",
+      "hsm": "HSMへ",
+      "policies": "ポリシーへ",
+      "approvals": "承認へ",
+      "reports": "レポートへ",
+      "discovery": "ディスカバリーへ",
+      "crlOcsp": "CRL/OCSPへ",
+      "msca": "MS CAへ"
+    },
+    "actions": {
+      "newCertificate": "新しい証明書を発行",
+      "newCA": "新しいCAを作成",
+      "uploadCSR": "CSRをアップロード"
+    },
+    "categories": {
+      "navigation": "ナビゲーション",
+      "actions": "アクション",
+      "proFeatures": "Pro機能",
+      "governance": "ガバナンス"
+    }
+  },
+  "passwordStrength": {
+    "weak": "弱い",
+    "fair": "普通",
+    "good": "良い",
+    "strong": "強い"
+  },
+  "websocket": {
+    "status": {
+      "active": "リアルタイム更新アクティブ",
+      "connecting": "接続中...",
+      "disabled": "リアルタイム更新無効",
+      "error": "接続エラー",
+      "live": "ライブ",
+      "offline": "オフライン"
+    }
   }
 }

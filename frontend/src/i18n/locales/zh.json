@@ -378,7 +378,28 @@
     "filters": "筛选",
     "help": "帮助",
     "theme": "主题",
-    "menu": "菜单"
+    "menu": "菜单",
+    "keyTypes": {
+      "rsa2048": "RSA 2048位",
+      "rsa4096": "RSA 4096位",
+      "ecdsaP256": "ECDSA P-256",
+      "ecdsaP384": "ECDSA P-384",
+      "ecdsaP521": "ECDSA P-521"
+    },
+    "dnFields": {
+      "cn": "通用名称",
+      "o": "组织",
+      "ou": "组织单位",
+      "l": "地区",
+      "st": "省/州",
+      "c": "国家",
+      "sn": "姓氏",
+      "gn": "名字",
+      "dc": "域组件",
+      "email": "电子邮件",
+      "street": "街道",
+      "serial": "序列号"
+    }
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",
@@ -387,7 +408,14 @@
     "favorites": "收藏",
     "recent": "最近",
     "navigate": "导航",
-    "select": "选择"
+    "select": "选择",
+    "searchSections": {
+      "certificates": "证书",
+      "certificateAuthorities": "证书颁发机构",
+      "users": "用户",
+      "templates": "模板",
+      "csrs": "CSR"
+    }
   },
   "operations": {
     "title": "操作",
@@ -663,7 +691,17 @@
     },
     "cnRequired": "通用名称为必填项",
     "localityPlaceholder": "例如 北京",
-    "statePlaceholder": "例如 北京市"
+    "statePlaceholder": "例如 北京市",
+    "sourceTypes": {
+      "codeSigning": "代码签名",
+      "intermediateCA": "中间CA",
+      "rootCA": "根CA",
+      "server": "服务器",
+      "client": "客户端",
+      "emailSmime": "邮件 / S/MIME",
+      "ca": "CA",
+      "selfSigned": "自签名"
+    }
   },
   "cas": {
     "parentCA": "父CA",
@@ -1155,7 +1193,8 @@
     "groups": {
       "management": "管理",
       "settings": "设置"
-    }
+    },
+    "enrollmentRequest": "SCEP注册请求"
   },
   "crlOcsp": {
     "subtitle": "{{count}}个活跃CRL",
@@ -1944,14 +1983,29 @@
       "settings": "系统设置",
       "acme": "ACME 协议",
       "scep": "SCEP 协议",
-      "templates": "证书模板"
+      "templates": "证书模板",
+      "certificates": "证书",
+      "certificateAuthorities": "证书颁发机构",
+      "userManagement": "用户管理",
+      "auditLogs": "审计日志",
+      "trustStore": "信任存储",
+      "hsmManagement": "HSM管理",
+      "singleSignOn": "单点登录"
     },
     "subtitle_one": "{{count}} 个角色",
     "subtitle_other": "{{count}} 个角色",
     "subtitle": "{{count}} 个自定义角色",
     "customRole": "自定义角色",
     "noCustomRole": "None (base role only)",
-    "userCount": "{{count}} users"
+    "userCount": "{{count}} users",
+    "allResources": "所有资源",
+    "noPermissions": "无权限",
+    "fullAccess": "完全访问",
+    "readAccess": "读取访问",
+    "writeAccess": "写入访问",
+    "deleteAccess": "删除访问",
+    "noDescription": "无描述",
+    "roleDetails": "角色详情"
   },
   "hsm": {
     "statusUnavailable": "HSM功能不可用",
@@ -2021,7 +2075,8 @@
     },
     "subtitle_one": "{{count}} 个提供者",
     "subtitle_other": "{{count}} 个提供者",
-    "subtitle": "{{count}} 个 HSM 提供商"
+    "subtitle": "{{count}} 个 HSM 提供商",
+    "providerDetails": "提供商详情"
   },
   "sso": {
     "subtitle": "配置LDAP、OAuth2或SAML提供商进行集中认证",
@@ -2156,7 +2211,26 @@
     "verifySsl": "验证SSL证书",
     "caBundleLabel": "自定义CA证书（PEM）",
     "caBundleHelp": "如果提供商使用私有或自签名证书，请粘贴PEM格式的CA证书。",
-    "sslWarning": "⚠ SSL验证已禁用。连接容易受到中间人攻击。"
+    "sslWarning": "⚠ SSL验证已禁用。连接容易受到中间人攻击。",
+    "ldapTypes": {
+      "openldap": "OpenLDAP",
+      "activeDirectory": "Active Directory"
+    },
+    "ldapGroupAttrs": {
+      "memberOf": "memberOf (Active Directory)",
+      "member": "member (OpenLDAP / RFC 2307)",
+      "uniqueMember": "uniqueMember (OpenLDAP groupOfUniqueNames)"
+    },
+    "providerDescriptions": {
+      "ldap": "Active Directory、OpenLDAP",
+      "oauth2": "Azure AD、Google、GitHub、OIDC",
+      "saml": "Okta、ADFS、Keycloak"
+    },
+    "oauthProviders": {
+      "azure": "🟦 Microsoft Entra",
+      "google": "🔵 Google",
+      "github": "⚫ GitHub"
+    }
   },
   "notifications": {
     "certificateIssued": "证书已颁发：{{name}}",
@@ -2748,7 +2822,12 @@
     "toggleFailed": "切换策略失败",
     "total": "总计",
     "updated": "策略已更新",
-    "withApproval": "需审批"
+    "withApproval": "需审批",
+    "policyType": {
+      "issuance": "签发",
+      "renewal": "续期",
+      "revocation": "吊销"
+    }
   },
   "reports": {
     "complianceReport": "合规报告",
@@ -2891,7 +2970,18 @@
     "formatDerDesc": "二进制格式，紧凑",
     "formatP7bDesc": "证书链捆绑包",
     "formatP12Desc": "证书+密钥加密容器",
-    "formatKeyDesc": "仅PEM编码的私钥"
+    "formatKeyDesc": "仅PEM编码的私钥",
+    "formats": {
+      "privateKey": "私钥"
+    },
+    "formatOptions": {
+      "pemOnly": "PEM（仅证书）",
+      "pemWithKey": "PEM + 私钥",
+      "pemWithChain": "PEM + CA链",
+      "fullBundle": "完整包（证书 + 密钥 + 链）",
+      "derBinary": "DER（二进制）",
+      "pkcs12": "PKCS#12 (.p12)"
+    }
   },
   "userCertificates": {
     "title": "用户证书",
@@ -3261,5 +3351,60 @@
     "certLoaded": "证书已加载",
     "keyLoaded": "私钥已加载",
     "noCertsWithKey": "未找到包含私钥的证书"
+  },
+  "commands": {
+    "nav": {
+      "dashboard": "前往仪表板",
+      "certificates": "前往证书",
+      "cas": "前往CA",
+      "csrs": "前往CSR",
+      "templates": "前往模板",
+      "users": "前往用户",
+      "acme": "前往ACME",
+      "scep": "前往SCEP",
+      "est": "前往EST",
+      "operations": "前往操作",
+      "tools": "前往证书工具",
+      "audit": "前往审计日志",
+      "settings": "前往设置",
+      "account": "前往账户",
+      "groups": "前往群组",
+      "rbac": "前往RBAC",
+      "sso": "前往SSO",
+      "hsm": "前往HSM",
+      "policies": "前往策略",
+      "approvals": "前往审批",
+      "reports": "前往报告",
+      "discovery": "前往发现",
+      "crlOcsp": "前往CRL/OCSP",
+      "msca": "前往MS CA"
+    },
+    "actions": {
+      "newCertificate": "签发新证书",
+      "newCA": "创建新CA",
+      "uploadCSR": "上传CSR"
+    },
+    "categories": {
+      "navigation": "导航",
+      "actions": "操作",
+      "proFeatures": "专业功能",
+      "governance": "治理"
+    }
+  },
+  "passwordStrength": {
+    "weak": "弱",
+    "fair": "一般",
+    "good": "良好",
+    "strong": "强"
+  },
+  "websocket": {
+    "status": {
+      "active": "实时更新已激活",
+      "connecting": "连接中...",
+      "disabled": "实时更新已禁用",
+      "error": "连接错误",
+      "live": "实时",
+      "offline": "离线"
+    }
   }
 }

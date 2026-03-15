@@ -792,8 +792,8 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                   }
                 }}
                 options={[
-                  { value: 'openldap', label: 'OpenLDAP' },
-                  { value: 'ad', label: 'Active Directory' },
+                  { value: 'openldap', label: t('sso.ldapTypes.openldap') },
+                  { value: 'ad', label: t('sso.ldapTypes.activeDirectory') },
                   { value: 'custom', label: t('common.custom') },
                 ]}
               />
@@ -939,9 +939,9 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                 value={formData.ldap_group_member_attr || 'member'}
                 onChange={value => handleChange('ldap_group_member_attr', value)}
                 options={[
-                  { value: 'memberOf', label: 'memberOf (Active Directory)' },
-                  { value: 'member', label: 'member (OpenLDAP / RFC 2307)' },
-                  { value: 'uniqueMember', label: 'uniqueMember (OpenLDAP groupOfUniqueNames)' },
+                  { value: 'memberOf', label: t('sso.ldapGroupAttrs.memberOf') },
+                  { value: 'member', label: t('sso.ldapGroupAttrs.member') },
+                  { value: 'uniqueMember', label: t('sso.ldapGroupAttrs.uniqueMember') },
                 ]}
               />
               <Select
@@ -1054,9 +1054,9 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
               <div className="flex gap-2 flex-wrap">
                 {[
                   { id: 'custom', label: t('sso.oauth2PresetCustom') },
-                  { id: 'azure', label: '🟦 Microsoft Entra' },
-                  { id: 'google', label: '🔵 Google' },
-                  { id: 'github', label: '⚫ GitHub' },
+                  { id: 'azure', label: t('sso.oauthProviders.azure') },
+                  { id: 'google', label: t('sso.oauthProviders.google') },
+                  { id: 'github', label: t('sso.oauthProviders.github') },
                 ].map(preset => (
                   <button
                     key={preset.id}
@@ -3254,9 +3254,9 @@ export default function SettingsPage() {
               <div className="space-y-3">
                 {/* One card per provider type */}
                 {[
-                  { type: 'ldap', label: t('sso.ldap'), icon: Database, color: 'icon-bg-blue', desc: 'Active Directory, OpenLDAP' },
-                  { type: 'oauth2', label: t('sso.oauth2'), icon: Globe, color: 'icon-bg-teal', desc: 'Azure AD, Google, GitHub, OIDC' },
-                  { type: 'saml', label: t('sso.saml'), icon: Shield, color: 'icon-bg-violet', desc: 'Okta, ADFS, Keycloak' },
+                  { type: 'ldap', label: t('sso.ldap'), icon: Database, color: 'icon-bg-blue', desc: t('sso.providerDescriptions.ldap') },
+                  { type: 'oauth2', label: t('sso.oauth2'), icon: Globe, color: 'icon-bg-teal', desc: t('sso.providerDescriptions.oauth2') },
+                  { type: 'saml', label: t('sso.saml'), icon: Shield, color: 'icon-bg-violet', desc: t('sso.providerDescriptions.saml') },
                 ].map(({ type, label, icon: Icon, color, desc }) => {
                   const provider = ssoProviders.find(p => p.provider_type === type)
                   return (

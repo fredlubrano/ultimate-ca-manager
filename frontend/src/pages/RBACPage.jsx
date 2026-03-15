@@ -21,55 +21,55 @@ import { rolesService } from '../services'
 // Permission categories for RBAC - aligned with backend
 const PERMISSION_CATEGORIES = {
   certificates: {
-    label: 'Certificates',
+    labelKey: 'rbac.categories.certificates',
     permissions: ['read:certs', 'write:certs', 'delete:certs', 'revoke:certs']
   },
   cas: {
-    label: 'Certificate Authorities',
+    labelKey: 'rbac.categories.certificateAuthorities',
     permissions: ['read:cas', 'write:cas', 'delete:cas', 'admin:cas']
   },
   csrs: {
-    label: 'Certificate Requests',
+    labelKey: 'rbac.categories.csrs',
     permissions: ['read:csrs', 'write:csrs', 'delete:csrs', 'sign:csrs']
   },
   users: {
-    label: 'User Management',
+    labelKey: 'rbac.categories.userManagement',
     permissions: ['read:users', 'write:users', 'delete:users', 'admin:users']
   },
   groups: {
-    label: 'Group Management',
+    labelKey: 'rbac.categories.groups',
     permissions: ['read:groups', 'write:groups', 'delete:groups', 'admin:groups']
   },
   settings: {
-    label: 'System Settings',
+    labelKey: 'rbac.categories.settings',
     permissions: ['read:settings', 'write:settings', 'admin:system']
   },
   audit: {
-    label: 'Audit Logs',
+    labelKey: 'rbac.categories.auditLogs',
     permissions: ['read:audit', 'export:audit']
   },
   acme: {
-    label: 'ACME Protocol',
+    labelKey: 'rbac.categories.acme',
     permissions: ['read:acme', 'write:acme', 'delete:acme']
   },
   scep: {
-    label: 'SCEP Protocol',
+    labelKey: 'rbac.categories.scep',
     permissions: ['read:scep', 'write:scep', 'delete:scep']
   },
   truststore: {
-    label: 'Trust Store',
+    labelKey: 'rbac.categories.trustStore',
     permissions: ['read:truststore', 'write:truststore', 'delete:truststore']
   },
   hsm: {
-    label: 'HSM Management',
+    labelKey: 'rbac.categories.hsmManagement',
     permissions: ['read:hsm', 'write:hsm', 'delete:hsm']
   },
   sso: {
-    label: 'Single Sign-On',
+    labelKey: 'rbac.categories.singleSignOn',
     permissions: ['read:sso', 'write:sso', 'delete:sso']
   },
   templates: {
-    label: 'Certificate Templates',
+    labelKey: 'rbac.categories.templates',
     permissions: ['read:templates', 'write:templates', 'delete:templates']
   }
 }
@@ -300,7 +300,7 @@ export default function RBACPage() {
         icon={role.is_system ? Lock : Shield}
         iconClass={role.is_system ? 'icon-bg-amber' : 'icon-bg-violet'}
         title={role.name}
-        subtitle={role.description || 'No description'}
+        subtitle={role.description || t('rbac.noDescription')}
         badge={
           <Badge variant={role.is_system ? 'secondary' : 'primary'} size="sm">
             {role.is_system ? t('common.system') : t('common.custom')}
@@ -367,7 +367,7 @@ export default function RBACPage() {
                   ) : (
                     <XCircle size={14} weight="duotone" className="text-text-tertiary" />
                   )}
-                  {category.label}
+                  {t(category.labelKey)}
                 </button>
                 <div className="flex flex-wrap gap-1.5 pl-5">
                   {categoryPerms.map(perm => {
@@ -430,7 +430,7 @@ export default function RBACPage() {
           </div>
         }
         slideOverOpen={!!selectedRole}
-        slideOverTitle={selectedRole?.name || 'Role Details'}
+        slideOverTitle={selectedRole?.name || t('rbac.roleDetails')}
         slideOverContent={selectedRole && renderDetails(selectedRole)}
         slideOverWidth="lg"
         onSlideOverClose={() => setSelectedRole(null)}

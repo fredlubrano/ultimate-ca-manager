@@ -378,7 +378,28 @@
     "filters": "Filters",
     "help": "Help",
     "theme": "Theme",
-    "menu": "Menu"
+    "menu": "Menu",
+    "keyTypes": {
+      "rsa2048": "RSA 2048-bit",
+      "rsa4096": "RSA 4096-bit",
+      "ecdsaP256": "ECDSA P-256",
+      "ecdsaP384": "ECDSA P-384",
+      "ecdsaP521": "ECDSA P-521"
+    },
+    "dnFields": {
+      "cn": "Common Name",
+      "o": "Organization",
+      "ou": "Org. Unit",
+      "l": "Locality",
+      "st": "State",
+      "c": "Country",
+      "sn": "Surname",
+      "gn": "Given Name",
+      "dc": "Domain Component",
+      "email": "Email",
+      "street": "Street",
+      "serial": "Serial"
+    }
   },
   "commandPalette": {
     "searchPlaceholder": "Search commands, certificates, CAs, users...",
@@ -387,7 +408,14 @@
     "favorites": "Favorites",
     "recent": "Recent",
     "navigate": "Navigate",
-    "select": "Select"
+    "select": "Select",
+    "searchSections": {
+      "certificates": "Certificates",
+      "certificateAuthorities": "Certificate Authorities",
+      "users": "Users",
+      "templates": "Templates",
+      "csrs": "CSRs"
+    }
   },
   "operations": {
     "title": "Operations",
@@ -663,7 +691,17 @@
     },
     "cnRequired": "Common Name is required",
     "localityPlaceholder": "e.g. San Francisco",
-    "statePlaceholder": "e.g. California"
+    "statePlaceholder": "e.g. California",
+    "sourceTypes": {
+      "codeSigning": "Code Signing",
+      "intermediateCA": "Intermediate CA",
+      "rootCA": "Root CA",
+      "server": "Server",
+      "client": "Client",
+      "emailSmime": "Email / S/MIME",
+      "ca": "CA",
+      "selfSigned": "Self-Signed"
+    }
   },
   "cas": {
     "parentCA": "Parent CA",
@@ -1155,7 +1193,8 @@
     "groups": {
       "management": "Management",
       "settings": "Settings"
-    }
+    },
+    "enrollmentRequest": "SCEP Enrollment Request"
   },
   "crlOcsp": {
     "subtitle": "{{count}} active CRLs",
@@ -1945,7 +1984,14 @@
       "settings": "System Settings",
       "acme": "ACME Protocol",
       "scep": "SCEP Protocol",
-      "templates": "Certificate Templates"
+      "templates": "Certificate Templates",
+      "certificates": "Certificates",
+      "certificateAuthorities": "Certificate Authorities",
+      "userManagement": "User Management",
+      "auditLogs": "Audit Logs",
+      "trustStore": "Trust Store",
+      "hsmManagement": "HSM Management",
+      "singleSignOn": "Single Sign-On"
     },
     "stats": {},
     "subtitle_one": "{{count}} role",
@@ -1953,7 +1999,15 @@
     "subtitle": "{{count}} custom roles",
     "customRole": "Custom Role",
     "noCustomRole": "None (base role only)",
-    "userCount": "{{count}} users"
+    "userCount": "{{count}} users",
+    "allResources": "All Resources",
+    "noPermissions": "No permissions",
+    "fullAccess": "Full Access",
+    "readAccess": "Read Access",
+    "writeAccess": "Write Access",
+    "deleteAccess": "Delete Access",
+    "noDescription": "No description",
+    "roleDetails": "Role Details"
   },
   "hsm": {
     "statusUnavailable": "HSM features are not available",
@@ -2023,7 +2077,8 @@
     },
     "subtitle_one": "{{count}} provider",
     "subtitle_other": "{{count}} providers",
-    "subtitle": "{{count}} HSM providers"
+    "subtitle": "{{count}} HSM providers",
+    "providerDetails": "Provider Details"
   },
   "sso": {
     "subtitle": "Configure LDAP, OAuth2, or SAML providers for centralized authentication",
@@ -2159,7 +2214,26 @@
     "verifySsl": "Verify SSL Certificate",
     "caBundleLabel": "Custom CA Certificate (PEM)",
     "caBundleHelp": "Paste the CA certificate in PEM format if the provider uses a private or self-signed certificate.",
-    "sslWarning": "⚠ SSL verification is disabled. Connections are vulnerable to man-in-the-middle attacks."
+    "sslWarning": "⚠ SSL verification is disabled. Connections are vulnerable to man-in-the-middle attacks.",
+    "ldapTypes": {
+      "openldap": "OpenLDAP",
+      "activeDirectory": "Active Directory"
+    },
+    "ldapGroupAttrs": {
+      "memberOf": "memberOf (Active Directory)",
+      "member": "member (OpenLDAP / RFC 2307)",
+      "uniqueMember": "uniqueMember (OpenLDAP groupOfUniqueNames)"
+    },
+    "providerDescriptions": {
+      "ldap": "Active Directory, OpenLDAP",
+      "oauth2": "Azure AD, Google, GitHub, OIDC",
+      "saml": "Okta, ADFS, Keycloak"
+    },
+    "oauthProviders": {
+      "azure": "🟦 Microsoft Entra",
+      "google": "🔵 Google",
+      "github": "⚫ GitHub"
+    }
   },
   "notifications": {
     "certificateIssued": "Certificate issued: {{name}}",
@@ -2474,7 +2548,12 @@
     "saveFailed": "Failed to save policy",
     "deleteFailed": "Failed to delete policy",
     "toggleFailed": "Failed to toggle policy",
-    "deleteConfirm": "Are you sure you want to delete the policy \"{{name}}\"? This cannot be undone."
+    "deleteConfirm": "Are you sure you want to delete the policy \"{{name}}\"? This cannot be undone.",
+    "policyType": {
+      "issuance": "Issuance",
+      "renewal": "Renewal",
+      "revocation": "Revocation"
+    }
   },
   "approvals": {
     "title": "Approval Requests",
@@ -2894,7 +2973,18 @@
     "formatDerDesc": "Binary format, compact",
     "formatP7bDesc": "Certificate chain bundle",
     "formatP12Desc": "Certificate + key in encrypted container",
-    "formatKeyDesc": "PEM-encoded private key only"
+    "formatKeyDesc": "PEM-encoded private key only",
+    "formats": {
+      "privateKey": "Private Key"
+    },
+    "formatOptions": {
+      "pemOnly": "PEM (Certificate only)",
+      "pemWithKey": "PEM + Private Key",
+      "pemWithChain": "PEM + CA Chain",
+      "fullBundle": "Full Bundle (Cert + Key + Chain)",
+      "derBinary": "DER (Binary)",
+      "pkcs12": "PKCS#12 (.p12)"
+    }
   },
   "userCertificates": {
     "title": "User Certificates",
@@ -3264,5 +3354,60 @@
     "certLoaded": "Certificate loaded",
     "keyLoaded": "Private key loaded",
     "noCertsWithKey": "No certificates with private key found"
+  },
+  "commands": {
+    "nav": {
+      "dashboard": "Go to Dashboard",
+      "certificates": "Go to Certificates",
+      "cas": "Go to CAs",
+      "csrs": "Go to CSRs",
+      "templates": "Go to Templates",
+      "users": "Go to Users",
+      "acme": "Go to ACME",
+      "scep": "Go to SCEP",
+      "est": "Go to EST",
+      "operations": "Go to Operations",
+      "tools": "Go to Certificate Tools",
+      "audit": "Go to Audit Logs",
+      "settings": "Go to Settings",
+      "account": "Go to Account",
+      "groups": "Go to Groups",
+      "rbac": "Go to RBAC",
+      "sso": "Go to SSO",
+      "hsm": "Go to HSM",
+      "policies": "Go to Policies",
+      "approvals": "Go to Approvals",
+      "reports": "Go to Reports",
+      "discovery": "Go to Discovery",
+      "crlOcsp": "Go to CRL/OCSP",
+      "msca": "Go to MS CA"
+    },
+    "actions": {
+      "newCertificate": "Issue New Certificate",
+      "newCA": "Create New CA",
+      "uploadCSR": "Upload CSR"
+    },
+    "categories": {
+      "navigation": "Navigation",
+      "actions": "Actions",
+      "proFeatures": "Pro Features",
+      "governance": "Governance"
+    }
+  },
+  "passwordStrength": {
+    "weak": "Weak",
+    "fair": "Fair",
+    "good": "Good",
+    "strong": "Strong"
+  },
+  "websocket": {
+    "status": {
+      "active": "Real-time updates active",
+      "connecting": "Connecting...",
+      "disabled": "Real-time updates disabled",
+      "error": "Connection error",
+      "live": "Live",
+      "offline": "Offline"
+    }
   }
 }

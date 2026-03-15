@@ -902,7 +902,7 @@ export default function UsersGroupsPage() {
           </div>
         }
         slideOverOpen={!!currentSelected}
-        slideOverTitle={currentSelected?.username || currentSelected?.name || 'Details'}
+        slideOverTitle={currentSelected?.username || currentSelected?.name || t('common.details')}
         slideOverContent={currentDetailContent}
         slideOverWidth="lg"
         onSlideOverClose={() => { setSelectedUser(null); setSelectedGroup(null) }}
