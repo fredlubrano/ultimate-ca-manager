@@ -559,7 +559,8 @@
       "emailSmime": "Email / S/MIME",
       "ca": "AC",
       "selfSigned": "Auto-signé"
-    }
+    },
+    "approvalRequired": "Demande de certificat soumise pour approbation (politique : {{policy}})"
   },
   "common": {
     "saved": "Paramètres enregistrés",
@@ -2610,7 +2611,9 @@
     "noRequests": "Aucune demande d'approbation",
     "noRequestsDesc": "Les demandes d'approbation apparaîtront ici lorsque des certificats nécessiteront une approbation basée sur les politiques.",
     "searchPlaceholder": "Rechercher des demandes...",
-    "loadFailed": "Échec du chargement des demandes d'approbation"
+    "loadFailed": "Échec du chargement des demandes d'approbation",
+    "certificateRequest": "Demande de certificat",
+    "certificateIssued": "Certificat émis avec succès"
   },
   "reports": {
     "title": "Rapports",

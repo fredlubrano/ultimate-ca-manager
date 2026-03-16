@@ -701,7 +701,8 @@
       "emailSmime": "Email / S/MIME",
       "ca": "CA",
       "selfSigned": "Autoassinado"
-    }
+    },
+    "approvalRequired": "Solicitação de certificado enviada para aprovação (política: {{policy}})"
   },
   "cas": {
     "parentCA": "CA pai",
@@ -2555,7 +2556,9 @@
     "searchPlaceholder": "Pesquisar solicitações...",
     "subtitle": "Revise e gerencie fluxos de aprovação de certificados",
     "title": "Solicitações de Aprovação",
-    "total": "Total"
+    "total": "Total",
+    "certificateRequest": "Solicitação de certificado",
+    "certificateIssued": "Certificado emitido com sucesso"
   },
   "messages": {
     "confirm": {

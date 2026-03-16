@@ -701,7 +701,8 @@
       "emailSmime": "E-Mail / S/MIME",
       "ca": "CA",
       "selfSigned": "Selbstsigniert"
-    }
+    },
+    "approvalRequired": "Zertifikatsanfrage zur Genehmigung eingereicht (Richtlinie: {{policy}})"
   },
   "cas": {
     "parentCA": "Übergeordnete CA",
@@ -2555,7 +2556,9 @@
     "searchPlaceholder": "Anfragen suchen...",
     "subtitle": "Genehmigungsworkflows für Zertifikate prüfen und verwalten",
     "title": "Genehmigungsanfragen",
-    "total": "Gesamt"
+    "total": "Gesamt",
+    "certificateRequest": "Zertifikatsanfrage",
+    "certificateIssued": "Zertifikat erfolgreich ausgestellt"
   },
   "messages": {
     "confirm": {

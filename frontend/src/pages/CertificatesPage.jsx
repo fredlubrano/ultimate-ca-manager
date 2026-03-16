@@ -841,8 +841,12 @@ export default function CertificatesPage() {
           onSubmit={async (data) => {
             try {
               muteToasts()
-              await certificatesService.create(data)
-              showSuccess(t('messages.success.create.certificate'))
+              const response = await certificatesService.create(data)
+              if (response?.data?.approval_required) {
+                showWarning(t('certificates.approvalRequired', { policy: response.data.policy_name }))
+              } else {
+                showSuccess(t('messages.success.create.certificate'))
+              }
               setShowIssueModal(false)
               setIssueInitialData(null)
               loadData()

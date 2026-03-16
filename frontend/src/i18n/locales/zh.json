@@ -701,7 +701,8 @@
       "emailSmime": "邮件 / S/MIME",
       "ca": "CA",
       "selfSigned": "自签名"
-    }
+    },
+    "approvalRequired": "证书请求已提交审批（策略：{{policy}}）"
   },
   "cas": {
     "parentCA": "父CA",
@@ -2555,7 +2556,9 @@
     "searchPlaceholder": "搜索请求...",
     "subtitle": "审查和管理证书审批工作流",
     "title": "审批请求",
-    "total": "总计"
+    "total": "总计",
+    "certificateRequest": "证书请求",
+    "certificateIssued": "证书已成功颁发"
   },
   "messages": {
     "confirm": {

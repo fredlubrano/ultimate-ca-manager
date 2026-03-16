@@ -701,7 +701,8 @@
       "emailSmime": "Email / S/MIME",
       "ca": "ЦС",
       "selfSigned": "Самопідписаний"
-    }
+    },
+    "approvalRequired": "Запит на сертифікат надіслано на затвердження (політика: {{policy}})"
   },
   "cas": {
     "parentCA": "Батьківський ЦС",
@@ -2555,7 +2556,9 @@
     "searchPlaceholder": "Пошук запитів...",
     "subtitle": "Перегляд та керування процесами затвердження сертифікатів",
     "title": "Запити на затвердження",
-    "total": "Усього"
+    "total": "Усього",
+    "certificateRequest": "Запит на сертифікат",
+    "certificateIssued": "Сертифікат успішно видано"
   },
   "messages": {
     "confirm": {

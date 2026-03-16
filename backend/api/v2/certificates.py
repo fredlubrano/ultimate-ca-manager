@@ -330,6 +330,36 @@ def create_certificate():
     if not ca.prv:
         return error_response('CA private key not available', 400)
     
+    # Policy evaluation — check if approval is required
+    try:
+        from services.policy_service import PolicyEvaluationService
+        policy = PolicyEvaluationService.check_approval_required(
+            ca_id=ca.id,
+            template_id=data.get('template_id')
+        )
+        if policy:
+            user_id = g.current_user.id if hasattr(g, 'current_user') else None
+            if not user_id:
+                return error_response('Authentication required for approval workflow', 401)
+            approval = PolicyEvaluationService.create_approval_request(
+                policy=policy,
+                request_data=data,
+                requester_id=user_id,
+                comment=data.get('approval_comment')
+            )
+            return success_response(
+                data={
+                    'approval_required': True,
+                    'approval_id': approval.id,
+                    'policy_name': policy.name,
+                    'status': 'pending_approval',
+                    'message': f'Certificate request requires approval per policy "{policy.name}"'
+                },
+                message='Certificate request submitted for approval'
+            )
+    except Exception as e:
+        logger.warning(f"Policy evaluation failed (non-blocking): {e}")
+    
     try:
         # Load CA certificate and key
         ca_cert_pem = base64.b64decode(ca.crt)

@@ -2,18 +2,190 @@
 Certificate Policy API - UCM
 Manages certificate policies and approval workflows.
 """
-from flask import Blueprint, request
+from flask import Blueprint, request, g
 from auth.unified import require_auth
 from utils.response import success_response, error_response
-from models import db
+from models import db, CA, Certificate
 from models.policy import CertificatePolicy, ApprovalRequest
 from datetime import datetime, timedelta
 import json
 import logging
+import base64
+import uuid
 
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('policies_pro', __name__)
+
+
+def _issue_approved_certificate(approval):
+    """Issue a certificate from an approved request's stored data.
+    
+    Re-invokes the certificate creation logic using the original request data.
+    Returns the certificate dict on success, raises on failure.
+    """
+    from services.policy_service import PolicyEvaluationService
+    from cryptography import x509
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa, ec
+    from cryptography.hazmat.backends import default_backend
+    from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID, ExtensionOID
+    from utils.datetime_utils import utc_now
+
+    data = PolicyEvaluationService.get_request_data(approval)
+    if not data:
+        raise ValueError("No request data stored in approval")
+    
+    ca = CA.query.get(data['ca_id'])
+    if not ca:
+        raise ValueError(f"CA {data['ca_id']} not found")
+    if not ca.prv:
+        raise ValueError("CA private key not available")
+    
+    # Load CA cert and key
+    ca_cert_pem = base64.b64decode(ca.crt)
+    ca_cert = x509.load_pem_x509_certificate(ca_cert_pem, default_backend())
+    ca_key_pem = base64.b64decode(ca.prv)
+    ca_key = serialization.load_pem_private_key(ca_key_pem, password=None, backend=default_backend())
+    
+    # Generate key pair
+    key_type = data.get('key_type', 'RSA')
+    key_size = data.get('key_size', '2048')
+    
+    if key_type.upper() in ('EC', 'ECDSA'):
+        curve_map = {
+            '256': ec.SECP256R1(), 'secp256r1': ec.SECP256R1(),
+            '384': ec.SECP384R1(), 'secp384r1': ec.SECP384R1(),
+            '521': ec.SECP521R1(), 'secp521r1': ec.SECP521R1(),
+        }
+        curve = curve_map.get(str(key_size), ec.SECP256R1())
+        new_key = ec.generate_private_key(curve, default_backend())
+    else:
+        new_key = rsa.generate_private_key(65537, int(key_size), default_backend())
+    
+    # Build subject
+    subject_attrs = [x509.NameAttribute(NameOID.COMMON_NAME, data['cn'])]
+    for field, oid in [('organization', NameOID.ORGANIZATION_NAME), ('organizational_unit', NameOID.ORGANIZATIONAL_UNIT_NAME),
+                       ('country', NameOID.COUNTRY_NAME), ('state', NameOID.STATE_OR_PROVINCE_NAME), ('locality', NameOID.LOCALITY_NAME)]:
+        if data.get(field):
+            val = data[field].upper() if field == 'country' else data[field]
+            subject_attrs.append(x509.NameAttribute(oid, val))
+    
+    subject = x509.Name(subject_attrs)
+    validity_days = data.get('validity_days', 365)
+    now = utc_now()
+    
+    builder = x509.CertificateBuilder()
+    builder = builder.subject_name(subject)
+    builder = builder.issuer_name(ca_cert.subject)
+    builder = builder.public_key(new_key.public_key())
+    builder = builder.serial_number(x509.random_serial_number())
+    builder = builder.not_valid_before(now)
+    builder = builder.not_valid_after(now + timedelta(days=validity_days))
+    
+    builder = builder.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+    
+    # Key Usage
+    cert_type = data.get('cert_type', 'server')
+    if cert_type == 'client':
+        builder = builder.add_extension(x509.KeyUsage(digital_signature=True, key_encipherment=False, content_commitment=False,
+            data_encipherment=False, key_agreement=False, key_cert_sign=False, crl_sign=False, encipher_only=False, decipher_only=False), critical=True)
+        builder = builder.add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.CLIENT_AUTH]), critical=False)
+    else:
+        builder = builder.add_extension(x509.KeyUsage(digital_signature=True, key_encipherment=True, content_commitment=False,
+            data_encipherment=False, key_agreement=False, key_cert_sign=False, crl_sign=False, encipher_only=False, decipher_only=False), critical=True)
+        ekus = [ExtendedKeyUsageOID.SERVER_AUTH]
+        if cert_type == 'combined':
+            ekus.append(ExtendedKeyUsageOID.CLIENT_AUTH)
+        builder = builder.add_extension(x509.ExtendedKeyUsage(ekus), critical=False)
+    
+    # SANs
+    from ipaddress import ip_address
+    san_list = []
+    for dns in data.get('san_dns', []):
+        san_list.append(x509.DNSName(dns))
+    for ip in data.get('san_ip', []):
+        san_list.append(x509.IPAddress(ip_address(ip)))
+    for email in data.get('san_email', []):
+        san_list.append(x509.RFC822Name(email))
+    
+    cn = data['cn']
+    if cert_type in ['server', 'combined'] and '.' in cn and cn not in data.get('san_dns', []):
+        san_list.insert(0, x509.DNSName(cn))
+    
+    if san_list:
+        builder = builder.add_extension(x509.SubjectAlternativeName(san_list), critical=False)
+    
+    # SKI/AKI
+    builder = builder.add_extension(x509.SubjectKeyIdentifier.from_public_key(new_key.public_key()), critical=False)
+    builder = builder.add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(ca_key.public_key()), critical=False)
+    
+    # CDP/OCSP
+    if ca.cdp_enabled and ca.cdp_url:
+        cdp_url = ca.cdp_url.replace('{ca_refid}', ca.refid or '')
+        builder = builder.add_extension(x509.CRLDistributionPoints([
+            x509.DistributionPoint(full_name=[x509.UniformResourceIdentifier(cdp_url)], relative_name=None, reasons=None, crl_issuer=None)
+        ]), critical=False)
+    if ca.ocsp_enabled and ca.ocsp_url:
+        builder = builder.add_extension(x509.AuthorityInformationAccess([
+            x509.AccessDescription(x509.oid.AuthorityInformationAccessOID.OCSP, x509.UniformResourceIdentifier(ca.ocsp_url))
+        ]), critical=False)
+    
+    # Sign
+    new_cert = builder.sign(ca_key, hashes.SHA256(), default_backend())
+    cert_pem = new_cert.public_bytes(serialization.Encoding.PEM).decode('utf-8')
+    key_pem = new_key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.TraditionalOpenSSL, serialization.NoEncryption()).decode('utf-8')
+    
+    # Extract SKI/AKI
+    cert_ski, cert_aki = None, None
+    try:
+        ext = new_cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_KEY_IDENTIFIER)
+        cert_ski = ext.value.key_identifier.hex(':').upper()
+    except Exception:
+        pass
+    try:
+        ext = new_cert.extensions.get_extension_for_oid(ExtensionOID.AUTHORITY_KEY_IDENTIFIER)
+        if ext.value.key_identifier:
+            cert_aki = ext.value.key_identifier.hex(':').upper()
+    except Exception:
+        pass
+    
+    # Save to DB
+    db_cert = Certificate(
+        refid=str(uuid.uuid4())[:8],
+        descr=data.get('description', data['cn']),
+        caref=ca.refid,
+        crt=base64.b64encode(cert_pem.encode()).decode(),
+        prv=base64.b64encode(key_pem.encode()).decode(),
+        cert_type=cert_type,
+        subject=new_cert.subject.rfc4514_string(),
+        issuer=new_cert.issuer.rfc4514_string(),
+        serial_number=format(new_cert.serial_number, 'x'),
+        aki=cert_aki,
+        ski=cert_ski,
+        valid_from=now,
+        valid_to=now + timedelta(days=validity_days),
+        san_dns=json.dumps(data.get('san_dns', [])),
+        san_ip=json.dumps(data.get('san_ip', [])),
+        san_email=json.dumps(data.get('san_email', [])),
+        source='approval',
+        created_by=approval.requester.username if approval.requester else 'system'
+    )
+    db.session.add(db_cert)
+    
+    # Link approval to issued cert
+    approval.certificate_id = db_cert.id
+    db.session.commit()
+    
+    logger.info(f"Certificate CN={data['cn']} issued via approval #{approval.id}")
+    
+    return {
+        'id': db_cert.id,
+        'cn': data['cn'],
+        'serial_number': db_cert.serial_number,
+        'valid_from': now.isoformat(),
+        'valid_to': (now + timedelta(days=validity_days)).isoformat(),
+    }
 
 
 # ============ Policy Management ============
@@ -189,7 +361,7 @@ def get_approval(request_id):
 @bp.route('/api/v2/approvals/<int:request_id>/approve', methods=['POST'])
 @require_auth(['write:approvals'])
 def approve_request(request_id):
-    """Approve a request"""
+    """Approve a request — triggers certificate issuance if fully approved"""
     approval = ApprovalRequest.query.get_or_404(request_id)
     
     if approval.status != 'pending':
@@ -207,7 +379,22 @@ def approve_request(request_id):
     
     db.session.commit()
     
-    return success_response(data=approval.to_dict(), message="Approval recorded")
+    result = approval.to_dict()
+    
+    # If fully approved and has stored request data, issue the certificate
+    if approval.status == 'approved' and approval.request_data:
+        try:
+            cert_data = _issue_approved_certificate(approval)
+            if cert_data:
+                result['certificate'] = cert_data
+                result['certificate_issued'] = True
+                logger.info(f"Certificate issued for approval #{approval.id}")
+        except Exception as e:
+            logger.error(f"Failed to issue certificate for approval #{approval.id}: {e}")
+            result['certificate_issued'] = False
+            result['issue_error'] = str(e)
+    
+    return success_response(data=result, message="Approval recorded")
 
 
 @bp.route('/api/v2/approvals/<int:request_id>/reject', methods=['POST'])

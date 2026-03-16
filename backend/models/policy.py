@@ -108,6 +108,9 @@ class ApprovalRequest(db.Model):
     # What needs approval (certificate ID, which can be a CSR or issued cert)
     certificate_id = db.Column(db.Integer, db.ForeignKey('certificates.id'), nullable=True)
     
+    # Stored request data for deferred issuance (JSON)
+    request_data = db.Column(db.Text)
+    
     # Policy that triggered this
     policy_id = db.Column(db.Integer, db.ForeignKey('certificate_policies.id'), nullable=True)
     
@@ -162,7 +165,7 @@ class ApprovalRequest(db.Model):
             self.resolved_at = utc_now()
     
     def to_dict(self):
-        return {
+        result = {
             'id': self.id,
             'request_type': self.request_type,
             'certificate_id': self.certificate_id,
@@ -178,3 +181,16 @@ class ApprovalRequest(db.Model):
             'expires_at': self.expires_at.isoformat() if self.expires_at else None,
             'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
         }
+        # Include certificate request summary if available
+        if self.request_data:
+            try:
+                rd = json.loads(self.request_data)
+                result['request_summary'] = {
+                    'cn': rd.get('cn'),
+                    'ca_id': rd.get('ca_id'),
+                    'cert_type': rd.get('cert_type'),
+                    'validity_days': rd.get('validity_days'),
+                }
+            except Exception:
+                pass
+        return result

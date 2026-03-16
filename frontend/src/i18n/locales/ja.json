@@ -701,7 +701,8 @@
       "emailSmime": "メール / S/MIME",
       "ca": "CA",
       "selfSigned": "自己署名"
-    }
+    },
+    "approvalRequired": "証明書リクエストが承認待ちです（ポリシー: {{policy}}）"
   },
   "cas": {
     "parentCA": "親CA",
@@ -2555,7 +2556,9 @@
     "searchPlaceholder": "リクエストを検索...",
     "subtitle": "証明書の承認ワークフローを確認・管理します",
     "title": "承認リクエスト",
-    "total": "合計"
+    "total": "合計",
+    "certificateRequest": "証明書リクエスト",
+    "certificateIssued": "証明書が正常に発行されました"
   },
   "messages": {
     "confirm": {

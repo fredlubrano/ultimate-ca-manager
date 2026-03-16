@@ -701,7 +701,8 @@
       "emailSmime": "Email / S/MIME",
       "ca": "CA",
       "selfSigned": "Self-Signed"
-    }
+    },
+    "approvalRequired": "Certificate request submitted for approval (policy: {{policy}})"
   },
   "cas": {
     "parentCA": "Parent CA",
@@ -2598,7 +2599,9 @@
     "noRequests": "No approval requests",
     "noRequestsDesc": "Approval requests will appear here when certificates require policy-based approval.",
     "searchPlaceholder": "Search requests...",
-    "loadFailed": "Failed to load approval requests"
+    "loadFailed": "Failed to load approval requests",
+    "certificateRequest": "Certificate Request",
+    "certificateIssued": "Certificate issued successfully"
   },
   "reports": {
     "title": "Reports",

@@ -116,10 +116,15 @@ export default function ApprovalsPage() {
       header: t('common.type'),
       priority: 1,
       sortable: true,
-      render: (val) => (
-        <Badge variant={val === 'certificate' ? 'info' : val === 'revocation' ? 'danger' : 'default'}>
-          {val}
-        </Badge>
+      render: (val, row) => (
+        <div>
+          <Badge variant={val === 'certificate' ? 'info' : val === 'revocation' ? 'danger' : 'default'}>
+            {val}
+          </Badge>
+          {row.request_summary?.cn && (
+            <div className="text-xs text-text-muted mt-0.5 font-mono truncate max-w-48">{row.request_summary.cn}</div>
+          )}
+        </div>
       ),
     },
     {
@@ -200,8 +205,12 @@ export default function ApprovalsPage() {
     try {
       setActionLoading(true)
       if (type === 'approve') {
-        await approvalsService.approve(req.id, comment || undefined)
-        showSuccess(t('approvals.approvedSuccess'))
+        const result = await approvalsService.approve(req.id, comment || undefined)
+        if (result?.data?.certificate_issued) {
+          showSuccess(t('approvals.certificateIssued'))
+        } else {
+          showSuccess(t('approvals.approvedSuccess'))
+        }
       } else {
         await approvalsService.reject(req.id, comment)
         showSuccess(t('approvals.rejectedSuccess'))
