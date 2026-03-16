@@ -31,6 +31,7 @@ import {
 import { Badge, CATypeIcon } from './Badge'
 import { Button } from './Button'
 import { CompactSection, CompactGrid, CompactField } from './DetailCard'
+import { CertificateExtensions } from './CertificateExtensions'
 import { cn } from '../lib/utils'
 
 // Format date helper — delegates to shared util
@@ -224,6 +225,9 @@ export function CADetails({
         </CompactSection>
       )}
       
+      {/* X.509 Extensions */}
+      <CertificateExtensions extensions={ca.extensions} defaultOpen={false} />
+
       {/* Fingerprints */}
       <CompactSection title={t('common.fingerprints')} icon={Fingerprint} iconClass="icon-bg-gray" collapsible defaultOpen={false}>
         <CompactGrid cols={1}>

@@ -68,6 +68,7 @@ export {
 
 // Certificate Details (reusable)
 export { CertificateDetails } from './CertificateDetails'
+export { CertificateExtensions, SubjectAltNames } from './CertificateExtensions'
 export { CertificateCompareModal } from './CertificateCompareModal'
 export { TemplatePreviewModal } from './TemplatePreviewModal'
 export { CADetails } from './CADetails'

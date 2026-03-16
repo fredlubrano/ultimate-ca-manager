@@ -18,7 +18,8 @@ import {
   ResponsiveLayout, ResponsiveDataTable,
   Badge, Button, Input, Modal, Textarea, Select,
   LoadingSpinner, EmptyState, HelpCard,
-  CompactSection, CompactGrid, CompactField, CompactHeader, CompactStats
+  CompactSection, CompactGrid, CompactField, CompactHeader, CompactStats,
+  CertificateExtensions, SubjectAltNames
 } from '../components'
 import TagsInput from '../components/ui/TagsInput'
 import { ToggleSwitch } from '../components/ui/ToggleSwitch'
@@ -1515,9 +1516,24 @@ function FormattedDN({ dn }) {
 }
 
 function DiscoveredDetailPanel({ item, t }) {
+  const [detail, setDetail] = useState(null)
+  const [loadingDetail, setLoadingDetail] = useState(false)
+
+  useEffect(() => {
+    if (!item?.id || item.status === 'error') return
+    let cancelled = false
+    setLoadingDetail(true)
+    discoveryService.getById(item.id)
+      .then(res => { if (!cancelled) setDetail(res.data || res) })
+      .catch(() => { if (!cancelled) setDetail(null) })
+      .finally(() => { if (!cancelled) setLoadingDetail(false) })
+    return () => { cancelled = true }
+  }, [item?.id])
+
+  const cert = detail || item
   const extractCN = (s) => { const m = s?.match(/CN=([^,]+)/); return m ? m[1] : null }
   const isError = item.status === 'error'
-  const name = isError ? `${item.target}:${item.port || 443}` : (extractCN(item.subject) || item.target || t('common.unknown'))
+  const name = isError ? `${item.target}:${item.port || 443}` : (extractCN(cert.subject) || cert.target || t('common.unknown'))
   const days = item.days_until_expiry
   const isExpired = item.is_expired
   const isExpiring = !isExpired && days != null && days <= 30
@@ -1621,7 +1637,24 @@ function DiscoveredDetailPanel({ item, t }) {
         <FormattedDN dn={item.issuer} />
       </CompactSection>
 
-      {(item.san_dns_names?.length > 0 || item.san_ip_addresses?.length > 0) && (
+      {/* Key & Signature Info */}
+      {(cert.key_algorithm || cert.signature_algorithm) && (
+        <CompactSection title={t('common.keyInformation')}>
+          <CompactGrid>
+            {cert.key_algorithm && (
+              <CompactField label={t('common.keyAlgorithm')} value={`${cert.key_algorithm}${cert.key_size ? ` ${cert.key_size}` : ''}${cert.curve ? ` (${cert.curve})` : ''}`} />
+            )}
+            {cert.signature_algorithm && (
+              <CompactField label={t('common.signatureAlgorithm')} value={cert.signature_algorithm} />
+            )}
+          </CompactGrid>
+        </CompactSection>
+      )}
+
+      {/* SANs — use extensions if available, fall back to list data */}
+      {cert.extensions?.subject_alt_names?.entries?.length > 0 ? (
+        <SubjectAltNames extensions={cert.extensions} />
+      ) : (item.san_dns_names?.length > 0 || item.san_ip_addresses?.length > 0) && (
         <CompactSection title={t('discovery.subjectAltNames')}>
           <div className="space-y-2">
             {item.san_dns_names?.length > 0 && (
@@ -1660,11 +1693,22 @@ function DiscoveredDetailPanel({ item, t }) {
       </CompactSection>
 
       <CompactSection title={t('common.fingerprint')}>
-        <div>
-          <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-0.5">SHA-256</div>
-          <div className="text-xs font-mono text-text-primary break-all">{item.fingerprint_sha256 || '—'}</div>
+        <div className="space-y-2">
+          <div>
+            <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-0.5">SHA-256</div>
+            <div className="text-xs font-mono text-text-primary break-all">{cert.fingerprint_sha256 || item.fingerprint_sha256 || '—'}</div>
+          </div>
+          {cert.fingerprint_sha1 && (
+            <div>
+              <div className="text-2xs text-text-tertiary uppercase tracking-wider mb-0.5">SHA-1</div>
+              <div className="text-xs font-mono text-text-primary break-all">{cert.fingerprint_sha1}</div>
+            </div>
+          )}
         </div>
       </CompactSection>
+
+      {/* X.509 Extensions */}
+      {cert.extensions && <CertificateExtensions extensions={cert.extensions} defaultOpen={false} />}
 
       <CompactSection title={t('discovery.scanInfo')}>
         <CompactGrid>

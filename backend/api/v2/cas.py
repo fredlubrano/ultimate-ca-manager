@@ -385,6 +385,13 @@ def get_ca(ca_id):
     except Exception as e:
         # Fallback if parsing fails
         pass
+
+    # Parse X.509 extensions from CA certificate
+    try:
+        from utils.cert_extensions import parse_certificate_extensions
+        ca_data['extensions'] = parse_certificate_extensions(ca.crt)
+    except Exception:
+        pass
         
     return success_response(data=ca_data)
 

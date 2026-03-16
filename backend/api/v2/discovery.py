@@ -271,6 +271,36 @@ def get_stats():
     return success_response(data=svc.get_stats(profile_id=profile_id))
 
 
+@bp.route('/api/v2/discovery/<int:disc_id>', methods=['GET'])
+@require_auth(['read:certificates'])
+def get_discovered(disc_id):
+    """Get discovered certificate detail with parsed extensions."""
+    from models.discovered_certificate import DiscoveredCertificate
+    cert = DiscoveredCertificate.query.get(disc_id)
+    if not cert:
+        return error_response("Not found", 404)
+
+    data = cert.to_dict()
+
+    # Parse extensions and cert info from stored PEM
+    if cert.pem_certificate:
+        try:
+            from utils.cert_extensions import parse_certificate_extensions, parse_certificate_info
+            data['extensions'] = parse_certificate_extensions(cert.pem_certificate)
+            cert_info = parse_certificate_info(cert.pem_certificate)
+            data['key_algorithm'] = cert_info.get('key_algorithm')
+            data['key_size'] = cert_info.get('key_size')
+            data['curve'] = cert_info.get('curve')
+            data['signature_algorithm'] = cert_info.get('signature_algorithm')
+            data['fingerprint_sha1'] = cert_info.get('fingerprint_sha1')
+            if not data.get('fingerprint_sha256'):
+                data['fingerprint_sha256'] = cert_info.get('fingerprint_sha256')
+        except Exception:
+            pass
+
+    return success_response(data=data)
+
+
 @bp.route('/api/v2/discovery/<int:disc_id>', methods=['DELETE'])
 @require_auth(['delete:certificates'])
 def delete_discovered(disc_id):

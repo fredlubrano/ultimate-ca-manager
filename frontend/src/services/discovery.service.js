@@ -34,6 +34,9 @@ export const discoveryService = {
   getAll: (params = {}) =>
     apiClient.get(`/discovery${buildQueryString(params)}`),
 
+  getById: (id) =>
+    apiClient.get(`/discovery/${id}`),
+
   getStats: (profileId) =>
     apiClient.get(`/discovery/stats${buildQueryString(profileId ? { profile_id: profileId } : {})}`),
 
