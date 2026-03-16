@@ -11,6 +11,21 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.81] - 2026-03-17
+
+### Added
+- **HTTP Protocol Server for CDP/OCSP** — Optional plain HTTP server (port 8080 by default) serving only CDP and OCSP endpoints, avoiding TLS verification loops when clients fetch CRLs
+- **Refid-based CDP URLs** — CDP URLs now use CA refid (UUID) instead of sequential numeric IDs, preventing CA enumeration; legacy numeric IDs still supported
+- **Protocol Base URL Setting** — Configurable base URL for protocol endpoints (CDP/OCSP) in Settings UI; auto-detects HTTP port when enabled
+- **HTTP Protocol Port in UI** — Port configurable via Settings > General with validation (0=disabled, 1024-65535)
+- **Global JSON Error Handlers** — All API errors (400, 404, 405, 413, 500) now return consistent JSON responses instead of HTML
+
+### Fixed
+- **Integer Overflow Crash** — Requesting certificates with absurdly large IDs no longer causes 500; returns 400 JSON
+- **Unhandled Exception Logging** — All uncaught exceptions are now logged with full stack trace and return safe JSON error
+
+---
+
 ## [2.80] - 2026-03-16
 
 ### Added
