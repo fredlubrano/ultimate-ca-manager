@@ -76,8 +76,9 @@ ENV PATH="/opt/ucm/venv/bin:$PATH" \
     UCM_BASE_PATH=/opt/ucm \
     DATA_DIR=/opt/ucm/data
 
-# Expose HTTPS port
+# Expose HTTPS port (and optional HTTP protocol port for CDP/OCSP)
 EXPOSE 8443
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
