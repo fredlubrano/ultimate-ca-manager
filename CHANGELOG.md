@@ -11,6 +11,23 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.80] - 2026-03-16
+
+### Added
+- **Approval Workflow Enforcement** — Certificate policies with `requires_approval` now actually block issuance until approved; approved requests auto-issue certificates with stored request data
+- **Smart Policy Matching** — Approval policies evaluate request data (CN, SANs) against rules; wildcard policy only triggers for `*.domain` certificates, not all requests
+- **X.509 Extensions for CA & Discovery** — Shared extension parser displays full X.509 details in CA detail and Discovery certificate views (reuses certificate extension components)
+
+### Fixed
+- **CDP/OCSP in Certificates (#39)** — CRL Distribution Points and OCSP URLs now embedded in all issued certificates (direct creation, CSR signing, SCEP, EST) when enabled on the CA
+- **EST Protocol** — Implemented missing `CAService.sign_csr_from_crypto()` and `get_certificate_chain()` methods; all 5 EST endpoints now functional
+- **Auto-Renewal Service** — Fixed same missing CAService methods that caused auto-renewal to crash at runtime
+- **Scheduler Crash** — Removed reference to non-existent `SMTPConfig.admin_email` in expiry alerts and discovery notifications (used `smtp_from` instead)
+- **CRL/OCSP URL Format** — Fixed frontend displaying wrong CDP/OCSP URLs; auto-generates correct URLs when toggles are enabled
+- **Overbroad Seed Policies** — Deactivated "Code Signing" demo policy that had no narrowing rules and would block all certificate creation
+
+---
+
 ## [2.77] - 2026-03-16
 
 ### Added
