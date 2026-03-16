@@ -11,6 +11,16 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.76] - 2026-03-16
+
+### Fixed
+- **FK Cascade on Delete (#39)** — All DELETE endpoints now properly handle foreign key dependencies (CAs cascade CRL/OCSP records, certificates/policies clean up ApprovalRequests), with try/except + rollback preventing HTTP 500 on constraint failures
+- **Protocol Middleware Exemptions (#39)** — CDP, OCSP, SCEP, ACME, and EST endpoints now exempt from FQDN redirect, HTTPS enforcement, and safe-mode middleware (was causing protocol clients to get HTML login page)
+- **SPA Catch-All (#39)** — Added `/cdp/` and `/ocsp/` to SPA exclusion list so protocol endpoints aren't intercepted by React Router
+- **i18n Completeness** — Replaced ~160 hardcoded English strings with `t()` calls across certificate discovery, website, and various UI components; all 9 locales updated (3086 keys each)
+
+---
+
 ## [2.75] - 2026-03-15
 
 ### Added
