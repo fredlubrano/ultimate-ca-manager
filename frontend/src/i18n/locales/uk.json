@@ -2337,7 +2337,19 @@
     "addIssuerToTrustStore": "Додати видавця до Trust Store",
     "addedToTrustStore": "CA успішно додано до Trust Store",
     "addToTrustStoreFailed": "Не вдалося додати CA до Trust Store",
-    "daysShort": "{{count}}д"
+    "daysShort": "{{count}}д",
+    "extensions": "Розширення сертифіката",
+    "ext": {
+      "basicConstraints": "Базові обмеження",
+      "keyUsage": "Використання ключа",
+      "extKeyUsage": "Розширене використання ключа",
+      "ski": "Ідентифікатор ключа суб'єкта",
+      "aki": "Ідентифікатор ключа центру сертифікації",
+      "crlDP": "Точки розповсюдження CRL",
+      "aia": "Доступ до інформації центру сертифікації",
+      "policies": "Політики сертифіката",
+      "nameConstraints": "Обмеження імен"
+    }
   },
   "compare": {
     "title": "Compare Сертифікатs",

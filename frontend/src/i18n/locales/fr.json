@@ -1212,7 +1212,19 @@
     "addIssuerToTrustStore": "Ajouter l'émetteur au Trust Store",
     "addedToTrustStore": "CA ajoutée au Trust Store avec succès",
     "addToTrustStoreFailed": "Échec de l'ajout de la CA au Trust Store",
-    "daysShort": "{{count}}j"
+    "daysShort": "{{count}}j",
+    "extensions": "Extensions du certificat",
+    "ext": {
+      "basicConstraints": "Contraintes de base",
+      "keyUsage": "Utilisation de la clé",
+      "extKeyUsage": "Utilisation étendue de la clé",
+      "ski": "Identifiant de clé du sujet",
+      "aki": "Identifiant de clé de l'autorité",
+      "crlDP": "Points de distribution CRL",
+      "aia": "Accès aux informations de l'autorité",
+      "policies": "Politiques du certificat",
+      "nameConstraints": "Contraintes de noms"
+    }
   },
   "groups": {
     "group": "Groupe",

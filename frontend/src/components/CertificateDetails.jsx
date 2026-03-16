@@ -282,11 +282,155 @@ export function CertificateDetails({
         </CompactGrid>
       </CompactSection>
       
-      {/* SANs */}
-      {cert.san_combined && (
+      {/* SANs — use parsed extensions for full SAN types (UPN, DirName, etc.) */}
+      {(cert.extensions?.subject_alt_names?.entries?.length > 0 || cert.san_combined) && (
         <CompactSection title={t('common.subjectAltNames')} icon={Globe} iconClass="icon-bg-cyan">
-          <div className="text-xs font-mono text-text-primary break-all bg-tertiary-op30 p-2 rounded border border-border-op50">
-            {cert.san_combined}
+          {cert.extensions?.subject_alt_names?.entries?.length > 0 ? (
+            <div className="space-y-1">
+              {cert.extensions.subject_alt_names.entries.map((entry, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs">
+                  <Badge variant="secondary" size="sm" className="shrink-0 font-mono">{entry.type}</Badge>
+                  <span className="font-mono text-text-primary break-all">{entry.value}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs font-mono text-text-primary break-all bg-tertiary-op30 p-2 rounded border border-border-op50">
+              {cert.san_combined}
+            </div>
+          )}
+        </CompactSection>
+      )}
+      
+      {/* X.509 Extensions */}
+      {cert.extensions && Object.keys(cert.extensions).length > 0 && (
+        <CompactSection title={t('details.extensions')} icon={ShieldCheck} iconClass="icon-bg-indigo" collapsible defaultOpen>
+          <div className="space-y-3">
+            {/* Basic Constraints */}
+            {cert.extensions.basic_constraints && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                  {t('details.ext.basicConstraints')}
+                  {cert.extensions.basic_constraints.critical && <Badge variant="danger" size="sm">Critical</Badge>}
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <Badge variant={cert.extensions.basic_constraints.ca ? 'warning' : 'secondary'} size="sm">
+                    CA: {cert.extensions.basic_constraints.ca ? 'TRUE' : 'FALSE'}
+                  </Badge>
+                  {cert.extensions.basic_constraints.path_length !== null && cert.extensions.basic_constraints.path_length !== undefined && (
+                    <Badge variant="secondary" size="sm">
+                      Path Length: {cert.extensions.basic_constraints.path_length}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Key Usage */}
+            {cert.extensions.key_usage && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                  {t('details.ext.keyUsage')}
+                  {cert.extensions.key_usage.critical && <Badge variant="danger" size="sm">Critical</Badge>}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {cert.extensions.key_usage.usages.map(u => (
+                    <Badge key={u} variant="primary" size="sm">{u}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Extended Key Usage */}
+            {cert.extensions.extended_key_usage && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                  {t('details.ext.extKeyUsage')}
+                  {cert.extensions.extended_key_usage.critical && <Badge variant="danger" size="sm">Critical</Badge>}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {cert.extensions.extended_key_usage.usages.map(u => (
+                    <Badge key={u.oid} variant="teal" size="sm" title={u.oid}>{u.name}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Subject Key Identifier */}
+            {cert.extensions.subject_key_identifier && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary">{t('details.ext.ski')}</div>
+                <div className="text-2xs font-mono text-text-secondary break-all">{cert.extensions.subject_key_identifier.value}</div>
+              </div>
+            )}
+
+            {/* Authority Key Identifier */}
+            {cert.extensions.authority_key_identifier && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary">{t('details.ext.aki')}</div>
+                <div className="text-2xs font-mono text-text-secondary break-all">{cert.extensions.authority_key_identifier.key_id}</div>
+              </div>
+            )}
+
+            {/* CRL Distribution Points */}
+            {cert.extensions.crl_distribution_points?.urls?.length > 0 && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary">{t('details.ext.crlDP')}</div>
+                {cert.extensions.crl_distribution_points.urls.map((url, i) => (
+                  <div key={i} className="text-2xs font-mono text-accent-primary break-all">{url}</div>
+                ))}
+              </div>
+            )}
+
+            {/* Authority Information Access */}
+            {cert.extensions.authority_info_access && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary">{t('details.ext.aia')}</div>
+                {cert.extensions.authority_info_access.ocsp?.map((url, i) => (
+                  <div key={`ocsp-${i}`} className="flex items-start gap-2 text-2xs">
+                    <Badge variant="secondary" size="sm" className="shrink-0">OCSP</Badge>
+                    <span className="font-mono text-accent-primary break-all">{url}</span>
+                  </div>
+                ))}
+                {cert.extensions.authority_info_access.ca_issuers?.map((url, i) => (
+                  <div key={`ca-${i}`} className="flex items-start gap-2 text-2xs">
+                    <Badge variant="secondary" size="sm" className="shrink-0">CA Issuers</Badge>
+                    <span className="font-mono text-accent-primary break-all">{url}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Certificate Policies */}
+            {cert.extensions.certificate_policies?.policies?.length > 0 && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary">{t('details.ext.policies')}</div>
+                {cert.extensions.certificate_policies.policies.map((p, i) => (
+                  <div key={i} className="text-2xs font-mono text-text-secondary">
+                    {p.name || p.oid}
+                    {p.qualifiers?.map((q, j) => (
+                      <span key={j} className="ml-2 text-accent-primary">{q.value}</span>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Name Constraints */}
+            {cert.extensions.name_constraints && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                  {t('details.ext.nameConstraints')}
+                  {cert.extensions.name_constraints.critical && <Badge variant="danger" size="sm">Critical</Badge>}
+                </div>
+                {cert.extensions.name_constraints.permitted && (
+                  <div className="text-2xs"><span className="text-status-success font-medium">Permitted:</span> {cert.extensions.name_constraints.permitted.join(', ')}</div>
+                )}
+                {cert.extensions.name_constraints.excluded && (
+                  <div className="text-2xs"><span className="text-status-danger font-medium">Excluded:</span> {cert.extensions.name_constraints.excluded.join(', ')}</div>
+                )}
+              </div>
+            )}
           </div>
         </CompactSection>
       )}

@@ -2337,7 +2337,19 @@
     "addIssuerToTrustStore": "将颁发者添加到信任存储",
     "addedToTrustStore": "CA已成功添加到信任存储",
     "addToTrustStoreFailed": "添加CA到信任存储失败",
-    "daysShort": "{{count}}天"
+    "daysShort": "{{count}}天",
+    "extensions": "证书扩展",
+    "ext": {
+      "basicConstraints": "基本约束",
+      "keyUsage": "密钥用途",
+      "extKeyUsage": "增强型密钥用途",
+      "ski": "使用者密钥标识符",
+      "aki": "颁发机构密钥标识符",
+      "crlDP": "CRL 分发点",
+      "aia": "颁发机构信息访问",
+      "policies": "证书策略",
+      "nameConstraints": "名称约束"
+    }
   },
   "compare": {
     "title": "比较证书",

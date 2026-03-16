@@ -2337,7 +2337,19 @@
     "addIssuerToTrustStore": "Aussteller zum Trust Store hinzufügen",
     "addedToTrustStore": "CA erfolgreich zum Trust Store hinzugefügt",
     "addToTrustStoreFailed": "CA konnte nicht zum Trust Store hinzugefügt werden",
-    "daysShort": "{{count}}T"
+    "daysShort": "{{count}}T",
+    "extensions": "Zertifikatserweiterungen",
+    "ext": {
+      "basicConstraints": "Grundlegende Einschränkungen",
+      "keyUsage": "Schlüsselverwendung",
+      "extKeyUsage": "Erweiterte Schlüsselverwendung",
+      "ski": "Schlüsselkennung des Antragstellers",
+      "aki": "Schlüsselkennung der Zertifizierungsstelle",
+      "crlDP": "CRL-Verteilungspunkte",
+      "aia": "Zugriff auf Zertifizierungsstelleninformationen",
+      "policies": "Zertifikatsrichtlinien",
+      "nameConstraints": "Namenseinschränkungen"
+    }
   },
   "compare": {
     "title": "Zertifikate vergleichen",

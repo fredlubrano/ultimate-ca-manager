@@ -2337,7 +2337,19 @@
     "addIssuerToTrustStore": "発行者をトラストストアに追加",
     "addedToTrustStore": "CAがトラストストアに正常に追加されました",
     "addToTrustStoreFailed": "CAのトラストストアへの追加に失敗しました",
-    "daysShort": "{{count}}日"
+    "daysShort": "{{count}}日",
+    "extensions": "証明書拡張",
+    "ext": {
+      "basicConstraints": "基本制約",
+      "keyUsage": "鍵の用途",
+      "extKeyUsage": "拡張鍵の用途",
+      "ski": "サブジェクト鍵識別子",
+      "aki": "認証局鍵識別子",
+      "crlDP": "CRL配布ポイント",
+      "aia": "認証局情報アクセス",
+      "policies": "証明書ポリシー",
+      "nameConstraints": "名前制約"
+    }
   },
   "compare": {
     "title": "証明書の比較",

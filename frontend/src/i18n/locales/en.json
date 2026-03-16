@@ -2340,7 +2340,19 @@
     "addIssuerToTrustStore": "Add Issuer to Trust Store",
     "addedToTrustStore": "CA added to Trust Store successfully",
     "addToTrustStoreFailed": "Failed to add CA to Trust Store",
-    "daysShort": "{{count}}d"
+    "daysShort": "{{count}}d",
+    "extensions": "Certificate Extensions",
+    "ext": {
+      "basicConstraints": "Basic Constraints",
+      "keyUsage": "Key Usage",
+      "extKeyUsage": "Extended Key Usage",
+      "ski": "Subject Key Identifier",
+      "aki": "Authority Key Identifier",
+      "crlDP": "CRL Distribution Points",
+      "aia": "Authority Information Access",
+      "policies": "Certificate Policies",
+      "nameConstraints": "Name Constraints"
+    }
   },
   "compare": {
     "title": "Compare Certificates",
