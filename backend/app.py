@@ -7,7 +7,7 @@ import time
 from os import environ
 import sys
 from pathlib import Path
-from flask import Flask, redirect, request
+from flask import Flask, jsonify as flask_jsonify, redirect, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_caching import Cache
@@ -646,6 +646,50 @@ def create_app(config_name=None):
                        'Place your master.key at /etc/ucm/master.key and restart UCM.',
             'safe_mode': True
         }), 503
+    
+    # ── Global error handlers ─────────────────────────────────
+    # Ensure ALL errors return JSON (not HTML) for API requests
+    
+    def _json_error(code, message):
+        return flask_jsonify({'error': True, 'code': code, 'message': message}), code
+    
+    @app.errorhandler(400)
+    def handle_400(e):
+        if request.path.startswith('/api/'):
+            return _json_error(400, 'Bad request')
+        return e
+    
+    @app.errorhandler(404)
+    def handle_404(e):
+        if request.path.startswith('/api/'):
+            return _json_error(404, 'Not found')
+        return e
+    
+    @app.errorhandler(405)
+    def handle_405(e):
+        if request.path.startswith('/api/'):
+            return _json_error(405, 'Method not allowed')
+        return e
+    
+    @app.errorhandler(413)
+    def handle_413(e):
+        if request.path.startswith('/api/'):
+            return _json_error(413, 'Request too large')
+        return e
+    
+    @app.errorhandler(500)
+    def handle_500(e):
+        app.logger.error("Unhandled 500 error: %s (path: %s)", e, request.path)
+        if request.path.startswith('/api/'):
+            return _json_error(500, 'Internal server error')
+        return e
+    
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        if isinstance(e, (OverflowError, ValueError)):
+            return _json_error(400, 'Invalid parameter value')
+        app.logger.error("Unhandled exception on %s: %s", request.path, e, exc_info=True)
+        return _json_error(500, 'Internal server error')
     
     return app
 
