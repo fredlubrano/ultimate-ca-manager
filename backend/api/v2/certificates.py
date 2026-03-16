@@ -333,9 +333,14 @@ def create_certificate():
     # Policy evaluation — check if approval is required
     try:
         from services.policy_service import PolicyEvaluationService
+        san_list = data.get('san', [])
+        if isinstance(san_list, str):
+            san_list = [s.strip() for s in san_list.split(',') if s.strip()]
         policy = PolicyEvaluationService.check_approval_required(
             ca_id=ca.id,
-            template_id=data.get('template_id')
+            template_id=data.get('template_id'),
+            cn=data.get('cn'),
+            san_list=san_list
         )
         if policy:
             user_id = g.current_user.id if hasattr(g, 'current_user') else None

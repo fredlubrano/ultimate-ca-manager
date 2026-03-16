@@ -18,9 +18,13 @@ class PolicyEvaluationService:
     """Evaluates certificate requests against policies"""
 
     @staticmethod
-    def check_approval_required(ca_id: int, template_id: int = None) -> Optional[CertificatePolicy]:
+    def check_approval_required(ca_id: int, template_id: int = None,
+                                cn: str = None, san_list: list = None) -> Optional[CertificatePolicy]:
         """
-        Check if any active policy requires approval for this CA/template combination.
+        Check if any active policy requires approval for this CA/template/request.
+        
+        Also evaluates policy rules against the actual request:
+        - san_restrictions.dns_pattern: only matches if CN or a SAN matches the pattern
         
         Returns the matching policy if approval is required, None otherwise.
         Policies are checked by priority (lower number = higher priority).
@@ -34,19 +38,53 @@ class PolicyEvaluationService:
         policies = query.all()
         
         for policy in policies:
-            # Policy with no CA scope = applies to all CAs
-            if policy.ca_id is None:
-                return policy
-            # Policy scoped to specific CA
-            if policy.ca_id == ca_id:
-                # If also scoped to template, check that too
-                if policy.template_id is not None:
-                    if policy.template_id == template_id:
-                        return policy
-                else:
-                    return policy
+            # Check CA scope
+            if policy.ca_id is not None and policy.ca_id != ca_id:
+                continue
+            # Check template scope
+            if policy.template_id is not None and policy.template_id != template_id:
+                continue
+            # Check rules-based filtering (e.g. wildcard pattern)
+            if not PolicyEvaluationService._matches_rules(policy, cn, san_list):
+                continue
+            return policy
         
         return None
+
+    @staticmethod
+    def _matches_rules(policy: CertificatePolicy, cn: str = None, san_list: list = None) -> bool:
+        """
+        Check if the request matches this policy's rules.
+        If the policy has narrowing rules (e.g. dns_pattern), the request must match them.
+        If the policy has no narrowing rules, it matches everything in its scope.
+        """
+        rules = policy.get_rules() if hasattr(policy, 'get_rules') else {}
+        san_restrictions = rules.get('san_restrictions', {})
+        dns_pattern = san_restrictions.get('dns_pattern', '')
+        
+        if not dns_pattern:
+            return True
+        
+        # Collect all names to check
+        names = []
+        if cn:
+            names.append(cn)
+        if san_list:
+            names.extend(san_list)
+        
+        if not names:
+            return False
+        
+        # Check if any name matches the pattern
+        for name in names:
+            if dns_pattern == '*.':
+                # Wildcard policy: matches if name starts with *.
+                if name.startswith('*.'):
+                    return True
+            elif name.startswith(dns_pattern) or name.endswith(dns_pattern):
+                return True
+        
+        return False
 
     @staticmethod
     def create_approval_request(
