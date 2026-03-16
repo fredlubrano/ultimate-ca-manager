@@ -2671,6 +2671,19 @@ export default function SettingsPage() {
                   placeholder="http://pki.example.com"
                   helperText={t('settings.protocolBaseUrlHelper')}
                 />
+                <Input
+                  label={t('settings.httpProtocolPort')}
+                  type="number"
+                  min={0}
+                  max={65535}
+                  value={settings.http_protocol_port ?? 8080}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0
+                    updateSetting('http_protocol_port', Math.min(65535, Math.max(0, val)))
+                  }}
+                  placeholder="8080"
+                  helperText={t('settings.httpProtocolPortHelper')}
+                />
               </div>
             </DetailSection>
             <DetailSection title={t('settings.sessionTimezone')} icon={Clock} iconClass="icon-bg-teal">

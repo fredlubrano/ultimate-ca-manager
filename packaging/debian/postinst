@@ -119,9 +119,8 @@ DATABASE_PATH=$UCM_DATA/ucm.db
 
 # ============ NETWORK ============
 HTTPS_PORT=8443
-# HTTP_PORT=8080
+HTTP_PROTOCOL_PORT=8080
 # HTTP_REDIRECT=true
-# HTTP_PROTOCOL_PORT=8080  # Uncomment to serve CDP/OCSP on plain HTTP
 # FQDN=ucm.example.com
 
 # ============ LOGGING ============

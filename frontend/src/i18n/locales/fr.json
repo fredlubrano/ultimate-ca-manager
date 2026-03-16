@@ -2018,7 +2018,9 @@
     "channelDev": "Versions de développement (instables)",
     "channelDevWarning": "Les versions de développement peuvent contenir des bugs, des fonctionnalités incomplètes et des changements non rétrocompatibles. À utiliser uniquement pour les tests. Ne pas utiliser en production.",
     "currentReleaseNotes": "Notes de version — v{{version}}",
-    "updateReleaseNotes": "Nouveautés de la v{{version}}"
+    "updateReleaseNotes": "Nouveautés de la v{{version}}",
+    "httpProtocolPort": "Port HTTP protocole",
+    "httpProtocolPortHelper": "Port du serveur HTTP non chiffré pour les points d'accès CDP/OCSP. Mettre à 0 pour désactiver. Nécessite un redémarrage."
   },
   "sso": {
     "subtitle": "Configurez des fournisseurs LDAP, OAuth2 ou SAML pour une authentification centralisée",

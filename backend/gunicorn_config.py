@@ -220,25 +220,13 @@ def post_worker_init(worker):
     hub.handle_error = _quiet_handle_error
 
     # Start HTTP protocol server for CDP/OCSP (no TLS)
-    http_port = int(os.getenv('HTTP_PROTOCOL_PORT', '0'))
-    if http_port > 0:
-        try:
-            from gevent.pywsgi import WSGIServer
-            from protocol_http_server import ProtocolOnlyMiddleware
-            from wsgi import app as flask_app
-
-            http_server = WSGIServer(
-                ('0.0.0.0', http_port),
-                ProtocolOnlyMiddleware(flask_app),
-                log=None,
-            )
-            http_server.start()
-            import logging
-            logging.getLogger('ucm.protocol').info(
-                "HTTP protocol server (CDP/OCSP) started on port %d", http_port
-            )
-        except Exception as e:
-            import logging
-            logging.getLogger('ucm.protocol').warning(
-                "Could not start HTTP protocol server: %s", e
-            )
+    try:
+        from protocol_http_server import start_http_protocol_server
+        from wsgi import app as flask_app
+        with flask_app.app_context():
+            start_http_protocol_server(flask_app)
+    except Exception as e:
+        import logging
+        logging.getLogger('ucm.protocol').warning(
+            "Could not initialize HTTP protocol server: %s", e
+        )

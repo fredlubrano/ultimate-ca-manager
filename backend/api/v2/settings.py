@@ -48,6 +48,7 @@ def get_general_settings():
         'max_login_attempts': int(get_config('max_login_attempts', '5')),
         'lockout_duration': int(get_config('lockout_duration', '300')),
         'protocol_base_url': get_config('protocol_base_url', ''),
+        'http_protocol_port': int(get_config('http_protocol_port', '8080')),
     })
 
 
@@ -62,8 +63,21 @@ def update_general_settings():
         'site_name', 'timezone', 'auto_backup_enabled', 'backup_frequency',
         'backup_retention_days', 'backup_password', 'session_timeout',
         'session_max_lifetime', 'max_login_attempts', 'lockout_duration',
-        'protocol_base_url'
+        'protocol_base_url', 'http_protocol_port'
     ]
+
+    # Validate http_protocol_port if provided
+    if 'http_protocol_port' in data:
+        try:
+            port = int(data['http_protocol_port'])
+        except (ValueError, TypeError):
+            return error_response("Invalid port number", 400)
+        if port != 0 and (port < 1024 or port > 65535):
+            return error_response("Port must be 0 (disabled) or between 1024-65535", 400)
+        from config.settings import Config
+        if port == Config.HTTPS_PORT:
+            return error_response("HTTP protocol port cannot be the same as HTTPS port", 400)
+        data['http_protocol_port'] = str(port)
     
     for key in allowed_keys:
         if key in data:

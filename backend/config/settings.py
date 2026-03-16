@@ -118,7 +118,7 @@ class Config:
     HOST = os.getenv("HOST", "0.0.0.0")
     HTTPS_PORT = int(os.getenv("HTTPS_PORT", "8443"))
     HTTP_REDIRECT = os.getenv("HTTP_REDIRECT", "true").lower() == "true"
-    HTTP_PROTOCOL_PORT = int(os.getenv("HTTP_PROTOCOL_PORT", "0"))  # 0 = disabled
+    HTTP_PROTOCOL_PORT = int(os.getenv("HTTP_PROTOCOL_PORT", "8080"))  # 8080 = default
     
     # HTTPS Certificate
     # Respect package installation paths: /var/lib/ucm (Debian) or /etc/ucm (RPM)

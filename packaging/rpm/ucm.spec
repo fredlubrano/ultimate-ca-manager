@@ -134,7 +134,7 @@ if [ ! -f "$UCM_CONFIG/ucm.env" ]; then
 DATABASE_PATH=$UCM_DATA/ucm.db
 DATA_DIR=$UCM_DATA
 HTTPS_PORT=8443
-# HTTP_PROTOCOL_PORT=8080  # Uncomment to serve CDP/OCSP on plain HTTP
+HTTP_PROTOCOL_PORT=8080
 LOG_LEVEL=INFO
 
 # Security (auto-generated - keep secret)

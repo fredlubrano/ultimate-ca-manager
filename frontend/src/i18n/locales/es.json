@@ -1846,7 +1846,9 @@
     "channelDev": "Versiones de desarrollo (inestables)",
     "channelDevWarning": "Las versiones de desarrollo pueden contener errores, funciones incompletas y cambios incompatibles. Usar solo para pruebas. No usar en producción.",
     "currentReleaseNotes": "Notas de versión — v{{version}}",
-    "updateReleaseNotes": "Novedades en v{{version}}"
+    "updateReleaseNotes": "Novedades en v{{version}}",
+    "httpProtocolPort": "Puerto HTTP protocolo",
+    "httpProtocolPortHelper": "Puerto del servidor HTTP sin cifrar para los endpoints CDP/OCSP. Establecer en 0 para deshabilitar. Requiere reinicio."
   },
   "account": {
     "profile": "Perfil",

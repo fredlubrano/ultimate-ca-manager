@@ -1846,7 +1846,9 @@
     "channelDev": "开发版本（不稳定）",
     "channelDevWarning": "开发版本可能包含错误、未完成的功能和不兼容的更改。仅用于测试目的。请勿在生产环境中使用。",
     "currentReleaseNotes": "发行说明 — v{{version}}",
-    "updateReleaseNotes": "v{{version}} 新功能"
+    "updateReleaseNotes": "v{{version}} 新功能",
+    "httpProtocolPort": "HTTP协议端口",
+    "httpProtocolPortHelper": "用于CDP/OCSP端点的HTTP明文服务器端口。设为0禁用。需要重启。"
   },
   "account": {
     "profile": "个人资料",

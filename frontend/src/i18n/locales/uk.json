@@ -1846,7 +1846,9 @@
     "channelDev": "Версії розробки (нестабільні)",
     "channelDevWarning": "Версії розробки можуть містити помилки, неповні функції та несумісні зміни. Використовуйте лише для тестування. Не використовуйте у виробництві.",
     "currentReleaseNotes": "Примітки до випуску — v{{version}}",
-    "updateReleaseNotes": "Що нового у v{{version}}"
+    "updateReleaseNotes": "Що нового у v{{version}}",
+    "httpProtocolPort": "HTTP порт протоколу",
+    "httpProtocolPortHelper": "Порт HTTP-сервера без шифрування для CDP/OCSP. Встановіть 0 для вимкнення. Потрібен перезапуск."
   },
   "account": {
     "profile": "Профіль",

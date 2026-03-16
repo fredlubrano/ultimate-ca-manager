@@ -1321,18 +1321,18 @@ def main():
         print(f"{'='*60}\n")
     
     # Start HTTP protocol server for CDP/OCSP (dev mode, non-blocking thread)
-    if config.HTTP_PROTOCOL_PORT > 0:
-        import threading
-        from protocol_http_server import ProtocolOnlyMiddleware
-        from werkzeug.serving import make_server
-
-        http_srv = make_server(
-            config.HOST, config.HTTP_PROTOCOL_PORT,
-            ProtocolOnlyMiddleware(app),
-        )
-        http_thread = threading.Thread(target=http_srv.serve_forever, daemon=True)
-        http_thread.start()
-        print(f"  HTTP protocol server (CDP/OCSP) on port {config.HTTP_PROTOCOL_PORT}")
+    try:
+        from protocol_http_server import get_http_protocol_port, ProtocolOnlyMiddleware
+        http_port = get_http_protocol_port()
+        if http_port > 0:
+            import threading
+            from werkzeug.serving import make_server
+            http_srv = make_server(config.HOST, http_port, ProtocolOnlyMiddleware(app))
+            http_thread = threading.Thread(target=http_srv.serve_forever, daemon=True)
+            http_thread.start()
+            print(f"  HTTP protocol server (CDP/OCSP) on port {http_port}")
+    except Exception as e:
+        print(f"  ⚠ HTTP protocol server failed: {e}")
 
     # Run HTTPS server
     try:
