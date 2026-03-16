@@ -656,8 +656,8 @@ class DiscoveryService:
             import json
             smtp_config = json.loads(smtp_row.value)
             recipients = smtp_config.get('notification_recipients', [])
-            if not recipients and smtp_config.get('admin_email'):
-                recipients = [smtp_config['admin_email']]
+            if not recipients and smtp_config.get('smtp_from'):
+                recipients = [smtp_config['smtp_from']]
             if not recipients:
                 return
 

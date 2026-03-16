@@ -134,7 +134,7 @@ def check_and_send_alerts() -> Dict[str, Any]:
                 
                 # Add admin email from SMTP config if set
                 if smtp_config.smtp_from:
-                    admin_email = smtp_config.admin_email or smtp_config.smtp_from
+                    admin_email = smtp_config.smtp_from
                     if admin_email not in recipients:
                         recipients.append(admin_email)
                 
