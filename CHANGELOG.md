@@ -11,6 +11,15 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.89] - 2026-03-18
+
+### Fixed
+- **SubCA CDP/OCSP embedding** — SubCA certificates now embed parent CA's CRL Distribution Point and OCSP URLs in extensions (Fixes #39)
+- **Certificate CA filter crash** — Filtering certificates by specific CA caused 500 error due to using non-existent `ca_id` column instead of `caref` FK (Fixes #41)
+- **DN subject field order** — Reordered all forms (CAs, Certificates, CSRs) and detail displays to follow OpenSSL standard order: C → ST → L → O → OU → Email (Fixes #40)
+
+---
+
 ## [2.88] - 2026-03-17
 
 ### Fixed
