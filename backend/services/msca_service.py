@@ -352,18 +352,23 @@ class MicrosoftCAService:
                 cert_pem = client.get_cert(csr_pem, template, encoding='b64')
 
                 # Auto-approved: cert returned immediately
-                request = MSCARequest(
-                    msca_id=msca_id,
-                    csr_id=csr_id,
-                    template=template,
-                    status='issued',
-                    submitted_at=utc_now(),
-                    issued_at=utc_now(),
-                    cert_pem=cert_pem,
-                    submitted_by=submitted_by,
-                )
-                db.session.add(request)
-                db.session.commit()
+                try:
+                    request = MSCARequest(
+                        msca_id=msca_id,
+                        csr_id=csr_id,
+                        template=template,
+                        status='issued',
+                        submitted_at=utc_now(),
+                        issued_at=utc_now(),
+                        cert_pem=cert_pem,
+                        submitted_by=submitted_by,
+                    )
+                    db.session.add(request)
+                    db.session.commit()
+                except Exception as db_err:
+                    db.session.rollback()
+                    logger.error(f"Failed to save issued cert: {db_err}")
+                    raise
 
                 logger.info(f"CSR signed by MS CA '{msca.name}' (auto-approved), template={template}")
                 return {
@@ -373,30 +378,44 @@ class MicrosoftCAService:
                 }
 
             except Exception as submit_err:
-                import certsrv as _certsrv
                 err_str = str(submit_err).lower()
 
-                # Pending approval (typed exception or string match)
+                # Classify the error — string matching first (always works),
+                # then enhance with typed exceptions if certsrv importable
                 is_pending = (
-                    isinstance(submit_err, _certsrv.CertificatePendingException)
-                    or 'pending' in err_str
+                    'pending' in err_str
                     or 'taken under submission' in err_str
                 )
+                is_denied = 'denied' in err_str
+
+                try:
+                    import certsrv as _certsrv
+                    if hasattr(_certsrv, 'CertificatePendingException'):
+                        is_pending = is_pending or isinstance(submit_err, _certsrv.CertificatePendingException)
+                    if hasattr(_certsrv, 'RequestDeniedException'):
+                        is_denied = is_denied or isinstance(submit_err, _certsrv.RequestDeniedException)
+                except ImportError:
+                    pass  # String matching above is sufficient
+
                 if is_pending:
                     ms_request_id = MicrosoftCAService._extract_request_id(str(submit_err))
 
-                    req = MSCARequest(
-                        msca_id=msca_id,
-                        csr_id=csr_id,
-                        request_id=ms_request_id,
-                        template=template,
-                        status='pending',
-                        disposition_message=str(submit_err)[:500],
-                        submitted_at=utc_now(),
-                        submitted_by=submitted_by,
-                    )
-                    db.session.add(req)
-                    db.session.commit()
+                    try:
+                        req = MSCARequest(
+                            msca_id=msca_id,
+                            csr_id=csr_id,
+                            request_id=ms_request_id,
+                            template=template,
+                            status='pending',
+                            disposition_message=str(submit_err)[:500],
+                            submitted_at=utc_now(),
+                            submitted_by=submitted_by,
+                        )
+                        db.session.add(req)
+                        db.session.commit()
+                    except Exception as db_err:
+                        db.session.rollback()
+                        logger.error(f"Failed to save pending request: {db_err}")
 
                     logger.info(
                         f"CSR submitted to MS CA '{msca.name}' (pending approval), "
@@ -404,43 +423,46 @@ class MicrosoftCAService:
                     )
                     return {
                         'status': 'pending',
-                        'request_id': req.id,
+                        'request_id': getattr(req, 'id', None),
                         'ms_request_id': ms_request_id,
                         'message': 'Request pending manager approval',
                     }
 
-                # Denied (typed exception or string match)
-                is_denied = (
-                    isinstance(submit_err, _certsrv.RequestDeniedException)
-                    or 'denied' in err_str
-                )
                 if is_denied:
+                    try:
+                        req = MSCARequest(
+                            msca_id=msca_id,
+                            csr_id=csr_id,
+                            template=template,
+                            status='denied',
+                            error_message=str(submit_err)[:500],
+                            submitted_at=utc_now(),
+                            submitted_by=submitted_by,
+                        )
+                        db.session.add(req)
+                        db.session.commit()
+                    except Exception as db_err:
+                        db.session.rollback()
+                        logger.error(f"Failed to save denied request: {db_err}")
+                    raise ValueError(f"Certificate request denied: {submit_err}")
+
+                # Unknown error — log with full traceback
+                logger.error(f"MS CA sign failed for '{msca.name}': {submit_err}", exc_info=True)
+                try:
                     req = MSCARequest(
                         msca_id=msca_id,
                         csr_id=csr_id,
                         template=template,
-                        status='denied',
+                        status='failed',
                         error_message=str(submit_err)[:500],
                         submitted_at=utc_now(),
                         submitted_by=submitted_by,
                     )
                     db.session.add(req)
                     db.session.commit()
-                    raise ValueError(f"Certificate request denied: {submit_err}")
-
-                # Unknown error — log with traceback and store
-                logger.error(f"MS CA sign failed for '{msca.name}': {submit_err}", exc_info=True)
-                req = MSCARequest(
-                    msca_id=msca_id,
-                    csr_id=csr_id,
-                    template=template,
-                    status='failed',
-                    error_message=str(submit_err)[:500],
-                    submitted_at=utc_now(),
-                    submitted_by=submitted_by,
-                )
-                db.session.add(req)
-                db.session.commit()
+                except Exception as db_err:
+                    db.session.rollback()
+                    logger.error(f"Failed to save failed request: {db_err}")
                 raise
 
         finally:

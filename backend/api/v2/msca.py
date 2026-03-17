@@ -273,7 +273,18 @@ def sign_csr(msca_id, csr_id):
     except Exception:
         csr_pem = csr.csr
 
-    username = g.current_user.username if hasattr(g, 'current_user') else None
+    if not csr_pem:
+        return error_response("CSR data is empty", 400)
+
+    # Ensure it's a string
+    if isinstance(csr_pem, bytes):
+        csr_pem = csr_pem.decode('utf-8', errors='replace')
+
+    username = None
+    try:
+        username = g.current_user.username if hasattr(g, 'current_user') and g.current_user else None
+    except Exception:
+        pass
 
     try:
         result = MicrosoftCAService.submit_csr(
@@ -295,11 +306,11 @@ def sign_csr(msca_id, csr_id):
         return success_response(data=result)
 
     except ValueError as e:
-        logger.error(f"Validation error signing CSR via MS CA: {e}")
-        return error_response("Invalid request data", 400)
+        logger.error(f"Validation error signing CSR via MS CA: {e}", exc_info=True)
+        return error_response(str(e), 400)
     except Exception as e:
-        logger.error(f"Failed to sign CSR via MS CA: {e}")
-        return error_response("Failed to submit CSR to Microsoft CA", 500)
+        logger.error(f"Failed to sign CSR via MS CA: {e}", exc_info=True)
+        return error_response(f"Failed to submit CSR to Microsoft CA: {e}", 500)
 
 
 @bp.route('/<int:msca_id>/requests/<int:request_id>', methods=['GET'])
