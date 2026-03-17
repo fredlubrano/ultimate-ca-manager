@@ -4,7 +4,7 @@ CRUD for MS CA connections + CSR signing + request status tracking
 """
 
 import logging
-from flask import Blueprint, request
+from flask import Blueprint, request, g
 from auth.unified import require_auth
 from utils.response import success_response, error_response, created_response, no_content_response
 from models import db
@@ -68,7 +68,7 @@ def create_connection():
             ca_bundle=data.get('ca_bundle', '').strip() or None,
             default_template=data.get('default_template', 'WebServer').strip(),
             enabled=data.get('enabled', True),
-            created_by=request.current_user.username if hasattr(request, 'current_user') else None,
+            created_by=g.current_user.username if hasattr(g, 'current_user') else None,
         )
 
         # Auth-specific fields
@@ -273,7 +273,7 @@ def sign_csr(msca_id, csr_id):
     except Exception:
         csr_pem = csr.csr
 
-    username = request.current_user.username if hasattr(request, 'current_user') else None
+    username = g.current_user.username if hasattr(g, 'current_user') else None
 
     try:
         result = MicrosoftCAService.submit_csr(

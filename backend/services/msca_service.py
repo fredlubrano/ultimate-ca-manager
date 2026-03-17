@@ -136,26 +136,40 @@ class MicrosoftCAService:
         
         The certsrv library doesn't expose template listing, so we scrape
         the Advanced Certificate Request page which has a <select> dropdown.
-        Returns list of template OID/name strings.
+        
+        ADCS Option values can be in different formats:
+          - Simple: "WebServer"
+          - Compound: "E;WebServer;1;21255454;..."  (Enterprise templates)
+        We extract just the template name from both formats.
+        
+        Returns list of template name strings.
         """
         url = f"https://{client.server}/certsrv/certrqxt.asp"
         try:
             response = client.session.get(url, timeout=client.timeout)
             response.raise_for_status()
             html = response.text
-            # Parse <Option Value="TemplateName"> from the lbCertTemplateID select
-            templates = re.findall(
+            # Parse <Option Value="..."> from the lbCertTemplateID select
+            raw_values = re.findall(
                 r'<Option\s+Value="([^"]+)"',
                 html,
                 re.IGNORECASE
             )
-            # Deduplicate while preserving order
+            # Extract template name from compound values
+            # Format: "E;TemplateName;MajorVersion;MinorVersion;..." or just "TemplateName"
             seen = set()
             unique = []
-            for t in templates:
-                if t not in seen:
-                    seen.add(t)
-                    unique.append(t)
+            for raw in raw_values:
+                if ';' in raw:
+                    # Compound format: split and take the second field (template name)
+                    parts = raw.split(';')
+                    name = parts[1] if len(parts) > 1 else parts[0]
+                else:
+                    name = raw
+                name = name.strip()
+                if name and name not in seen:
+                    seen.add(name)
+                    unique.append(name)
             return unique
         except Exception as e:
             logger.warning(f"Failed to scrape templates from certrqxt.asp: {e}")
@@ -359,13 +373,19 @@ class MicrosoftCAService:
                 }
 
             except Exception as submit_err:
+                import certsrv as _certsrv
                 err_str = str(submit_err).lower()
-                # Check if it's a pending approval (disposition = 5 / "taken under submission")
-                if 'pending' in err_str or 'taken under submission' in err_str:
-                    # Extract request ID from error if possible
+
+                # Pending approval (typed exception or string match)
+                is_pending = (
+                    isinstance(submit_err, _certsrv.CertificatePendingException)
+                    or 'pending' in err_str
+                    or 'taken under submission' in err_str
+                )
+                if is_pending:
                     ms_request_id = MicrosoftCAService._extract_request_id(str(submit_err))
 
-                    request = MSCARequest(
+                    req = MSCARequest(
                         msca_id=msca_id,
                         csr_id=csr_id,
                         request_id=ms_request_id,
@@ -375,7 +395,7 @@ class MicrosoftCAService:
                         submitted_at=utc_now(),
                         submitted_by=submitted_by,
                     )
-                    db.session.add(request)
+                    db.session.add(req)
                     db.session.commit()
 
                     logger.info(
@@ -384,14 +404,18 @@ class MicrosoftCAService:
                     )
                     return {
                         'status': 'pending',
-                        'request_id': request.id,
+                        'request_id': req.id,
                         'ms_request_id': ms_request_id,
                         'message': 'Request pending manager approval',
                     }
 
-                # Check if denied
-                if 'denied' in err_str:
-                    request = MSCARequest(
+                # Denied (typed exception or string match)
+                is_denied = (
+                    isinstance(submit_err, _certsrv.RequestDeniedException)
+                    or 'denied' in err_str
+                )
+                if is_denied:
+                    req = MSCARequest(
                         msca_id=msca_id,
                         csr_id=csr_id,
                         template=template,
@@ -400,12 +424,13 @@ class MicrosoftCAService:
                         submitted_at=utc_now(),
                         submitted_by=submitted_by,
                     )
-                    db.session.add(request)
+                    db.session.add(req)
                     db.session.commit()
                     raise ValueError(f"Certificate request denied: {submit_err}")
 
-                # Unknown error
-                request = MSCARequest(
+                # Unknown error — log with traceback and store
+                logger.error(f"MS CA sign failed for '{msca.name}': {submit_err}", exc_info=True)
+                req = MSCARequest(
                     msca_id=msca_id,
                     csr_id=csr_id,
                     template=template,
@@ -414,7 +439,7 @@ class MicrosoftCAService:
                     submitted_at=utc_now(),
                     submitted_by=submitted_by,
                 )
-                db.session.add(request)
+                db.session.add(req)
                 db.session.commit()
                 raise
 
