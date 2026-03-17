@@ -313,6 +313,8 @@ class MicrosoftCAService:
         try:
             client = MicrosoftCAService._get_client(msca)
             ca_cert_pem = client.get_ca_cert(encoding='b64')
+            if isinstance(ca_cert_pem, bytes):
+                ca_cert_pem = ca_cert_pem.decode('utf-8', errors='replace')
             return ca_cert_pem
         except Exception as e:
             logger.error(f"Failed to get CA cert from '{msca.name}': {e}")
@@ -350,6 +352,10 @@ class MicrosoftCAService:
             # Submit CSR - certsrv returns cert directly for auto-approved templates
             try:
                 cert_pem = client.get_cert(csr_pem, template, encoding='b64')
+
+                # certsrv returns bytes — decode to string for JSON/DB storage
+                if isinstance(cert_pem, bytes):
+                    cert_pem = cert_pem.decode('utf-8', errors='replace')
 
                 # Auto-approved: cert returned immediately
                 try:
@@ -491,6 +497,8 @@ class MicrosoftCAService:
             client = MicrosoftCAService._get_client(msca)
             # Try to retrieve the cert (will succeed if approved)
             cert_pem = client.get_existing_cert(req.request_id, encoding='b64')
+            if isinstance(cert_pem, bytes):
+                cert_pem = cert_pem.decode('utf-8', errors='replace')
 
             req.status = 'issued'
             req.issued_at = utc_now()
