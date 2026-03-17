@@ -17,6 +17,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 - **CDP URLs now use HTTP protocol** — CDP URL generation in CA API was hardcoded to HTTPS (`request.host_url`), now uses `get_protocol_base_url()` which respects HTTP protocol port configuration
 - **CRL/OCSP page shows actual URLs** — Distribution Points section now displays the real CDP/OCSP URLs stored on the CA (with HTTP protocol) instead of hardcoded `window.location.origin` (HTTPS)
 - **Migration updates existing CA URLs** — Existing CAs with HTTPS CDP/OCSP URLs are automatically migrated to HTTP when HTTP protocol port is enabled
+- **Expiry alerts respect disabled setting** — Scheduler now uses NotificationService (DB-backed) instead of in-memory ExpiryAlertSettings; disabling alerts in UI actually stops emails
+- **Expiry emails use custom template** — Alert emails now go through NotificationService which applies the configured email template
+- **Missing i18n keys** — Added `details.subjectAltNames`, `common.enable`, `common.disable` across all 9 locales
 
 ---
 
