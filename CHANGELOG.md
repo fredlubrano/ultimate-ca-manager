@@ -11,6 +11,17 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.83] - 2026-03-17
+
+### Fixed
+- **ADCS template parsing** — Extract template name from compound ADCS values (`E;TemplateName;1;...`) instead of using raw string
+- **ADCS CSR signing 500 error** — Proper certsrv exception handling (CertificatePendingException, RequestDeniedException) with full stack trace logging
+- **ADCS submitted_by tracking** — Fixed username access (`g.current_user` instead of non-existent `request.current_user`)
+- **Expiry alerts ignore disabled setting** — Scheduler now uses NotificationService (DB-backed) instead of in-memory settings; disabling alerts in UI actually stops emails
+- **Expiry emails use custom template** — Alert emails now go through NotificationService with configured email template
+
+---
+
 ## [2.82] - 2026-03-17
 
 ### Fixed
