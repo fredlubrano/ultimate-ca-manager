@@ -354,16 +354,18 @@ def create_app(config_name=None):
         except ImportError:
             pass
         
-        # Register certificate expiry alert task (runs daily)
+        # Register certificate/CRL expiry notification task (runs daily)
+        # Uses NotificationService which respects DB enabled/disabled settings
+        # and uses the custom email template
         try:
-            from services.expiry_alert_service import scheduled_expiry_check
+            from services.notification_service import NotificationService
             scheduler.register_task(
                 name="cert_expiry_alerts",
-                func=scheduled_expiry_check,
+                func=NotificationService.run_scheduled_checks,
                 interval=86400,  # 24 hours
-                description="Check for expiring certificates and send alerts"
+                description="Check for expiring certificates/CRLs and send notifications"
             )
-            app.logger.info("Registered certificate expiry alert task (daily)")
+            app.logger.info("Registered certificate expiry notification task (daily)")
         except ImportError:
             pass
         
