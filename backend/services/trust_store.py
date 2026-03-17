@@ -112,6 +112,7 @@ class TrustStoreService:
         validity_days: int = 825,
         digest: str = 'sha256',
         ocsp_uri: Optional[str] = None,
+        cdp_url: Optional[str] = None,
         serial: Optional[int] = None
     ) -> Tuple[bytes, bytes]:
         """
@@ -124,7 +125,8 @@ class TrustStoreService:
             issuer_private_key: Issuer's private key (None for self-signed)
             validity_days: Certificate validity in days
             digest: Hash algorithm
-            ocsp_uri: Optional OCSP URI
+            ocsp_uri: Optional OCSP URI (parent CA's OCSP)
+            cdp_url: Optional CRL Distribution Point URL (parent CA's CDP)
             serial: Optional serial number
             
         Returns:
@@ -191,6 +193,20 @@ class TrustStoreService:
                     x509.AccessDescription(
                         x509.oid.AuthorityInformationAccessOID.OCSP,
                         x509.UniformResourceIdentifier(ocsp_uri)
+                    )
+                ]),
+                critical=False,
+            )
+        
+        # CRL Distribution Point if provided (parent CA's CDP for SubCAs)
+        if cdp_url:
+            builder = builder.add_extension(
+                x509.CRLDistributionPoints([
+                    x509.DistributionPoint(
+                        full_name=[x509.UniformResourceIdentifier(cdp_url)],
+                        relative_name=None,
+                        crl_issuer=None,
+                        reasons=None,
                     )
                 ]),
                 critical=False,

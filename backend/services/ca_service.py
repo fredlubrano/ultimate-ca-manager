@@ -68,6 +68,8 @@ class CAService:
         # Get parent CA if intermediate
         issuer = None
         issuer_private_key = None
+        parent_cdp_url = None
+        parent_ocsp_url = None
         if caref:
             parent_ca = CA.query.filter_by(refid=caref).first()
             if not parent_ca:
@@ -91,6 +93,12 @@ class CAService:
             
             # Increment parent CA serial
             parent_ca.serial = (parent_ca.serial or 0) + 1
+
+            # Resolve parent CDP/OCSP URLs for embedding in SubCA cert
+            if parent_ca.cdp_enabled and parent_ca.cdp_url:
+                parent_cdp_url = parent_ca.cdp_url.replace('{ca_refid}', parent_ca.refid or '')
+            if parent_ca.ocsp_enabled and parent_ca.ocsp_url:
+                parent_ocsp_url = parent_ca.ocsp_url.replace('{ca_refid}', parent_ca.refid or '')
         
         # Create CA certificate
         cert_pem, key_pem = TrustStoreService.create_ca_certificate(
@@ -100,7 +108,8 @@ class CAService:
             issuer_private_key=issuer_private_key,
             validity_days=validity_days,
             digest=digest,
-            ocsp_uri=ocsp_uri
+            ocsp_uri=parent_ocsp_url or ocsp_uri,
+            cdp_url=parent_cdp_url,
         )
         
         # Parse certificate for details
