@@ -399,7 +399,9 @@
       "email": "E-mail",
       "street": "Rua",
       "serial": "Número de série"
-    }
+    },
+    "enable": "Ativar",
+    "disable": "Desativar"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
@@ -2354,7 +2356,8 @@
       "aia": "Acesso a informações da autoridade",
       "policies": "Políticas do certificado",
       "nameConstraints": "Restrições de nome"
-    }
+    },
+    "subjectAltNames": "Nomes alternativos do sujeito"
   },
   "compare": {
     "title": "Compare Certificados",

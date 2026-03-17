@@ -399,7 +399,9 @@
       "email": "电子邮件",
       "street": "街道",
       "serial": "序列号"
-    }
+    },
+    "enable": "启用",
+    "disable": "禁用"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",
@@ -2354,7 +2356,8 @@
       "aia": "颁发机构信息访问",
       "policies": "证书策略",
       "nameConstraints": "名称约束"
-    }
+    },
+    "subjectAltNames": "主题备用名称"
   },
   "compare": {
     "title": "比较证书",

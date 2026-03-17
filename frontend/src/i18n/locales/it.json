@@ -399,7 +399,9 @@
       "email": "E-mail",
       "street": "Via",
       "serial": "Numero di serie"
-    }
+    },
+    "enable": "Attiva",
+    "disable": "Disattiva"
   },
   "commandPalette": {
     "searchPlaceholder": "Cerca comandi, certificati, CA, utenti...",
@@ -2354,7 +2356,8 @@
       "aia": "Accesso informazioni autorità",
       "policies": "Politiche del certificato",
       "nameConstraints": "Vincoli di nome"
-    }
+    },
+    "subjectAltNames": "Nomi alternativi del soggetto"
   },
   "compare": {
     "title": "Confronta Certificati",

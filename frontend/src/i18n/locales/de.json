@@ -399,7 +399,9 @@
       "email": "E-Mail",
       "street": "Straße",
       "serial": "Seriennummer"
-    }
+    },
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren"
   },
   "commandPalette": {
     "searchPlaceholder": "Befehle, Zertifikate, CAs, Benutzer suchen...",
@@ -2354,7 +2356,8 @@
       "aia": "Zugriff auf Zertifizierungsstelleninformationen",
       "policies": "Zertifikatsrichtlinien",
       "nameConstraints": "Namenseinschränkungen"
-    }
+    },
+    "subjectAltNames": "Alternative Antragstellernamen"
   },
   "compare": {
     "title": "Zertifikate vergleichen",

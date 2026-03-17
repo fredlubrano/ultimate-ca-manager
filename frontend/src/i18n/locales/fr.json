@@ -962,7 +962,9 @@
       "email": "E-mail",
       "street": "Rue",
       "serial": "Numéro de série"
-    }
+    },
+    "enable": "Activer",
+    "disable": "Désactiver"
   },
   "compare": {
     "title": "Comparer les certificats",
@@ -1225,7 +1227,8 @@
       "aia": "Accès aux informations de l'autorité",
       "policies": "Politiques du certificat",
       "nameConstraints": "Contraintes de noms"
-    }
+    },
+    "subjectAltNames": "Noms alternatifs du sujet"
   },
   "groups": {
     "group": "Groupe",

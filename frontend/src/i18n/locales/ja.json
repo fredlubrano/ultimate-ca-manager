@@ -399,7 +399,9 @@
       "email": "メール",
       "street": "番地",
       "serial": "シリアル番号"
-    }
+    },
+    "enable": "有効にする",
+    "disable": "無効にする"
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",
@@ -2354,7 +2356,8 @@
       "aia": "認証局情報アクセス",
       "policies": "証明書ポリシー",
       "nameConstraints": "名前制約"
-    }
+    },
+    "subjectAltNames": "サブジェクト代替名"
   },
   "compare": {
     "title": "証明書の比較",
