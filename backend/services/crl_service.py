@@ -188,7 +188,7 @@ class CRLService:
             # Build delta URL from the known CDP route pattern: /cdp/<ca_id>-delta.crl
             from urllib.parse import urlparse
             parsed = urlparse(ca.cdp_url.replace('{ca_refid}', ca.refid))
-            delta_url = f"{parsed.scheme}://{parsed.netloc}/cdp/{ca.id}-delta.crl"
+            delta_url = f"{parsed.scheme}://{parsed.netloc}/cdp/{ca.refid}-delta.crl"
             try:
                 builder = builder.add_extension(
                     x509.FreshestCRL([
@@ -422,6 +422,25 @@ class CRLService:
         builder = builder.add_extension(
             x509.DeltaCRLIndicator(base_crl.crl_number), critical=True
         )
+        
+        # Add IssuingDistributionPoint (RFC 5280 §5.2.5) — CRITICAL for delta CRLs
+        if ca.cdp_url:
+            try:
+                cdp_resolved = ca.cdp_url.replace('{ca_refid}', ca.refid)
+                builder = builder.add_extension(
+                    x509.IssuingDistributionPoint(
+                        full_name=[x509.UniformResourceIdentifier(cdp_resolved)],
+                        relative_name=None,
+                        only_contains_user_certs=False,
+                        only_contains_ca_certs=False,
+                        only_some_reasons=None,
+                        indirect_crl=False,
+                        only_contains_attribute_certs=False
+                    ),
+                    critical=True
+                )
+            except Exception as e:
+                logger.warning(f"Could not add IssuingDistributionPoint to delta CRL: {e}")
         
         # Add Authority Key Identifier
         try:

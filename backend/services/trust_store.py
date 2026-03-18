@@ -413,9 +413,11 @@ class TrustStoreService:
             san_list.extend([x509.RFC822Name(email) for email in san_email])
         
         if san_list:
+            # RFC 5280 §4.2.1.6: SAN MUST be critical if subject is empty
+            san_critical = not bool(list(subject))
             builder = builder.add_extension(
                 x509.SubjectAlternativeName(san_list),
-                critical=False,
+                critical=san_critical,
             )
         
         # Subject Key Identifier
@@ -524,7 +526,7 @@ class TrustStoreService:
         if san_list:
             builder = builder.add_extension(
                 x509.SubjectAlternativeName(san_list),
-                critical=False,
+                critical=False,  # CSR: criticality set by CA at signing time
             )
         
         # Sign CSR
@@ -706,6 +708,24 @@ class TrustStoreService:
                     ]),
                     critical=False
                 )
+
+        # SubjectKeyIdentifier — RFC 5280 §4.2.1.2 (MUST for CA, SHOULD for EE)
+        try:
+            csr.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_KEY_IDENTIFIER)
+        except x509.ExtensionNotFound:
+            builder = builder.add_extension(
+                x509.SubjectKeyIdentifier.from_public_key(csr.public_key()),
+                critical=False
+            )
+
+        # AuthorityKeyIdentifier — RFC 5280 §4.2.1.1 (MUST for non-self-signed)
+        try:
+            csr.extensions.get_extension_for_oid(ExtensionOID.AUTHORITY_KEY_IDENTIFIER)
+        except x509.ExtensionNotFound:
+            builder = builder.add_extension(
+                x509.AuthorityKeyIdentifier.from_issuer_public_key(ca_cert.public_key()),
+                critical=False
+            )
 
         # Sign
         hash_algo = TrustStoreService.HASH_ALGORITHMS.get(digest, hashes.SHA256())

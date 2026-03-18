@@ -35,6 +35,10 @@ def ocsp_responder():
     try:
         # Extract DER-encoded request
         if request.method == 'POST':
+            # RFC 6960 §4.2.2: validate Content-Type
+            content_type = request.content_type or ''
+            if not content_type.startswith(OCSP_REQUEST_TYPE):
+                return _error_response(ocsp.OCSPResponseStatus.MALFORMED_REQUEST)
             request_der = request.get_data()
         else:
             # GET: request is base64-encoded in the URL query string or path

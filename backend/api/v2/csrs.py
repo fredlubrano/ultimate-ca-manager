@@ -249,6 +249,10 @@ def upload_csr():
         # Parse CSR
         csr = x509.load_pem_x509_csr(csr_pem, default_backend())
         
+        # RFC 2986 §2.2: verify CSR signature
+        if not csr.is_signature_valid:
+            return error_response('CSR has invalid signature', 400)
+        
         # Extract subject info
         subject = csr.subject
         cn = None
@@ -366,6 +370,10 @@ def import_csr():
     try:
         # Parse CSR
         csr = x509.load_pem_x509_csr(csr_pem, default_backend())
+        
+        # RFC 2986 §2.2: verify CSR signature
+        if not csr.is_signature_valid:
+            return error_response('CSR has invalid signature', 400)
         
         # Extract subject info
         subject = csr.subject
