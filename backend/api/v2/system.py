@@ -383,8 +383,20 @@ def apply_https_cert():
             except Exception:
                 pass
         
-        # Write new certificate
-        cert_path.write_text(cert_data)
+        # Write new certificate with full chain (leaf + intermediates + root)
+        full_cert = cert_data
+        if cert.caref:
+            from services.ca_service import CAService
+            ca = CA.query.filter_by(refid=cert.caref).first()
+            if ca:
+                chain_pems = CAService.get_ca_chain(ca.id)
+                for chain_cert in chain_pems:
+                    chain_str = chain_cert.decode('utf-8') if isinstance(chain_cert, bytes) else chain_cert
+                    if not full_cert.endswith('\n'):
+                        full_cert += '\n'
+                    full_cert += chain_str
+        
+        cert_path.write_text(full_cert)
         
         # Write private key with restricted permissions
         key_path.write_text(key_data)

@@ -133,6 +133,38 @@ def _load_mtls_config():
             print(f"mTLS: CA cert for {ca_refid} is not valid PEM format", file=sys.stderr)
             return
 
+        # Build full chain (include parent CAs up to root)
+        full_chain = ca_pem
+        cursor2 = sqlite3.connect(db_path).cursor()
+        current_refid = ca_refid
+        while True:
+            cursor2.execute(
+                "SELECT caref FROM certificate_authorities WHERE refid = ?",
+                (current_refid,)
+            )
+            parent_row = cursor2.fetchone()
+            if not parent_row or not parent_row[0]:
+                break
+            parent_refid = parent_row[0]
+            cursor2.execute(
+                "SELECT crt FROM certificate_authorities WHERE refid = ?",
+                (parent_refid,)
+            )
+            parent_cert_row = cursor2.fetchone()
+            if not parent_cert_row or not parent_cert_row[0]:
+                break
+            try:
+                parent_pem = base64.b64decode(parent_cert_row[0]).decode('utf-8')
+            except Exception:
+                parent_pem = parent_cert_row[0]
+            if '-----BEGIN CERTIFICATE-----' not in parent_pem:
+                break
+            if not full_chain.endswith('\n'):
+                full_chain += '\n'
+            full_chain += parent_pem
+            current_refid = parent_refid
+        cursor2.connection.close()
+
         # Write CA cert atomically (temp file + rename) with restricted permissions
         import tempfile
         import stat
@@ -140,7 +172,7 @@ def _load_mtls_config():
         fd, temp_path = tempfile.mkstemp(dir=data_path, prefix='.mtls_ca_', suffix='.tmp')
         try:
             with os.fdopen(fd, 'w') as f:
-                f.write(ca_pem)
+                f.write(full_chain)
             os.chmod(temp_path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP)
             os.rename(temp_path, ca_file_path)
         except Exception as e:

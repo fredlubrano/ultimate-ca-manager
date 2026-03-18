@@ -157,10 +157,18 @@ def simple_enroll():
         db.session.add(log)
         db.session.commit()
         
-        # Return PKCS#7 with certificate
+        # Return PKCS#7 with certificate + CA chain (RFC 7030 §4.2.3)
         from cryptography.hazmat.primitives.serialization import pkcs7
         cert = x509.load_pem_x509_certificate(cert_pem.encode(), default_backend())
-        p7_der = pkcs7.serialize_certificates([cert], encoding=pkcs7.PKCS7Options.Binary)
+        certs_for_p7 = [cert]
+        
+        # Include issuing CA chain
+        chain = CAService.get_certificate_chain(ca.refid)
+        for chain_pem in chain:
+            chain_cert = x509.load_pem_x509_certificate(chain_pem.encode(), default_backend())
+            certs_for_p7.append(chain_cert)
+        
+        p7_der = pkcs7.serialize_certificates(certs_for_p7, encoding=pkcs7.PKCS7Options.Binary)
         p7_b64 = base64.b64encode(p7_der).decode()
         
         return Response(
@@ -245,7 +253,15 @@ def simple_reenroll():
         
         from cryptography.hazmat.primitives.serialization import pkcs7
         cert = x509.load_pem_x509_certificate(cert_pem.encode(), default_backend())
-        p7_der = pkcs7.serialize_certificates([cert], encoding=pkcs7.PKCS7Options.Binary)
+        certs_for_p7 = [cert]
+        
+        # Include issuing CA chain (RFC 7030 §4.2.3)
+        chain = CAService.get_certificate_chain(ca.refid)
+        for chain_pem in chain:
+            chain_cert = x509.load_pem_x509_certificate(chain_pem.encode(), default_backend())
+            certs_for_p7.append(chain_cert)
+        
+        p7_der = pkcs7.serialize_certificates(certs_for_p7, encoding=pkcs7.PKCS7Options.Binary)
         p7_b64 = base64.b64encode(p7_der).decode()
         
         return Response(
@@ -338,8 +354,14 @@ def server_keygen():
         
         cert = x509.load_pem_x509_certificate(cert_pem.encode(), default_backend())
         
-        # PKCS#7 certificate
-        p7_der = pkcs7.serialize_certificates([cert], encoding=pkcs7.PKCS7Options.Binary)
+        # PKCS#7 certificate + CA chain (RFC 7030 §4.2.3)
+        certs_for_p7 = [cert]
+        chain = CAService.get_certificate_chain(ca.refid)
+        for chain_pem in chain:
+            chain_cert = x509.load_pem_x509_certificate(chain_pem.encode(), default_backend())
+            certs_for_p7.append(chain_cert)
+        
+        p7_der = pkcs7.serialize_certificates(certs_for_p7, encoding=pkcs7.PKCS7Options.Binary)
         p7_b64 = base64.b64encode(p7_der).decode()
         
         # Private key — encrypt with password if Basic Auth was used (RFC 7030 §4.4.2)
