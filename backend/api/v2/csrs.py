@@ -167,12 +167,27 @@ def create_csr():
         else:
             key_type = '2048'
 
-        # Parse SANs - frontend sends ["DNS:example.com", "IP:1.2.3.4"]
+        # Parse SANs - frontend sends ["DNS:example.com", "IP:1.2.3.4", "Email:user@example.com"]
         san_dns = []
         san_ip = []
+        san_email = []
+        san_uri = []
         for entry in data.get('sans', []):
             entry = entry.strip()
-            entry_clean = re.sub(r'^(DNS|IP|EMAIL|URI):\s*', '', entry, flags=re.IGNORECASE)
+            # Detect type from prefix
+            entry_lower = entry.lower()
+            if entry_lower.startswith('email:'):
+                val = entry[6:].strip()
+                if val:
+                    san_email.append(val)
+                continue
+            if entry_lower.startswith('uri:'):
+                val = entry[4:].strip()
+                if val:
+                    san_uri.append(val)
+                continue
+            # Strip DNS:/IP: prefix for remaining
+            entry_clean = re.sub(r'^(DNS|IP):\s*', '', entry, flags=re.IGNORECASE)
             if not entry_clean:
                 continue
             try:
@@ -188,6 +203,8 @@ def create_csr():
             key_type=key_type,
             san_dns=san_dns or None,
             san_ip=san_ip or None,
+            san_email=san_email or None,
+            san_uri=san_uri or None,
             username=getattr(g, 'current_user', None) and g.current_user.username or 'system'
         )
         

@@ -483,6 +483,8 @@ class TrustStoreService:
         digest: str = 'sha256',
         san_dns: Optional[List[str]] = None,
         san_ip: Optional[List[str]] = None,
+        san_email: Optional[List[str]] = None,
+        san_uri: Optional[List[str]] = None,
     ) -> Tuple[bytes, bytes]:
         """
         Generate a Certificate Signing Request
@@ -493,6 +495,8 @@ class TrustStoreService:
             digest: Hash algorithm
             san_dns: List of DNS SANs
             san_ip: List of IP SANs
+            san_email: List of email SANs (RFC822Name)
+            san_uri: List of URI SANs
             
         Returns:
             Tuple of (CSR PEM, private key PEM)
@@ -512,6 +516,10 @@ class TrustStoreService:
             san_list.extend([
                 x509.IPAddress(ipaddress.ip_address(ip)) for ip in san_ip
             ])
+        if san_email:
+            san_list.extend([x509.RFC822Name(email) for email in san_email])
+        if san_uri:
+            san_list.extend([x509.UniformResourceIdentifier(uri) for uri in san_uri])
         
         if san_list:
             builder = builder.add_extension(

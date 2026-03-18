@@ -234,6 +234,8 @@ class CertificateService:
         digest: str = 'sha256',
         san_dns: Optional[List[str]] = None,
         san_ip: Optional[List[str]] = None,
+        san_email: Optional[List[str]] = None,
+        san_uri: Optional[List[str]] = None,
         username: str = 'system'
     ) -> Certificate:
         """
@@ -260,7 +262,9 @@ class CertificateService:
             key_type=key_type,
             digest=digest,
             san_dns=san_dns,
-            san_ip=san_ip
+            san_ip=san_ip,
+            san_email=san_email,
+            san_uri=san_uri
         )
         
         # Parse CSR
@@ -274,6 +278,10 @@ class CertificateService:
             csr=base64.b64encode(csr_pem).decode('utf-8'),
             prv=base64.b64encode(key_pem).decode('utf-8'),
             subject=csr.subject.rfc4514_string(),
+            san_dns=json.dumps(san_dns) if san_dns else None,
+            san_ip=json.dumps(san_ip) if san_ip else None,
+            san_email=json.dumps(san_email) if san_email else None,
+            san_uri=json.dumps(san_uri) if san_uri else None,
             imported_from='csr_generated',
             created_by=username
         )
