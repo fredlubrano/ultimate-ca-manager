@@ -3366,7 +3366,15 @@
     "signMicrosoft": "Microsoft CA",
     "notConfigured": "未設定",
     "configured": "設定済み",
-    "kerberosOptionalNote": "KerberosにはパッケージRequests-kerberos（pip install requests-kerberos）が必要で、マシンがActive Directoryドメインに参加しているか、Kerberos keytabが設定されている必要があります。"
+    "kerberosOptionalNote": "KerberosにはパッケージRequests-kerberos（pip install requests-kerberos）が必要で、マシンがActive Directoryドメインに参加しているか、Kerberos keytabが設定されている必要があります。",
+    "eobo": {
+      "enable": "代理登録 (EOBO)",
+      "enrolleeName": "登録対象者のDN",
+      "enrolleeNamePlaceholder": "CN=山田太郎,OU=ユーザー,DC=corp,DC=local",
+      "enrolleeUpn": "登録対象者のUPN",
+      "enrolleeUpnPlaceholder": "taro.yamada@corp.local",
+      "hint": "CAに構成された登録エージェント証明書が必要です。テンプレートは他のユーザーの代理登録を許可する必要があります。"
+    }
   },
   "certInput": {
     "modePaste": "貼り付け",

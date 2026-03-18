@@ -59,6 +59,9 @@ export default function CSRsPage() {
   const [mscaTemplates, setMscaTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [loadingTemplates, setLoadingTemplates] = useState(false)
+  const [eoboEnabled, setEoboEnabled] = useState(false)
+  const [enrolleeName, setEnrolleeName] = useState('')
+  const [enrolleeUpn, setEnrolleeUpn] = useState('')
   
   // Generate CSR form state
   const [genCN, setGenCN] = useState('')
@@ -195,7 +198,12 @@ export default function CSRsPage() {
         return
       }
       try {
-        const result = await mscaService.signCSR(selectedMsca, selectedCSR.id, selectedTemplate)
+        const signData = { template: selectedTemplate }
+        if (eoboEnabled) {
+          if (enrolleeName) signData.enrollee_name = enrolleeName
+          if (enrolleeUpn) signData.enrollee_upn = enrolleeUpn
+        }
+        const result = await mscaService.signCSR(selectedMsca, selectedCSR.id, signData)
         if (result.data?.status === 'issued') {
           showSuccess(t('messages.success.other.signed'))
         } else if (result.data?.status === 'pending') {
@@ -784,7 +792,7 @@ MIICijCCAXICAQAwRTELMAkGA1UEBhMCVVMx...
       {/* Sign CSR Modal */}
       <Modal
         open={modals.sign}
-        onOpenChange={() => { closeModal('sign'); setSignMode('local'); setSelectedMsca(''); setSelectedTemplate('') }}
+        onOpenChange={() => { closeModal('sign'); setSignMode('local'); setSelectedMsca(''); setSelectedTemplate(''); setEoboEnabled(false); setEnrolleeName(''); setEnrolleeUpn('') }}
         title={t('common.signCSR')}
       >
         <div className="p-4 space-y-4">
@@ -864,6 +872,40 @@ MIICijCCAXICAQAwRTELMAkGA1UEBhMCVVMx...
                   placeholder={loadingTemplates ? t('msca.loadingTemplates') : t('msca.selectTemplate')}
                   disabled={loadingTemplates}
                 />
+              )}
+
+              {selectedMsca && (
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={eoboEnabled}
+                      onChange={(e) => setEoboEnabled(e.target.checked)}
+                      className="rounded border-border"
+                    />
+                    <span className="text-text-secondary">{t('msca.eobo.enable')}</span>
+                  </label>
+
+                  {eoboEnabled && (
+                    <div className="space-y-3 pl-6 border-l-2 border-border">
+                      <Input
+                        label={t('msca.eobo.enrolleeName')}
+                        value={enrolleeName}
+                        onChange={(e) => setEnrolleeName(e.target.value)}
+                        placeholder={t('msca.eobo.enrolleeNamePlaceholder')}
+                      />
+                      <Input
+                        label={t('msca.eobo.enrolleeUpn')}
+                        value={enrolleeUpn}
+                        onChange={(e) => setEnrolleeUpn(e.target.value)}
+                        placeholder={t('msca.eobo.enrolleeUpnPlaceholder')}
+                      />
+                      <p className="text-xs text-text-tertiary">
+                        {t('msca.eobo.hint')}
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
             </>
           )}

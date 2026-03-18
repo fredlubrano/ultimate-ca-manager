@@ -3366,7 +3366,15 @@
     "signMicrosoft": "Microsoft CA",
     "notConfigured": "Nicht konfiguriert",
     "configured": "Konfiguriert",
-    "kerberosOptionalNote": "Kerberos erfordert das Paket requests-kerberos (pip install requests-kerberos) und die Maschine muss der Active Directory-Domäne beigetreten sein oder eine Kerberos-Keytab konfiguriert haben."
+    "kerberosOptionalNote": "Kerberos erfordert das Paket requests-kerberos (pip install requests-kerberos) und die Maschine muss der Active Directory-Domäne beigetreten sein oder eine Kerberos-Keytab konfiguriert haben.",
+    "eobo": {
+      "enable": "Registrierung im Auftrag von (EOBO)",
+      "enrolleeName": "DN des Antragstellers",
+      "enrolleeNamePlaceholder": "CN=Max Mustermann,OU=Benutzer,DC=corp,DC=local",
+      "enrolleeUpn": "UPN des Antragstellers",
+      "enrolleeUpnPlaceholder": "max.mustermann@corp.local",
+      "hint": "Erfordert ein auf der CA konfiguriertes Registrierungsagenten-Zertifikat. Die Vorlage muss die Registrierung im Auftrag anderer Benutzer zulassen."
+    }
   },
   "certInput": {
     "modePaste": "Einfügen",

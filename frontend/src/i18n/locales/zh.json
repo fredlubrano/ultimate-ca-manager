@@ -3366,7 +3366,15 @@
     "signMicrosoft": "Microsoft CA",
     "notConfigured": "未配置",
     "configured": "已配置",
-    "kerberosOptionalNote": "Kerberos 需要 requests-kerberos 包（pip install requests-kerberos），且机器必须加入 Active Directory 域或配置 Kerberos keytab。"
+    "kerberosOptionalNote": "Kerberos 需要 requests-kerberos 包（pip install requests-kerberos），且机器必须加入 Active Directory 域或配置 Kerberos keytab。",
+    "eobo": {
+      "enable": "代理注册 (EOBO)",
+      "enrolleeName": "注册对象DN",
+      "enrolleeNamePlaceholder": "CN=张三,OU=用户,DC=corp,DC=local",
+      "enrolleeUpn": "注册对象UPN",
+      "enrolleeUpnPlaceholder": "zhangsan@corp.local",
+      "hint": "需要在CA上配置注册代理证书。模板必须允许代理其他用户进行注册。"
+    }
   },
   "certInput": {
     "modePaste": "粘贴",

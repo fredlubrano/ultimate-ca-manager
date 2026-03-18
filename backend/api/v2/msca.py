@@ -266,6 +266,10 @@ def sign_csr(msca_id, csr_id):
     if not template:
         return error_response("Certificate template is required", 400)
 
+    # EOBO (Enroll on Behalf Of) fields
+    enrollee_name = data.get('enrollee_name', '').strip() or None
+    enrollee_upn = data.get('enrollee_upn', '').strip() or None
+
     # Get CSR PEM
     try:
         import base64
@@ -293,6 +297,8 @@ def sign_csr(msca_id, csr_id):
             template=template,
             csr_id=csr_id,
             submitted_by=username,
+            enrollee_name=enrollee_name,
+            enrollee_upn=enrollee_upn,
         )
 
         if result['status'] == 'issued':

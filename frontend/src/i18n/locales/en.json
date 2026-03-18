@@ -3369,7 +3369,15 @@
     "signMicrosoft": "Microsoft CA",
     "notConfigured": "Not Configured",
     "configured": "Configured",
-    "kerberosOptionalNote": "Kerberos requires the requests-kerberos package (pip install requests-kerberos) and the machine must be joined to the Active Directory domain or have a Kerberos keytab configured."
+    "kerberosOptionalNote": "Kerberos requires the requests-kerberos package (pip install requests-kerberos) and the machine must be joined to the Active Directory domain or have a Kerberos keytab configured.",
+    "eobo": {
+      "enable": "Enroll on Behalf Of (EOBO)",
+      "enrolleeName": "Enrollee DN",
+      "enrolleeNamePlaceholder": "CN=John Doe,OU=Users,DC=corp,DC=local",
+      "enrolleeUpn": "Enrollee UPN",
+      "enrolleeUpnPlaceholder": "john.doe@corp.local",
+      "hint": "Requires an enrollment agent certificate configured on the CA. The template must allow enrollment on behalf of other users."
+    }
   },
   "certInput": {
     "modePaste": "Paste",

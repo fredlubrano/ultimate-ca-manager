@@ -151,6 +151,8 @@ class MSCARequest(db.Model):
     error_message = db.Column(db.Text)
     cert_pem = db.Column(db.Text)
     submitted_by = db.Column(db.String(80))
+    enrollee_name = db.Column(db.String(500))
+    enrollee_upn = db.Column(db.String(500))
 
     def to_dict(self):
         return {
@@ -167,4 +169,6 @@ class MSCARequest(db.Model):
             'issued_at': self.issued_at.isoformat() if self.issued_at else None,
             'error_message': self.error_message,
             'submitted_by': self.submitted_by,
+            'enrollee_name': self.enrollee_name,
+            'enrollee_upn': self.enrollee_upn,
         }

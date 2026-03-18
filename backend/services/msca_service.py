@@ -325,7 +325,8 @@ class MicrosoftCAService:
 
     @staticmethod
     def submit_csr(msca_id: int, csr_pem: str, template: str,
-                   csr_id: int = None, submitted_by: str = None) -> dict:
+                   csr_id: int = None, submitted_by: str = None,
+                   enrollee_name: str = None, enrollee_upn: str = None) -> dict:
         """Submit a CSR to MS CA for signing
 
         Args:
@@ -334,6 +335,8 @@ class MicrosoftCAService:
             template: Certificate template name
             csr_id: Optional UCM CSR ID for tracking
             submitted_by: Username who submitted
+            enrollee_name: DN of user being enrolled (Enroll on Behalf Of)
+            enrollee_upn: UPN of user being enrolled (Enroll on Behalf Of)
 
         Returns:
             dict with request info (request_id, status, cert if auto-approved)
@@ -349,9 +352,21 @@ class MicrosoftCAService:
         try:
             client = MicrosoftCAService._get_client(msca)
 
+            # Build EOBO attributes if provided
+            eobo_attributes = None
+            if enrollee_name or enrollee_upn:
+                parts = []
+                if enrollee_name:
+                    parts.append(f"EnrolleeObjectName:{enrollee_name}")
+                if enrollee_upn:
+                    parts.append(f"EnrolleePrincipalName:{enrollee_upn}")
+                eobo_attributes = "\r\n".join(parts) + "\r\n"
+                logger.info(f"EOBO enrollment for '{enrollee_name or enrollee_upn}' via MS CA '{msca.name}'")
+
             # Submit CSR - certsrv returns cert directly for auto-approved templates
             try:
-                cert_pem = client.get_cert(csr_pem, template, encoding='b64')
+                cert_pem = client.get_cert(csr_pem, template, encoding='b64',
+                                           attributes=eobo_attributes)
 
                 # certsrv returns bytes — decode to string for JSON/DB storage
                 if isinstance(cert_pem, bytes):
@@ -368,6 +383,8 @@ class MicrosoftCAService:
                         issued_at=utc_now(),
                         cert_pem=cert_pem,
                         submitted_by=submitted_by,
+                        enrollee_name=enrollee_name,
+                        enrollee_upn=enrollee_upn,
                     )
                     db.session.add(request)
                     db.session.commit()
@@ -416,6 +433,8 @@ class MicrosoftCAService:
                             disposition_message=str(submit_err)[:500],
                             submitted_at=utc_now(),
                             submitted_by=submitted_by,
+                            enrollee_name=enrollee_name,
+                            enrollee_upn=enrollee_upn,
                         )
                         db.session.add(req)
                         db.session.commit()
@@ -444,6 +463,8 @@ class MicrosoftCAService:
                             error_message=str(submit_err)[:500],
                             submitted_at=utc_now(),
                             submitted_by=submitted_by,
+                            enrollee_name=enrollee_name,
+                            enrollee_upn=enrollee_upn,
                         )
                         db.session.add(req)
                         db.session.commit()
@@ -463,6 +484,8 @@ class MicrosoftCAService:
                         error_message=str(submit_err)[:500],
                         submitted_at=utc_now(),
                         submitted_by=submitted_by,
+                        enrollee_name=enrollee_name,
+                        enrollee_upn=enrollee_upn,
                     )
                     db.session.add(req)
                     db.session.commit()

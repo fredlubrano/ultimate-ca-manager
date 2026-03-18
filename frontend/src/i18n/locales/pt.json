@@ -3366,7 +3366,15 @@
     "signMicrosoft": "Microsoft CA",
     "notConfigured": "Não configurado",
     "configured": "Configurado",
-    "kerberosOptionalNote": "Kerberos requer o pacote requests-kerberos (pip install requests-kerberos) e a máquina deve estar associada ao domínio Active Directory ou ter um keytab Kerberos configurado."
+    "kerberosOptionalNote": "Kerberos requer o pacote requests-kerberos (pip install requests-kerberos) e a máquina deve estar associada ao domínio Active Directory ou ter um keytab Kerberos configurado.",
+    "eobo": {
+      "enable": "Inscrição em nome de (EOBO)",
+      "enrolleeName": "DN do inscrito",
+      "enrolleeNamePlaceholder": "CN=João Silva,OU=Utilizadores,DC=corp,DC=local",
+      "enrolleeUpn": "UPN do inscrito",
+      "enrolleeUpnPlaceholder": "joao.silva@corp.local",
+      "hint": "Requer um certificado de agente de inscrição configurado na CA. O modelo deve permitir a inscrição em nome de outros utilizadores."
+    }
   },
   "certInput": {
     "modePaste": "Colar",

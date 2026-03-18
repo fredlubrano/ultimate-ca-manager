@@ -33,8 +33,8 @@ const mscaService = {
     apiClient.get(`/microsoft-cas/${id}/templates`),
 
   // Sign CSR via MS CA
-  signCSR: (mscaId, csrId, template) =>
-    apiClient.post(`/microsoft-cas/${mscaId}/sign/${csrId}`, { template }),
+  signCSR: (mscaId, csrId, data) =>
+    apiClient.post(`/microsoft-cas/${mscaId}/sign/${csrId}`, data),
 
   // Check pending request status
   checkRequest: (mscaId, requestId) =>
