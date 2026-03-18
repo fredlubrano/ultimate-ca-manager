@@ -398,12 +398,13 @@ def _import_signed_cert(csr, cert_pem, msca, template, msca_request_id):
         cn = cn_attrs[0].value if cn_attrs else 'Unknown'
 
         # Extract SANs
-        san_dns, san_ip, san_email = [], [], []
+        san_dns, san_ip, san_email, san_uri = [], [], [], []
         try:
             san_ext = cert_obj.extensions.get_extension_for_class(cx509.SubjectAlternativeName)
             san_dns = [str(n) for n in san_ext.value.get_values_for_type(cx509.DNSName)]
             san_ip = [str(n) for n in san_ext.value.get_values_for_type(cx509.IPAddress)]
             san_email = [str(n) for n in san_ext.value.get_values_for_type(cx509.RFC822Name)]
+            san_uri = [str(n) for n in san_ext.value.get_values_for_type(cx509.UniformResourceIdentifier)]
         except cx509.ExtensionNotFound:
             pass
 
@@ -442,6 +443,7 @@ def _import_signed_cert(csr, cert_pem, msca, template, msca_request_id):
             san_dns=json.dumps(san_dns) if san_dns else None,
             san_ip=json.dumps(san_ip) if san_ip else None,
             san_email=json.dumps(san_email) if san_email else None,
+            san_uri=json.dumps(san_uri) if san_uri else None,
             source='msca',
             imported_from=f"msca:{msca.name}",
             created_by='system',

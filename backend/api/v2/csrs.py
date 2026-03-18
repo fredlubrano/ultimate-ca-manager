@@ -4,6 +4,7 @@ CSR Management Routes v2.0
 """
 
 import re
+import json
 import logging
 import datetime
 import base64
@@ -272,15 +273,35 @@ def upload_csr():
             subject_parts.append(f"OU={ou}")
         subject_str = ", ".join(subject_parts) if subject_parts else "Unknown"
         
+        # Extract SANs from CSR
+        san_dns, san_ip, san_email, san_uri = [], [], [], []
+        try:
+            san_ext = csr.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+            for name_entry in san_ext.value:
+                if isinstance(name_entry, x509.DNSName):
+                    san_dns.append(name_entry.value)
+                elif isinstance(name_entry, x509.IPAddress):
+                    san_ip.append(str(name_entry.value))
+                elif isinstance(name_entry, x509.RFC822Name):
+                    san_email.append(name_entry.value)
+                elif isinstance(name_entry, x509.UniformResourceIdentifier):
+                    san_uri.append(name_entry.value)
+        except x509.ExtensionNotFound:
+            pass
+        
         # Create Certificate record with CSR (pending)
-        # Store CSR as base64-encoded PEM (consistent with other storage)
         new_cert = Certificate(
             refid=str(uuid.uuid4()),
             descr=name or cn or 'Uploaded CSR',
             subject=subject_str,
+            subject_cn=cn,
             csr=base64.b64encode(csr_pem).decode('utf-8'),
-            crt=None,  # Not signed yet
-            prv=None,  # External CSR, no private key
+            crt=None,
+            prv=None,
+            san_dns=json.dumps(san_dns) if san_dns else None,
+            san_ip=json.dumps(san_ip) if san_ip else None,
+            san_email=json.dumps(san_email) if san_email else None,
+            san_uri=json.dumps(san_uri) if san_uri else None,
             source='upload',
             created_by=getattr(g, 'username', 'system')
         )
@@ -367,6 +388,7 @@ def import_csr():
         san_dns = []
         san_ip = []
         san_email = []
+        san_uri = []
         try:
             san_ext = csr.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
             for name_entry in san_ext.value:
@@ -376,6 +398,8 @@ def import_csr():
                     san_ip.append(str(name_entry.value))
                 elif isinstance(name_entry, x509.RFC822Name):
                     san_email.append(name_entry.value)
+                elif isinstance(name_entry, x509.UniformResourceIdentifier):
+                    san_uri.append(name_entry.value)
         except x509.ExtensionNotFound:
             pass
         
@@ -387,9 +411,11 @@ def import_csr():
             csr=base64.b64encode(csr_pem).decode('utf-8'),
             crt=None,  # Not signed yet
             subject=subject_str,
-            san_dns=str(san_dns) if san_dns else None,
-            san_ip=str(san_ip) if san_ip else None,
-            san_email=str(san_email) if san_email else None,
+            subject_cn=cn,
+            san_dns=json.dumps(san_dns) if san_dns else None,
+            san_ip=json.dumps(san_ip) if san_ip else None,
+            san_email=json.dumps(san_email) if san_email else None,
+            san_uri=json.dumps(san_uri) if san_uri else None,
             created_by='import',
             created_at=utc_now()
         )

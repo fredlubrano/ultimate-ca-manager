@@ -369,6 +369,8 @@ class SmartImporter:
                 valid_to=datetime.fromisoformat(cert_obj.not_after.replace('Z', '+00:00')) if cert_obj.not_after else None,
                 san_dns=json.dumps(cert_obj.san_dns) if cert_obj.san_dns else None,
                 san_ip=json.dumps(cert_obj.san_ip) if cert_obj.san_ip else None,
+                san_email=json.dumps(cert_obj.san_email) if cert_obj.san_email else None,
+                san_uri=json.dumps(cert_obj.san_uri) if cert_obj.san_uri else None,
                 source="import",
                 imported_from="smart_import",
                 created_by=username
@@ -421,6 +423,8 @@ class SmartImporter:
                 subject_cn=cn,
                 san_dns=json.dumps(csr_obj.san_dns) if csr_obj.san_dns else None,
                 san_ip=json.dumps(csr_obj.san_ip) if csr_obj.san_ip else None,
+                san_email=json.dumps(csr_obj.san_email) if csr_obj.san_email else None,
+                san_uri=json.dumps(csr_obj.san_uri) if csr_obj.san_uri else None,
                 source="import",
                 imported_from="smart_import",
                 created_by=username

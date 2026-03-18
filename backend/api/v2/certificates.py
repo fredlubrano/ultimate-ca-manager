@@ -301,14 +301,23 @@ def create_certificate():
         san_dns = []
         san_ip = []
         san_email = []
+        san_uri = []
         san_raw = data['san']
         # Accept both string and array
         if isinstance(san_raw, list):
             san_raw = ','.join(str(s) for s in san_raw)
         raw_sans = [s.strip() for s in re.split(r'[,\n;]+', san_raw) if s.strip()]
         for entry in raw_sans:
+            entry_lower = entry.lower()
+            # Check explicit type prefixes
+            if entry_lower.startswith('uri:'):
+                san_uri.append(re.sub(r'^URI:\s*', '', entry, flags=re.IGNORECASE))
+                continue
+            if entry_lower.startswith('email:'):
+                san_email.append(re.sub(r'^EMAIL:\s*', '', entry, flags=re.IGNORECASE))
+                continue
             # Remove type prefixes if present (e.g. "DNS:example.com", "IP:1.2.3.4")
-            entry_clean = re.sub(r'^(DNS|IP|EMAIL|URI):\s*', '', entry, flags=re.IGNORECASE)
+            entry_clean = re.sub(r'^(DNS|IP):\s*', '', entry, flags=re.IGNORECASE)
             if not entry_clean:
                 continue
             try:
@@ -317,6 +326,8 @@ def create_certificate():
             except ValueError:
                 if '@' in entry_clean:
                     san_email.append(entry_clean)
+                elif entry_clean.startswith('http://') or entry_clean.startswith('https://'):
+                    san_uri.append(entry_clean)
                 else:
                     san_dns.append(entry_clean)
         if san_dns:
@@ -325,6 +336,8 @@ def create_certificate():
             data['san_ip'] = san_ip
         if san_email:
             data['san_email'] = san_email
+        if san_uri:
+            data['san_uri'] = san_uri
     
     # Get the CA
     ca = CA.query.get(data['ca_id'])
@@ -614,6 +627,7 @@ def create_certificate():
             san_dns=json.dumps(data.get('san_dns', [])),
             san_ip=json.dumps(data.get('san_ip', [])),
             san_email=json.dumps(data.get('san_email', [])),
+            san_uri=json.dumps(data.get('san_uri', [])),
             created_by=g.current_user.username if hasattr(g, 'current_user') else None
         )
         
@@ -1637,6 +1651,14 @@ def import_certificate():
             existing_cert.valid_to = cert_info['valid_to']
             existing_cert.aki = cert_info.get('aki')
             existing_cert.ski = cert_info.get('ski')
+            if cert_info.get('san_dns'):
+                existing_cert.san_dns = json.dumps(cert_info['san_dns'])
+            if cert_info.get('san_ip'):
+                existing_cert.san_ip = json.dumps(cert_info['san_ip'])
+            if cert_info.get('san_email'):
+                existing_cert.san_email = json.dumps(cert_info['san_email'])
+            if cert_info.get('san_uri'):
+                existing_cert.san_uri = json.dumps(cert_info['san_uri'])
             
             # Update CA link if provided
             if ca_id:
@@ -1691,6 +1713,11 @@ def import_certificate():
             ski=cert_info.get('ski'),
             valid_from=cert_info['valid_from'],
             valid_to=cert_info['valid_to'],
+            san_dns=json.dumps(cert_info.get('san_dns', [])) if cert_info.get('san_dns') else None,
+            san_ip=json.dumps(cert_info.get('san_ip', [])) if cert_info.get('san_ip') else None,
+            san_email=json.dumps(cert_info.get('san_email', [])) if cert_info.get('san_email') else None,
+            san_uri=json.dumps(cert_info.get('san_uri', [])) if cert_info.get('san_uri') else None,
+            source='import',
             created_by='import'
         )
         

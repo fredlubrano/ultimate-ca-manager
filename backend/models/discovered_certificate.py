@@ -150,6 +150,8 @@ class DiscoveredCertificate(db.Model):
     dns_hostname = db.Column(db.String(1024))
     san_dns_names = db.Column(db.Text, nullable=False, default='[]')
     san_ip_addresses = db.Column(db.Text, nullable=False, default='[]')
+    san_emails = db.Column(db.Text, nullable=False, default='[]')
+    san_uris = db.Column(db.Text, nullable=False, default='[]')
     scan_error = db.Column(db.Text)
 
     ucm_certificate = db.relationship('Certificate', backref='discovered_instances')
@@ -198,6 +200,8 @@ class DiscoveredCertificate(db.Model):
             'dns_hostname': self.dns_hostname,
             'san_dns_names': json.loads(self.san_dns_names) if self.san_dns_names else [],
             'san_ip_addresses': json.loads(self.san_ip_addresses) if self.san_ip_addresses else [],
+            'san_emails': json.loads(self.san_emails) if self.san_emails else [],
+            'san_uris': json.loads(self.san_uris) if self.san_uris else [],
             'is_expired': self.is_expired,
             'days_until_expiry': self.days_until_expiry,
             'scan_error': self.scan_error,

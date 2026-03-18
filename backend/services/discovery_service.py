@@ -161,10 +161,14 @@ class DiscoveryService:
                         # Extract SANs
                         san_dns = []
                         san_ips = []
+                        san_emails = []
+                        san_uris = []
                         try:
                             san_ext = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
                             san_dns = san_ext.value.get_values_for_type(x509.DNSName)
                             san_ips = [str(ip) for ip in san_ext.value.get_values_for_type(x509.IPAddress)]
+                            san_emails = san_ext.value.get_values_for_type(x509.RFC822Name)
+                            san_uris = san_ext.value.get_values_for_type(x509.UniformResourceIdentifier)
                         except x509.ExtensionNotFound:
                             pass
 
@@ -178,6 +182,8 @@ class DiscoveryService:
                             'pem_certificate': pem,
                             'san_dns_names': san_dns,
                             'san_ip_addresses': san_ips,
+                            'san_emails': san_emails,
+                            'san_uris': san_uris,
                         })
 
                 # Reverse DNS resolution
@@ -461,6 +467,8 @@ class DiscoveryService:
 
             san_dns_json = _json.dumps(r.get('san_dns_names', []))
             san_ips_json = _json.dumps(r.get('san_ip_addresses', []))
+            san_emails_json = _json.dumps(r.get('san_emails', []))
+            san_uris_json = _json.dumps(r.get('san_uris', []))
 
             if existing:
                 # Change detection
@@ -486,6 +494,8 @@ class DiscoveryService:
                 existing.scan_error = None
                 existing.san_dns_names = san_dns_json
                 existing.san_ip_addresses = san_ips_json
+                existing.san_emails = san_emails_json
+                existing.san_uris = san_uris_json
                 if r.get('dns_hostname'):
                     existing.dns_hostname = r['dns_hostname']
             else:
@@ -506,6 +516,8 @@ class DiscoveryService:
                     dns_hostname=r.get('dns_hostname'),
                     san_dns_names=san_dns_json,
                     san_ip_addresses=san_ips_json,
+                    san_emails=san_emails_json,
+                    san_uris=san_uris_json,
                     first_seen=now, last_seen=now,
                 )
                 db.session.add(dc)

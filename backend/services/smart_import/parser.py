@@ -47,6 +47,8 @@ class ParsedObject:
     is_self_signed: bool = False
     san_dns: List[str] = field(default_factory=list)
     san_ip: List[str] = field(default_factory=list)
+    san_email: List[str] = field(default_factory=list)
+    san_uri: List[str] = field(default_factory=list)
     ski: Optional[str] = None  # Subject Key Identifier (hex)
     aki: Optional[str] = None  # Authority Key Identifier (hex)
     
@@ -76,6 +78,8 @@ class ParsedObject:
             "is_self_signed": self.is_self_signed,
             "san_dns": self.san_dns,
             "san_ip": self.san_ip,
+            "san_email": self.san_email,
+            "san_uri": self.san_uri,
             "key_algorithm": self.key_algorithm,
             "key_size": self.key_size,
             "is_encrypted": self.is_encrypted,
@@ -374,6 +378,10 @@ class SmartParser:
                                 obj.san_dns.append(name.value)
                             elif isinstance(name, x509.IPAddress):
                                 obj.san_ip.append(str(name.value))
+                            elif isinstance(name, x509.RFC822Name):
+                                obj.san_email.append(name.value)
+                            elif isinstance(name, x509.UniformResourceIdentifier):
+                                obj.san_uri.append(name.value)
                     except x509.ExtensionNotFound:
                         pass
                         
@@ -428,6 +436,10 @@ class SmartParser:
                     obj.san_dns.append(name.value)
                 elif isinstance(name, x509.IPAddress):
                     obj.san_ip.append(str(name.value))
+                elif isinstance(name, x509.RFC822Name):
+                    obj.san_email.append(name.value)
+                elif isinstance(name, x509.UniformResourceIdentifier):
+                    obj.san_uri.append(name.value)
         except x509.ExtensionNotFound:
             pass
         

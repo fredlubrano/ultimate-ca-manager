@@ -141,6 +141,23 @@ def extract_cert_info(cert):
     except Exception:
         pass
     
+    # Extract SANs
+    san_dns, san_ip, san_email, san_uri = [], [], [], []
+    try:
+        san_ext = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+        from cryptography.x509 import DNSName, IPAddress, RFC822Name, UniformResourceIdentifier
+        for name_entry in san_ext.value:
+            if isinstance(name_entry, DNSName):
+                san_dns.append(name_entry.value)
+            elif isinstance(name_entry, IPAddress):
+                san_ip.append(str(name_entry.value))
+            elif isinstance(name_entry, RFC822Name):
+                san_email.append(name_entry.value)
+            elif isinstance(name_entry, UniformResourceIdentifier):
+                san_uri.append(name_entry.value)
+    except Exception:
+        pass
+    
     return {
         'cn': get_name_attr(subject, NameOID.COMMON_NAME),
         'org': get_name_attr(subject, NameOID.ORGANIZATION_NAME),
@@ -154,6 +171,10 @@ def extract_cert_info(cert):
         'serial_hex': serial_hex,
         'ski': ski,
         'aki': aki,
+        'san_dns': san_dns,
+        'san_ip': san_ip,
+        'san_email': san_email,
+        'san_uri': san_uri,
     }
 
 
