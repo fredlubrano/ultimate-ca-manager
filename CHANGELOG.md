@@ -11,6 +11,16 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.93] - 2026-03-18
+
+### Added
+- **ADCS Enroll on Behalf Of (EOBO)** — Sign CSRs on behalf of other users via Microsoft AD CS enrollment agent certificates
+- EOBO fields (Enrollee DN, Enrollee UPN) in sign CSR modal with checkbox activation
+- Auto-prefill EOBO fields from CSR subject and SAN email data
+- Migration 011 adds EOBO tracking columns to MSCA requests
+
+---
+
 ## [2.92] - 2026-03-18
 
 ### Added
