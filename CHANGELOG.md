@@ -11,6 +11,24 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.92] - 2026-03-18
+
+### Added
+- **ACME ECDSA support** — Certificate keys: RSA-2048, RSA-4096, EC-P256, EC-P384; Account keys: ES256, ES384, RS256
+- **ACME External Account Binding** — EAB support per RFC 8555 §7.3.4 for CAs requiring pre-registration (ZeroSSL, HARICA, Google Trust)
+- **ACME custom server** — Configure any RFC 8555-compliant CA directory URL (not just Let's Encrypt)
+- **ACME key type per order** — Each certificate request can specify its own key type (migration 010)
+
+### Changed
+- **In-app help** — Updated ACME guide with ECDSA/EAB/custom server documentation, certbot & acme.sh examples
+- **Wiki** — Updated ACME-Support.md with custom CA table, EAB instructions, RFC compliance list
+
+### Security
+- **pyasn1** 0.6.2 → 0.6.3 — CVE-2026-30922 (HIGH)
+- **pyOpenSSL** 25.3.0 → 26.0.0 — CVE-2026-27459 (HIGH), CVE-2026-27448 (LOW)
+
+---
+
 ## [2.91] - 2026-03-18
 
 ### Fixed
