@@ -635,16 +635,51 @@ Configure the SCEP profile with:
 
 UCM supports ACME (Automated Certificate Management Environment) in two modes:
 
-- **Let's Encrypt Client** — Obtain public TLS certificates from Let's Encrypt (or any ACME CA)
+- **ACME Client** — Obtain certificates from any RFC 8555-compliant CA (Let's Encrypt, ZeroSSL, Buypass, HARICA, or custom)
 - **Local ACME Server** — Built-in ACME server for internal PKI automation with multi-CA support
 
-## Let's Encrypt
+## ACME Client
 
-### Client Tab
-Manage your Let's Encrypt account:
-- Register a new account or use an existing one
-- View active orders and their status
-- Request new certificates via ACME protocol
+### Client Settings
+Manage your ACME client configuration:
+- **Environment** — Staging (testing) or Production (live certificates)
+- **Contact Email** — Required for account registration
+- **Auto-Renewal** — Automatically renew certificates before expiry
+- **Certificate Key Type** — RSA-2048, RSA-4096, ECDSA P-256, or ECDSA P-384
+- **Account Key Algorithm** — ES256, ES384, or RS256 for ACME account signing
+
+### Custom ACME Server
+Use any RFC 8555-compliant CA, not just Let's Encrypt:
+
+| CA Provider | Directory URL |
+|---|---|
+| **Let's Encrypt** | *(default, leave empty)* |
+| **ZeroSSL** | \`https://acme.zerossl.com/v2/DV90\` |
+| **Buypass** | \`https://api.buypass.com/acme/directory\` |
+| **HARICA** | \`https://acme-v02.harica.gr/acme/<token>/directory\` |
+| **Google Trust** | \`https://dv.acme-v02.api.pki.goog/directory\` |
+
+Set your CA's directory URL in **Settings** → **Custom ACME Server**.
+
+### External Account Binding (EAB)
+Some CAs require EAB credentials to link your ACME account with an existing account at the CA:
+
+1. Register at your CA's portal to obtain **EAB Key ID** and **HMAC Key**
+2. Enter both values in **Settings** → **Custom ACME Server**
+3. The HMAC key is base64url-encoded (provided by the CA)
+
+> 💡 EAB is required by ZeroSSL, HARICA, Google Trust Services, and most enterprise CAs.
+
+### ECDSA vs RSA Keys
+
+| Key Type | Size | Security | Performance |
+|---|---|---|---|
+| **RSA-2048** | 2048 bit | Standard | Baseline |
+| **RSA-4096** | 4096 bit | Higher | Slower |
+| **ECDSA P-256** | 256 bit | ≈ RSA-3072 | Much faster |
+| **ECDSA P-384** | 384 bit | ≈ RSA-7680 | Faster |
+
+ECDSA keys are recommended for modern deployments — smaller, faster, and equally secure.
 
 ### DNS Providers
 Configure DNS-01 challenge providers for domain validation. Supported providers include:
@@ -710,26 +745,41 @@ Browse all certificate issuance orders:
 - Signing CA used
 - Issuance timestamp
 
-## Using certbot with UCM
+## Using certbot
 
 \`\`\`
-# Register account
-certbot register --server https://your-server:8443/acme/directory \\
+# Register account (Let's Encrypt — default)
+certbot register --agree-tos --email admin@example.com
+
+# Register with custom ACME CA + EAB
+certbot register \\
+  --server 'https://acme.zerossl.com/v2/DV90' \\
+  --eab-kid 'your-key-id' \\
+  --eab-hmac-key 'your-hmac-key' \\
   --agree-tos --email admin@example.com
 
-# Request certificate
+# Request certificate with ECDSA key
 certbot certonly --server https://your-server:8443/acme/directory \\
-  --standalone -d myserver.internal.corp
+  --standalone -d myserver.internal.corp \\
+  --key-type ecdsa --elliptic-curve secp256r1
 
 # Renew
 certbot renew --server https://your-server:8443/acme/directory
 \`\`\`
 
-## Using acme.sh with UCM
+## Using acme.sh
 
 \`\`\`
-acme.sh --server https://your-server:8443/acme/directory \\
-  --issue -d myserver.local --standalone
+# Default (Let's Encrypt)
+acme.sh --issue -d example.com --standalone
+
+# Custom ACME CA with EAB and ECDSA
+acme.sh --issue \\
+  --server 'https://acme-v02.harica.gr/acme/TOKEN/directory' \\
+  --eab-kid 'your-key-id' \\
+  --eab-hmac-key 'your-hmac-key' \\
+  --keylength ec-256 \\
+  -d example.com --standalone
 \`\`\`
 
 > ⚠ For internal ACME, clients must trust the UCM CA. Install the Root CA certificate in the client's trust store.

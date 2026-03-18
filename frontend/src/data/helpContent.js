@@ -368,13 +368,17 @@ export const helpContent = {
   acme: {
     title: 'ACME',
     subtitle: 'Automated Certificate Management',
-    overview: 'UCM supports two ACME modes: Let\'s Encrypt client for public certificates, and Local ACME server for internal PKI automation. The local ACME server supports multi-CA domain mapping.',
+    overview: 'UCM supports two ACME modes: ACME client for public certificates from any RFC 8555-compliant CA (Let\'s Encrypt, ZeroSSL, Buypass, HARICA, etc.), and Local ACME server for internal PKI automation with multi-CA domain mapping.',
     sections: [
       {
-        title: "Let's Encrypt",
+        title: 'ACME Client',
         icon: Globe,
         items: [
-          { label: 'Client', text: 'Request public certificates from Let\'s Encrypt via ACME protocol' },
+          { label: 'Client', text: 'Request certificates from any ACME CA — Let\'s Encrypt, ZeroSSL, Buypass, HARICA, or custom' },
+          { label: 'Custom Server', text: 'Set a custom ACME directory URL to use any RFC 8555-compliant CA' },
+          { label: 'EAB', text: 'External Account Binding support for CAs that require pre-registration (ZeroSSL, HARICA, etc.)' },
+          { label: 'Key Types', text: 'RSA-2048, RSA-4096, ECDSA P-256, ECDSA P-384 for certificate keys' },
+          { label: 'Account Keys', text: 'ES256 (P-256), ES384 (P-384), or RS256 algorithms for ACME account keys' },
           { label: 'DNS Providers', text: 'Configure DNS-01 challenge providers (Cloudflare, Route53, etc.)' },
           { label: 'Domains', text: 'Map domains to DNS providers for automatic validation' },
         ]
@@ -403,12 +407,16 @@ export const helpContent = {
     ],
     tips: [
       'ACME directory URL: https://your-server:port/acme/directory',
+      'Use a custom directory URL to connect to ZeroSSL, Buypass, HARICA, or any RFC 8555 CA',
+      'EAB credentials (Key ID + HMAC Key) are provided by your CA upon registration',
+      'ECDSA P-256 keys offer equivalent security to RSA-2048 with much smaller size',
       'Use Local Domains to assign different CAs to different internal domains',
       'Any CA with a private key can be selected as the issuing CA',
-      'Wildcard domains (*.example.com) require DNS-01 validation for Let\'s Encrypt',
+      'Wildcard domains (*.example.com) require DNS-01 validation',
     ],
     warnings: [
-      "Let's Encrypt requires domain validation — your server must be reachable or DNS configured",
+      'Domain validation is required — your server must be reachable or DNS configured',
+      'Changing account key type requires re-registering your ACME account',
     ],
     related: ['Certificates', 'CAs', 'DNS Providers']
   },
