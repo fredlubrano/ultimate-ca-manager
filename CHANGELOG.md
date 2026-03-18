@@ -11,6 +11,17 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.94] - 2026-03-18
+
+### Added
+- **Microsoft CA in-app documentation** — Help content and guide for MSCA integration, EOBO, connection setup
+- **Wiki: Microsoft CA Integration** — Full wiki page covering connections, auth methods, EOBO, API reference
+
+### Fixed
+- **ACME EAB HMAC key input** — Field was not accepting typed input due to controlled component bug
+
+---
+
 ## [2.93] - 2026-03-18
 
 ### Added
