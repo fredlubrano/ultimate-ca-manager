@@ -1140,7 +1140,19 @@
     "orderInvalid": "Перевірка замовлення не вдалася",
     "orderStillProcessing": "Замовлення ще перевіряється сервером ACME",
     "statusCheckFailed": "Не вдалося перевірити статус",
-    "renew": "Оновити"
+    "renew": "Оновити",
+    "keyType": "Тип ключа сертифіката",
+    "keyTypeHelper": "Алгоритм та розмір ключа для виданих сертифікатів",
+    "accountKeyType": "Алгоритм ключа облікового запису",
+    "accountKeyTypeHelper": "Алгоритм для ключа облікового запису ACME. Зміна вимагає повторної реєстрації.",
+    "customServer": "Користувацький сервер ACME",
+    "directoryUrl": "URL каталогу ACME",
+    "directoryUrlHelper": "Користувацька URL каталогу ACME CA. Залиште порожнім для Let's Encrypt.",
+    "eabKid": "Ідентифікатор ключа EAB",
+    "eabKidHelper": "Ідентифікатор ключа прив'язки зовнішнього облікового запису від вашого CA",
+    "eabHmacKey": "Ключ HMAC EAB",
+    "eabHmacKeyHelper": "Ключ HMAC прив'язки зовнішнього облікового запису (кодування base64url)",
+    "eabHmacKeyPlaceholder": "Введіть ключ HMAC від CA"
   },
   "scep": {
     "title": "Протокол SCEP",

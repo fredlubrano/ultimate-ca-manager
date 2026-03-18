@@ -309,7 +309,19 @@
     "orderInvalid": "La validation de la commande a échoué",
     "orderStillProcessing": "La commande est encore en cours de validation par le serveur ACME",
     "statusCheckFailed": "Échec de la vérification du statut",
-    "renew": "Renouveler"
+    "renew": "Renouveler",
+    "keyType": "Type de clé de certificat",
+    "keyTypeHelper": "Algorithme et taille de clé pour les certificats émis",
+    "accountKeyType": "Algorithme de clé de compte",
+    "accountKeyTypeHelper": "Algorithme pour la clé du compte ACME. Le changement nécessite une réinscription.",
+    "customServer": "Serveur ACME personnalisé",
+    "directoryUrl": "URL du répertoire ACME",
+    "directoryUrlHelper": "URL du répertoire CA ACME personnalisé. Laisser vide pour Let's Encrypt.",
+    "eabKid": "Identifiant de clé EAB",
+    "eabKidHelper": "Identifiant de clé de liaison de compte externe de votre CA",
+    "eabHmacKey": "Clé HMAC EAB",
+    "eabHmacKeyHelper": "Clé HMAC de liaison de compte externe (encodée base64url)",
+    "eabHmacKeyPlaceholder": "Entrez la clé HMAC de la CA"
   },
   "audit": {
     "event": "Événement",

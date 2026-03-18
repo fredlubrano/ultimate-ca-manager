@@ -1119,6 +1119,71 @@ export default function ACMEPage() {
             label={t('acme.autoRenewal')}
             description={t('acme.autoRenewalDesc')}
           />
+          
+          <Select
+            label={t('acme.keyType')}
+            value={clientSettings.key_type || 'RSA-2048'}
+            onChange={(val) => handleUpdateClientSetting('key_type', val)}
+            disabled={!canWrite('acme')}
+            options={[
+              { value: 'RSA-2048', label: 'RSA 2048' },
+              { value: 'RSA-4096', label: 'RSA 4096' },
+              { value: 'EC-P256', label: 'ECDSA P-256' },
+              { value: 'EC-P384', label: 'ECDSA P-384' },
+            ]}
+            helperText={t('acme.keyTypeHelper')}
+          />
+          
+          <Select
+            label={t('acme.accountKeyType')}
+            value={clientSettings.account_key_type || 'ES256'}
+            onChange={(val) => handleUpdateClientSetting('account_key_type', val)}
+            disabled={!canWrite('acme')}
+            options={[
+              { value: 'ES256', label: 'ECDSA P-256 (ES256)' },
+              { value: 'ES384', label: 'ECDSA P-384 (ES384)' },
+              { value: 'RS256', label: 'RSA 2048 (RS256)' },
+            ]}
+            helperText={t('acme.accountKeyTypeHelper')}
+          />
+        </div>
+      </CompactSection>
+      
+      {/* Custom ACME Server */}
+      <CompactSection title={t('acme.customServer')} icon={Globe}>
+        <div className="space-y-3">
+          <Input
+            label={t('acme.directoryUrl')}
+            type="url"
+            value={clientSettings.directory_url || ''}
+            onChange={(e) => handleUpdateClientSetting('directory_url', e.target.value)}
+            disabled={!canWrite('acme')}
+            placeholder="https://acme-v02.api.letsencrypt.org/directory"
+            helperText={t('acme.directoryUrlHelper')}
+          />
+          
+          <Input
+            label={t('acme.eabKid')}
+            value={clientSettings.eab_kid || ''}
+            onChange={(e) => handleUpdateClientSetting('eab_kid', e.target.value)}
+            disabled={!canWrite('acme')}
+            placeholder="key-id-from-ca"
+            helperText={t('acme.eabKidHelper')}
+          />
+          
+          <Input
+            label={t('acme.eabHmacKey')}
+            type="password"
+            value={clientSettings.eab_hmac_key_set ? '••••••••' : ''}
+            onChange={(e) => {
+              if (e.target.value !== '••••••••') {
+                handleUpdateClientSetting('eab_hmac_key', e.target.value)
+              }
+            }}
+            disabled={!canWrite('acme')}
+            placeholder={t('acme.eabHmacKeyPlaceholder')}
+            helperText={t('acme.eabHmacKeyHelper')}
+          />
         </div>
       </CompactSection>
 
@@ -2442,6 +2507,19 @@ function RequestCertificateForm({ onSubmit, onCancel, dnsProviders, defaultEnvir
           { value: 'staging', label: t('acme.staging') + ' - ' + t('acme.stagingDesc') },
           { value: 'production', label: t('acme.production') + ' - ' + t('acme.productionDesc') }
         ]}
+      />
+      
+      <Select
+        label={t('acme.keyType')}
+        value={formData.key_type || 'RSA-2048'}
+        onChange={(val) => setFormData(prev => ({ ...prev, key_type: val }))}
+        options={[
+          { value: 'RSA-2048', label: 'RSA 2048' },
+          { value: 'RSA-4096', label: 'RSA 4096' },
+          { value: 'EC-P256', label: 'ECDSA P-256' },
+          { value: 'EC-P384', label: 'ECDSA P-384' },
+        ]}
+        helperText={t('acme.keyTypeHelper')}
       />
       
       <div className="flex justify-end gap-2 pt-4 border-t border-border">

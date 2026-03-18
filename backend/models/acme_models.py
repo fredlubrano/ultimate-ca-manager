@@ -308,6 +308,7 @@ class AcmeClientOrder(db.Model):
     # Challenge configuration
     challenge_type = db.Column(db.String(20), nullable=False, default='dns-01')  # http-01, dns-01
     environment = db.Column(db.String(20), nullable=False, default='staging')  # staging, production
+    key_type = db.Column(db.String(20), default='RSA-2048')  # RSA-2048, RSA-4096, EC-P256, EC-P384
     
     # Order status
     status = db.Column(db.String(20), default='pending', nullable=False)
@@ -400,6 +401,7 @@ class AcmeClientOrder(db.Model):
             'primary_domain': self.primary_domain,
             'challenge_type': self.challenge_type,
             'environment': self.environment,
+            'key_type': self.key_type or 'RSA-2048',
             'status': self.status,
             'order_url': self.order_url,
             'challenges': self.challenges_dict,

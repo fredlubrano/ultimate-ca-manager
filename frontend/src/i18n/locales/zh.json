@@ -1140,7 +1140,19 @@
     "orderInvalid": "订单验证失败",
     "orderStillProcessing": "订单仍在被ACME服务器验证中",
     "statusCheckFailed": "检查状态失败",
-    "renew": "续期"
+    "renew": "续期",
+    "keyType": "证书密钥类型",
+    "keyTypeHelper": "颁发证书的算法和密钥大小",
+    "accountKeyType": "账户密钥算法",
+    "accountKeyTypeHelper": "ACME账户密钥的算法。更改需要重新注册。",
+    "customServer": "自定义ACME服务器",
+    "directoryUrl": "ACME目录URL",
+    "directoryUrlHelper": "自定义ACME CA目录URL。留空使用Let's Encrypt。",
+    "eabKid": "EAB密钥ID",
+    "eabKidHelper": "来自CA的外部账户绑定密钥标识符",
+    "eabHmacKey": "EAB HMAC密钥",
+    "eabHmacKeyHelper": "外部账户绑定HMAC密钥（base64url编码）",
+    "eabHmacKeyPlaceholder": "输入来自CA的HMAC密钥"
   },
   "scep": {
     "title": "SCEP协议",

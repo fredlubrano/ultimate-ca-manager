@@ -42,6 +42,17 @@ def get_settings():
     proxy_email_cfg = SystemConfig.query.filter_by(key='acme.proxy_email').first()
     proxy_enabled_cfg = SystemConfig.query.filter_by(key='acme.proxy_enabled').first()
     
+    # EAB settings
+    eab_kid_cfg = SystemConfig.query.filter_by(key='acme.client.eab_kid').first()
+    eab_hmac_cfg = SystemConfig.query.filter_by(key='acme.client.eab_hmac_key').first()
+    
+    # Custom directory URL
+    directory_cfg = SystemConfig.query.filter_by(key='acme.client.directory_url').first()
+    
+    # Key type settings
+    key_type_cfg = SystemConfig.query.filter_by(key='acme.client.key_type').first()
+    acct_key_type_cfg = SystemConfig.query.filter_by(key='acme.client.account_key_type').first()
+    
     return success_response(data={
         'email': email_cfg.value if email_cfg else None,
         'environment': env_cfg.value if env_cfg else 'staging',
@@ -52,6 +63,11 @@ def get_settings():
         'proxy_enabled': proxy_enabled_cfg.value == 'true' if proxy_enabled_cfg else False,
         'proxy_email': proxy_email_cfg.value if proxy_email_cfg else None,
         'proxy_registered': bool(proxy_email_cfg),
+        'directory_url': directory_cfg.value if directory_cfg else None,
+        'eab_kid': eab_kid_cfg.value if eab_kid_cfg else None,
+        'eab_hmac_key_set': bool(eab_hmac_cfg and eab_hmac_cfg.value),
+        'key_type': key_type_cfg.value if key_type_cfg else 'RSA-2048',
+        'account_key_type': acct_key_type_cfg.value if acct_key_type_cfg else 'ES256',
     })
 
 
@@ -93,6 +109,35 @@ def update_settings():
                     'true' if data['proxy_enabled'] else 'false',
                     'Let\'s Encrypt proxy enabled')
         updates.append('proxy_enabled')
+    
+    if 'directory_url' in data:
+        url_val = (data['directory_url'] or '').strip()
+        if url_val and not url_val.startswith('https://'):
+            return error_response('Directory URL must use HTTPS', 400)
+        _set_config('acme.client.directory_url', url_val, 'Custom ACME directory URL')
+        updates.append('directory_url')
+    
+    if 'eab_kid' in data:
+        _set_config('acme.client.eab_kid', data['eab_kid'] or '', 'ACME EAB Key ID')
+        updates.append('eab_kid')
+    
+    if 'eab_hmac_key' in data:
+        _set_config('acme.client.eab_hmac_key', data['eab_hmac_key'] or '', 'ACME EAB HMAC Key')
+        updates.append('eab_hmac_key')
+    
+    if 'key_type' in data:
+        valid_key_types = ['RSA-2048', 'RSA-4096', 'EC-P256', 'EC-P384']
+        if data['key_type'] not in valid_key_types:
+            return error_response(f'Key type must be one of: {", ".join(valid_key_types)}', 400)
+        _set_config('acme.client.key_type', data['key_type'], 'Certificate key type')
+        updates.append('key_type')
+    
+    if 'account_key_type' in data:
+        valid_acct_types = ['RS256', 'ES256', 'ES384']
+        if data['account_key_type'] not in valid_acct_types:
+            return error_response(f'Account key type must be one of: {", ".join(valid_acct_types)}', 400)
+        _set_config('acme.client.account_key_type', data['account_key_type'], 'Account key algorithm')
+        updates.append('account_key_type')
     
     db.session.commit()
     
@@ -268,6 +313,11 @@ def request_certificate():
     if has_wildcard and challenge_type != 'dns-01':
         return error_response('Wildcard domains require DNS-01 challenge', 400)
     
+    # Key type for certificate
+    key_type = data.get('key_type')
+    if key_type and key_type not in ['RSA-2048', 'RSA-4096', 'EC-P256', 'EC-P384']:
+        return error_response('Invalid key type', 400)
+    
     # Create order
     try:
         client = AcmeClientService(environment=environment)
@@ -280,6 +330,11 @@ def request_certificate():
         
         if not success:
             return error_response(message, 400)
+        
+        # Store key_type on order if specified
+        if key_type:
+            order.key_type = key_type
+            db.session.commit()
         
         AuditService.log_action(
             action='acme_request',

@@ -1140,7 +1140,19 @@
     "orderInvalid": "Order validation failed",
     "orderStillProcessing": "Order is still being validated by the ACME server",
     "statusCheckFailed": "Failed to check order status",
-    "renew": "Renew"
+    "renew": "Renew",
+    "keyType": "Certificate Key Type",
+    "keyTypeHelper": "Algorithm and key size for issued certificates",
+    "accountKeyType": "Account Key Algorithm",
+    "accountKeyTypeHelper": "Algorithm for ACME account key. Changing requires re-registration.",
+    "customServer": "Custom ACME Server",
+    "directoryUrl": "ACME Directory URL",
+    "directoryUrlHelper": "Custom ACME CA directory URL. Leave empty for Let's Encrypt.",
+    "eabKid": "EAB Key ID",
+    "eabKidHelper": "External Account Binding Key Identifier from your CA",
+    "eabHmacKey": "EAB HMAC Key",
+    "eabHmacKeyHelper": "External Account Binding HMAC key (base64url encoded)",
+    "eabHmacKeyPlaceholder": "Enter HMAC key from CA"
   },
   "scep": {
     "title": "SCEP Protocol",

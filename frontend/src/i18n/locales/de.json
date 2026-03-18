@@ -1140,7 +1140,19 @@
     "orderInvalid": "Auftragsvalidierung fehlgeschlagen",
     "orderStillProcessing": "Auftrag wird noch vom ACME-Server validiert",
     "statusCheckFailed": "Statusprüfung fehlgeschlagen",
-    "renew": "Erneuern"
+    "renew": "Erneuern",
+    "keyType": "Zertifikat-Schlüsseltyp",
+    "keyTypeHelper": "Algorithmus und Schlüsselgröße für ausgestellte Zertifikate",
+    "accountKeyType": "Konto-Schlüssel-Algorithmus",
+    "accountKeyTypeHelper": "Algorithmus für den ACME-Kontoschlüssel. Änderung erfordert Neuregistrierung.",
+    "customServer": "Benutzerdefinierter ACME-Server",
+    "directoryUrl": "ACME-Verzeichnis-URL",
+    "directoryUrlHelper": "Benutzerdefinierte ACME-CA-Verzeichnis-URL. Leer lassen für Let's Encrypt.",
+    "eabKid": "EAB-Schlüssel-ID",
+    "eabKidHelper": "External Account Binding Schlüsselkennung von Ihrer CA",
+    "eabHmacKey": "EAB-HMAC-Schlüssel",
+    "eabHmacKeyHelper": "External Account Binding HMAC-Schlüssel (base64url-kodiert)",
+    "eabHmacKeyPlaceholder": "HMAC-Schlüssel von der CA eingeben"
   },
   "scep": {
     "title": "SCEP-Protokoll",

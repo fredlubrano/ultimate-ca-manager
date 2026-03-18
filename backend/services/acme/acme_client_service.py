@@ -1,21 +1,23 @@
 """
-ACME Client Service
-Client for requesting certificates from external ACME servers (Let's Encrypt)
-UCM acts as an ACME CLIENT (not server) to obtain trusted certificates.
+ACME Client Service (RFC 8555)
+Client for requesting certificates from external ACME servers.
+Supports Let's Encrypt, HARICA, ZeroSSL, Buypass, Google Trust Services,
+and any RFC 8555-compliant CA with optional EAB (§7.3.4).
 """
 import json
 import base64
 import hashlib
+import hmac
 import time
 import logging
 import secrets
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple, List, Union
 from urllib.parse import urljoin
 
 import requests
 from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding
+from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding, utils as asym_utils
 from cryptography.hazmat.backends import default_backend
 from cryptography import x509
 from cryptography.x509.oid import NameOID
@@ -27,31 +29,63 @@ from utils.safe_requests import create_session
 
 logger = logging.getLogger(__name__)
 
+# Supported key types for account keys and certificate keys
+ACCOUNT_KEY_TYPES = {
+    'RS256': {'alg': 'RS256', 'generate': lambda: rsa.generate_private_key(65537, 2048, default_backend())},
+    'ES256': {'alg': 'ES256', 'generate': lambda: ec.generate_private_key(ec.SECP256R1(), default_backend())},
+    'ES384': {'alg': 'ES384', 'generate': lambda: ec.generate_private_key(ec.SECP384R1(), default_backend())},
+}
+
+CERT_KEY_TYPES = {
+    'RSA-2048': lambda: rsa.generate_private_key(65537, 2048, default_backend()),
+    'RSA-4096': lambda: rsa.generate_private_key(65537, 4096, default_backend()),
+    'EC-P256': lambda: ec.generate_private_key(ec.SECP256R1(), default_backend()),
+    'EC-P384': lambda: ec.generate_private_key(ec.SECP384R1(), default_backend()),
+}
+
 
 class AcmeClientService:
     """
-    ACME Client for Let's Encrypt and compatible CAs.
-    Handles the full certificate issuance workflow.
+    ACME Client for Let's Encrypt and any RFC 8555-compliant CA.
+    Handles the full certificate issuance workflow including EAB.
     """
     
-    # Let's Encrypt directories
+    # Well-known ACME directories
     LE_STAGING = "https://acme-staging-v02.api.letsencrypt.org/directory"
     LE_PRODUCTION = "https://acme-v02.api.letsencrypt.org/directory"
     
-    def __init__(self, environment: str = 'staging'):
+    def __init__(self, environment: str = 'staging', directory_url: str = None):
         """
         Initialize ACME client.
         
         Args:
-            environment: 'staging' or 'production'
+            environment: 'staging' or 'production' (for LE; ignored if directory_url set)
+            directory_url: Custom ACME directory URL (overrides environment)
         """
         self.environment = environment
-        self.directory_url = self.LE_PRODUCTION if environment == 'production' else self.LE_STAGING
+        
+        # Custom directory URL takes precedence
+        if directory_url:
+            self.directory_url = directory_url
+        else:
+            # Check for configured custom URL
+            custom_url = self._get_custom_directory_url()
+            if custom_url:
+                self.directory_url = custom_url
+            else:
+                self.directory_url = self.LE_PRODUCTION if environment == 'production' else self.LE_STAGING
+        
         self.directory = None
         self.account_key = None
         self.account_url = None
         self.session = create_session()
         self.session.headers['User-Agent'] = 'UCM-ACME-Client/2.1'
+    
+    @staticmethod
+    def _get_custom_directory_url() -> Optional[str]:
+        """Get custom ACME directory URL from settings"""
+        cfg = SystemConfig.query.filter_by(key='acme.client.directory_url').first()
+        return cfg.value if cfg and cfg.value else None
         
     # =========================================================================
     # Directory & Nonce
@@ -78,8 +112,8 @@ class AcmeClientService:
     # Account Key Management
     # =========================================================================
     
-    def _get_account_key(self) -> rsa.RSAPrivateKey:
-        """Load or create account private key"""
+    def _get_account_key(self):
+        """Load or create account private key (RSA or EC based on settings)"""
         if self.account_key:
             return self.account_key
         
@@ -93,12 +127,11 @@ class AcmeClientService:
                 backend=default_backend()
             )
         else:
-            # Generate new RSA key
-            self.account_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=2048,
-                backend=default_backend()
-            )
+            # Determine account key type from settings
+            acct_alg = self._get_account_key_algorithm()
+            key_info = ACCOUNT_KEY_TYPES.get(acct_alg, ACCOUNT_KEY_TYPES['RS256'])
+            self.account_key = key_info['generate']()
+            
             pem = self.account_key.private_bytes(
                 encoding=Encoding.PEM,
                 format=serialization.PrivateFormat.PKCS8,
@@ -111,9 +144,27 @@ class AcmeClientService:
                 description=f"ACME client account key ({self.environment})"
             ))
             db.session.commit()
-            logger.info(f"Generated new ACME account key for {self.environment}")
+            logger.info(f"Generated new ACME account key ({acct_alg}) for {self.environment}")
         
         return self.account_key
+    
+    def _get_account_key_algorithm(self) -> str:
+        """Get the configured account key algorithm"""
+        cfg = SystemConfig.query.filter_by(key='acme.client.account_key_type').first()
+        alg = cfg.value if cfg else 'ES256'
+        return alg if alg in ACCOUNT_KEY_TYPES else 'ES256'
+    
+    def _detect_key_algorithm(self, key) -> str:
+        """Detect the JWS algorithm for a given key"""
+        if isinstance(key, rsa.RSAPrivateKey):
+            return 'RS256'
+        elif isinstance(key, ec.EllipticCurvePrivateKey):
+            curve = key.curve
+            if isinstance(curve, ec.SECP256R1):
+                return 'ES256'
+            elif isinstance(curve, ec.SECP384R1):
+                return 'ES384'
+        return 'RS256'
     
     def _get_account_url(self) -> Optional[str]:
         """Get stored account URL"""
@@ -145,60 +196,114 @@ class AcmeClientService:
     # JWS Signing (RFC 7515)
     # =========================================================================
     
-    def _jwk_thumbprint(self, key: rsa.RSAPrivateKey) -> str:
-        """Calculate JWK thumbprint (RFC 7638)"""
+    def _jwk_thumbprint(self, key) -> str:
+        """Calculate JWK thumbprint (RFC 7638) for RSA or EC key"""
         public = key.public_key()
-        numbers = public.public_numbers()
         
-        # Convert to base64url
-        def b64url(n, length):
-            data = n.to_bytes(length, byteorder='big')
+        def b64url(data: bytes) -> str:
             return base64.urlsafe_b64encode(data).rstrip(b'=').decode()
         
-        # RSA key: e and n
-        e = b64url(numbers.e, 3)  # e is typically 65537 = 3 bytes
-        n = b64url(numbers.n, 256)  # 2048-bit = 256 bytes
+        if isinstance(key, rsa.RSAPrivateKey):
+            numbers = public.public_numbers()
+            e = b64url(numbers.e.to_bytes(3, byteorder='big'))
+            n_bytes = (numbers.n.bit_length() + 7) // 8
+            n = b64url(numbers.n.to_bytes(n_bytes, byteorder='big'))
+            jwk_json = json.dumps({"e": e, "kty": "RSA", "n": n}, separators=(',', ':'), sort_keys=True)
+        elif isinstance(key, ec.EllipticCurvePrivateKey):
+            numbers = public.public_numbers()
+            curve = key.curve
+            if isinstance(curve, ec.SECP256R1):
+                crv, coord_len = "P-256", 32
+            elif isinstance(curve, ec.SECP384R1):
+                crv, coord_len = "P-384", 48
+            else:
+                raise ValueError(f"Unsupported EC curve: {curve.name}")
+            x_val = b64url(numbers.x.to_bytes(coord_len, byteorder='big'))
+            y_val = b64url(numbers.y.to_bytes(coord_len, byteorder='big'))
+            # RFC 7638: canonical JSON with sorted keys
+            jwk_json = json.dumps({"crv": crv, "kty": "EC", "x": x_val, "y": y_val}, separators=(',', ':'), sort_keys=True)
+        else:
+            raise ValueError(f"Unsupported key type: {type(key)}")
         
-        # JWK thumbprint is SHA-256 of canonical JSON
-        jwk_json = json.dumps({"e": e, "kty": "RSA", "n": n}, separators=(',', ':'), sort_keys=True)
         thumbprint = hashlib.sha256(jwk_json.encode()).digest()
         return base64.urlsafe_b64encode(thumbprint).rstrip(b'=').decode()
     
+    def _build_jwk(self, key) -> dict:
+        """Build JWK dict for a key (RFC 7517)"""
+        def b64url(data: bytes) -> str:
+            return base64.urlsafe_b64encode(data).rstrip(b'=').decode()
+        
+        if isinstance(key, rsa.RSAPrivateKey):
+            public = key.public_key()
+            numbers = public.public_numbers()
+            n_bytes = (numbers.n.bit_length() + 7) // 8
+            return {
+                "kty": "RSA",
+                "e": b64url(numbers.e.to_bytes(3, byteorder='big')),
+                "n": b64url(numbers.n.to_bytes(n_bytes, byteorder='big')),
+            }
+        elif isinstance(key, ec.EllipticCurvePrivateKey):
+            public = key.public_key()
+            numbers = public.public_numbers()
+            curve = key.curve
+            if isinstance(curve, ec.SECP256R1):
+                crv, coord_len = "P-256", 32
+            elif isinstance(curve, ec.SECP384R1):
+                crv, coord_len = "P-384", 48
+            else:
+                raise ValueError(f"Unsupported EC curve: {curve.name}")
+            return {
+                "kty": "EC",
+                "crv": crv,
+                "x": b64url(numbers.x.to_bytes(coord_len, byteorder='big')),
+                "y": b64url(numbers.y.to_bytes(coord_len, byteorder='big')),
+            }
+        raise ValueError(f"Unsupported key type: {type(key)}")
+    
+    def _sign_data(self, key, data: bytes) -> bytes:
+        """Sign data with RSA or EC key, returning the signature bytes"""
+        if isinstance(key, rsa.RSAPrivateKey):
+            return key.sign(data, padding.PKCS1v15(), hashes.SHA256())
+        elif isinstance(key, ec.EllipticCurvePrivateKey):
+            curve = key.curve
+            if isinstance(curve, ec.SECP256R1):
+                hash_alg = hashes.SHA256()
+                coord_len = 32
+            elif isinstance(curve, ec.SECP384R1):
+                hash_alg = hashes.SHA384()
+                coord_len = 48
+            else:
+                raise ValueError(f"Unsupported EC curve: {curve.name}")
+            # EC signature is DER-encoded; ACME needs raw r||s (RFC 7518 §3.4)
+            der_sig = key.sign(data, ec.ECDSA(hash_alg))
+            r, s = asym_utils.decode_dss_signature(der_sig)
+            return r.to_bytes(coord_len, byteorder='big') + s.to_bytes(coord_len, byteorder='big')
+        raise ValueError(f"Unsupported key type: {type(key)}")
+    
     def _sign_jws(self, url: str, payload: Any, use_jwk: bool = False) -> Dict[str, str]:
         """
-        Sign payload as JWS (JSON Web Signature).
+        Sign payload as JWS (JSON Web Signature) per RFC 7515.
+        Supports RS256, ES256, ES384 based on account key type.
         
         Args:
             url: Target URL (included in protected header)
             payload: Payload to sign (dict or "" for POST-as-GET)
-            use_jwk: Include JWK in header (for new account)
+            use_jwk: Include JWK in header (for new account registration)
         """
         key = self._get_account_key()
         nonce = self._get_nonce()
+        alg = self._detect_key_algorithm(key)
         
         # Build protected header
         protected = {
-            "alg": "RS256",
+            "alg": alg,
             "nonce": nonce,
             "url": url,
         }
         
         if use_jwk:
-            # New account registration - include JWK
-            public = key.public_key()
-            numbers = public.public_numbers()
-            
-            def b64url_int(n, length):
-                data = n.to_bytes(length, byteorder='big')
-                return base64.urlsafe_b64encode(data).rstrip(b'=').decode()
-            
-            protected["jwk"] = {
-                "kty": "RSA",
-                "e": b64url_int(numbers.e, 3),
-                "n": b64url_int(numbers.n, 256),
-            }
+            protected["jwk"] = self._build_jwk(key)
         else:
-            # Use account URL (kid)
             account_url = self._get_account_url()
             if not account_url:
                 raise ValueError("No account registered. Register first.")
@@ -219,7 +324,7 @@ class AcmeClientService:
         
         # Sign
         signing_input = f"{protected_b64}.{payload_b64}".encode()
-        signature = key.sign(signing_input, padding.PKCS1v15(), hashes.SHA256())
+        signature = self._sign_data(key, signing_input)
         signature_b64 = base64.urlsafe_b64encode(signature).rstrip(b'=').decode()
         
         return {
@@ -246,6 +351,7 @@ class AcmeClientService:
     def register_account(self, email: str) -> Tuple[bool, str, Optional[str]]:
         """
         Register or retrieve existing ACME account.
+        Supports External Account Binding (EAB) per RFC 8555 §7.3.4.
         
         Args:
             email: Contact email address
@@ -261,6 +367,14 @@ class AcmeClientService:
                 "termsOfServiceAgreed": True,
                 "contact": [f"mailto:{email}"],
             }
+            
+            # External Account Binding (EAB) — RFC 8555 §7.3.4
+            eab_kid, eab_hmac_key = self._get_eab_credentials()
+            if eab_kid and eab_hmac_key:
+                eab_payload = self._build_eab_payload(eab_kid, eab_hmac_key, new_account_url)
+                payload["externalAccountBinding"] = eab_payload
+            elif directory.get('meta', {}).get('externalAccountRequired'):
+                return False, "This ACME server requires External Account Binding (EAB). Configure eab_kid and eab_hmac_key in settings.", None
             
             resp = self._post(new_account_url, payload, use_jwk=True)
             
@@ -278,6 +392,53 @@ class AcmeClientService:
         except Exception as e:
             logger.error(f"Account registration error: {e}")
             return False, str(e), None
+    
+    def _get_eab_credentials(self) -> Tuple[Optional[str], Optional[str]]:
+        """Get EAB credentials from settings"""
+        kid_cfg = SystemConfig.query.filter_by(key='acme.client.eab_kid').first()
+        hmac_cfg = SystemConfig.query.filter_by(key='acme.client.eab_hmac_key').first()
+        kid = kid_cfg.value if kid_cfg and kid_cfg.value else None
+        hmac_key = hmac_cfg.value if hmac_cfg and hmac_cfg.value else None
+        return kid, hmac_key
+    
+    def _build_eab_payload(self, eab_kid: str, eab_hmac_key: str, url: str) -> dict:
+        """
+        Build External Account Binding JWS (RFC 8555 §7.3.4).
+        The EAB is a JWS signed with the HMAC key, containing the account JWK as payload.
+        """
+        key = self._get_account_key()
+        account_jwk = self._build_jwk(key)
+        
+        # Protected header for EAB — uses HS256 with the HMAC key
+        protected = {
+            "alg": "HS256",
+            "kid": eab_kid,
+            "url": url,
+        }
+        
+        protected_b64 = base64.urlsafe_b64encode(
+            json.dumps(protected).encode()
+        ).rstrip(b'=').decode()
+        
+        payload_b64 = base64.urlsafe_b64encode(
+            json.dumps(account_jwk).encode()
+        ).rstrip(b'=').decode()
+        
+        # Decode the HMAC key (base64url-encoded per RFC 8555)
+        # Add padding if needed
+        padded = eab_hmac_key + '=' * (4 - len(eab_hmac_key) % 4)
+        hmac_key_bytes = base64.urlsafe_b64decode(padded)
+        
+        # Sign with HMAC-SHA256
+        signing_input = f"{protected_b64}.{payload_b64}".encode()
+        mac = hmac.new(hmac_key_bytes, signing_input, hashlib.sha256).digest()
+        signature_b64 = base64.urlsafe_b64encode(mac).rstrip(b'=').decode()
+        
+        return {
+            "protected": protected_b64,
+            "payload": payload_b64,
+            "signature": signature_b64,
+        }
     
     def ensure_account(self, email: str) -> Tuple[bool, str]:
         """Ensure account exists, register if needed"""
@@ -510,6 +671,7 @@ class AcmeClientService:
     def finalize_order(self, order: AcmeClientOrder) -> Tuple[bool, str, Optional[int]]:
         """
         Finalize order and download certificate.
+        Supports configurable key types (RSA-2048/4096, ECDSA P-256/P-384).
         
         Returns:
             Tuple of (success, message, certificate_id)
@@ -524,12 +686,19 @@ class AcmeClientService:
             domains = order.domains_list
             primary_domain = domains[0]
             
-            # Generate key pair for certificate
-            cert_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=2048,
-                backend=default_backend()
-            )
+            # Determine key type from order or settings
+            key_type = getattr(order, 'key_type', None) or self._get_default_key_type()
+            key_generator = CERT_KEY_TYPES.get(key_type, CERT_KEY_TYPES['RSA-2048'])
+            cert_key = key_generator()
+            
+            # Pick hash algorithm based on key type
+            if isinstance(cert_key, ec.EllipticCurvePrivateKey):
+                if isinstance(cert_key.curve, ec.SECP384R1):
+                    hash_alg = hashes.SHA384()
+                else:
+                    hash_alg = hashes.SHA256()
+            else:
+                hash_alg = hashes.SHA256()
             
             # Build CSR — CN must match a SAN exactly, otherwise LE treats it
             # as an extra identifier and rejects the CSR (wildcard bug #34)
@@ -545,7 +714,7 @@ class AcmeClientService:
             ).add_extension(
                 x509.SubjectAlternativeName(san_list),
                 critical=False
-            ).sign(cert_key, hashes.SHA256(), default_backend())
+            ).sign(cert_key, hash_alg, default_backend())
             
             # Encode CSR as base64url DER
             csr_der = csr.public_bytes(Encoding.DER)
@@ -668,6 +837,16 @@ class AcmeClientService:
         except Exception as e:
             logger.error(f"Certificate import error: {e}")
             return None
+    
+    # =========================================================================
+    # Configuration Helpers
+    # =========================================================================
+    
+    def _get_default_key_type(self) -> str:
+        """Get the default certificate key type from settings"""
+        cfg = SystemConfig.query.filter_by(key='acme.client.key_type').first()
+        kt = cfg.value if cfg else 'RSA-2048'
+        return kt if kt in CERT_KEY_TYPES else 'RSA-2048'
     
     # =========================================================================
     # Cleanup

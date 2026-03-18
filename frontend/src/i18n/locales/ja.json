@@ -1140,7 +1140,19 @@
     "orderInvalid": "オーダーの検証に失敗しました",
     "orderStillProcessing": "オーダーはACMEサーバーで検証中です",
     "statusCheckFailed": "ステータス確認に失敗しました",
-    "renew": "更新"
+    "renew": "更新",
+    "keyType": "証明書キータイプ",
+    "keyTypeHelper": "発行される証明書のアルゴリズムとキーサイズ",
+    "accountKeyType": "アカウントキーアルゴリズム",
+    "accountKeyTypeHelper": "ACMEアカウントキーのアルゴリズム。変更には再登録が必要です。",
+    "customServer": "カスタムACMEサーバー",
+    "directoryUrl": "ACMEディレクトリURL",
+    "directoryUrlHelper": "カスタムACME CAディレクトリURL。Let's Encryptの場合は空のままにしてください。",
+    "eabKid": "EABキーID",
+    "eabKidHelper": "CAからの外部アカウントバインディングキー識別子",
+    "eabHmacKey": "EAB HMACキー",
+    "eabHmacKeyHelper": "外部アカウントバインディングHMACキー（base64urlエンコード）",
+    "eabHmacKeyPlaceholder": "CAからのHMACキーを入力"
   },
   "scep": {
     "title": "SCEPプロトコル",
