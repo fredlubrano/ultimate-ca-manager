@@ -880,7 +880,25 @@ MIICijCCAXICAQAwRTELMAkGA1UEBhMCVVMx...
                     <input
                       type="checkbox"
                       checked={eoboEnabled}
-                      onChange={(e) => setEoboEnabled(e.target.checked)}
+                      onChange={(e) => {
+                        const enabled = e.target.checked
+                        setEoboEnabled(enabled)
+                        if (enabled && selectedCSR) {
+                          if (!enrolleeName && selectedCSR.subject) {
+                            setEnrolleeName(selectedCSR.subject)
+                          }
+                          if (!enrolleeUpn && selectedCSR.san_email) {
+                            try {
+                              const emails = typeof selectedCSR.san_email === 'string'
+                                ? JSON.parse(selectedCSR.san_email)
+                                : selectedCSR.san_email
+                              if (Array.isArray(emails) && emails.length > 0) {
+                                setEnrolleeUpn(emails[0])
+                              }
+                            } catch { /* ignore parse errors */ }
+                          }
+                        }
+                      }}
                       className="rounded border-border"
                     />
                     <span className="text-text-secondary">{t('msca.eobo.enable')}</span>
