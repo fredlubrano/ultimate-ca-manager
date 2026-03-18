@@ -11,6 +11,26 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.91] - 2026-03-18
+
+### Fixed
+- **RFC 5280 SAN compliance** — All code paths (CSR upload, import, MSCA, smart import, discovery) now extract and store all 4 SAN types: DNS, IP, Email (RFC822Name), URI
+- **CSR import SAN storage** — Fixed `str(list)` → `json.dumps()` for proper JSON serialization of SANs
+- **CSR Email SAN handling** — Emails in CSR SANs are now correctly stored as RFC822Name instead of being misclassified as DNS names
+- **Certificate creation** — URI SANs now properly saved to database; URI: prefix correctly parsed
+- **sign_csr() extensions** — SubjectKeyIdentifier and AuthorityKeyIdentifier now added as fallback when missing from CSR (RFC 5280 §4.2.1.1/§4.2.1.2)
+- **SAN critical flag** — SAN extension now marked critical when certificate subject is empty (RFC 5280 §4.2.1.6)
+- **Delta CRL** — Added mandatory IssuingDistributionPoint critical extension (RFC 5280 §5.2.5)
+- **FreshestCRL URL** — Fixed delta CRL URL to use `ca.refid` instead of `ca.id` matching CDP route pattern
+- **OCSP POST validation** — Content-Type `application/ocsp-request` now validated on POST requests (RFC 6960 §4.2.2)
+- **CSR signature verification** — Upload and import endpoints now verify CSR signature before accepting (RFC 2986 §2.2)
+- **Certificate import** — SANs now extracted and stored when importing certificates via file upload
+
+### Added
+- **Discovery SAN columns** — `san_emails` and `san_uris` columns added to discovered certificates (migration 009)
+
+---
+
 ## [2.90] - 2026-03-18
 
 ### Added
