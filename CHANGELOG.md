@@ -11,6 +11,15 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.95] - 2026-03-18
+
+### Fixed
+- **HTTPS certificate chain** — Apply managed certificate now includes full CA chain (leaf + intermediates + root) in https_cert.pem
+- **EST enrollment chain** — simpleenroll, simplereenroll, and serverkeygen now return full CA chain in PKCS#7 response (RFC 7030 §4.2.3)
+- **mTLS trust file** — mtls_ca.pem now includes parent CA hierarchy for intermediate CA trust
+
+---
+
 ## [2.94] - 2026-03-18
 
 ### Added
