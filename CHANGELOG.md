@@ -11,6 +11,14 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.90] - 2026-03-18
+
+### Added
+- **ADCS badge** — Certificates signed by Microsoft CA now show a purple "ADCS" tag in the certificate list
+- **EST badge** — Certificates issued via EST protocol now show a yellow "EST" tag in the certificate list
+
+---
+
 ## [2.89] - 2026-03-18
 
 ### Fixed
