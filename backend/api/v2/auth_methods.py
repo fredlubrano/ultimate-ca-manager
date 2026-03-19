@@ -31,6 +31,20 @@ try:
 except ImportError:
     HAS_CSRF = False
 
+
+def _get_display_settings():
+    """Get timezone, date_format, show_time from system_config for login responses."""
+    from models import SystemConfig
+    tz_row = SystemConfig.query.filter_by(key='timezone').first()
+    df_row = SystemConfig.query.filter_by(key='date_format').first()
+    st_row = SystemConfig.query.filter_by(key='show_time').first()
+    return {
+        'timezone': tz_row.value if tz_row else 'UTC',
+        'date_format': df_row.value if df_row else 'short',
+        'show_time': st_row.value != 'false' if st_row else True,
+    }
+
+
 bp = Blueprint('auth_methods', __name__)
 
 # In-memory 2FA/WebAuthn brute-force tracking (per-session, cleared on success)
@@ -273,7 +287,8 @@ def login_password():
             'permissions': permissions,
             'auth_method': 'password',
             'csrf_token': csrf_token,
-            'force_password_change': user.force_password_change or False
+            'force_password_change': user.force_password_change or False,
+            **_get_display_settings()
         },
         message='Login successful'
     )
@@ -398,7 +413,8 @@ def login_2fa():
             'permissions': permissions,
             'auth_method': auth_method,
             'csrf_token': csrf_token,
-            'force_password_change': user.force_password_change or False
+            'force_password_change': user.force_password_change or False,
+            **_get_display_settings()
         },
         message='Login successful'
     )
@@ -477,7 +493,8 @@ def login_mtls():
             'certificate': {
                 'serial': auth_cert.cert_serial,
                 'name': auth_cert.name
-            }
+            },
+            **_get_display_settings()
         },
         message='Login successful via mTLS'
     )
@@ -633,7 +650,8 @@ def webauthn_verify():
                 'role': user.role,
                 'permissions': permissions,
                 'auth_method': 'webauthn',
-                'csrf_token': csrf_token
+                'csrf_token': csrf_token,
+                **_get_display_settings()
             },
             message='Login successful via WebAuthn'
         )

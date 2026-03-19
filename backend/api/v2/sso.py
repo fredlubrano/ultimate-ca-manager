@@ -1607,12 +1607,21 @@ def ldap_login():
     from auth.permissions import get_role_permissions
     permissions = get_role_permissions(user.role)
     
+    # Get display settings for frontend
+    from models import SystemConfig
+    tz_row = SystemConfig.query.filter_by(key='timezone').first()
+    df_row = SystemConfig.query.filter_by(key='date_format').first()
+    st_row = SystemConfig.query.filter_by(key='show_time').first()
+    
     return success_response(
         data={
             'user': user.to_dict(),
             'role': user.role,
             'permissions': permissions,
-            'csrf_token': csrf_token
+            'csrf_token': csrf_token,
+            'timezone': tz_row.value if tz_row else 'UTC',
+            'date_format': df_row.value if df_row else 'short',
+            'show_time': st_row.value != 'false' if st_row else True,
         },
         message='LDAP authentication successful'
     )

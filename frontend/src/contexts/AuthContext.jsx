@@ -94,6 +94,11 @@ export function AuthProvider({ children }) {
       setPermissions(response.data?.permissions || response.permissions || [])
       setRole(response.data?.role || response.role || null)
       setForcePasswordChange(response.data?.force_password_change || false)
+      // Apply display settings from login response (timezone, date_format, show_time)
+      const loginData = response.data || response
+      if (loginData.timezone) setAppTimezone(loginData.timezone)
+      if (loginData.date_format) setDateFormat(loginData.date_format)
+      if (loginData.show_time !== undefined) setShowTime(loginData.show_time !== false)
       debug('✅ User authenticated:', userData)
       return response
     } catch (error) {

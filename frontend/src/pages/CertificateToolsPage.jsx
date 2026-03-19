@@ -17,8 +17,7 @@ import {
 import { ResponsiveLayout } from '../components/ui/responsive'
 import { toolsService } from '../services'
 import { useNotification } from '../contexts'
-import { cn } from '../lib/utils'
-import { getAppTimezone } from '../stores/timezoneStore'
+import { cn, formatDate } from '../lib/utils'
 
 // Tool definitions with tab-compatible format for sidebar layout
 const TOOLS = [
@@ -704,8 +703,8 @@ export default function CertificateToolsPage() {
         <CompactGrid cols={2}>
           <CompactField autoIcon="commonName" label={t('common.commonName')} value={data.subject?.commonName} copyable />
           <CompactField autoIcon="issuer" label={t('common.issuer')} value={data.issuer?.commonName || data.issuer?.organizationName} />
-          <CompactField autoIcon="validFrom" label={t('common.validFrom')} value={new Date(data.not_valid_before).toLocaleDateString(undefined, { timeZone: getAppTimezone() })} />
-          <CompactField autoIcon="validUntil" label={t('common.validUntil')} value={new Date(data.not_valid_after).toLocaleDateString(undefined, { timeZone: getAppTimezone() })} />
+          <CompactField autoIcon="validFrom" label={t('common.validFrom')} value={formatDate(data.not_valid_before)} />
+          <CompactField autoIcon="validUntil" label={t('common.validUntil')} value={formatDate(data.not_valid_after)} />
           <CompactField autoIcon="daysLeft" label={t('tools.daysLeft')} value={data.days_until_expiry} />
           <CompactField autoIcon="status" label={t('common.status')} value={
             <Badge variant={data.status === 'valid' ? 'success' : 'danger'}>
@@ -811,8 +810,8 @@ export default function CertificateToolsPage() {
 
         {/* Validity */}
         <CompactGrid cols={3}>
-          <CompactField autoIcon="validFrom" label={t('common.validFrom')} value={new Date(data.not_valid_before).toLocaleDateString(undefined, { timeZone: getAppTimezone() })} />
-          <CompactField autoIcon="validUntil" label={t('common.validUntil')} value={new Date(data.not_valid_after).toLocaleDateString(undefined, { timeZone: getAppTimezone() })} />
+          <CompactField autoIcon="validFrom" label={t('common.validFrom')} value={formatDate(data.not_valid_before)} />
+          <CompactField autoIcon="validUntil" label={t('common.validUntil')} value={formatDate(data.not_valid_after)} />
           <CompactField autoIcon="daysLeft" label={t('tools.daysLeft')} value={data.days_until_expiry} />
         </CompactGrid>
 

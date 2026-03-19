@@ -47,8 +47,8 @@ import {
 import { useNotification } from '../contexts';
 import { usePermission } from '../hooks';
 import auditService from '../services/audit.service';
-import { getAppTimezone } from '../stores/timezoneStore';
 import { formatRelativeTime } from '../lib/ui';
+import { formatDate } from '../lib/utils';
 // Action icons mapping
 const actionIcons = {
   login_success: SignIn,
@@ -616,7 +616,7 @@ export default function AuditLogsPage() {
         <CompactGrid>
           <CompactField 
             autoIcon="created" label={t('audit.timestamp')} 
-            value={new Date(selectedLog.timestamp).toLocaleString(undefined, { timeZone: getAppTimezone() })} 
+            value={formatDate(selectedLog.timestamp)} 
           />
           <CompactField 
             autoIcon="user" label={t('common.user')} 

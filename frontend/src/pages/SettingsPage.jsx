@@ -35,7 +35,7 @@ import { useTheme } from '../contexts/ThemeContext'
 import { ToggleSwitch } from '../components/ui/ToggleSwitch'
 import TagsInput from '../components/ui/TagsInput'
 import EmailTemplateWindow from '../components/EmailTemplateWindow'
-import { getAppTimezone, setAppTimezone } from '../stores/timezoneStore'
+import { setAppTimezone } from '../stores/timezoneStore'
 import { setDateFormat, setShowTime } from '../stores/dateFormatStore'
 
 // Settings categories with colors for visual distinction
@@ -1295,7 +1295,7 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                   ? availableCerts.map(c => ({
                       value: c.id,
                       label: c.not_after
-                        ? `${c.label} (${new Date(c.not_after).toLocaleDateString(undefined, { timeZone: getAppTimezone() })})`
+                        ? `${c.label} (${formatDate(c.not_after)})`
                         : c.label
                     }))
                   : [{ value: 'https', label: t('sso.httpsDefault') }]
@@ -3145,7 +3145,7 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-3 mt-1 text-xs text-text-tertiary">
                           <span className="flex items-center gap-1">
                             <Clock size={12} />
-                            {new Date(anomaly.timestamp).toLocaleString(undefined, { timeZone: getAppTimezone() })}
+                            {formatDate(anomaly.timestamp)}
                           </span>
                           {anomaly.details?.ip && (
                             <span className="flex items-center gap-1">

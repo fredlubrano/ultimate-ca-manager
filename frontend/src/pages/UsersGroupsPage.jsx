@@ -21,7 +21,6 @@ import { usersService, groupsService, rolesService, casService, accountService }
 import { useNotification, useMobile } from '../contexts'
 import { usePermission, useWebSocket } from '../hooks'
 import { formatDate, cn } from '../lib/utils'
-import { getAppTimezone } from '../stores/timezoneStore'
 export default function UsersGroupsPage() {
   const { t } = useTranslation()
   const { isMobile } = useMobile()
@@ -1126,7 +1125,7 @@ export default function UsersGroupsPage() {
                             <div className="text-xs text-text-secondary mt-1 truncate">{cert.subject}</div>
                             {cert.valid_to && (
                               <div className="text-xs text-text-tertiary mt-0.5">
-                                {t('account.mtlsExpiresOn', { date: new Date(cert.valid_to).toLocaleDateString(undefined, { timeZone: getAppTimezone() }) })}
+                                {t('account.mtlsExpiresOn', { date: formatDate(cert.valid_to) })}
                               </div>
                             )}
                           </button>
