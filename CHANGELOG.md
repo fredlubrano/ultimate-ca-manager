@@ -11,6 +11,14 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.96] - 2026-03-19
+
+### Fixed
+- **Timezone not applied on login** — All login endpoints (password, 2FA, mTLS, WebAuthn, LDAP) now return timezone, date_format, and show_time settings so the frontend applies them immediately without requiring a page refresh
+- **Consistent date formatting** — Replaced 13 raw `toLocaleString`/`toLocaleDateString` calls with centralized `formatDate()` across 8 frontend files
+
+---
+
 ## [2.95] - 2026-03-18
 
 ### Fixed
