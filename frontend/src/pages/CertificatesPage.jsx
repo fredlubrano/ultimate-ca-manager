@@ -129,8 +129,8 @@ export default function CertificatesPage() {
       
       // Handle orphan filter client-side (no CA or CA not in our list)
       if (filterStatus === 'orphan' && cas.length > 0) {
-        const caIds = new Set(cas.map(ca => ca.id))
-        certs = certs.filter(c => c.ca_id && !caIds.has(c.ca_id) && !caIds.has(Number(c.ca_id)))
+        const caRefIds = new Set(cas.map(ca => ca.refid))
+        certs = certs.filter(c => c.caref && !caRefIds.has(c.caref))
       }
       
       setCertificates(certs)
@@ -313,21 +313,17 @@ export default function CertificatesPage() {
 
   // Normalize and filter data - detect orphans (cert without existing CA)
   const filteredCerts = useMemo(() => {
-    const caIds = new Set(cas.map(ca => ca.id))
+    const caRefIds = new Set(cas.map(ca => ca.refid))
     
     let result = certificates.map(cert => ({
       ...cert,
       status: cert.revoked ? 'revoked' : cert.status,
       cn: cert.cn || cert.common_name || extractCN(cert.subject) || cert.descr || (cert.san_dns ? JSON.parse(cert.san_dns)[0] : null) || 'Certificate',
-      isOrphan: cert.ca_id && !caIds.has(cert.ca_id) && !caIds.has(Number(cert.ca_id))
+      isOrphan: cert.caref && !caRefIds.has(cert.caref)
     }))
     
     if (filterStatus) {
       result = result.filter(c => c.status === filterStatus)
-    }
-    
-    if (filterCA) {
-      result = result.filter(c => String(c.ca_id) === filterCA || c.caref === filterCA)
     }
     
     return result
