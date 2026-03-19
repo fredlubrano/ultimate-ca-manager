@@ -11,6 +11,19 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.97] - 2026-03-19
+
+### Fixed
+- **Certificate CA filter** — Filtering certificates by CA now works correctly; frontend was using nonexistent `ca_id` field instead of `caref`
+- **Orphan certificate detection** — Orphan count and filter now properly compare `caref`/`refid` instead of missing `ca_id`
+- **ACME order serialization** — Fixed `AcmeOrder.to_dict()` crash caused by referencing `self.expires_at` instead of `self.expires`
+- **Trust store detail panel** — Subject and issuer fields now display correctly using actual API response fields
+- **Trust store search** — Search now works on `subject`/`issuer` fields instead of nonexistent `subject_cn`/`issuer_cn`
+- **Certificate subtitle** — Floating detail window now extracts issuer CN from full DN string
+- **CA parent name** — CA history subtitle now resolves parent name from parent_id instead of missing `parent_name` field
+
+---
+
 ## [2.96] - 2026-03-19
 
 ### Fixed
