@@ -11,6 +11,16 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.99] - 2026-03-20
+
+### Added
+- **JKS (Java KeyStore) export** — Export certificates and CAs as password-protected JKS files with optional CA chain inclusion; available in all export modals, detail panels, and certificate converter tool
+
+### Fixed
+- **Orphan certificate re-chaining** — SKI/AKI backfill now fixes certificates with stale CA references (e.g. after OPNsense migration) by matching AKI to existing CA SKI
+
+---
+
 ## [2.98] - 2026-03-20
 
 ### Fixed
