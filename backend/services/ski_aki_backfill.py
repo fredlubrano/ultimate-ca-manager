@@ -129,18 +129,24 @@ def backfill_ski_aki():
             pass
 
     # --- Phase 3: Re-chain orphan certificates ---
+    # Include certs with NULL/empty caref AND certs whose caref points to a non-existent CA
+    ca_refids = set(ca.refid for ca in CA.query.with_entities(CA.refid).all())
+    
     orphan_certs_list = Certificate.query.filter(
-        Certificate.caref.is_(None) | (Certificate.caref == ''),
         Certificate.aki.isnot(None)
     ).all()
 
     for cert in orphan_certs_list:
+        # Skip if caref is valid (points to existing CA)
+        if cert.caref and cert.caref in ca_refids:
+            continue
         try:
             parent = CA.query.filter(CA.ski == cert.aki).first()
             if parent:
+                old_caref = cert.caref
                 cert.caref = parent.refid
                 stats['rechained_certs'] += 1
-                logger.info(f"SKI/AKI backfill: re-chained cert '{cert.descr}' -> CA '{parent.descr}'")
+                logger.info(f"SKI/AKI backfill: re-chained cert '{cert.descr}' (caref={old_caref}) -> CA '{parent.descr}'")
         except Exception:
             pass
 
@@ -240,17 +246,19 @@ def backfill_ski_aki():
         if stats.get('populated_cn'):
             logger.info(f"SKI/AKI backfill: populated subject_cn for {stats['populated_cn']} certificates")
 
-    # Count remaining orphans after repair (exclude self-signed roots)
+    # Count remaining orphans after repair (certs with invalid/missing caref)
+    ca_refids_final = set(ca.refid for ca in CA.query.with_entities(CA.refid).all())
     stats['orphan_cas'] = CA.query.filter(
         CA.caref.is_(None) | (CA.caref == ''),
         CA.ski.isnot(None),
         CA.crt.isnot(None),
         CA.subject != CA.issuer
     ).count()
-    stats['orphan_certs'] = Certificate.query.filter(
-        Certificate.caref.is_(None) | (Certificate.caref == ''),
-        Certificate.aki.isnot(None)
-    ).count()
+    orphan_cert_count = 0
+    for cert in Certificate.query.filter(Certificate.aki.isnot(None)).all():
+        if not cert.caref or cert.caref not in ca_refids_final:
+            orphan_cert_count += 1
+    stats['orphan_certs'] = orphan_cert_count
 
     # Store stats for API access
     _last_run_stats.update(stats)
