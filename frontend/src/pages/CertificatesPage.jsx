@@ -202,7 +202,7 @@ export default function CertificatesPage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      const ext = { pem: 'pem', der: 'der', pkcs7: 'p7b', pkcs12: 'p12', pfx: 'pfx' }[format] || format
+      const ext = { pem: 'pem', der: 'der', pkcs7: 'p7b', pkcs12: 'p12', pfx: 'pfx', jks: 'jks' }[format] || format
       a.download = `${selectedCert.common_name || 'certificate'}.${ext}`
       a.click()
       URL.revokeObjectURL(url)
@@ -582,7 +582,7 @@ export default function CertificatesPage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      const ext = { pkcs12: 'p12', pkcs7: 'p7b' }[format] || format
+      const ext = { pkcs12: 'p12', pkcs7: 'p7b', jks: 'jks' }[format] || format
       a.download = `${cert.common_name || cert.cn || 'certificate'}.${ext}`
       a.click()
       URL.revokeObjectURL(url)

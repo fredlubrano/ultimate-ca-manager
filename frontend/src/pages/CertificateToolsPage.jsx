@@ -203,11 +203,11 @@ export default function CertificateToolsPage() {
       return
     }
     // Guard: PKCS12 output requires key + password
-    if (convertFormat === 'pkcs12' && !keyContent) {
+    if ((convertFormat === 'pkcs12' || convertFormat === 'jks') && !keyContent) {
       showError(t('tools.privateKeyRequired'))
       return
     }
-    if (convertFormat === 'pkcs12' && !pkcs12Password) {
+    if ((convertFormat === 'pkcs12' || convertFormat === 'jks') && !pkcs12Password) {
       showError(t('tools.pkcs12OutputPasswordRequired'))
       return
     }
@@ -245,7 +245,7 @@ export default function CertificateToolsPage() {
     const { data, filename, format } = result.data
     
     let blob
-    if (format === 'der' || format === 'pkcs12') {
+    if (format === 'der' || format === 'pkcs12' || format === 'jks') {
       // Binary format - decode base64
       const binary = atob(data)
       const bytes = new Uint8Array(binary.length)
@@ -585,10 +585,11 @@ export default function CertificateToolsPage() {
             { value: 'pem', label: t('tools.pemText') },
             { value: 'der', label: t('tools.derBinary') },
             { value: 'pkcs12', label: t('tools.pkcs12') },
+            { value: 'jks', label: 'JKS (Java KeyStore)' },
             { value: 'pkcs7', label: t('tools.pkcs7') },
           ]}
         />
-        {convertFormat === 'pkcs12' && (
+        {(convertFormat === 'pkcs12' || convertFormat === 'jks') && (
           <Input
             label={t('tools.outputPkcs12Password')}
             type="password"
@@ -602,8 +603,8 @@ export default function CertificateToolsPage() {
         )}
       </div>
 
-      {/* Additional inputs for PKCS12 output */}
-      {convertFormat === 'pkcs12' && (
+      {/* Additional inputs for PKCS12/JKS output */}
+      {(convertFormat === 'pkcs12' || convertFormat === 'jks') && (
         <div className="p-4 border border-border rounded-lg bg-secondary-op50 space-y-4">
           <div className="text-sm font-medium text-text-primary">{t('tools.pkcs12RequiresKey')}</div>
           

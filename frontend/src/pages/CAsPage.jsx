@@ -222,7 +222,7 @@ export default function CAsPage() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      const ext = { pem: 'pem', der: 'der', pkcs7: 'p7b', pkcs12: 'p12' }[format] || format
+      const ext = { pem: 'pem', der: 'der', pkcs7: 'p7b', pkcs12: 'p12', jks: 'jks' }[format] || format
       a.download = `${ca.name || ca.common_name || 'ca'}.${ext}`
       a.click()
       URL.revokeObjectURL(url)

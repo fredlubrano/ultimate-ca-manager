@@ -331,6 +331,68 @@ def export_user_certificate(cert_id):
                 headers={'Content-Disposition': f'attachment; filename="{filename_base}.p12"'}
             )
 
+        elif export_format == 'jks':
+            if not password or len(password) < 8:
+                return error_response('Password required (minimum 8 characters) for JKS export', 400)
+            if not cert.prv:
+                return error_response('Certificate has no private key for JKS export', 400)
+
+            import jks as pyjks
+            import time as _time
+
+            x509_cert = x509.load_pem_x509_certificate(cert_pem, default_backend())
+            key_pem_data = base64.b64decode(cert.prv)
+            private_key = serialization.load_pem_private_key(key_pem_data, password=None, backend=default_backend())
+
+            cert_der = x509_cert.public_bytes(serialization.Encoding.DER)
+            key_pkcs8 = private_key.private_bytes(
+                serialization.Encoding.DER,
+                serialization.PrivateFormat.PKCS8,
+                serialization.NoEncryption()
+            )
+
+            cert_chain = [("X.509", cert_der)]
+            if include_chain and cert.caref:
+                ca = CA.query.filter_by(refid=cert.caref).first()
+                seen = set()
+                while ca and ca.refid not in seen and len(cert_chain) < 10:
+                    seen.add(ca.refid)
+                    if ca.crt:
+                        try:
+                            ca_cert_obj = x509.load_pem_x509_certificate(
+                                base64.b64decode(ca.crt), default_backend()
+                            )
+                            cert_chain.append(("X.509", ca_cert_obj.public_bytes(serialization.Encoding.DER)))
+                        except Exception:
+                            logger.warning(f"Failed to load CA cert {ca.refid}")
+                    ca = CA.query.filter_by(refid=ca.caref).first() if ca.caref else None
+
+            ts = int(_time.time() * 1000)
+            pke = pyjks.PrivateKeyEntry(
+                alias=(filename_base).lower().replace(' ', '-'),
+                cert_chain=cert_chain,
+                pkey_pkcs8=key_pkcs8,
+                timestamp=ts,
+            )
+
+            keystore = pyjks.KeyStore.new("jks", [pke])
+            jks_bytes = keystore.saves(password)
+
+            AuditService.log_action(
+                action='user_certificate_exported',
+                resource_type='user_certificate',
+                resource_id=cert_id,
+                resource_name=filename_base,
+                details=f'Exported JKS for user cert: {filename_base}',
+                success=True
+            )
+
+            return Response(
+                jks_bytes,
+                mimetype='application/x-java-keystore',
+                headers={'Content-Disposition': f'attachment; filename="{filename_base}.jks"'}
+            )
+
         # PEM export (default)
         result = cert_pem
         filename = f"{filename_base}.crt"

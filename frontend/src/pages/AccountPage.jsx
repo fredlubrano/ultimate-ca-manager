@@ -422,7 +422,7 @@ export default function AccountPage() {
     if (!exportCert) return
     try {
       const blob = await userCertificatesService.export(exportCert.id, format, options)
-      const extMap = { pem: 'pem', der: 'der', pkcs7: 'p7b', pkcs12: 'p12', key: 'key' }
+      const extMap = { pem: 'pem', der: 'der', pkcs7: 'p7b', pkcs12: 'p12', key: 'key', jks: 'jks' }
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url

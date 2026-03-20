@@ -130,7 +130,7 @@ export default function UserCertificatesPage() {
   // Export handler
   const handleExport = async () => {
     if (!exportCert) return
-    if (exportFormat === 'pkcs12' && exportPassword.length < 8) {
+    if ((exportFormat === 'pkcs12' || exportFormat === 'jks') && exportPassword.length < 8) {
       showError(t('userCertificates.exportPasswordMin'))
       return
     }
@@ -138,9 +138,9 @@ export default function UserCertificatesPage() {
     try {
       const blob = await userCertificatesService.export(
         exportCert.id, exportFormat,
-        { password: exportFormat === 'pkcs12' ? exportPassword : undefined }
+        { password: (exportFormat === 'pkcs12' || exportFormat === 'jks') ? exportPassword : undefined }
       )
-      const ext = exportFormat === 'pkcs12' ? 'p12' : 'pem'
+      const ext = { pkcs12: 'p12', jks: 'jks' }[exportFormat] || 'pem'
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -413,8 +413,13 @@ export default function UserCertificatesPage() {
                 PKCS12 (.p12)
               </Button>
             )}
+            {exportCert?.has_private_key && (
+              <Button type="button" variant={exportFormat === 'jks' ? 'primary' : 'secondary'} size="sm" onClick={() => setExportFormat('jks')}>
+                JKS
+              </Button>
+            )}
           </div>
-          {exportFormat === 'pkcs12' && (
+          {(exportFormat === 'pkcs12' || exportFormat === 'jks') && (
             <Input
               type="password"
               label={t('userCertificates.exportPasswordLabel')}

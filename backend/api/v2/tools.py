@@ -762,6 +762,49 @@ def convert_certificate():
             finally:
                 os.unlink(temp_pem)
         
+        elif output_format == 'jks':
+            if not certs:
+                return error_response('Certificate is required for JKS output', 400)
+            if not keys:
+                return error_response('Private key is required for JKS output', 400)
+            if not pkcs12_password:
+                return error_response('Password is required for JKS output', 400)
+            
+            import jks as pyjks
+            import time as _time
+            
+            cert = certs[0]
+            key = keys[0]
+            ts = int(_time.time() * 1000)
+            
+            cert_der = cert.public_bytes(serialization.Encoding.DER)
+            key_pkcs8 = key.private_bytes(
+                serialization.Encoding.DER,
+                serialization.PrivateFormat.PKCS8,
+                serialization.NoEncryption()
+            )
+            
+            cert_chain = [("X.509", cert_der)]
+            for ca_cert in (certs[1:] + chain_certs):
+                cert_chain.append(("X.509", ca_cert.public_bytes(serialization.Encoding.DER)))
+            
+            pke = pyjks.PrivateKeyEntry(
+                alias='certificate',
+                cert_chain=cert_chain,
+                pkey_pkcs8=key_pkcs8,
+                timestamp=ts,
+            )
+            
+            keystore = pyjks.KeyStore.new("jks", [pke])
+            jks_bytes = keystore.saves(pkcs12_password)
+            
+            result = {
+                'format': 'jks',
+                'data': base64.b64encode(jks_bytes).decode(),
+                'filename': 'certificate.jks',
+                'detected_format': detected_format
+            }
+        
         else:
             return error_response(f'Unknown output format: {output_format}', 400)
         
