@@ -11,6 +11,20 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.100] - 2026-03-23
+
+### Fixed
+- **Migration system** — Upgrades from old versions (pre-v2.52) no longer fail; baseline migration now creates all tables unconditionally with `CREATE TABLE IF NOT EXISTS` instead of skipping schema for existing installs
+- **Missing database columns** — Added fallback for columns missing after partial upgrades: `key_type`, delta CRL fields, `request_data`, EOBO fields, SAN fields on discovered certificates
+
+### Added
+- **docker-compose.simple.yml** — Minimal compose file for Portainer and quick deployments (just image, ports, volume)
+
+### Changed
+- **Docker Compose fixes** — Removed non-existent `development` build target from dev compose, removed deprecated `FLASK_ENV` (Flask 3.x), fixed nginx healthcheck and `depends_on` condition in prod compose
+
+---
+
 ## [2.99] - 2026-03-20
 
 ### Added
