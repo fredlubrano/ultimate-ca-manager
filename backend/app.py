@@ -749,6 +749,8 @@ def init_database(app):
                 ('ocsp_url', 'VARCHAR(512)', None),
                 ('owner_group_id', 'INTEGER', None),
                 ('serial_number', 'VARCHAR(64)', None),
+                ('delta_crl_enabled', 'BOOLEAN', '0'),
+                ('delta_crl_interval', 'INTEGER', '4'),
             ],
             'groups': [
                 ('description', 'TEXT', None),
@@ -771,6 +773,22 @@ def init_database(app):
                 ('last_renewal_at', 'DATETIME', None),
                 ('renewal_failures', 'INTEGER', '0'),
                 ('last_error_at', 'DATETIME', None),
+                ('key_type', "VARCHAR(20)", "'RSA-2048'"),
+            ],
+            'crl_metadata': [
+                ('is_delta', 'BOOLEAN', '0'),
+                ('base_crl_number', 'INTEGER', None),
+            ],
+            'approval_requests': [
+                ('request_data', 'TEXT', None),
+            ],
+            'msca_requests': [
+                ('enrollee_name', 'VARCHAR(500)', None),
+                ('enrollee_upn', 'VARCHAR(500)', None),
+            ],
+            'discovered_certificates': [
+                ('san_emails', 'TEXT', "'[]'"),
+                ('san_uris', 'TEXT', "'[]'"),
             ],
         }
         

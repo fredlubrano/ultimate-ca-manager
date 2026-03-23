@@ -851,20 +851,23 @@ CREATE INDEX IF NOT EXISTS idx_disc_cert_fp ON discovered_certificates(fingerpri
 
 
 def upgrade(conn):
-    """Create baseline schema or skip for existing installations."""
+    """Create baseline schema, handling both fresh installs and partial upgrades."""
     # Check if any legacy migrations have been applied
     cursor = conn.execute(
         "SELECT COUNT(*) FROM _migrations WHERE name LIKE '0%'"
     )
     applied_count = cursor.fetchone()[0]
 
-    if applied_count > 0:
-        # Existing installation — schema already exists, nothing to do
-        return
-
-    # Fresh install — create the full schema
-    conn.executescript(SCHEMA_SQL)
-    conn.commit()
+    if applied_count == 0:
+        # Fresh install — create the full schema
+        conn.executescript(SCHEMA_SQL)
+        conn.commit()
+    else:
+        # Existing installation — run schema with CREATE TABLE IF NOT EXISTS
+        # to fill in any tables from migrations that were never applied
+        # (e.g. upgrading from v2.0 which didn't have discovery tables 040-042)
+        conn.executescript(SCHEMA_SQL)
+        conn.commit()
 
     # Mark all legacy migrations as applied so they're never attempted
     for name in LEGACY_MIGRATIONS:
