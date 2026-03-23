@@ -1,0 +1,14 @@
+name: ucm
+services:
+  ultimate-ca-manager:
+    image: neyslim/ultimate-ca-manager:latest
+    container_name: ucm
+    restart: unless-stopped
+    ports:
+      - 8443:8443
+      - 8080:8080
+    volumes:
+      - ucm-data:/opt/ucm/data
+volumes:
+  ucm-data:
+    name: ucm-data

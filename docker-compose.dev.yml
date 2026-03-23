@@ -13,7 +13,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: development  # Use development stage if multi-stage
     
     # Mount source code for hot-reload
     volumes:
@@ -31,8 +30,7 @@ services:
       - UCM_DEBUG=true
       - UCM_LOG_LEVEL=DEBUG
       
-      # Flask development server
-      - FLASK_ENV=development
+      # Flask debug mode (hot-reload)
       - FLASK_DEBUG=true
       
       # Disable caching for development
