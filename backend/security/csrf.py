@@ -38,6 +38,7 @@ CSRF_EXEMPT_PATHS = [
     '/.well-known/acme',        # ACME challenge
     '/ocsp',                    # OCSP protocol
     '/cdp/',                    # CRL distribution
+    '/ca/',                     # AIA CA Issuers
     '/api/health',              # Health checks
     '/api/v2/health',           # Health checks (v2)
     '/api/v2/mtls/',            # mTLS authentication (cert-based)

@@ -25,13 +25,13 @@ class ProtocolOnlyMiddleware:
             start_response('200 OK', [('Content-Type', 'text/plain')])
             return [b'OK']
 
-        if path.startswith(('/cdp/', '/ocsp')):
+        if path.startswith(('/cdp/', '/ca/', '/ocsp')):
             # Disable Talisman HTTPS redirect for protocol requests
             environ['wsgi.url_scheme'] = 'https'
             return self.app(environ, start_response)
 
         start_response('404 Not Found', [('Content-Type', 'text/plain')])
-        return [b'Only CDP/OCSP endpoints are available on this port']
+        return [b'Only CDP/OCSP/AIA endpoints are available on this port']
 
 
 def get_http_protocol_port():

@@ -568,7 +568,7 @@ def create_app(config_name=None):
     @app.before_request
     def redirect_to_fqdn():
         # Skip for health checks and static files
-        if request.path in ['/api/v2/health', '/api/health', '/health', '/api/auth/verify', '/api/v2/auth/verify'] or request.path.startswith(('/static/', '/assets/', '/cdp/', '/ocsp/', '/scep/', '/acme/', '/.well-known/')):
+        if request.path in ['/api/v2/health', '/api/health', '/health', '/api/auth/verify', '/api/v2/auth/verify'] or request.path.startswith(('/static/', '/assets/', '/cdp/', '/ca/', '/ocsp/', '/scep/', '/acme/', '/.well-known/')):
             return None
         
         # Get configured FQDN - check both UCM_FQDN (Docker) and FQDN env vars
@@ -612,7 +612,7 @@ def create_app(config_name=None):
         def enforce_https():
             if not request.is_secure and request.url.startswith('http://'):
                 # Skip protocol endpoints — CRL/OCSP/SCEP/ACME/EST clients often can't follow redirects
-                if request.path.startswith(('/cdp/', '/ocsp', '/scep/', '/acme/', '/.well-known/')):
+                if request.path.startswith(('/cdp/', '/ca/', '/ocsp', '/scep/', '/acme/', '/.well-known/')):
                     return None
                 url = request.url.replace('http://', 'https://', 1)
                 url = url.replace(f':{config.HTTPS_PORT}', f':{config.HTTPS_PORT}')
@@ -632,7 +632,7 @@ def create_app(config_name=None):
             '/static/', '/assets/', '/favicon',
             '/socket.io/',
             # Protocol endpoints must remain available (revocation, enrollment)
-            '/cdp/', '/ocsp', '/scep/', '/acme/', '/.well-known/',
+            '/cdp/', '/ca/', '/ocsp', '/scep/', '/acme/', '/.well-known/',
         )
         if request.path.startswith(allowed_prefixes):
             return None
@@ -747,6 +747,8 @@ def init_database(app):
                 ('cdp_url', 'VARCHAR(512)', None),
                 ('ocsp_enabled', 'BOOLEAN', '0'),
                 ('ocsp_url', 'VARCHAR(512)', None),
+                ('aia_ca_issuers_enabled', 'BOOLEAN', '0'),
+                ('aia_ca_issuers_url', 'VARCHAR(512)', None),
                 ('owner_group_id', 'INTEGER', None),
                 ('serial_number', 'VARCHAR(64)', None),
                 ('delta_crl_enabled', 'BOOLEAN', '0'),
@@ -1271,6 +1273,7 @@ def register_blueprints(app):
     # Import UI and public routes
     from api.ui_routes import ui_bp
     from api.cdp_routes import cdp_bp
+    from api.aia_routes import aia_bp
     from api.ocsp_routes import ocsp_bp
     from api.health_routes import health_bp
     from api.scep_protocol import bp as scep_protocol_bp
@@ -1282,6 +1285,7 @@ def register_blueprints(app):
     
     # Public endpoints (no auth, no /api prefix - standard paths)
     app.register_blueprint(cdp_bp, url_prefix='/cdp')     # CRL Distribution Points
+    app.register_blueprint(aia_bp, url_prefix='/ca')      # AIA CA Issuers (RFC 5280)
     app.register_blueprint(ocsp_bp)                        # OCSP Responder (/ocsp)
     app.register_blueprint(scep_protocol_bp)               # SCEP Protocol (/scep)
     app.register_blueprint(health_bp)  # Health check endpoints (no auth)

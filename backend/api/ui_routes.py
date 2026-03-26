@@ -51,7 +51,7 @@ def spa(path):
     """
     # Don't catch API or protocol routes - let them 404 properly if not found
     # Note: 'scep/' is the protocol endpoint, 'scep-config' is a React route (should NOT be excluded)
-    if path.startswith(('api/', 'scep/', 'acme/', 'cdp/', 'ocsp/', '.well-known/')) or path in ('scep', 'ocsp'):
+    if path.startswith(('api/', 'scep/', 'acme/', 'cdp/', 'ca/', 'ocsp/', '.well-known/')) or path in ('scep', 'ocsp'):
         return {"error": "Not Found"}, 404
         
     # SPECIAL: Serve demo file if requested

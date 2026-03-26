@@ -1262,7 +1262,13 @@
     "deltaNextUpdate": "次回更新",
     "deltaInterval": "間隔",
     "deltaIntervalUpdated": "デルタCRL間隔が更新されました",
-    "deltaIntervalFailed": "間隔の更新に失敗しました"
+    "deltaIntervalFailed": "間隔の更新に失敗しました",
+    "aiaIssuers": "CA Issuers",
+    "aiaIssuersConfig": "AIA CA Issuers",
+    "aiaIssuersUrl": "CA Issuers URL",
+    "aiaIssuersEnabled": "{{name}}のAIA CA Issuersを有効にしました",
+    "aiaIssuersDisabled": "{{name}}のAIA CA Issuersを無効にしました",
+    "toggleAiaFailed": "AIA CA Issuersの切り替えに失敗しました"
   },
   "trustStore": {
     "caTrust": "CAトラスト",

@@ -192,6 +192,10 @@ class CA(db.Model):
     ocsp_enabled = db.Column(db.Boolean, default=False)
     ocsp_url = db.Column(db.String(512))  # Ex: http://ucm.local:8443/ocsp
     
+    # AIA CA Issuers (RFC 5280 §4.2.2.1)
+    aia_ca_issuers_enabled = db.Column(db.Boolean, default=False)
+    aia_ca_issuers_url = db.Column(db.String(512))  # Ex: http://ucm.local:8080/ca/{ca_refid}.cer
+    
     # HSM Support - private key stored in Hardware Security Module
     hsm_key_id = db.Column(db.Integer, db.ForeignKey('hsm_keys.id'), nullable=True)
     hsm_key = db.relationship('HsmKey', backref='cas')
@@ -377,6 +381,9 @@ class CA(db.Model):
             # OCSP configuration
             "ocsp_enabled": self.ocsp_enabled,
             "ocsp_url": self.ocsp_url,
+            # AIA CA Issuers
+            "aia_ca_issuers_enabled": self.aia_ca_issuers_enabled,
+            "aia_ca_issuers_url": self.aia_ca_issuers_url,
             # Ownership (Pro feature)
             "owner_group_id": self.owner_group_id,
             "owner_group_name": self.owner_group.name if self.owner_group else None,

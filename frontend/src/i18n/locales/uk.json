@@ -1262,7 +1262,13 @@
     "deltaNextUpdate": "Наступне оновлення",
     "deltaInterval": "Інтервал",
     "deltaIntervalUpdated": "Інтервал дельта CRL оновлено",
-    "deltaIntervalFailed": "Не вдалося оновити інтервал"
+    "deltaIntervalFailed": "Не вдалося оновити інтервал",
+    "aiaIssuers": "CA Issuers",
+    "aiaIssuersConfig": "AIA CA Issuers",
+    "aiaIssuersUrl": "URL CA Issuers",
+    "aiaIssuersEnabled": "AIA CA Issuers увімкнено для {{name}}",
+    "aiaIssuersDisabled": "AIA CA Issuers вимкнено для {{name}}",
+    "toggleAiaFailed": "Не вдалося перемкнути AIA CA Issuers"
   },
   "trustStore": {
     "caTrust": "Довіра CA",

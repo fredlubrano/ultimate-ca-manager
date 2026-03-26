@@ -347,38 +347,40 @@ def create_certificate():
     if not ca.prv:
         return error_response('CA private key not available', 400)
     
-    # Policy evaluation — check if approval is required
+    # Policy evaluation — check if approval is required (admins bypass)
     try:
-        from services.policy_service import PolicyEvaluationService
-        san_list = data.get('san', [])
-        if isinstance(san_list, str):
-            san_list = [s.strip() for s in san_list.split(',') if s.strip()]
-        policy = PolicyEvaluationService.check_approval_required(
-            ca_id=ca.id,
-            template_id=data.get('template_id'),
-            cn=data.get('cn'),
-            san_list=san_list
-        )
-        if policy:
-            user_id = g.current_user.id if hasattr(g, 'current_user') else None
-            if not user_id:
-                return error_response('Authentication required for approval workflow', 401)
-            approval = PolicyEvaluationService.create_approval_request(
-                policy=policy,
-                request_data=data,
-                requester_id=user_id,
-                comment=data.get('approval_comment')
+        user_role = getattr(g.current_user, 'role', None) if hasattr(g, 'current_user') else None
+        if user_role != 'admin':
+            from services.policy_service import PolicyEvaluationService
+            san_list = data.get('san', [])
+            if isinstance(san_list, str):
+                san_list = [s.strip() for s in san_list.split(',') if s.strip()]
+            policy = PolicyEvaluationService.check_approval_required(
+                ca_id=ca.id,
+                template_id=data.get('template_id'),
+                cn=data.get('cn'),
+                san_list=san_list
             )
-            return success_response(
-                data={
-                    'approval_required': True,
-                    'approval_id': approval.id,
-                    'policy_name': policy.name,
-                    'status': 'pending_approval',
-                    'message': f'Certificate request requires approval per policy "{policy.name}"'
-                },
-                message='Certificate request submitted for approval'
-            )
+            if policy:
+                user_id = g.current_user.id if hasattr(g, 'current_user') else None
+                if not user_id:
+                    return error_response('Authentication required for approval workflow', 401)
+                approval = PolicyEvaluationService.create_approval_request(
+                    policy=policy,
+                    request_data=data,
+                    requester_id=user_id,
+                    comment=data.get('approval_comment')
+                )
+                return success_response(
+                    data={
+                        'approval_required': True,
+                        'approval_id': approval.id,
+                        'policy_name': policy.name,
+                        'status': 'pending_approval',
+                        'message': f'Certificate request requires approval per policy "{policy.name}"'
+                    },
+                    message='Certificate request submitted for approval'
+                )
     except Exception as e:
         logger.warning(f"Policy evaluation failed (non-blocking): {e}")
     
@@ -575,6 +577,14 @@ def create_certificate():
                 x509.AccessDescription(
                     x509.oid.AuthorityInformationAccessOID.OCSP,
                     x509.UniformResourceIdentifier(ca.ocsp_url)
+                )
+            )
+        if ca.aia_ca_issuers_enabled and ca.aia_ca_issuers_url:
+            aia_url = ca.aia_ca_issuers_url.replace('{ca_refid}', ca.refid)
+            aia_descriptions.append(
+                x509.AccessDescription(
+                    x509.oid.AuthorityInformationAccessOID.CA_ISSUERS,
+                    x509.UniformResourceIdentifier(aia_url)
                 )
             )
         if aia_descriptions:

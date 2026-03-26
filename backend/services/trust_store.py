@@ -247,6 +247,7 @@ class TrustStoreService:
         san_email: Optional[List[str]] = None,
         ocsp_uri: Optional[str] = None,
         cdp_url: Optional[str] = None,
+        aia_ca_issuers_url: Optional[str] = None,
     ) -> Tuple[bytes, bytes]:
         """
         Create a certificate signed by a CA
@@ -434,15 +435,25 @@ class TrustStoreService:
             critical=False,
         )
         
-        # OCSP URI (Authority Information Access)
+        # Authority Information Access (RFC 5280 §4.2.2.1)
+        aia_descriptions = []
         if ocsp_uri:
+            aia_descriptions.append(
+                x509.AccessDescription(
+                    x509.oid.AuthorityInformationAccessOID.OCSP,
+                    x509.UniformResourceIdentifier(ocsp_uri)
+                )
+            )
+        if aia_ca_issuers_url:
+            aia_descriptions.append(
+                x509.AccessDescription(
+                    x509.oid.AuthorityInformationAccessOID.CA_ISSUERS,
+                    x509.UniformResourceIdentifier(aia_ca_issuers_url)
+                )
+            )
+        if aia_descriptions:
             builder = builder.add_extension(
-                x509.AuthorityInformationAccess([
-                    x509.AccessDescription(
-                        x509.oid.AuthorityInformationAccessOID.OCSP,
-                        x509.UniformResourceIdentifier(ocsp_uri)
-                    )
-                ]),
+                x509.AuthorityInformationAccess(aia_descriptions),
                 critical=False,
             )
         
@@ -552,7 +563,8 @@ class TrustStoreService:
         digest: str = 'sha256',
         cert_type: str = 'server_cert',
         cdp_url: str = None,
-        ocsp_url: str = None
+        ocsp_url: str = None,
+        aia_ca_issuers_url: str = None
     ) -> bytes:
         """
         Sign a CSR with a CA
@@ -694,18 +706,28 @@ class TrustStoreService:
                     critical=False
                 )
 
-        # Authority Information Access — embed OCSP URI if enabled
+        # Authority Information Access (RFC 5280 §4.2.2.1)
+        aia_descriptions = []
         if ocsp_url:
+            aia_descriptions.append(
+                x509.AccessDescription(
+                    x509.oid.AuthorityInformationAccessOID.OCSP,
+                    x509.UniformResourceIdentifier(ocsp_url)
+                )
+            )
+        if aia_ca_issuers_url:
+            aia_descriptions.append(
+                x509.AccessDescription(
+                    x509.oid.AuthorityInformationAccessOID.CA_ISSUERS,
+                    x509.UniformResourceIdentifier(aia_ca_issuers_url)
+                )
+            )
+        if aia_descriptions:
             try:
                 csr.extensions.get_extension_for_oid(ExtensionOID.AUTHORITY_INFORMATION_ACCESS)
             except x509.ExtensionNotFound:
                 builder = builder.add_extension(
-                    x509.AuthorityInformationAccess([
-                        x509.AccessDescription(
-                            x509.oid.AuthorityInformationAccessOID.OCSP,
-                            x509.UniformResourceIdentifier(ocsp_url)
-                        )
-                    ]),
+                    x509.AuthorityInformationAccess(aia_descriptions),
                     critical=False
                 )
 

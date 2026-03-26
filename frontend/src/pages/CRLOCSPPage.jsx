@@ -164,6 +164,22 @@ export default function CRLOCSPPage() {
     }
   }
 
+  const handleToggleAiaIssuers = async (ca) => {
+    if (!canWrite('crl')) return
+    try {
+      const newVal = !ca.aia_ca_issuers_enabled
+      await casService.update(ca.id, { aia_ca_issuers_enabled: newVal })
+      showSuccess(t(newVal ? 'crlOcsp.aiaIssuersEnabled' : 'crlOcsp.aiaIssuersDisabled', { name: ca.descr }))
+      setCas(prev => prev.map(c => c.id === ca.id ? { ...c, aia_ca_issuers_enabled: newVal } : c))
+      if (selectedCA?.id === ca.id) {
+        setSelectedCA(prev => ({ ...prev, aia_ca_issuers_enabled: newVal }))
+      }
+      loadData()
+    } catch (error) {
+      showError(error.message || t('crlOcsp.toggleAiaFailed'))
+    }
+  }
+
   const handleDownloadCRL = () => {
     if (!selectedCRL?.crl_pem) return
     
@@ -308,6 +324,22 @@ export default function CRLOCSPPage() {
           <ToggleSwitch
             checked={v}
             onChange={() => handleToggleOcsp(row)}
+            disabled={!row.has_private_key || !canWrite('crl')}
+            size="sm"
+          />
+        </div>
+      )
+    },
+    {
+      key: 'aia_ca_issuers_enabled',
+      header: t('crlOcsp.aiaIssuers'),
+      priority: 5,
+      hideOnMobile: true,
+      render: (v, row) => (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ToggleSwitch
+            checked={v || false}
+            onChange={() => handleToggleAiaIssuers(row)}
             disabled={!row.has_private_key || !canWrite('crl')}
             size="sm"
           />
@@ -495,6 +527,19 @@ export default function CRLOCSPPage() {
         </CompactGrid>
       </CompactSection>
 
+      {/* AIA CA Issuers Configuration */}
+      <CompactSection title={t('crlOcsp.aiaIssuersConfig')} icon={LinkIcon}>
+        <CompactGrid cols={2}>
+          <CompactField 
+            autoIcon="status" label={t('common.status')} 
+            value={selectedCA.aia_ca_issuers_enabled ? t('common.enabled') : t('common.disabled')} 
+          />
+          {selectedCA.aia_ca_issuers_enabled && selectedCA.aia_ca_issuers_url && (
+            <CompactField autoIcon="url" label={t('crlOcsp.aiaIssuersUrl')} value={selectedCA.aia_ca_issuers_url} mono />
+          )}
+        </CompactGrid>
+      </CompactSection>
+
       {/* Distribution Points */}
       <CompactSection title={t('crlOcsp.cdpNote')} icon={LinkIcon}>
         <div className="space-y-3">
@@ -510,12 +555,23 @@ export default function CRLOCSPPage() {
             </div>
           </div>
           <div>
-            <p className="text-xs text-text-secondary mb-1">{t('crlOcsp.aia')}</p>
+            <p className="text-xs text-text-secondary mb-1">{t('crlOcsp.aia')} (OCSP)</p>
             <div className="flex items-center gap-2">
               <code className="flex-1 text-xs font-mono text-text-primary bg-bg-tertiary p-2 rounded break-all">
                 {selectedCA.ocsp_url || `${window.location.origin}/ocsp`}
               </code>
               <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(selectedCA.ocsp_url || `${window.location.origin}/ocsp`)}>
+                <Copy size={14} />
+              </Button>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs text-text-secondary mb-1">{t('crlOcsp.aia')} ({t('crlOcsp.aiaIssuers')})</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 text-xs font-mono text-text-primary bg-bg-tertiary p-2 rounded break-all">
+                {selectedCA.aia_ca_issuers_url || `${window.location.origin}/ca/${selectedCA.refid || selectedCA.id}.cer`}
+              </code>
+              <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(selectedCA.aia_ca_issuers_url || `${window.location.origin}/ca/${selectedCA.refid || selectedCA.id}.cer`)}>
                 <Copy size={14} />
               </Button>
             </div>

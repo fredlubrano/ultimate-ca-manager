@@ -1262,7 +1262,13 @@
     "deltaNextUpdate": "下次更新",
     "deltaInterval": "间隔",
     "deltaIntervalUpdated": "增量CRL间隔已更新",
-    "deltaIntervalFailed": "更新间隔失败"
+    "deltaIntervalFailed": "更新间隔失败",
+    "aiaIssuers": "CA Issuers",
+    "aiaIssuersConfig": "AIA CA Issuers",
+    "aiaIssuersUrl": "CA Issuers URL",
+    "aiaIssuersEnabled": "{{name}}的AIA CA Issuers已启用",
+    "aiaIssuersDisabled": "{{name}}的AIA CA Issuers已禁用",
+    "toggleAiaFailed": "切换AIA CA Issuers失败"
   },
   "trustStore": {
     "caTrust": "CA 信任",

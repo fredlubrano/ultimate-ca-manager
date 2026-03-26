@@ -98,7 +98,7 @@ DEFAULT_POLICIES = [
         'description': 'Controls wildcard certificate issuance. Requires approval to prevent overly broad certificates that increase attack surface.',
         'policy_type': 'issuance',
         'priority': 8,
-        'is_active': True,
+        'is_active': False,
         'notify_on_violation': True,
         'requires_approval': True,
         'min_approvers': 1,

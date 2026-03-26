@@ -435,6 +435,13 @@ def update_ca(ca_id):
             ca.cdp_url = f"{base_url}/cdp/{ca.refid}.crl"
     if 'cdp_url' in data:
         ca.cdp_url = data['cdp_url']
+    if 'aia_ca_issuers_enabled' in data:
+        ca.aia_ca_issuers_enabled = bool(data['aia_ca_issuers_enabled'])
+        if ca.aia_ca_issuers_enabled and not ca.aia_ca_issuers_url:
+            base_url = get_protocol_base_url()
+            ca.aia_ca_issuers_url = f"{base_url}/ca/{ca.refid}.cer"
+    if 'aia_ca_issuers_url' in data:
+        ca.aia_ca_issuers_url = data['aia_ca_issuers_url']
     if 'is_active' in data:
         ca.is_active = bool(data['is_active'])
     

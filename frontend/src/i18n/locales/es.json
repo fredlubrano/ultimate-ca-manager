@@ -1262,7 +1262,13 @@
     "deltaNextUpdate": "Próxima actualización",
     "deltaInterval": "Intervalo",
     "deltaIntervalUpdated": "Intervalo de CRL Delta actualizado",
-    "deltaIntervalFailed": "Error al actualizar el intervalo"
+    "deltaIntervalFailed": "Error al actualizar el intervalo",
+    "aiaIssuers": "CA Issuers",
+    "aiaIssuersConfig": "AIA CA Issuers",
+    "aiaIssuersUrl": "URL CA Issuers",
+    "aiaIssuersEnabled": "AIA CA Issuers habilitado para {{name}}",
+    "aiaIssuersDisabled": "AIA CA Issuers deshabilitado para {{name}}",
+    "toggleAiaFailed": "Error al alternar AIA CA Issuers"
   },
   "trustStore": {
     "caTrust": "Confianza de CA",
