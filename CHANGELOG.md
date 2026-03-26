@@ -11,6 +11,19 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.101] - 2026-03-26
+
+### Added
+- **AIA CA Issuers** (RFC 5280 §4.2.2.1) — Public `/ca/{refid}.cer` and `.pem` endpoints serve CA certificates for chain building; CA Issuers URL embedded in Authority Information Access extension of issued certificates (#45)
+- **AIA toggle & URLs** — CRL/OCSP page now has AIA CA Issuers toggle per CA with copy-to-clipboard URLs alongside CDP and OCSP
+
+### Fixed
+- **showWarning crash** — Creating wildcard certificates no longer crashes with "showWarning is not defined" toast error
+- **Admin approval bypass** — Admin users now bypass approval policies when issuing certificates; previously admins were incorrectly subject to approval workflows
+- **Wildcard policy default** — Wildcard certificate policy now seeded as inactive by default (was incorrectly active, blocking wildcard creation for all users)
+
+---
+
 ## [2.100] - 2026-03-23
 
 ### Fixed
