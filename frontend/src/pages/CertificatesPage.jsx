@@ -72,7 +72,7 @@ export default function CertificatesPage() {
     else setFilterCA('')
   }, [])
   
-  const { showSuccess, showError, showConfirm, showPrompt } = useNotification()
+  const { showSuccess, showError, showConfirm, showPrompt, showWarning } = useNotification()
   const { canWrite, canDelete } = usePermission()
   const { muteToasts } = useWebSocket()
 
