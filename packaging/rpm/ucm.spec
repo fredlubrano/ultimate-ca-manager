@@ -11,6 +11,8 @@ BuildArch:      noarch
 # Disable auto-detection of requires (we manage deps via venv)
 AutoReqProv:    no
 Requires:       python3 >= 3.12
+Requires:       python3-devel
+Requires:       gcc
 Requires:       systemd
 Requires:       openssl >= 1.1.1
 Recommends:     softhsm

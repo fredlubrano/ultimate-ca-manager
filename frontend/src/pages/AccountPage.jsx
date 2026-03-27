@@ -69,6 +69,9 @@ export default function AccountPage() {
   const [webauthnName, setWebauthnName] = useState('')
   const [webauthnRegistering, setWebauthnRegistering] = useState(false)
 
+  // API Key form state
+  const [apiKeyForm, setApiKeyForm] = useState({ name: '', expires_days: '', scope: 'full' })
+
   // Load data
   useEffect(() => {
     loadAll()
@@ -287,11 +290,29 @@ export default function AccountPage() {
   }
 
   // API Key handlers
-  const handleCreateApiKey = async (keyData) => {
+  const SCOPE_PERMISSIONS = {
+    full: ['*'],
+    read: ['read:*'],
+    readwrite: ['read:*', 'write:*'],
+    certificates: ['read:certificates', 'write:certificates', 'read:cas', 'read:crl'],
+  }
+
+  const handleCreateApiKey = async (e) => {
+    e?.preventDefault()
+    if (!apiKeyForm.name.trim()) {
+      showError(t('account.apiKeyNameRequired'))
+      return
+    }
     try {
-      const created = await accountService.createApiKey(keyData)
+      const payload = {
+        name: apiKeyForm.name.trim(),
+        permissions: SCOPE_PERMISSIONS[apiKeyForm.scope] || ['*'],
+        ...(apiKeyForm.expires_days ? { expires_days: parseInt(apiKeyForm.expires_days, 10) } : {})
+      }
+      const created = await accountService.createApiKey(payload)
       showSuccess(t('account.apiKeyCreated', { key: created.key || created.data?.key }))
       setShowApiKeyModal(false)
+      setApiKeyForm({ name: '', expires_days: '', scope: 'full' })
       await loadApiKeys()
     } catch (error) {
       showError(error.message || t('messages.errors.createFailed.generic'))
@@ -699,6 +720,12 @@ export default function AccountPage() {
                     </div>
                     <p className="text-xs text-text-tertiary font-mono">{key.key_prefix}...</p>
                     <p className="text-xs text-text-tertiary">
+                      {key.permissions && (
+                        <span className="font-mono">
+                          {Array.isArray(key.permissions) ? key.permissions.join(', ') : key.permissions}
+                          {' • '}
+                        </span>
+                      )}
                       {t('common.created')} {formatDate(key.created_at)}
                       {key.expires_at && ` • ${t('common.expires')} ${formatDate(key.expires_at)}`}
                     </p>
@@ -787,27 +814,56 @@ export default function AccountPage() {
       </FormModal>
 
       {/* Create API Key Modal */}
-      <FormModal
+      <Modal
         open={showApiKeyModal}
-        onOpenChange={setShowApiKeyModal}
+        onOpenChange={(open) => {
+          setShowApiKeyModal(open)
+          if (!open) setApiKeyForm({ name: '', expires_days: '', scope: 'full' })
+        }}
         title={t('account.createAPIKey')}
-        onSubmit={handleCreateApiKey}
-        submitLabel={t('account.createKey')}
       >
-        <Input
-          label={t('account.apiKeyName')}
-          name="name"
-          placeholder={t('account.keyNameExample')}
-          required
-        />
-        <Input
-          label={t('account.expiresInDays')}
-          type="number"
-          name="expires_in_days"
-          placeholder={t('common.validityPlaceholder')}
-          helperText={t('account.noExpiration')}
-        />
-      </FormModal>
+        <form onSubmit={handleCreateApiKey}>
+          <div className="p-4 space-y-4">
+            <Input
+              label={t('account.apiKeyName')}
+              value={apiKeyForm.name}
+              onChange={(e) => setApiKeyForm(f => ({ ...f, name: e.target.value }))}
+              placeholder={t('account.keyNameExample')}
+              required
+            />
+            <Select
+              label={t('account.permissionScope')}
+              value={apiKeyForm.scope}
+              onChange={(val) => setApiKeyForm(f => ({ ...f, scope: val }))}
+              options={[
+                { value: 'full', label: t('account.scopeFull') },
+                { value: 'read', label: t('account.scopeReadOnly') },
+                { value: 'readwrite', label: t('account.scopeReadWrite') },
+                { value: 'certificates', label: t('account.scopeCertificates') },
+              ]}
+            />
+            <p className="text-xs text-text-tertiary font-mono px-1">
+              {(SCOPE_PERMISSIONS[apiKeyForm.scope] || ['*']).join(', ')}
+            </p>
+            <Input
+              label={t('account.expiresInDays')}
+              type="number"
+              value={apiKeyForm.expires_days}
+              onChange={(e) => setApiKeyForm(f => ({ ...f, expires_days: e.target.value }))}
+              placeholder={t('common.validityPlaceholder')}
+              helperText={t('account.noExpiration')}
+            />
+          </div>
+          <div className="flex justify-end gap-2 p-4 border-t border-border">
+            <Button type="button" variant="secondary" onClick={() => setShowApiKeyModal(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit">
+              {t('account.createKey')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* 2FA Setup Modal */}
       <Modal

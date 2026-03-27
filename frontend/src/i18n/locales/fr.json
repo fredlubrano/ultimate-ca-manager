@@ -102,7 +102,13 @@
     "mtlsCertAssigned": "Certificat assigné avec succès",
     "mtlsCertAssignFailed": "Échec de l'assignation du certificat",
     "mtlsLoadAvailableFailed": "Échec du chargement des certificats disponibles",
-    "assignCertificate": "Assigner le certificat"
+    "assignCertificate": "Assigner le certificat",
+    "permissionScope": "Portée des permissions",
+    "scopeFull": "Accès complet (toutes les permissions)",
+    "scopeReadOnly": "Lecture seule",
+    "scopeReadWrite": "Lecture et écriture",
+    "scopeCertificates": "Certificats uniquement",
+    "apiKeyNameRequired": "Le nom de la clé API est requis"
   },
   "acme": {
     "title": "Protocole ACME",

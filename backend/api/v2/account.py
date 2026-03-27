@@ -231,7 +231,7 @@ def create_api_key():
     
     # Create API key
     auth_manager = AuthManager()
-    expires_days = data.get('expires_days', 365)
+    expires_days = data.get('expires_days') or data.get('expires_in_days') or 365
     
     try:
         key_info = auth_manager.create_api_key(

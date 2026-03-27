@@ -1974,7 +1974,13 @@
     "mtlsCertAssigned": "Certificate assigned successfully",
     "mtlsCertAssignFailed": "Failed to assign certificate",
     "mtlsLoadAvailableFailed": "Failed to load available certificates",
-    "assignCertificate": "Assign Certificate"
+    "assignCertificate": "Assign Certificate",
+    "permissionScope": "Permission Scope",
+    "scopeFull": "Full Access (all permissions)",
+    "scopeReadOnly": "Read Only",
+    "scopeReadWrite": "Read & Write",
+    "scopeCertificates": "Certificates Only",
+    "apiKeyNameRequired": "API key name is required"
   },
   "rbac": {
     "title": "Role-Based Access Control",

@@ -1973,7 +1973,13 @@
     "mtlsCertAssigned": "证书分配成功",
     "mtlsCertAssignFailed": "证书分配失败",
     "mtlsLoadAvailableFailed": "加载可用证书失败",
-    "assignCertificate": "分配证书"
+    "assignCertificate": "分配证书",
+    "permissionScope": "权限范围",
+    "scopeFull": "完全访问（所有权限）",
+    "scopeReadOnly": "只读",
+    "scopeReadWrite": "读写",
+    "scopeCertificates": "仅证书",
+    "apiKeyNameRequired": "API密钥名称为必填项"
   },
   "rbac": {
     "title": "基于角色的访问控制",

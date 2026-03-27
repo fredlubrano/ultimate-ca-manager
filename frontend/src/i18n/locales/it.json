@@ -1973,7 +1973,13 @@
     "mtlsCertAssigned": "Certificato assegnato con successo",
     "mtlsCertAssignFailed": "Errore nell'assegnazione del certificato",
     "mtlsLoadAvailableFailed": "Errore nel caricamento dei certificati disponibili",
-    "assignCertificate": "Assegna certificato"
+    "assignCertificate": "Assegna certificato",
+    "permissionScope": "Ambito permessi",
+    "scopeFull": "Accesso completo (tutti i permessi)",
+    "scopeReadOnly": "Solo lettura",
+    "scopeReadWrite": "Lettura e scrittura",
+    "scopeCertificates": "Solo certificati",
+    "apiKeyNameRequired": "Il nome della chiave API è obbligatorio"
   },
   "rbac": {
     "title": "Controllo accessi basato su ruoli",

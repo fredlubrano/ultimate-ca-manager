@@ -17,6 +17,8 @@ Architecture: all
 Depends: ${misc:Depends},
          python3 (>= 3.12),
          python3-venv,
+         python3-dev,
+         gcc,
          openssl (>= 1.1.1),
          adduser,
          systemd
@@ -27,8 +29,9 @@ Description: Ultimate CA Manager - Certificate Authority Management System
  management system designed for organizations that need to manage their own PKI
  infrastructure.
  .
- Python dependencies are installed in a virtual environment during setup,
- no compiler required. Kerberos auth for MS CA is optional (pip install requests-kerberos).
+ Python dependencies are installed in a virtual environment during setup.
+ gcc and python3-dev are required to compile native extensions (twofish/pyjks).
+ Kerberos auth for MS CA is optional (pip install requests-kerberos).
  .
  Features:
   * Complete CA lifecycle management

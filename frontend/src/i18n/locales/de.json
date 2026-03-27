@@ -1973,7 +1973,13 @@
     "mtlsCertAssigned": "Zertifikat erfolgreich zugewiesen",
     "mtlsCertAssignFailed": "Zuweisung des Zertifikats fehlgeschlagen",
     "mtlsLoadAvailableFailed": "Laden der verfügbaren Zertifikate fehlgeschlagen",
-    "assignCertificate": "Zertifikat zuweisen"
+    "assignCertificate": "Zertifikat zuweisen",
+    "permissionScope": "Berechtigungsumfang",
+    "scopeFull": "Vollzugriff (alle Berechtigungen)",
+    "scopeReadOnly": "Nur Lesen",
+    "scopeReadWrite": "Lesen & Schreiben",
+    "scopeCertificates": "Nur Zertifikate",
+    "apiKeyNameRequired": "API-Schlüsselname ist erforderlich"
   },
   "rbac": {
     "title": "Rollenbasierte Zugriffskontrolle",

@@ -1973,7 +1973,13 @@
     "mtlsCertAssigned": "証明書が正常に割り当てられました",
     "mtlsCertAssignFailed": "証明書の割り当てに失敗しました",
     "mtlsLoadAvailableFailed": "利用可能な証明書の読み込みに失敗しました",
-    "assignCertificate": "証明書を割り当て"
+    "assignCertificate": "証明書を割り当て",
+    "permissionScope": "権限スコープ",
+    "scopeFull": "フルアクセス（全権限）",
+    "scopeReadOnly": "読み取り専用",
+    "scopeReadWrite": "読み取り・書き込み",
+    "scopeCertificates": "証明書のみ",
+    "apiKeyNameRequired": "APIキー名は必須です"
   },
   "rbac": {
     "title": "ロールベースアクセス制御",

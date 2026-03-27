@@ -1973,7 +1973,13 @@
     "mtlsCertAssigned": "Сертифікат успішно призначено",
     "mtlsCertAssignFailed": "Не вдалося призначити сертифікат",
     "mtlsLoadAvailableFailed": "Не вдалося завантажити доступні сертифікати",
-    "assignCertificate": "Призначити сертифікат"
+    "assignCertificate": "Призначити сертифікат",
+    "permissionScope": "Область дозволів",
+    "scopeFull": "Повний доступ (усі дозволи)",
+    "scopeReadOnly": "Лише читання",
+    "scopeReadWrite": "Читання та запис",
+    "scopeCertificates": "Лише сертифікати",
+    "apiKeyNameRequired": "Назва ключа API обов'язкова"
   },
   "rbac": {
     "title": "Контроль доступу на основі ролей",

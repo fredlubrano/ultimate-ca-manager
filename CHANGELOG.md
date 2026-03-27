@@ -11,6 +11,17 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.102] - 2026-03-27
+
+### Fixed
+- **DEB/RPM packaging** — Added `gcc` and `python3-dev` as package dependencies to fix install failures on Ubuntu 24.04 and other minimal systems where C compiler is not present (needed to compile `twofish` extension for JKS export)
+- **API key creation** — Fixed "Permissions are required" error when creating API keys from the UI; added permission scope selector (Full Access, Read Only, Read & Write, Certificates Only) to the creation form ([#46](https://github.com/NeySlim/ultimate-ca-manager/issues/46))
+
+### Changed
+- **Documentation** — Added AIA CA Issuers to README, API reference, in-app help, and wiki
+
+---
+
 ## [2.101] - 2026-03-26
 
 ### Added
