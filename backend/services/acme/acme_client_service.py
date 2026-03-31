@@ -10,10 +10,8 @@ import hashlib
 import hmac
 import time
 import logging
-import secrets
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, Tuple, List, Union
-from urllib.parse import urljoin
 
 import requests
 from cryptography.hazmat.primitives import serialization, hashes
@@ -21,7 +19,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding, utils as
 from cryptography.hazmat.backends import default_backend
 from cryptography import x509
 from cryptography.x509.oid import NameOID
-from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+from cryptography.hazmat.primitives.serialization import Encoding
 
 from models import db, SystemConfig, Certificate, DnsProvider, AcmeClientOrder
 from services.acme.dns_providers import create_provider, get_provider_class
@@ -143,7 +141,12 @@ class AcmeClientService:
                 value=pem,
                 description=f"ACME client account key ({self.environment})"
             ))
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Failed to save ACME account key: {e}")
+                raise
             logger.info(f"Generated new ACME account key ({acct_alg}) for {self.environment}")
         
         return self.account_key
@@ -190,7 +193,12 @@ class AcmeClientService:
                 value=url,
                 description=f"ACME client account URL ({self.environment})"
             ))
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to save ACME account URL: {e}")
+            raise
     
     # =========================================================================
     # JWS Signing (RFC 7515)
@@ -782,7 +790,11 @@ class AcmeClientService:
             logger.error(f"Finalization error: {e}")
             order.status = 'error'
             order.error_message = str(e)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as commit_err:
+                db.session.rollback()
+                logger.error(f"Failed to save order error state: {commit_err}")
             return False, str(e), None
     
     def _import_certificate(

@@ -7,8 +7,6 @@ import json
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Tuple
 import logging
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from cryptography import x509
 from cryptography.x509.oid import NameOID, ExtensionOID
@@ -64,7 +62,12 @@ class AcmeService:
             expires_at=utc_now() + timedelta(hours=1)
         )
         db.session.add(nonce)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"DB commit failed: {e}")
+            raise
         
         return nonce_token
     
@@ -89,7 +92,12 @@ class AcmeService:
             'used': True,
             'used_at': utc_now()
         })
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"DB commit failed: {e}")
+            raise
         return result > 0
     
     def cleanup_expired_nonces(self) -> int:
@@ -106,7 +114,12 @@ class AcmeService:
         for nonce in expired:
             db.session.delete(nonce)
         
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"DB commit failed: {e}")
+            raise
         return count
     
     # ==================== Account Management ====================
@@ -152,7 +165,12 @@ class AcmeService:
         )
         
         db.session.add(account)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"DB commit failed: {e}")
+            raise
         
         return account, True
     
@@ -181,7 +199,12 @@ class AcmeService:
             return False
         
         account.status = "deactivated"
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"DB commit failed: {e}")
+            raise
         
         return True
     
@@ -231,7 +254,12 @@ class AcmeService:
         if order.authorizations and all(a.status == "valid" for a in order.authorizations):
             order.status = "ready"
         
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"DB commit failed: {e}")
+            raise
         
         return order
     
@@ -300,7 +328,12 @@ class AcmeService:
         # Create pending challenges
         self._create_challenges(auth, status="pending")
         
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"DB commit failed: {e}")
+            raise
         
         return auth
 
@@ -412,7 +445,12 @@ class AcmeService:
                 "type": "urn:ietf:params:acme:error:connection",
                 "detail": str(e)
             })
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as commit_err:
+                db.session.rollback()
+                logger.error(f"DB commit failed: {commit_err}")
+                raise
             return False
     
     def validate_dns01_challenge(
@@ -479,7 +517,12 @@ class AcmeService:
                 "type": "urn:ietf:params:acme:error:dns",
                 "detail": str(e)
             })
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as commit_err:
+                db.session.rollback()
+                logger.error(f"DB commit failed: {commit_err}")
+                raise
             return False
     
     def _update_authorization_status(self, auth: AcmeAuthorization):
@@ -500,7 +543,12 @@ class AcmeService:
             
             if all_valid:
                 order.status = "ready"
-                db.session.commit()
+                try:
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    logger.error(f"DB commit failed: {e}")
+                    raise
     
     # ==================== Certificate Finalization ====================
     
@@ -562,7 +610,12 @@ class AcmeService:
                 "type": "urn:ietf:params:acme:error:serverInternal",
                 "detail": error
             })
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"DB commit failed: {e}")
+                raise
             return False, error
         
         # Update order status
@@ -570,7 +623,12 @@ class AcmeService:
         order.csr = csr_pem
         order.certificate_id = cert_id
         order.certificate_url = f"{self.base_url}/acme/cert/{order.order_id}"
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"DB commit failed: {e}")
+            raise
         
         return True, None
     

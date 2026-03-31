@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, Tuple, Union
 
 from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
+from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 import josepy as jose
 
@@ -70,7 +70,12 @@ class AcmeProxyService:
                 value=pem,
                 description="Private key for ACME Proxy upstream account"
             ))
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Failed to save ACME proxy account key: {e}")
+                raise
             
         return private_key, jose.JWKRSA(key=private_key.public_key())
 
@@ -115,10 +120,15 @@ class AcmeProxyService:
                     value=loc,
                     description="Upstream ACME Account URL"
                 ))
-            db.session.commit()
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Failed to save upstream ACME account URL: {e}")
+                raise
             return loc
         else:
-            raise Exception(f"Failed to register upstream account: {resp.text}")
+            raise RuntimeError(f"Failed to register upstream account: {resp.text}")
 
     def _ensure_directory(self):
         """Fetch upstream directory"""
@@ -207,6 +217,9 @@ class AcmeProxyService:
         from api.v2.acme_domains import find_provider_for_domain
         from models import AcmeClientOrder
         
+        if not identifiers:
+            raise ValueError("identifiers must be a non-empty list")
+        
         self._ensure_directory()
         
         # Extract domains from identifiers
@@ -260,7 +273,12 @@ class AcmeProxyService:
             dns_provider_id=list(domain_providers.values())[0]['provider'].id if domain_providers else None
         )
         db.session.add(order)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to save ACME proxy order: {e}")
+            raise
         
         # Rewrite URLs in response to point to Proxy
         # We encode upstream URLs into base64 IDs
