@@ -401,7 +401,8 @@
       "serial": "Número de série"
     },
     "enable": "Ativar",
-    "disable": "Desativar"
+    "disable": "Desativar",
+    "digest": "Algoritmo de hash"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",

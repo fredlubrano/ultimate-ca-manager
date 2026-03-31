@@ -9,7 +9,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { 
   FileText, Plus, Copy, Trash, Download, FileArrowUp, PencilSimple,
-  Certificate, ShieldCheck, Clock, Eye
+  Certificate, ShieldCheck, Clock, Eye, Key, Globe
 } from '@phosphor-icons/react'
 import {
   ResponsiveLayout, ResponsiveDataTable, Badge, Button, Modal, Input, Select, Textarea,
@@ -373,11 +373,18 @@ export default function TemplatesPage() {
         )}
       </div>
 
-      <CompactSection title={t('templates.basicInfo')}>
+      <CompactSection title={t('templates.basicInfo')} icon={Globe}>
         <CompactGrid columns={1}>
           <CompactField autoIcon="name" label={t('common.name')} value={selectedTemplate.name} />
           <CompactField autoIcon="type" label={t('common.type')} value={selectedTemplate.type === 'ca' ? t('common.certificateAuthority') : t('common.certificate')} />
           <CompactField autoIcon="description" label={t('common.description')} value={selectedTemplate.description || '—'} />
+        </CompactGrid>
+      </CompactSection>
+
+      <CompactSection title={t('templates.keySettings')} icon={Key}>
+        <CompactGrid columns={2}>
+          <CompactField autoIcon="keyType" label={t('common.keyType')} value={selectedTemplate.key_type || '—'} />
+          <CompactField autoIcon="signature" label={t('common.digest')} value={selectedTemplate.digest || '—'} />
         </CompactGrid>
       </CompactSection>
 
@@ -388,25 +395,44 @@ export default function TemplatesPage() {
         </CompactGrid>
       </CompactSection>
 
-      <CompactSection title={t('templates.subjectTemplate')} collapsible>
+      <CompactSection title={t('templates.subjectTemplate')} icon={Certificate} collapsible>
         <CompactGrid columns={2}>
-          <CompactField autoIcon="country" label={t('templates.country')} value={selectedTemplate.subject?.C || '—'} />
-          <CompactField autoIcon="state" label={t('templates.state')} value={selectedTemplate.subject?.ST || '—'} />
-          <CompactField autoIcon="organization" label={t('templates.organization')} value={selectedTemplate.subject?.O || '—'} />
-          <CompactField autoIcon="commonName" label={t('templates.commonName')} value={selectedTemplate.subject?.CN || '—'} />
+          <CompactField autoIcon="country" label={t('templates.country')} value={selectedTemplate.dn_template?.C || '—'} />
+          <CompactField autoIcon="state" label={t('templates.state')} value={selectedTemplate.dn_template?.ST || '—'} />
+          <CompactField autoIcon="locality" label={t('common.locality')} value={selectedTemplate.dn_template?.L || '—'} />
+          <CompactField autoIcon="organization" label={t('templates.organization')} value={selectedTemplate.dn_template?.O || '—'} />
+          <CompactField autoIcon="commonName" label={t('templates.commonName')} value={selectedTemplate.dn_template?.CN || '—'} />
         </CompactGrid>
       </CompactSection>
 
-      {(selectedTemplate.key_usage?.length > 0 || selectedTemplate.extended_key_usage?.length > 0) && (
-        <CompactSection title={t('common.keyUsage')} collapsible defaultOpen={false}>
-          <CompactGrid columns={1}>
-            {selectedTemplate.key_usage?.length > 0 && (
-              <CompactField autoIcon="keyUsage" label={t('common.keyUsage')} value={selectedTemplate.key_usage.join(', ')} />
+      {(selectedTemplate.extensions_template?.key_usage?.length > 0 || selectedTemplate.extensions_template?.extended_key_usage?.length > 0) && (
+        <CompactSection title={t('common.keyUsage')} icon={ShieldCheck} collapsible defaultOpen={false}>
+          <div className="space-y-3">
+            {selectedTemplate.extensions_template?.key_usage?.length > 0 && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary">
+                  {t('details.ext.keyUsage')}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedTemplate.extensions_template.key_usage.map(usage => (
+                    <Badge key={usage} variant="primary" size="sm">{usage}</Badge>
+                  ))}
+                </div>
+              </div>
             )}
-            {selectedTemplate.extended_key_usage?.length > 0 && (
-              <CompactField autoIcon="extKeyUsage" label={t('common.extKeyUsage')} value={selectedTemplate.extended_key_usage.join(', ')} />
+            {selectedTemplate.extensions_template?.extended_key_usage?.length > 0 && (
+              <div className="space-y-1">
+                <div className="text-xs font-semibold text-text-primary">
+                  {t('details.ext.extKeyUsage')}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {selectedTemplate.extensions_template.extended_key_usage.map(usage => (
+                    <Badge key={usage} variant="teal" size="sm">{usage}</Badge>
+                  ))}
+                </div>
+              </div>
             )}
-          </CompactGrid>
+          </div>
         </CompactSection>
       )}
     </div>

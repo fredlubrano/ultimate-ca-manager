@@ -77,14 +77,14 @@ def _score_key_strength(cert_dict):
         key_algo = key_type
 
     # Normalize
-    if 'EC' in key_algo or 'ECDSA' in key_algo or 'P-' in key_algo:
+    key_info = (key_algo + ' ' + key_type).upper()
+    if 'EC' in key_algo or 'ECDSA' in key_algo or 'P-' in key_algo or 'PRIME' in key_type:
         algo_family = 'EC'
-        # Extract curve size from key_algo or key_type
-        if 'P-521' in key_algo or 'SECP521' in key_algo or key_size >= 521:
+        if 'P-521' in key_info or 'SECP521' in key_info or 'PRIME521' in key_info or key_size >= 521:
             score, reason = max_points, 'ECDSA P-521'
-        elif 'P-384' in key_algo or 'SECP384' in key_algo or key_size >= 384:
+        elif 'P-384' in key_info or 'SECP384' in key_info or 'PRIME384' in key_info or key_size >= 384:
             score, reason = max_points, 'ECDSA P-384'
-        elif 'P-256' in key_algo or 'SECP256' in key_algo or key_size >= 256:
+        elif 'P-256' in key_info or 'SECP256' in key_info or 'PRIME256' in key_info or key_size >= 256:
             score, reason = 25, 'ECDSA P-256'
         else:
             score, reason = 15, f'ECDSA ({key_size}-bit)'

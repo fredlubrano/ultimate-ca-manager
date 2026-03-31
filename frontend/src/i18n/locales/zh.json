@@ -401,7 +401,8 @@
       "serial": "序列号"
     },
     "enable": "启用",
-    "disable": "禁用"
+    "disable": "禁用",
+    "digest": "摘要算法"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",

@@ -982,7 +982,8 @@
       "serial": "Numéro de série"
     },
     "enable": "Activer",
-    "disable": "Désactiver"
+    "disable": "Désactiver",
+    "digest": "Algorithme de hachage"
   },
   "compare": {
     "title": "Comparer les certificats",

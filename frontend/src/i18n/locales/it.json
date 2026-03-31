@@ -401,7 +401,8 @@
       "serial": "Numero di serie"
     },
     "enable": "Attiva",
-    "disable": "Disattiva"
+    "disable": "Disattiva",
+    "digest": "Algoritmo di hash"
   },
   "commandPalette": {
     "searchPlaceholder": "Cerca comandi, certificati, CA, utenti...",

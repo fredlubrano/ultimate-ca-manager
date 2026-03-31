@@ -401,7 +401,8 @@
       "serial": "シリアル番号"
     },
     "enable": "有効にする",
-    "disable": "無効にする"
+    "disable": "無効にする",
+    "digest": "ダイジェスト"
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",
