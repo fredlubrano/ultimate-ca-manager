@@ -161,7 +161,8 @@ def _find_ca_by_issuer_hash(issuer_name_hash, issuer_key_hash, hash_algorithm):
                 if computed_name_hash == issuer_name_hash:
                     return ca
 
-            except Exception:
+            except Exception as e:
+                logger.debug(f"OCSP: Failed to parse CA cert {ca.refid}: {e}")
                 continue
         return None
     except Exception as e:

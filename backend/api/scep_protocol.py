@@ -3,9 +3,12 @@ SCEP Protocol Routes
 Implements RFC 8894 SCEP endpoints at /scep/pkiclient.exe
 """
 
-from flask import Blueprint, request, make_response, current_app
+from flask import Blueprint, request, make_response
 from models import db, CA, SystemConfig
 import base64
+import logging
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint('scep_protocol', __name__)
 
@@ -126,7 +129,7 @@ def handle_get_ca_cert():
         return response
         
     except Exception as e:
-        current_app.logger.error(f"SCEP GetCACert error: {e}")
+        logger.error(f"SCEP GetCACert error: {e}")
         return make_error_response("SCEP server error", 500)
 
 
@@ -166,7 +169,7 @@ def handle_pki_operation():
         return response
         
     except Exception as e:
-        current_app.logger.error(f"SCEP PKIOperation error: {e}", exc_info=True)
+        logger.error(f"SCEP PKIOperation error: {e}", exc_info=True)
         return make_error_response("SCEP processing error", 500)
 
 

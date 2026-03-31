@@ -58,6 +58,9 @@ def acme_response(data: Dict[str, Any], status_code: int = 200) -> Any:
     # Add Link header to directory
     response.headers['Link'] = f'<{service.base_url}/acme/directory>;rel="index"'
     
+    # RFC 8555 §8: prevent caching of ACME responses
+    response.headers['Cache-Control'] = 'no-store'
+    
     return response
 
 
@@ -557,6 +560,9 @@ def order_info(order_id: str):
         is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
         if not is_valid:
             return acme_error('malformed', f'Invalid JWS: {error}')
+        # RFC 8555 §6.3: POST-as-GET payload must be empty
+        if payload:
+            return acme_error('malformed', 'POST-as-GET must have empty payload')
     
     order = service.get_order(order_id)
     
@@ -681,6 +687,9 @@ def authorization_info(authorization_id: str):
         is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
         if not is_valid:
             return acme_error('malformed', f'Invalid JWS: {error}')
+        # RFC 8555 §6.3: POST-as-GET payload must be empty
+        if payload:
+            return acme_error('malformed', 'POST-as-GET must have empty payload')
     
     auth = AcmeAuthorization.query.filter_by(
         authorization_id=authorization_id
@@ -819,6 +828,9 @@ def download_certificate(order_id: str):
             is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
             if not is_valid:
                 return acme_error('malformed', f'Invalid JWS: {error}')
+            # RFC 8555 §6.3: POST-as-GET payload must be empty
+            if payload:
+                return acme_error('malformed', 'POST-as-GET must have empty payload')
     
     # Get order
     order = service.get_order(order_id)
@@ -873,9 +885,9 @@ def download_certificate(order_id: str):
     # Return PEM chain
     response = make_response(pem_chain, 200)
     response.headers['Content-Type'] = 'application/pem-certificate-chain'
-    
-    # Add Replay-Nonce for ACME compliance
     response.headers['Replay-Nonce'] = service.generate_nonce()
+    response.headers['Cache-Control'] = 'no-store'
+    response.headers['Link'] = f'<{service.base_url}/acme/directory>;rel="index"'
     
     return response
 
@@ -939,7 +951,12 @@ def revoke_cert():
             logger.error(f"ACME revocation failed: {e}")
             return acme_error('serverInternal', 'Revocation failed', 500)
         
-        return make_response('', 200)
+        # RFC 8555 §7.6: successful revocation returns 200 with proper headers
+        response = make_response('', 200)
+        response.headers['Replay-Nonce'] = service.generate_nonce()
+        response.headers['Cache-Control'] = 'no-store'
+        response.headers['Link'] = f'<{service.base_url}/acme/directory>;rel="index"'
+        return response
         
     except Exception as e:
         logger.error(f"ACME revoke-cert error: {e}")
