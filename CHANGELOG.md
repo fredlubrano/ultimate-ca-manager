@@ -11,7 +11,14 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
-## [2.104] - 2026-03-28
+## [2.105] - 2026-03-31
+
+### Fixed
+- **ACME Proxy** — Add missing route decorators on `authz`, `order`, `finalize`, `cert` endpoints (were unreachable dead code — certbot failed after `new-order`); add POST-as-GET empty payload validation (RFC 8555 §6.3); fix error responses to use `urn:ietf:params:acme:error` URN format with `application/problem+json` (RFC 7807); add `revoke-cert` and `key-change` stub endpoints (advertised in directory but missing) (fixes #50)
+- **ACME Main API** — Add `Cache-Control: no-store` to all ACME responses (RFC 8555 §8); add POST-as-GET payload validation on order, authz, cert endpoints; fix `revoke-cert` success response missing `Replay-Nonce`, `Cache-Control`, `Link` headers
+- **ACME Services** — Wrap all bare `db.session.commit()` calls with try/except + rollback + logging across acme_service, acme_proxy_service, acme_client_service; add input validation for identifiers in proxy `new_order()`
+- **OCSP** — Add debug logging to silent CA cert parsing exception in issuer hash lookup
+- **SCEP** — Use module-level logger instead of `current_app.logger` for consistency
 
 ### Fixed
 - **Settings API** — `system_name`, `base_url`, `date_format`, `show_time` were missing from the GET response and PATCH allowed keys; frontend fields now properly persist (credit: f1lint, PR #47)
