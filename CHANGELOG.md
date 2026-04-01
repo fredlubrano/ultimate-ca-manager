@@ -11,6 +11,19 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.106] - 2026-04-01
+
+### Fixed
+- **ACME Proxy** — Fix challenge validation staying pending when using certbot: proxy now only exposes dns-01 challenges (http-01/tls-alpn-01 cannot work through a proxy); add clear error messages when upstream CA has no dns-01 challenge, DNS provider is not configured, or no matching order found; replace all silent exception handling with proper logging (fixes #51)
+
+### Added
+- **ACME Proxy EAB** — Support External Account Binding for upstream CA registration (required by HARICA, Sectigo, etc.) via `acme.proxy.eab_kid` and `acme.proxy.eab_hmac_key` settings; auto-detect when upstream requires EAB and show clear error
+
+### Security
+- **Dependencies** — Update requests 2.32.5 → 2.33.1 (CVE-2026-25645), cbor2 5.8.0 → 5.9.0 (CVE-2026-26209), cryptography 46.0.5 → 46.0.6 (CVE-2026-34073)
+
+---
+
 ## [2.105] - 2026-03-31
 
 ### Fixed
