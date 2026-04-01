@@ -89,13 +89,10 @@ class AcmeProxyService:
         return self._register_upstream_account()
 
     def _register_upstream_account(self):
-        """Register account with upstream"""
+        """Register account with upstream, with optional EAB support"""
         self._ensure_directory()
         new_account_url = self.directory['newAccount']
         
-        # Use a dummy email that passes validation
-        # In production, this should be configurable
-        # We try to use the system FQDN to look legitimate
         from config.settings import get_config
         conf = get_config()
         fqdn = conf.FQDN or "ucm.local"
@@ -104,6 +101,25 @@ class AcmeProxyService:
             "termsOfServiceAgreed": True,
             "contact": [f"mailto:admin@{fqdn}"] 
         }
+        
+        # Add External Account Binding if configured (required by HARICA, etc.)
+        eab_kid_config = SystemConfig.query.filter_by(key='acme.proxy.eab_kid').first()
+        eab_hmac_config = SystemConfig.query.filter_by(key='acme.proxy.eab_hmac_key').first()
+        if eab_kid_config and eab_hmac_config:
+            eab_kid = eab_kid_config.value
+            eab_hmac_key = eab_hmac_config.value
+            payload["externalAccountBinding"] = self._build_eab(
+                eab_kid, eab_hmac_key, new_account_url
+            )
+            logger.info(f"Registering upstream account with EAB (kid={eab_kid})")
+        else:
+            # Check if upstream requires EAB
+            meta = self.directory.get('meta', {})
+            if meta.get('externalAccountRequired'):
+                raise RuntimeError(
+                    "Upstream CA requires External Account Binding (EAB). "
+                    "Configure acme.proxy.eab_kid and acme.proxy.eab_hmac_key in Settings > ACME."
+                )
         
         resp = self._post_jws(new_account_url, payload)
         
@@ -295,37 +311,53 @@ class AcmeProxyService:
         return upstream_order, order_id
 
     def get_authz(self, authz_id_b64):
-        """Proxy authz fetch"""
+        """Proxy authz fetch — only exposes dns-01 challenges.
+        
+        The proxy can only handle dns-01 validation (via DNS provider).
+        http-01 and tls-alpn-01 require the upstream CA to reach the client
+        directly, which doesn't work through a proxy.
+        """
         # Fix padding
         authz_id_b64 += '=' * (4 - len(authz_id_b64) % 4)
         authz_url = base64.urlsafe_b64decode(authz_id_b64).decode()
         
-        # Authz fetch is usually a GET (POST-as-GET in ACME v2)
-        # RFC 8555: "Clients MUST NOT send a JWS body ... for GET requests" -> Wait, ACME uses POST-as-GET
         resp = self._post_jws(authz_url, "", kid=self.account_url)
         
         if resp.status_code != 200:
-             return None
+            logger.error(f"Upstream authz fetch failed: {resp.status_code} {resp.text}")
+            return None
              
         authz = resp.json()
         
         # Extract identifier (domain)
         identifier = authz.get('identifier', {})
         
-        # Rewrite challenges
+        # Filter to dns-01 only — the proxy handles DNS record creation
+        # automatically. http-01/tls-alpn-01 cannot work through a proxy
+        # because the upstream CA needs direct access to the client.
         proxy_challenges = []
-        for chall in authz['challenges']:
+        for chall in authz.get('challenges', []):
+            if chall.get('type') != 'dns-01':
+                continue
             chall_url = chall['url']
             chall_id = base64.urlsafe_b64encode(chall_url.encode()).rstrip(b'=').decode()
-            
             chall['url'] = f"{self.base_url}/acme/proxy/challenge/{chall_id}"
-            # TOKEN IS PRESERVED! Crucial for passthrough.
             proxy_challenges.append(chall)
+        
+        if not proxy_challenges:
+            logger.error(
+                f"Upstream authz for {identifier.get('value', '?')} has no dns-01 challenge. "
+                f"Available types: {[c.get('type') for c in authz.get('challenges', [])]}"
+            )
+            raise RuntimeError(
+                f"Upstream CA does not offer dns-01 challenge for {identifier.get('value', '?')}. "
+                "The ACME proxy only supports dns-01 validation."
+            )
             
         authz['challenges'] = proxy_challenges
         return authz, identifier
 
-    def respond_challenge(self, chall_id_b64, authz_id_b64=None):
+    def respond_challenge(self, chall_id_b64):
         """Proxy challenge response with automatic DNS setup"""
         import hashlib
         from api.v2.acme_domains import find_provider_for_domain
@@ -335,96 +367,87 @@ class AcmeProxyService:
         chall_id_b64_padded = chall_id_b64 + '=' * (4 - len(chall_id_b64) % 4)
         chall_url = base64.urlsafe_b64decode(chall_id_b64_padded).decode()
         
-        # Decode authz URL if provided
-        authz_url = None
-        if authz_id_b64:
-            authz_id_padded = authz_id_b64 + '=' * (4 - len(authz_id_b64) % 4)
-            authz_url = base64.urlsafe_b64decode(authz_id_padded).decode()
-        
-        # First, fetch the challenge to get token and type
+        # Fetch the challenge to get token and type
         resp = self._post_jws(chall_url, "", kid=self.account_url)
         if resp.status_code != 200:
-            raise Exception(f"Failed to fetch challenge: {resp.text}")
+            raise RuntimeError(f"Failed to fetch challenge: {resp.text}")
         
         challenge_data = resp.json()
         token = challenge_data.get('token')
         challenge_type = challenge_data.get('type')
         
-        # Only handle dns-01 challenges
-        if challenge_type == 'dns-01' and token:
-            # Calculate key authorization
-            jwk_thumbprint = self._get_account_thumbprint()
-            key_authz = f"{token}.{jwk_thumbprint}"
-            
-            # TXT record value = base64url(sha256(key_authz))
-            digest = hashlib.sha256(key_authz.encode()).digest()
-            txt_value = base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
-            
-            # Find order by authz URL match (more precise than just "most recent pending")
-            order = None
-            if authz_url:
-                # Find order that contains this authz URL
-                pending_orders = AcmeClientOrder.query.filter(
-                    AcmeClientOrder.is_proxy_order == True,
-                    AcmeClientOrder.status == 'pending'
-                ).all()
-                
-                for o in pending_orders:
-                    if o.upstream_authz_urls:
-                        try:
-                            authz_urls = json.loads(o.upstream_authz_urls)
-                            if authz_url in authz_urls:
-                                order = o
-                                break
-                        except (json.JSONDecodeError, TypeError):
-                            pass
-            
-            # Fallback to most recent if no match (backwards compatibility)
-            if not order:
-                order = AcmeClientOrder.query.filter(
-                    AcmeClientOrder.is_proxy_order == True,
-                    AcmeClientOrder.status == 'pending'
-                ).order_by(AcmeClientOrder.created_at.desc()).first()
-            
-            if order and order.domains_list:
-                domain = order.domains_list[0].lstrip('*.')
-                
-                # Find DNS provider for this domain
-                provider_info = find_provider_for_domain(domain)
-                if provider_info:
-                    provider_model = provider_info['provider']
-                    try:
-                        # Create DNS provider instance
-                        credentials = json.loads(provider_model.credentials) if provider_model.credentials else {}
-                        provider = create_provider(provider_model.provider_type, credentials)
-                        
-                        # Create TXT record
-                        record_name = f"_acme-challenge.{domain}"
-                        provider.create_txt_record(domain, record_name, txt_value)
-                        
-                        # Wait for DNS propagation (30s for most providers)
-                        time.sleep(30)
-                        
-                        # Store record info for cleanup AFTER successful creation
-                        records = json.loads(order.dns_records_created) if order.dns_records_created else []
-                        records.append({
-                            'domain': domain,
-                            'record_name': record_name,
-                            'value': txt_value,
-                            'provider_id': provider_model.id
-                        })
-                        order.dns_records_created = json.dumps(records)
-                        db.session.commit()
-                        
-                    except Exception as e:
-                        db.session.rollback()
-                        raise Exception(f"Failed to create DNS record: {e}")
+        if challenge_type != 'dns-01':
+            raise RuntimeError(
+                f"Unsupported challenge type: {challenge_type}. "
+                "The ACME proxy only supports dns-01 validation."
+            )
         
-        # Now trigger upstream validation
+        if not token:
+            raise RuntimeError("Challenge has no token")
+        
+        # Calculate key authorization using PROXY's account thumbprint
+        # (the proxy's account is what the upstream CA knows about)
+        jwk_thumbprint = self._get_account_thumbprint()
+        key_authz = f"{token}.{jwk_thumbprint}"
+        
+        # TXT record value = base64url(sha256(key_authz))
+        digest = hashlib.sha256(key_authz.encode()).digest()
+        txt_value = base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
+        
+        # Find the proxy order that contains this challenge's authz URL
+        order = self._find_order_for_challenge(chall_url, AcmeClientOrder)
+        
+        if not order or not order.domains_list:
+            raise RuntimeError(
+                "No pending proxy order found for this challenge. "
+                "The order may have expired or been completed."
+            )
+        
+        domain = order.domains_list[0].lstrip('*.')
+        
+        # Find DNS provider for this domain
+        provider_info = find_provider_for_domain(domain)
+        if not provider_info:
+            raise RuntimeError(
+                f"No DNS provider configured for domain: {domain}. "
+                "Configure a DNS provider in ACME > Domains before requesting certificates."
+            )
+        
+        provider_model = provider_info['provider']
+        try:
+            credentials = json.loads(provider_model.credentials) if provider_model.credentials else {}
+            provider = create_provider(provider_model.provider_type, credentials)
+            
+            record_name = f"_acme-challenge.{domain}"
+            logger.info(f"Creating DNS TXT record: {record_name} = {txt_value[:20]}...")
+            provider.create_txt_record(domain, record_name, txt_value)
+            
+            # Wait for DNS propagation
+            time.sleep(30)
+            
+            # Store record info for cleanup
+            records = json.loads(order.dns_records_created) if order.dns_records_created else []
+            records.append({
+                'domain': domain,
+                'record_name': record_name,
+                'value': txt_value,
+                'provider_id': provider_model.id
+            })
+            order.dns_records_created = json.dumps(records)
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Failed to save DNS record info: {e}")
+        except Exception as e:
+            db.session.rollback()
+            raise RuntimeError(f"Failed to create DNS record for {domain}: {e}")
+        
+        # Trigger upstream validation
         resp = self._post_jws(chall_url, {}, kid=self.account_url)
         
         if resp.status_code != 200:
-            raise Exception(f"Upstream challenge error: {resp.text}")
+            raise RuntimeError(f"Upstream challenge validation error: {resp.text}")
              
         chall = resp.json()
         chall['url'] = f"{self.base_url}/acme/proxy/challenge/{chall_id_b64}"
@@ -432,8 +455,6 @@ class AcmeProxyService:
         # Get Link header from upstream and rewrite authz URL
         link_header = resp.headers.get('Link')
         if link_header:
-            # Parse and rewrite the authz URL in Link header
-            # Format: <https://...authz...>;rel="up"
             import re
             match = re.search(r'<([^>]+)>', link_header)
             if match:
@@ -442,6 +463,39 @@ class AcmeProxyService:
                 link_header = f'<{self.base_url}/acme/proxy/authz/{authz_id}>;rel="up"'
         
         return chall, link_header
+    
+    def _find_order_for_challenge(self, chall_url, AcmeClientOrder):
+        """Find the proxy order associated with a challenge URL."""
+        # Strategy: fetch the challenge to get its authz URL from Link header,
+        # then match against stored upstream authz URLs
+        pending_orders = AcmeClientOrder.query.filter(
+            AcmeClientOrder.is_proxy_order == True,
+            AcmeClientOrder.status == 'pending'
+        ).order_by(AcmeClientOrder.created_at.desc()).all()
+        
+        for order in pending_orders:
+            if order.upstream_authz_urls:
+                try:
+                    authz_urls = json.loads(order.upstream_authz_urls)
+                    # Challenge URLs are under the authz URL path on most CAs
+                    for authz_url in authz_urls:
+                        # Match by common URL prefix (same CA host/path structure)
+                        if self._urls_share_ca(chall_url, authz_url):
+                            return order
+                except (json.JSONDecodeError, TypeError):
+                    pass
+        
+        # Fallback: most recent pending proxy order
+        if pending_orders:
+            logger.warning("Could not match challenge to specific order, using most recent")
+            return pending_orders[0]
+        return None
+    
+    @staticmethod
+    def _urls_share_ca(url1, url2):
+        """Check if two URLs belong to the same CA (same host)."""
+        from urllib.parse import urlparse
+        return urlparse(url1).netloc == urlparse(url2).netloc
     
     def _get_account_thumbprint(self):
         """Get JWK thumbprint of our upstream account key"""
@@ -456,6 +510,40 @@ class AcmeProxyService:
         }, separators=(',', ':'), sort_keys=True)
         digest = hashlib.sha256(canonical.encode()).digest()
         return base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
+
+    def _build_eab(self, kid, hmac_key_b64, account_url):
+        """Build External Account Binding JWS (RFC 8555 §7.3.4)"""
+        import hashlib
+        import hmac as hmac_mod
+        
+        # Decode HMAC key (base64url-encoded)
+        hmac_key_padded = hmac_key_b64 + '=' * (4 - len(hmac_key_b64) % 4)
+        hmac_key = base64.urlsafe_b64decode(hmac_key_padded)
+        
+        # Protected header for EAB
+        protected = {
+            "alg": "HS256",
+            "kid": kid,
+            "url": account_url
+        }
+        protected_b64 = base64.urlsafe_b64encode(
+            json.dumps(protected).encode()
+        ).rstrip(b'=').decode()
+        
+        # Payload is the account key JWK
+        jwk_json = json.dumps(self.account_key.to_json(), separators=(',', ':'), sort_keys=True)
+        payload_b64 = base64.urlsafe_b64encode(jwk_json.encode()).rstrip(b'=').decode()
+        
+        # HMAC-SHA256 signature
+        signing_input = f"{protected_b64}.{payload_b64}".encode()
+        sig = hmac_mod.new(hmac_key, signing_input, hashlib.sha256).digest()
+        sig_b64 = base64.urlsafe_b64encode(sig).rstrip(b'=').decode()
+        
+        return {
+            "protected": protected_b64,
+            "payload": payload_b64,
+            "signature": sig_b64
+        }
 
     def get_order(self, order_id_b64):
         """Get order status (POST-as-GET)"""
@@ -576,8 +664,6 @@ class AcmeProxyService:
             except Exception as e:
                 # Log but don't fail - cert was obtained
                 logger.error(f"[ACME Proxy] Error storing certificate: {e}")
-                import traceback
-                traceback.print_exc()
             
             # Cleanup DNS records and link certificate to order
             order = AcmeClientOrder.query.filter(
@@ -602,16 +688,19 @@ class AcmeProxyService:
                                 try:
                                     provider.delete_txt_record(record['domain'], record['record_name'])
                                 except Exception as e:
-                                    # Log but don't fail - record might already be deleted
-                                    pass
+                                    logger.warning(f"Failed to cleanup DNS record {record.get('record_name')}: {e}")
                     
                     # Update order status
                     order.status = 'valid'
                     order.dns_records_created = None  # Clear after cleanup
-                    db.session.commit()
+                    try:
+                        db.session.commit()
+                    except Exception as e:
+                        db.session.rollback()
+                        logger.error(f"Failed to update order status: {e}")
                 except Exception as e:
-                    # Log cleanup error but still return cert
-                    pass
+                    db.session.rollback()
+                    logger.error(f"Failed during certificate cleanup: {e}")
         
         # Cert response is PEM stream usually
         return resp.content, resp.headers.get('Content-Type', 'application/pem-certificate-chain'), link_header

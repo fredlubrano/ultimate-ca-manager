@@ -4,6 +4,7 @@ Mirrors the standard ACME API but proxies requests to upstream providers.
 """
 from flask import Blueprint, request, jsonify, make_response
 import base64
+import json
 import logging
 from datetime import datetime
 
@@ -149,16 +150,39 @@ def new_order():
         if not_before:
             not_before = datetime.fromisoformat(not_before.replace('Z', '+00:00'))
 
+        # Compute client JWK thumbprint for order tracking
+        client_thumbprint = None
+        if jwk:
+            try:
+                import hashlib
+                jwk_canonical = json.dumps(jwk, separators=(',', ':'), sort_keys=True)
+                client_thumbprint = base64.urlsafe_b64encode(
+                    hashlib.sha256(jwk_canonical.encode()).digest()
+                ).rstrip(b'=').decode()
+            except Exception:
+                pass
+
         svc = get_proxy_service()
-        order_data, order_id = svc.new_order(identifiers, not_before)
+        order_data, order_id = svc.new_order(
+            identifiers, not_before, client_thumbprint=client_thumbprint
+        )
 
         order_url = f"{request.scheme}://{request.host}/acme/proxy/order/{order_id}"
         resp = proxy_response(order_data, 201)
         resp.headers['Location'] = order_url
         return resp
 
+    except ValueError as e:
+        return proxy_error("malformed", str(e))
+    except RuntimeError as e:
+        logger.warning(f"ACME proxy new-order: {e}")
+        return proxy_error("serverInternal", str(e))
     except Exception as e:
         logger.error(f"ACME proxy new-order error: {e}")
+        # Surface DNS provider configuration errors clearly
+        detail = str(e)
+        if "No DNS provider" in detail:
+            return proxy_error("serverInternal", detail)
         return proxy_error("serverInternal", "Internal server error", 500)
 
 
@@ -181,6 +205,9 @@ def authz(authz_id):
 
         data, _ = result
         return proxy_response(data)
+    except RuntimeError as e:
+        logger.warning(f"ACME proxy authz: {e}")
+        return proxy_error("unsupportedIdentifier", str(e))
     except Exception as e:
         logger.error(f"ACME proxy authz error: {e}")
         return proxy_error("serverInternal", "Internal server error", 500)
@@ -200,6 +227,15 @@ def challenge(chall_id):
         if link_header:
             resp.headers['Link'] = link_header
         return resp
+    except RuntimeError as e:
+        logger.warning(f"ACME proxy challenge: {e}")
+        detail = str(e)
+        error_type = "serverInternal"
+        if "dns-01" in detail.lower() or "unsupported" in detail.lower():
+            error_type = "unsupportedIdentifier"
+        elif "dns provider" in detail.lower():
+            error_type = "serverInternal"
+        return proxy_error(error_type, detail)
     except Exception as e:
         logger.error(f"ACME proxy challenge error: {e}")
         return proxy_error("serverInternal", "Internal server error", 500)
