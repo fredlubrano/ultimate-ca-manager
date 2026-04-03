@@ -1270,7 +1270,8 @@
     "aiaIssuersEnabled": "AIA CA Issuers увімкнено для {{name}}",
     "aiaIssuersDisabled": "AIA CA Issuers вимкнено для {{name}}",
     "toggleAiaFailed": "Не вдалося перемкнути AIA CA Issuers",
-    "urlNotConfigured": "URL не налаштовано — встановіть FQDN або базову URL протоколу в Налаштуваннях"
+    "urlNotConfigured": "URL не налаштовано — встановіть FQDN або базову URL протоколу в Налаштуваннях",
+    "autoRegen": "Авто-оновл."
   },
   "trustStore": {
     "caTrust": "Довіра CA",

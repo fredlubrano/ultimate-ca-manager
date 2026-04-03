@@ -286,7 +286,7 @@ export default function CRLOCSPPage() {
     },
     {
       key: 'cdp_enabled',
-      header: 'CRL',
+      header: t('crlOcsp.autoRegen'),
       priority: 3,
       hideOnMobile: true,
       render: (v, row) => (
@@ -368,7 +368,7 @@ export default function CRLOCSPPage() {
     },
     {
       key: 'crl_updated',
-      header: t('common.updated'),
+      header: t('common.lastUpdate'),
       priority: 3,
       hideOnMobile: true,
       mono: true,
@@ -377,6 +377,22 @@ export default function CRLOCSPPage() {
           {v ? formatDate(v, 'short') : '—'}
         </span>
       )
+    },
+    {
+      key: 'crl_next_update',
+      header: t('crlOcsp.nextUpdate'),
+      priority: 4,
+      hideOnMobile: true,
+      mono: true,
+      render: (v) => {
+        if (!v) return <span className="text-text-tertiary">—</span>
+        const isExpired = new Date(v) < new Date()
+        return (
+          <span className={isExpired ? 'text-red-500 font-medium' : 'text-text-secondary'}>
+            {formatDate(v, 'short')}
+          </span>
+        )
+      }
     }
   ], [canWrite, handleToggleAutoRegen, handleToggleDeltaCRL, handleToggleOcsp, t])
 

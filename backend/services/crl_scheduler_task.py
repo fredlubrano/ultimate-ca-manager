@@ -122,11 +122,13 @@ class CRLSchedulerTask:
         try:
             logger.debug("Starting CRL regeneration check")
             
-            # Get all CAs with private keys AND CDP enabled (auto-regen)
-            cas_with_keys = CA.query.filter_by(has_private_key=True, cdp_enabled=True).all()
+            # Get all CAs with CDP enabled (auto-regen)
+            # NOTE: has_private_key is a @property, NOT a DB column — cannot use filter_by
+            cas_with_cdp = CA.query.filter_by(cdp_enabled=True).all()
+            cas_with_keys = [ca for ca in cas_with_cdp if ca.has_private_key]
             
             if not cas_with_keys:
-                logger.debug("No CAs with CDP enabled found")
+                logger.debug("No CAs with CDP enabled and private key found")
                 return
             
             regenerated_count = 0
@@ -156,9 +158,11 @@ class CRLSchedulerTask:
             )
             
             # Check delta CRLs for CAs with delta enabled
-            delta_cas = CA.query.filter_by(
-                has_private_key=True, cdp_enabled=True, delta_crl_enabled=True
-            ).all()
+            # NOTE: has_private_key is a @property — filter in Python
+            delta_cas = [
+                ca for ca in CA.query.filter_by(cdp_enabled=True, delta_crl_enabled=True).all()
+                if ca.has_private_key
+            ]
             
             delta_count = 0
             for ca in delta_cas:

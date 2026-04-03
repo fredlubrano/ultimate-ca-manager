@@ -51,6 +51,51 @@ def create_app(config_name=None):
     config = get_config(config_name)
     app.config.from_object(config)
     
+    # ── Centralized logging ──────────────────────────────────────
+    # Configure the root Python logger so that ALL module-level loggers
+    # (logging.getLogger(__name__)) inherit a common handler.
+    # Without this, only Flask's app.logger writes to the log file;
+    # services, schedulers, and protocol handlers log into the void.
+    import logging as _logging
+    _is_docker = os.path.exists('/.dockerenv') or os.getenv('UCM_DOCKER') == '1'
+    _log_level = getattr(_logging, config.LOG_LEVEL.upper(), _logging.INFO)
+    _log_fmt = _logging.Formatter(
+        '%(asctime)s [%(name)s] %(levelname)s %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    root_logger = _logging.getLogger()
+    root_logger.setLevel(_log_level)
+
+    if _is_docker:
+        # Docker: everything to stdout (captured by docker logs)
+        _sh = _logging.StreamHandler(sys.stdout)
+        _sh.setFormatter(_log_fmt)
+        root_logger.addHandler(_sh)
+    else:
+        # Native: write to /var/log/ucm/ucm.log (same file the docs reference)
+        _log_path = os.getenv('UCM_LOG_FILE', '/var/log/ucm/ucm.log')
+        try:
+            from logging.handlers import RotatingFileHandler
+            _fh = RotatingFileHandler(
+                _log_path, maxBytes=10 * 1024 * 1024, backupCount=5
+            )
+            _fh.setFormatter(_log_fmt)
+            root_logger.addHandler(_fh)
+        except (PermissionError, FileNotFoundError):
+            # Fallback to stderr if log dir doesn't exist (e.g. during build)
+            _sh = _logging.StreamHandler(sys.stderr)
+            _sh.setFormatter(_log_fmt)
+            root_logger.addHandler(_sh)
+
+    # Quiet noisy third-party libraries
+    for _lib in ('urllib3', 'gevent', 'geventwebsocket', 'engineio',
+                 'socketio', 'werkzeug', 'flask_limiter', 'flask_caching'):
+        _logging.getLogger(_lib).setLevel(_logging.WARNING)
+
+    app.logger.setLevel(_log_level)
+    # ─────────────────────────────────────────────────────────────
+    
     # Reverse proxy support (handles X-Forwarded-* headers)
     # Safe to enable even without proxy - only activates if headers present
     app.wsgi_app = ProxyFix(

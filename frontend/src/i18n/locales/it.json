@@ -1270,7 +1270,8 @@
     "aiaIssuersEnabled": "AIA CA Issuers abilitato per {{name}}",
     "aiaIssuersDisabled": "AIA CA Issuers disabilitato per {{name}}",
     "toggleAiaFailed": "Impossibile attivare/disattivare AIA CA Issuers",
-    "urlNotConfigured": "URL non configurato — impostare FQDN o URL base protocollo in Impostazioni"
+    "urlNotConfigured": "URL non configurato — impostare FQDN o URL base protocollo in Impostazioni",
+    "autoRegen": "Auto-Regen"
   },
   "trustStore": {
     "caTrust": "Fiducia CA",
