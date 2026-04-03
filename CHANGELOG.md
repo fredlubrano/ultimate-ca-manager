@@ -15,6 +15,17 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.108] - 2026-04-03
+
+### Fixed
+- **CRL Auto-Regeneration** — Fix scheduler silently returning no CAs: `has_private_key` is a Python `@property`, not a DB column; `filter_by(has_private_key=True)` returned empty results; replaced with Python-side filtering (Issue #52)
+- **Centralized Logging** — Module-level loggers (`logging.getLogger(__name__)`) had no handlers; added root logger configuration in `app.py` with RotatingFileHandler (native) or stdout (Docker); all scheduler/service logs now visible in `/var/log/ucm/ucm.log`
+
+### Improved
+- **CRL/OCSP Page Redesign** — Replace text toggle headers with language-independent icon+tooltip headers; merge Status into CA Name column; merge Last Update + Next Update into single stacked Updates column; add `compact` column flag to ResponsiveDataTable for fixed-width toggle columns (48px); table reduced from 9 → 7 columns
+
+---
+
 ## [2.107] - 2026-04-02
 
 ### Fixed
