@@ -7,8 +7,9 @@ import { useTranslation } from 'react-i18next'
 import { 
   FileX, ShieldCheck, ArrowsClockwise, Download, Copy,
   Database, Pulse, Calendar, Hash, XCircle,
-  Info as LinkIcon
+  Info as LinkIcon, TreeStructure, Link as LinkChain
 } from '@phosphor-icons/react'
+import { Tooltip } from '../components'
 import {
   ResponsiveLayout,
   ResponsiveDataTable,
@@ -238,7 +239,16 @@ export default function CRLOCSPPage() {
     { icon: Pulse, label: t('common.ocspResponder'), value: ocspStatus.running ? t('common.online') : t('common.offline'), variant: ocspStatus.running ? 'success' : 'warning' }
   ], [cas.length, crls.length, totalRevoked, ocspStatus.running, t])
 
-  // Table columns
+  // Icon-only header with tooltip (language-independent, compact)
+  const iconHeader = (icon, label) => (
+    <Tooltip content={label} side="top">
+      <span className="inline-flex items-center justify-center cursor-help">
+        {icon}
+      </span>
+    </Tooltip>
+  )
+
+  // Table columns — compact icon headers for toggles, merged updates column
   const columns = useMemo(() => [
     {
       key: 'descr',
@@ -254,6 +264,11 @@ export default function CRLOCSPPage() {
             <FileX size={14} weight="duotone" />
           </div>
           <span className="font-medium truncate">{v || row.name}</span>
+          {!row.has_crl && (
+            <Badge variant="orange" size="sm" className="shrink-0">
+              {t('crlOcsp.noCRL')}
+            </Badge>
+          )}
         </div>
       ),
       mobileRender: (v, row) => (
@@ -274,23 +289,15 @@ export default function CRLOCSPPage() {
       )
     },
     {
-      key: 'has_crl',
-      header: t('common.status'),
-      priority: 2,
-      hideOnMobile: true,
-      render: (v) => (
-        <Badge variant={v ? 'success' : 'orange'} size="sm" dot pulse={!v}>
-          {v ? t('common.active') : t('crlOcsp.noCRL')}
-        </Badge>
-      )
-    },
-    {
       key: 'cdp_enabled',
-      header: t('crlOcsp.autoRegen'),
+      header: iconHeader(<ArrowsClockwise size={14} weight="duotone" className="text-text-tertiary" />, t('crlOcsp.autoRegen')),
+      width: '48px',
+      compact: true,
       priority: 3,
       hideOnMobile: true,
+      sortable: false,
       render: (v, row) => (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div onClick={(e) => e.stopPropagation()} className="flex justify-center">
           <ToggleSwitch
             checked={v}
             onChange={() => handleToggleAutoRegen(row)}
@@ -302,11 +309,14 @@ export default function CRLOCSPPage() {
     },
     {
       key: 'delta_crl_enabled',
-      header: t('crlOcsp.deltaCrl'),
+      header: iconHeader(<TreeStructure size={14} weight="duotone" className="text-text-tertiary" />, t('crlOcsp.deltaCrl')),
+      width: '48px',
+      compact: true,
       priority: 4,
       hideOnMobile: true,
+      sortable: false,
       render: (v, row) => (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div onClick={(e) => e.stopPropagation()} className="flex justify-center">
           <ToggleSwitch
             checked={v || false}
             onChange={() => handleToggleDeltaCRL(row)}
@@ -318,11 +328,14 @@ export default function CRLOCSPPage() {
     },
     {
       key: 'ocsp_enabled',
-      header: 'OCSP',
+      header: iconHeader(<Pulse size={14} weight="duotone" className="text-text-tertiary" />, 'OCSP'),
+      width: '48px',
+      compact: true,
       priority: 3,
       hideOnMobile: true,
+      sortable: false,
       render: (v, row) => (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div onClick={(e) => e.stopPropagation()} className="flex justify-center">
           <ToggleSwitch
             checked={v}
             onChange={() => handleToggleOcsp(row)}
@@ -334,11 +347,14 @@ export default function CRLOCSPPage() {
     },
     {
       key: 'aia_ca_issuers_enabled',
-      header: t('crlOcsp.aiaIssuers'),
+      header: iconHeader(<LinkChain size={14} weight="duotone" className="text-text-tertiary" />, t('crlOcsp.aiaIssuers')),
+      width: '48px',
+      compact: true,
       priority: 5,
       hideOnMobile: true,
+      sortable: false,
       render: (v, row) => (
-        <div onClick={(e) => e.stopPropagation()}>
+        <div onClick={(e) => e.stopPropagation()} className="flex justify-center">
           <ToggleSwitch
             checked={v || false}
             onChange={() => handleToggleAiaIssuers(row)}
@@ -351,6 +367,7 @@ export default function CRLOCSPPage() {
     {
       key: 'revoked_count',
       header: t('common.revoked'),
+      width: '80px',
       priority: 2,
       render: (v) => (
         <Badge variant={v > 0 ? 'danger' : 'secondary'} size="sm" dot={v > 0}>
@@ -368,33 +385,31 @@ export default function CRLOCSPPage() {
     },
     {
       key: 'crl_updated',
-      header: t('common.lastUpdate'),
+      header: t('crlOcsp.updates'),
       priority: 3,
       hideOnMobile: true,
-      mono: true,
-      render: (v) => (
-        <span className="text-text-secondary">
-          {v ? formatDate(v, 'short') : '—'}
-        </span>
-      )
-    },
-    {
-      key: 'crl_next_update',
-      header: t('crlOcsp.nextUpdate'),
-      priority: 4,
-      hideOnMobile: true,
-      mono: true,
-      render: (v) => {
-        if (!v) return <span className="text-text-tertiary">—</span>
-        const isExpired = new Date(v) < new Date()
+      size: 2,
+      render: (v, row) => {
+        const nextUpdate = row.crl_next_update
+        const isExpired = nextUpdate && new Date(nextUpdate) < new Date()
         return (
-          <span className={isExpired ? 'text-red-500 font-medium' : 'text-text-secondary'}>
-            {formatDate(v, 'short')}
-          </span>
+          <div className="flex flex-col gap-0.5 text-xs leading-tight">
+            <span className="text-text-secondary">
+              {v ? formatDate(v, 'short') : '—'}
+            </span>
+            {nextUpdate && (
+              <span className={cn(
+                'text-2xs',
+                isExpired ? 'text-red-500 font-medium' : 'text-text-tertiary'
+              )}>
+                → {formatDate(nextUpdate, 'short')}
+              </span>
+            )}
+          </div>
         )
       }
     }
-  ], [canWrite, handleToggleAutoRegen, handleToggleDeltaCRL, handleToggleOcsp, t])
+  ], [canWrite, handleToggleAutoRegen, handleToggleDeltaCRL, handleToggleOcsp, handleToggleAiaIssuers, t])
 
   // Help content
   const helpContent = (

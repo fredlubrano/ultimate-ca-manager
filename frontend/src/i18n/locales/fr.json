@@ -1060,7 +1060,8 @@
     "aiaIssuersDisabled": "AIA CA Issuers désactivé pour {{name}}",
     "toggleAiaFailed": "Échec du basculement AIA CA Issuers",
     "urlNotConfigured": "URL non configurée — définissez le FQDN ou l'URL de base du protocole dans Paramètres",
-    "autoRegen": "Auto-Regen"
+    "autoRegen": "Auto-Regen",
+    "updates": "Mises à jour"
   },
   "csrs": {
     "uploadCSR": "Téléverser une CSR",

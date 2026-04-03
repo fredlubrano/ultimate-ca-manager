@@ -1102,8 +1102,8 @@ function DesktopTable({
     if (columnWidths[col.key]) {
       return { width: `${columnWidths[col.key]}px` }
     }
-    // Column has explicit width (e.g. '120px', '80px')
-    if (col.width) return { width: col.width }
+    // Column has explicit width (e.g. '120px', '80px') — lock it
+    if (col.width) return { width: col.width, minWidth: col.width, maxWidth: col.width }
     // Use proportional sizing based on column "size" hint or smart defaults
     const size = col.size || getDefaultColumnSize(col)
     const totalSize = columns.reduce((sum, c) => {
@@ -1198,14 +1198,14 @@ function DesktopTable({
                   className={cn(
                     'text-left text-[11px] font-medium text-text-tertiary tracking-wide',
                     'relative group',
-                    dStyle.header,
+                    col.compact ? 'px-1 py-1.5' : dStyle.header,
                     'transition-colors duration-200',
                     sortable && col.sortable !== false && 'cursor-pointer hover:text-text-secondary',
                     sort?.key === col.key && 'text-accent-primary',
                     !isLast && 'table-col-separator'
                   )}
                 >
-                  <div className="flex items-center gap-1.5 truncate pr-3">
+                  <div className={cn("flex items-center gap-1.5 truncate", col.compact ? 'justify-center pr-0' : 'pr-3')}>
                     {col.header || col.label}
                     {sort?.key === col.key && (
                       sort.direction === 'asc' 
@@ -1278,7 +1278,7 @@ function DesktopTable({
                       key={col.key}
                       style={style}
                       className={cn(
-                        dStyle.cell,
+                        col.compact ? 'px-1 py-0.5' : dStyle.cell,
                         "transition-colors duration-200",
                         col.mono && "font-mono",
                         col.className,

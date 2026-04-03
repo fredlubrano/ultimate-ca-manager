@@ -1271,7 +1271,8 @@
     "aiaIssuersDisabled": "{{name}}のAIA CA Issuersを無効にしました",
     "toggleAiaFailed": "AIA CA Issuersの切り替えに失敗しました",
     "urlNotConfigured": "URL未設定 — 設定でFQDNまたはプロトコルベースURLを設定してください",
-    "autoRegen": "自動更新"
+    "autoRegen": "自動更新",
+    "updates": "更新"
   },
   "trustStore": {
     "caTrust": "CAトラスト",

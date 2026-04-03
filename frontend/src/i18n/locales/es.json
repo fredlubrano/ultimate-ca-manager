@@ -1271,7 +1271,8 @@
     "aiaIssuersDisabled": "AIA CA Issuers deshabilitado para {{name}}",
     "toggleAiaFailed": "Error al alternar AIA CA Issuers",
     "urlNotConfigured": "URL no configurada — establezca el FQDN o la URL base del protocolo en Configuración",
-    "autoRegen": "Auto-Regen"
+    "autoRegen": "Auto-Regen",
+    "updates": "Actualizaciones"
   },
   "trustStore": {
     "caTrust": "Confianza de CA",
