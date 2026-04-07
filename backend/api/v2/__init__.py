@@ -17,6 +17,7 @@ from api.v2.certificates import bp as certificates_bp
 from api.v2.acme import bp as acme_bp
 from api.v2.scep import bp as scep_bp
 from api.v2.est import bp as est_bp
+from api.v2.tsa import bp as tsa_bp
 from api.v2.settings import bp as settings_bp
 from api.v2.system import bp as system_bp
 from api.v2.dashboard import bp as dashboard_bp
@@ -59,6 +60,7 @@ API_V2_BLUEPRINTS = [
     acme_bp,
     scep_bp,
     est_bp,
+    tsa_bp,
     settings_bp,
     system_bp,
     dashboard_bp,
