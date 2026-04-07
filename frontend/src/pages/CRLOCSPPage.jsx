@@ -47,6 +47,12 @@ export default function CRLOCSPPage() {
   const [newUrlField, setNewUrlField] = useState({ type: null, value: '' })
   const [savingUrls, setSavingUrls] = useState(false)
 
+  // Delegated OCSP responder state
+  const [ocspResponder, setOcspResponder] = useState(null)
+  const [eligibleResponders, setEligibleResponders] = useState([])
+  const [loadingResponder, setLoadingResponder] = useState(false)
+  const [eligibleLoaded, setEligibleLoaded] = useState(false)
+
   useEffect(() => {
     loadData()
   }, [])
@@ -90,7 +96,48 @@ export default function CRLOCSPPage() {
 
   const handleSelectCA = (ca) => {
     setSelectedCA(ca)
+    setOcspResponder(null)
+    setEligibleResponders([])
+    setEligibleLoaded(false)
     loadCRLForCA(ca.id)
+    crlService.getOcspResponder(ca.id).then(res => {
+      setOcspResponder(res.data?.responder || null)
+    }).catch(() => setOcspResponder(null))
+  }
+
+  const handleAssignResponder = async (certId) => {
+    try {
+      await crlService.setOcspResponder(selectedCA.id, certId)
+      showSuccess(t('crlOcsp.delegatedResponderSet'))
+      const res = await crlService.getOcspResponder(selectedCA.id)
+      setOcspResponder(res.data?.responder || null)
+    } catch (error) {
+      showError(error.message || t('crlOcsp.delegatedResponderFailed'))
+    }
+  }
+
+  const handleRemoveResponder = async () => {
+    try {
+      await crlService.removeOcspResponder(selectedCA.id)
+      showSuccess(t('crlOcsp.delegatedResponderRemoved'))
+      setOcspResponder(null)
+    } catch (error) {
+      showError(error.message || t('crlOcsp.delegatedResponderRemoveFailed'))
+    }
+  }
+
+  const handleLoadEligible = async () => {
+    setLoadingResponder(true)
+    try {
+      const res = await crlService.getEligibleOcspResponders(selectedCA.id)
+      setEligibleResponders(res.data || [])
+      setEligibleLoaded(true)
+    } catch {
+      setEligibleResponders([])
+      setEligibleLoaded(true)
+    } finally {
+      setLoadingResponder(false)
+    }
   }
 
   const handleRegenerateCRL = async () => {
@@ -635,6 +682,59 @@ export default function CRLOCSPPage() {
           <CompactField autoIcon="totalRequests" label={t('crlOcsp.totalRequests')} value={ocspStats.total_requests} />
           <CompactField autoIcon="cacheHits" label={t('crlOcsp.cacheHits')} value={ocspStats.cache_hits} />
         </CompactGrid>
+      </CompactSection>
+
+      {/* Delegated OCSP Responder */}
+      <CompactSection title={t('crlOcsp.delegatedResponder')} icon={ShieldCheck}>
+        <p className="text-xs text-text-tertiary mb-3">
+          {t('crlOcsp.delegatedResponderDescription')}
+        </p>
+        {ocspResponder ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 p-2 rounded-md bg-bg-tertiary border border-border">
+              <CertificateIcon size={16} className="text-accent-primary shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-text-primary truncate">{ocspResponder.common_name}</div>
+                <div className="text-xs text-text-tertiary">
+                  SN: {ocspResponder.serial_number} · {t('common.expires')}: {formatDate(ocspResponder.valid_to)}
+                </div>
+              </div>
+              {canWrite('cas') && (
+                <Button type="button" variant="danger" size="xs" onClick={handleRemoveResponder}>
+                  <Trash size={14} />
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-xs text-text-tertiary italic">{t('crlOcsp.delegatedResponderNone')}</p>
+            {canWrite('cas') && (
+              <div className="space-y-2">
+                {!eligibleLoaded ? (
+                  <Button type="button" variant="secondary" size="sm" onClick={handleLoadEligible} disabled={loadingResponder}>
+                    {t('crlOcsp.selectResponder')}
+                  </Button>
+                ) : eligibleResponders.length > 0 ? (
+                  <select
+                    className="w-full rounded-md border border-border bg-bg-primary text-text-primary text-sm p-2"
+                    onChange={(e) => e.target.value && handleAssignResponder(parseInt(e.target.value))}
+                    defaultValue=""
+                  >
+                    <option value="" disabled>{t('crlOcsp.selectResponder')}</option>
+                    {eligibleResponders.map(cert => (
+                      <option key={cert.id} value={cert.id}>
+                        {cert.common_name} (SN: {cert.serial_number})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-text-tertiary italic">{t('crlOcsp.noEligibleResponders')}</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </CompactSection>
 
       {/* AIA CA Issuers Configuration */}

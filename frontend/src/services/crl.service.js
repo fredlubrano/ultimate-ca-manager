@@ -52,5 +52,21 @@ export const crlService = {
 
   async getOcspStats() {
     return apiClient.get('/ocsp/stats')
+  },
+
+  async getOcspResponder(caId) {
+    return apiClient.get(`/cas/${caId}/ocsp-responder`)
+  },
+
+  async setOcspResponder(caId, certificateId) {
+    return apiClient.post(`/cas/${caId}/ocsp-responder`, { certificate_id: certificateId })
+  },
+
+  async removeOcspResponder(caId) {
+    return apiClient.delete(`/cas/${caId}/ocsp-responder`)
+  },
+
+  async getEligibleOcspResponders(caId) {
+    return apiClient.get(`/cas/${caId}/eligible-ocsp-responders`)
   }
 }

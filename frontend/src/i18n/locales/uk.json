@@ -707,7 +707,13 @@
       "selfSigned": "Самопідписаний"
     },
     "approvalRequired": "Запит на сертифікат надіслано на затвердження (політика: {{policy}})",
-    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)"
+    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)",
+    "submitToCT": "Надіслати до CT",
+    "ctSubmitted": "Сертифікат надіслано до журналів CT",
+    "ctSubmitFailed": "Не вдалося надіслати до журналів CT",
+    "ctScts": "CT SCTs",
+    "ctSctsCount": "{{count}} SCT записано",
+    "ctNoScts": "Немає SCTs — не надіслано до журналів CT"
   },
   "cas": {
     "parentCA": "Батьківський ЦС",
@@ -1291,7 +1297,18 @@
     "cpsEnabled": "CPS увімкнено",
     "cpsUri": "URI CPS",
     "cpsOid": "OID політики",
-    "cpsOidNote": "За замовчуванням: 2.5.29.32.0 (anyPolicy). Використовуйте власний OID для специфічних політик."
+    "cpsOidNote": "За замовчуванням: 2.5.29.32.0 (anyPolicy). Використовуйте власний OID для специфічних політик.",
+    "delegatedResponder": "Делегований відповідач",
+    "delegatedResponderDescription": "Делегований OCSP-відповідач використовує спеціальний сертифікат з EKU OCSPSigning для підпису відповідей замість ключа ЦС",
+    "delegatedResponderNone": "Делегований відповідач не налаштований — використовується ключ ЦС",
+    "delegatedResponderSet": "Делегований OCSP-відповідач налаштований",
+    "delegatedResponderRemoved": "Делегований OCSP-відповідач видалений",
+    "delegatedResponderFailed": "Не вдалося налаштувати делегований відповідач",
+    "delegatedResponderRemoveFailed": "Не вдалося видалити делегований відповідач",
+    "selectResponder": "Обрати сертифікат відповідача",
+    "noEligibleResponders": "Придатних сертифікатів не знайдено. Сертифікат потребує EKU OCSPSigning та закритий ключ.",
+    "removeResponder": "Видалити відповідач",
+    "assignResponder": "Призначити відповідач"
   },
   "trustStore": {
     "caTrust": "Довіра CA",
@@ -1763,7 +1780,8 @@
       "updates": "Оновлення",
       "webhooks": "Webhooks",
       "about": "Про програму",
-      "microsoftCA": "Microsoft CA"
+      "microsoftCA": "Microsoft CA",
+      "ct": "CT"
     },
     "testRecipient": "Одержувач тесту",
     "testRecipientRequired": "Введіть адресу електронної пошти одержувача для тесту",
@@ -1891,7 +1909,15 @@
     "currentReleaseNotes": "Примітки до випуску — v{{version}}",
     "updateReleaseNotes": "Що нового у v{{version}}",
     "httpProtocolPort": "HTTP порт протоколу",
-    "httpProtocolPortHelper": "Порт HTTP-сервера без шифрування для CDP/OCSP. Встановіть 0 для вимкнення. Потрібен перезапуск."
+    "httpProtocolPortHelper": "Порт HTTP-сервера без шифрування для CDP/OCSP. Встановіть 0 для вимкнення. Потрібен перезапуск.",
+    "ct": "Прозорість сертифікатів",
+    "ctDescription": "Надсилати сертифікати до публічних журналів CT для прозорості та можливості аудиту",
+    "ctEnabled": "Увімкнути прозорість сертифікатів",
+    "ctAutoSubmit": "Автоматично надсилати нові сертифікати до журналів CT",
+    "ctLogUrls": "URL журналів CT",
+    "ctAddLogUrl": "Додати URL журналу CT",
+    "ctSettingsUpdated": "Налаштування CT оновлено",
+    "ctSettingsFailed": "Не вдалося оновити налаштування CT"
   },
   "account": {
     "profile": "Профіль",
@@ -2402,7 +2428,8 @@
       "crlDP": "Точки розповсюдження CRL",
       "aia": "Доступ до інформації центру сертифікації",
       "policies": "Політики сертифіката",
-      "nameConstraints": "Обмеження імен"
+      "nameConstraints": "Обмеження імен",
+      "sct": "Підписані мітки часу сертифікатів (SCT)"
     },
     "subjectAltNames": "Альтернативні імена суб'єкта"
   },

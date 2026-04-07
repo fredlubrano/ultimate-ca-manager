@@ -707,7 +707,13 @@
       "selfSigned": "Selbstsigniert"
     },
     "approvalRequired": "Zertifikatsanfrage zur Genehmigung eingereicht (Richtlinie: {{policy}})",
-    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)"
+    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)",
+    "submitToCT": "An CT übermitteln",
+    "ctSubmitted": "Zertifikat an CT-Logs übermittelt",
+    "ctSubmitFailed": "Übermittlung an CT-Logs fehlgeschlagen",
+    "ctScts": "CT-SCTs",
+    "ctSctsCount": "{{count}} SCT(s) aufgezeichnet",
+    "ctNoScts": "Keine SCTs — nicht an CT-Logs übermittelt"
   },
   "cas": {
     "parentCA": "Übergeordnete CA",
@@ -1291,7 +1297,18 @@
     "cpsEnabled": "CPS aktiviert",
     "cpsUri": "CPS-URI",
     "cpsOid": "Richtlinien-OID",
-    "cpsOidNote": "Standard: 2.5.29.32.0 (anyPolicy). Verwenden Sie eine eigene OID für organisationsspezifische Richtlinien."
+    "cpsOidNote": "Standard: 2.5.29.32.0 (anyPolicy). Verwenden Sie eine eigene OID für organisationsspezifische Richtlinien.",
+    "delegatedResponder": "Delegierter Responder",
+    "delegatedResponderDescription": "Ein delegierter OCSP-Responder verwendet ein dediziertes Zertifikat mit OCSPSigning-EKU zum Signieren von Antworten anstelle des CA-Schlüssels",
+    "delegatedResponderNone": "Kein delegierter Responder konfiguriert — CA-Schlüssel wird verwendet",
+    "delegatedResponderSet": "Delegierter OCSP-Responder konfiguriert",
+    "delegatedResponderRemoved": "Delegierter OCSP-Responder entfernt",
+    "delegatedResponderFailed": "Konfiguration des delegierten Responders fehlgeschlagen",
+    "delegatedResponderRemoveFailed": "Entfernung des delegierten Responders fehlgeschlagen",
+    "selectResponder": "Responder-Zertifikat auswählen",
+    "noEligibleResponders": "Keine berechtigten Zertifikate gefunden. Ein Zertifikat benötigt OCSPSigning-EKU und einen privaten Schlüssel.",
+    "removeResponder": "Responder entfernen",
+    "assignResponder": "Responder zuweisen"
   },
   "trustStore": {
     "caTrust": "CA-Vertrauen",
@@ -1763,7 +1780,8 @@
       "updates": "Updates",
       "webhooks": "Webhooks",
       "about": "Über",
-      "microsoftCA": "Microsoft CA"
+      "microsoftCA": "Microsoft CA",
+      "ct": "CT"
     },
     "testRecipient": "Testempfänger",
     "testRecipientRequired": "Geben Sie eine Empfänger-E-Mail-Adresse für den Test ein",
@@ -1891,7 +1909,15 @@
     "currentReleaseNotes": "Versionshinweise — v{{version}}",
     "updateReleaseNotes": "Neuerungen in v{{version}}",
     "httpProtocolPort": "HTTP-Protokoll-Port",
-    "httpProtocolPortHelper": "Port für den unverschlüsselten HTTP-Server für CDP/OCSP-Endpunkte. Auf 0 setzen zum Deaktivieren. Neustart erforderlich."
+    "httpProtocolPortHelper": "Port für den unverschlüsselten HTTP-Server für CDP/OCSP-Endpunkte. Auf 0 setzen zum Deaktivieren. Neustart erforderlich.",
+    "ct": "Zertifikatstransparenz",
+    "ctDescription": "Zertifikate an öffentliche CT-Logs übermitteln für Transparenz und Nachvollziehbarkeit",
+    "ctEnabled": "Zertifikatstransparenz aktivieren",
+    "ctAutoSubmit": "Neue Zertifikate automatisch an CT-Logs übermitteln",
+    "ctLogUrls": "CT-Log-URLs",
+    "ctAddLogUrl": "CT-Log-URL hinzufügen",
+    "ctSettingsUpdated": "CT-Einstellungen aktualisiert",
+    "ctSettingsFailed": "CT-Einstellungen konnten nicht aktualisiert werden"
   },
   "account": {
     "profile": "Profil",
@@ -2402,7 +2428,8 @@
       "crlDP": "CRL-Verteilungspunkte",
       "aia": "Zugriff auf Zertifizierungsstelleninformationen",
       "policies": "Zertifikatsrichtlinien",
-      "nameConstraints": "Namenseinschränkungen"
+      "nameConstraints": "Namenseinschränkungen",
+      "sct": "Signierte Zertifikatstimestamps (SCT)"
     },
     "subjectAltNames": "Alternative Antragstellernamen"
   },

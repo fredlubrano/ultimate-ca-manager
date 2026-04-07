@@ -707,7 +707,13 @@
       "selfSigned": "Autoassinado"
     },
     "approvalRequired": "Solicitação de certificado enviada para aprovação (política: {{policy}})",
-    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)"
+    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)",
+    "submitToCT": "Enviar para CT",
+    "ctSubmitted": "Certificado enviado para logs CT",
+    "ctSubmitFailed": "Falha ao enviar para logs CT",
+    "ctScts": "SCTs CT",
+    "ctSctsCount": "{{count}} SCT(s) registrado(s)",
+    "ctNoScts": "Sem SCTs — não enviado para logs CT"
   },
   "cas": {
     "parentCA": "CA pai",
@@ -1291,7 +1297,18 @@
     "cpsEnabled": "CPS habilitado",
     "cpsUri": "URI CPS",
     "cpsOid": "OID de política",
-    "cpsOidNote": "Padrão: 2.5.29.32.0 (anyPolicy). Use um OID personalizado para políticas específicas."
+    "cpsOidNote": "Padrão: 2.5.29.32.0 (anyPolicy). Use um OID personalizado para políticas específicas.",
+    "delegatedResponder": "Respondedor delegado",
+    "delegatedResponderDescription": "Um respondedor OCSP delegado usa um certificado dedicado com EKU OCSPSigning para assinar respostas em vez da chave CA",
+    "delegatedResponderNone": "Nenhum respondedor delegado configurado — usando chave CA",
+    "delegatedResponderSet": "Respondedor OCSP delegado configurado",
+    "delegatedResponderRemoved": "Respondedor OCSP delegado removido",
+    "delegatedResponderFailed": "Falha ao configurar respondedor delegado",
+    "delegatedResponderRemoveFailed": "Falha ao remover respondedor delegado",
+    "selectResponder": "Selecionar certificado respondedor",
+    "noEligibleResponders": "Nenhum certificado elegível encontrado. Um certificado precisa de EKU OCSPSigning e chave privada.",
+    "removeResponder": "Remover respondedor",
+    "assignResponder": "Atribuir respondedor"
   },
   "trustStore": {
     "caTrust": "AC Trust",
@@ -1763,7 +1780,8 @@
       "updates": "Atualizações",
       "webhooks": "Webhooks",
       "about": "Sobre",
-      "microsoftCA": "Microsoft CA"
+      "microsoftCA": "Microsoft CA",
+      "ct": "CT"
     },
     "testRecipient": "Destinatário de teste",
     "testRecipientRequired": "Insira um endereço de email destinatário para o teste",
@@ -1891,7 +1909,15 @@
     "currentReleaseNotes": "Notas de lançamento — v{{version}}",
     "updateReleaseNotes": "Novidades na v{{version}}",
     "httpProtocolPort": "Porta HTTP protocolo",
-    "httpProtocolPortHelper": "Porta do servidor HTTP simples para endpoints CDP/OCSP. Defina como 0 para desativar. Requer reinício."
+    "httpProtocolPortHelper": "Porta do servidor HTTP simples para endpoints CDP/OCSP. Defina como 0 para desativar. Requer reinício.",
+    "ct": "Transparência de certificados",
+    "ctDescription": "Enviar certificados para logs CT públicos para transparência e auditabilidade",
+    "ctEnabled": "Ativar transparência de certificados",
+    "ctAutoSubmit": "Enviar automaticamente novos certificados para logs CT",
+    "ctLogUrls": "URLs de logs CT",
+    "ctAddLogUrl": "Adicionar URL de log CT",
+    "ctSettingsUpdated": "Configurações CT atualizadas",
+    "ctSettingsFailed": "Falha ao atualizar configurações CT"
   },
   "account": {
     "profile": "Perfil",
@@ -2402,7 +2428,8 @@
       "crlDP": "Pontos de distribuição CRL",
       "aia": "Acesso a informações da autoridade",
       "policies": "Políticas do certificado",
-      "nameConstraints": "Restrições de nome"
+      "nameConstraints": "Restrições de nome",
+      "sct": "Carimbos de tempo de certificados assinados (SCT)"
     },
     "subjectAltNames": "Nomes alternativos do sujeito"
   },

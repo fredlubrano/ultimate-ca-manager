@@ -235,6 +235,32 @@ class CertificateService:
         from services.audit_service import AuditService
         AuditService.log_certificate('cert_created', certificate, f'Created certificate: {descr}')
         
+        # Submit to Certificate Transparency if enabled
+        try:
+            from models import SystemConfig
+            ct_enabled = SystemConfig.query.filter_by(key='ct_enabled').first()
+            ct_auto = SystemConfig.query.filter_by(key='ct_auto_submit').first()
+            if ct_enabled and ct_enabled.value == 'true' and ct_auto and ct_auto.value == 'true':
+                ct_log_urls_config = SystemConfig.query.filter_by(key='ct_log_urls').first()
+                ct_log_urls = json.loads(ct_log_urls_config.value) if ct_log_urls_config and ct_log_urls_config.value else None
+
+                chain = [cert_pem.decode('utf-8') if isinstance(cert_pem, bytes) else cert_pem]
+                ca_pem_str = ca_cert_pem.decode('utf-8') if isinstance(ca_cert_pem, bytes) else ca_cert_pem
+                chain.append(ca_pem_str)
+
+                from utils.ct_client import collect_scts
+                scts = collect_scts(chain, ct_log_urls)
+                if scts:
+                    config = SystemConfig(key=f'cert_scts_{certificate.id}', value=json.dumps(scts))
+                    db.session.add(config)
+                    try:
+                        db.session.commit()
+                    except Exception:
+                        db.session.rollback()
+                    logger.info(f"Certificate {certificate.id} submitted to {len(scts)} CT log(s)")
+        except Exception as e:
+            logger.warning(f"CT auto-submission failed for cert {certificate.id}: {e}")
+        
         # Save files
         cert_path = cert_cert_path(certificate)
         with open(cert_path, 'wb') as f:

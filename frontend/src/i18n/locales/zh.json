@@ -707,7 +707,13 @@
       "selfSigned": "自签名"
     },
     "approvalRequired": "证书请求已提交审批（策略：{{policy}}）",
-    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)"
+    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)",
+    "submitToCT": "提交到CT",
+    "ctSubmitted": "证书已提交到CT日志",
+    "ctSubmitFailed": "提交到CT日志失败",
+    "ctScts": "CT SCTs",
+    "ctSctsCount": "已记录{{count}}个SCT",
+    "ctNoScts": "无SCT — 未提交到CT日志"
   },
   "cas": {
     "parentCA": "父CA",
@@ -1291,7 +1297,18 @@
     "cpsEnabled": "CPS 已启用",
     "cpsUri": "CPS URI",
     "cpsOid": "策略 OID",
-    "cpsOidNote": "默认：2.5.29.32.0 (anyPolicy)。使用自定义 OID 来设置组织特定策略。"
+    "cpsOidNote": "默认：2.5.29.32.0 (anyPolicy)。使用自定义 OID 来设置组织特定策略。",
+    "delegatedResponder": "委托响应者",
+    "delegatedResponderDescription": "委托OCSP响应者使用具有OCSPSigning EKU的专用证书来签署响应，而不是使用CA密钥",
+    "delegatedResponderNone": "未配置委托响应者 — 使用CA密钥",
+    "delegatedResponderSet": "委托OCSP响应者已配置",
+    "delegatedResponderRemoved": "委托OCSP响应者已移除",
+    "delegatedResponderFailed": "配置委托响应者失败",
+    "delegatedResponderRemoveFailed": "移除委托响应者失败",
+    "selectResponder": "选择响应者证书",
+    "noEligibleResponders": "未找到符合条件的证书。证书需要OCSPSigning EKU和私钥。",
+    "removeResponder": "移除响应者",
+    "assignResponder": "分配响应者"
   },
   "trustStore": {
     "caTrust": "CA 信任",
@@ -1763,7 +1780,8 @@
       "updates": "更新",
       "webhooks": "Webhooks",
       "about": "关于",
-      "microsoftCA": "Microsoft CA"
+      "microsoftCA": "Microsoft CA",
+      "ct": "CT"
     },
     "testRecipient": "测试收件人",
     "testRecipientRequired": "请输入测试收件人电子邮件地址",
@@ -1891,7 +1909,15 @@
     "currentReleaseNotes": "发行说明 — v{{version}}",
     "updateReleaseNotes": "v{{version}} 新功能",
     "httpProtocolPort": "HTTP协议端口",
-    "httpProtocolPortHelper": "用于CDP/OCSP端点的HTTP明文服务器端口。设为0禁用。需要重启。"
+    "httpProtocolPortHelper": "用于CDP/OCSP端点的HTTP明文服务器端口。设为0禁用。需要重启。",
+    "ct": "证书透明度",
+    "ctDescription": "将证书提交到公共CT日志以提高透明度和可审计性",
+    "ctEnabled": "启用证书透明度",
+    "ctAutoSubmit": "自动将新证书提交到CT日志",
+    "ctLogUrls": "CT日志URL",
+    "ctAddLogUrl": "添加CT日志URL",
+    "ctSettingsUpdated": "CT设置已更新",
+    "ctSettingsFailed": "更新CT设置失败"
   },
   "account": {
     "profile": "个人资料",
@@ -2402,7 +2428,8 @@
       "crlDP": "CRL 分发点",
       "aia": "颁发机构信息访问",
       "policies": "证书策略",
-      "nameConstraints": "名称约束"
+      "nameConstraints": "名称约束",
+      "sct": "签名证书时间戳（SCT）"
     },
     "subjectAltNames": "主题备用名称"
   },

@@ -707,7 +707,13 @@
       "selfSigned": "Self-Signed"
     },
     "approvalRequired": "Certificate request submitted for approval (policy: {{policy}})",
-    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)"
+    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)",
+    "submitToCT": "Submit to CT",
+    "ctSubmitted": "Certificate submitted to CT logs",
+    "ctSubmitFailed": "Failed to submit to CT logs",
+    "ctScts": "CT SCTs",
+    "ctSctsCount": "{{count}} SCT(s) recorded",
+    "ctNoScts": "No SCTs — not submitted to CT logs"
   },
   "cas": {
     "parentCA": "Parent CA",
@@ -1291,7 +1297,18 @@
     "cpsEnabled": "CPS Enabled",
     "cpsUri": "CPS URI",
     "cpsOid": "Policy OID",
-    "cpsOidNote": "Default: 2.5.29.32.0 (anyPolicy). Use a custom OID for organization-specific policies."
+    "cpsOidNote": "Default: 2.5.29.32.0 (anyPolicy). Use a custom OID for organization-specific policies.",
+    "delegatedResponder": "Delegated Responder",
+    "delegatedResponderDescription": "A delegated OCSP responder uses a dedicated certificate with OCSPSigning EKU to sign responses instead of the CA key",
+    "delegatedResponderNone": "No delegated responder configured — using CA key",
+    "delegatedResponderSet": "Delegated OCSP responder configured",
+    "delegatedResponderRemoved": "Delegated OCSP responder removed",
+    "delegatedResponderFailed": "Failed to configure delegated responder",
+    "delegatedResponderRemoveFailed": "Failed to remove delegated responder",
+    "selectResponder": "Select Responder Certificate",
+    "noEligibleResponders": "No eligible certificates found. A certificate needs OCSPSigning EKU and private key.",
+    "removeResponder": "Remove Responder",
+    "assignResponder": "Assign Responder"
   },
   "trustStore": {
     "caTrust": "CA Trust",
@@ -1764,7 +1781,8 @@
       "updates": "Updates",
       "webhooks": "Webhooks",
       "about": "About",
-      "microsoftCA": "Microsoft CA"
+      "microsoftCA": "Microsoft CA",
+      "ct": "CT"
     },
     "testRecipient": "Test recipient",
     "testRecipientRequired": "Enter a recipient email address for the test",
@@ -1892,7 +1910,15 @@
     "currentReleaseNotes": "Release Notes — v{{version}}",
     "updateReleaseNotes": "What's New in v{{version}}",
     "httpProtocolPort": "HTTP Protocol Port",
-    "httpProtocolPortHelper": "Port for the plain HTTP server serving CDP/OCSP endpoints. Set to 0 to disable. Requires restart."
+    "httpProtocolPortHelper": "Port for the plain HTTP server serving CDP/OCSP endpoints. Set to 0 to disable. Requires restart.",
+    "ct": "Certificate Transparency",
+    "ctDescription": "Submit certificates to public CT logs for transparency and auditability",
+    "ctEnabled": "Enable Certificate Transparency",
+    "ctAutoSubmit": "Auto-submit new certificates to CT logs",
+    "ctLogUrls": "CT Log URLs",
+    "ctAddLogUrl": "Add CT Log URL",
+    "ctSettingsUpdated": "CT settings updated",
+    "ctSettingsFailed": "Failed to update CT settings"
   },
   "account": {
     "profile": "Profile",
@@ -2405,7 +2431,8 @@
       "crlDP": "CRL Distribution Points",
       "aia": "Authority Information Access",
       "policies": "Certificate Policies",
-      "nameConstraints": "Name Constraints"
+      "nameConstraints": "Name Constraints",
+      "sct": "Signed Certificate Timestamps (SCT)"
     },
     "subjectAltNames": "Subject Alternative Names"
   },

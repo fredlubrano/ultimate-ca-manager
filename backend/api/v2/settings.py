@@ -9,6 +9,7 @@ from utils.response import success_response, error_response, created_response
 from models import db, SystemConfig
 from services.audit_service import AuditService
 from datetime import datetime, timezone
+import json
 import logging
 from utils.datetime_utils import utc_now
 logger = logging.getLogger(__name__)
@@ -977,3 +978,47 @@ def get_backup_history():
         ],
         meta={'total': 1, 'page': page, 'per_page': per_page}
     )
+
+
+# --- Certificate Transparency (CT) ---
+
+@bp.route('/api/v2/settings/ct', methods=['GET'])
+@require_auth(['read:settings'])
+def get_ct_settings():
+    """Get Certificate Transparency configuration."""
+    return success_response(data={
+        'enabled': get_config('ct_enabled', 'false') == 'true',
+        'log_urls': json.loads(get_config('ct_log_urls', '[]')),
+        'auto_submit': get_config('ct_auto_submit', 'false') == 'true',
+    })
+
+
+@bp.route('/api/v2/settings/ct', methods=['PATCH'])
+@require_auth(['admin:settings'])
+def update_ct_settings():
+    """Update Certificate Transparency configuration."""
+    data = request.get_json()
+
+    if 'enabled' in data:
+        set_config('ct_enabled', 'true' if data['enabled'] else 'false')
+    if 'log_urls' in data:
+        if not isinstance(data['log_urls'], list):
+            return error_response('log_urls must be a list', 400)
+        set_config('ct_log_urls', json.dumps(data['log_urls']))
+    if 'auto_submit' in data:
+        set_config('ct_auto_submit', 'true' if data['auto_submit'] else 'false')
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to update CT settings: {e}")
+        return error_response('Failed to update CT settings', 500)
+
+    AuditService.log_action(
+        'ct_settings_updated',
+        resource_type='settings',
+        details='Certificate Transparency settings updated'
+    )
+
+    return success_response(message='CT settings updated')

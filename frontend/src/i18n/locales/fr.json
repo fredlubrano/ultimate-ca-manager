@@ -590,7 +590,13 @@
       "selfSigned": "Auto-signé"
     },
     "approvalRequired": "Demande de certificat soumise pour approbation (politique : {{policy}})",
-    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)"
+    "ocspMustStaple": "OCSP Must-Staple (RFC 6066)",
+    "submitToCT": "Soumettre au CT",
+    "ctSubmitted": "Certificat soumis aux journaux CT",
+    "ctSubmitFailed": "Échec de la soumission aux journaux CT",
+    "ctScts": "SCTs CT",
+    "ctSctsCount": "{{count}} SCT(s) enregistré(s)",
+    "ctNoScts": "Aucun SCT — non soumis aux journaux CT"
   },
   "common": {
     "saved": "Paramètres enregistrés",
@@ -1080,7 +1086,18 @@
     "cpsEnabled": "CPS activé",
     "cpsUri": "URI CPS",
     "cpsOid": "OID de politique",
-    "cpsOidNote": "Par défaut : 2.5.29.32.0 (anyPolicy). Utilisez un OID personnalisé pour les politiques spécifiques."
+    "cpsOidNote": "Par défaut : 2.5.29.32.0 (anyPolicy). Utilisez un OID personnalisé pour les politiques spécifiques.",
+    "delegatedResponder": "Répondeur délégué",
+    "delegatedResponderDescription": "Un répondeur OCSP délégué utilise un certificat dédié avec l'EKU OCSPSigning pour signer les réponses au lieu de la clé CA",
+    "delegatedResponderNone": "Aucun répondeur délégué configuré — utilisation de la clé CA",
+    "delegatedResponderSet": "Répondeur OCSP délégué configuré",
+    "delegatedResponderRemoved": "Répondeur OCSP délégué supprimé",
+    "delegatedResponderFailed": "Échec de la configuration du répondeur délégué",
+    "delegatedResponderRemoveFailed": "Échec de la suppression du répondeur délégué",
+    "selectResponder": "Sélectionner le certificat répondeur",
+    "noEligibleResponders": "Aucun certificat éligible trouvé. Un certificat nécessite l'EKU OCSPSigning et une clé privée.",
+    "removeResponder": "Supprimer le répondeur",
+    "assignResponder": "Assigner le répondeur"
   },
   "csrs": {
     "uploadCSR": "Téléverser une CSR",
@@ -1273,7 +1290,8 @@
       "crlDP": "Points de distribution CRL",
       "aia": "Accès aux informations de l'autorité",
       "policies": "Politiques du certificat",
-      "nameConstraints": "Contraintes de noms"
+      "nameConstraints": "Contraintes de noms",
+      "sct": "Horodatages de certificats signés (SCT)"
     },
     "subjectAltNames": "Noms alternatifs du sujet"
   },
@@ -1813,7 +1831,8 @@
       "updates": "Mises à jour",
       "webhooks": "Webhooks",
       "about": "À propos",
-      "microsoftCA": "Microsoft CA"
+      "microsoftCA": "Microsoft CA",
+      "ct": "CT"
     },
     "systemNameHelper": "Nom d'affichage du système UCM",
     "baseUrl": "URL de base",
@@ -2070,7 +2089,15 @@
     "currentReleaseNotes": "Notes de version — v{{version}}",
     "updateReleaseNotes": "Nouveautés de la v{{version}}",
     "httpProtocolPort": "Port HTTP protocole",
-    "httpProtocolPortHelper": "Port du serveur HTTP non chiffré pour les points d'accès CDP/OCSP. Mettre à 0 pour désactiver. Nécessite un redémarrage."
+    "httpProtocolPortHelper": "Port du serveur HTTP non chiffré pour les points d'accès CDP/OCSP. Mettre à 0 pour désactiver. Nécessite un redémarrage.",
+    "ct": "Transparence des certificats",
+    "ctDescription": "Soumettre les certificats aux journaux CT publics pour la transparence et l'auditabilité",
+    "ctEnabled": "Activer la transparence des certificats",
+    "ctAutoSubmit": "Soumission automatique des nouveaux certificats aux journaux CT",
+    "ctLogUrls": "URL des journaux CT",
+    "ctAddLogUrl": "Ajouter une URL de journal CT",
+    "ctSettingsUpdated": "Paramètres CT mis à jour",
+    "ctSettingsFailed": "Échec de la mise à jour des paramètres CT"
   },
   "sso": {
     "subtitle": "Configurez des fournisseurs LDAP, OAuth2 ou SAML pour une authentification centralisée",

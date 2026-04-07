@@ -92,5 +92,14 @@ export const settingsService = {
 
   async testSyslog() {
     return apiClient.post('/system/audit/syslog/test')
+  },
+
+  // Certificate Transparency
+  async getCTSettings() {
+    return apiClient.get('/settings/ct')
+  },
+
+  async updateCTSettings(data) {
+    return apiClient.patch('/settings/ct', data)
   }
 }

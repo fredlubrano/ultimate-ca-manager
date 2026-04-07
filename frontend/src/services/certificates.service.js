@@ -81,5 +81,9 @@ export const certificatesService = {
 
   async getComplianceStats() {
     return apiClient.get('/certificates/compliance')
+  },
+
+  async submitToCT(certId) {
+    return apiClient.post(`/certificates/${certId}/submit-ct`)
   }
 }

@@ -196,6 +196,18 @@ def parse_certificate_extensions(pem_data):
             nc_data['excluded'] = [str(s.value) if hasattr(s, 'value') else str(s) for s in nc.excluded_subtrees]
         extensions['name_constraints'] = nc_data
 
+    # Signed Certificate Timestamps (SCT) — RFC 6962
+    SCT_OID = x509.ObjectIdentifier("1.3.6.1.4.1.11129.2.4.2")
+    try:
+        sct_ext = cert.extensions.get_extension_for_oid(SCT_OID)
+        if sct_ext:
+            extensions['signed_certificate_timestamps'] = {
+                'present': True,
+                'critical': sct_ext.critical,
+            }
+    except x509.ExtensionNotFound:
+        pass
+
     return extensions
 
 
