@@ -159,10 +159,17 @@ def verify_jws(jws_data: Dict[str, Any], expected_url: str, account_key: Optiona
                     # Existing account - use stored account key
                     key_to_verify = account_key
                 else:
-                    # KID provided but no account key available
-                    # This happens when we need to fetch the account first
-                    # For now, accept it (will be validated when account is fetched)
-                    return True, payload, jwk, None
+                    # KID provided — look up account to get key
+                    try:
+                        # Extract account ID from KID URL
+                        acct_id = kid.rstrip('/').split('/')[-1]
+                        account = AcmeAccount.query.filter_by(id=int(acct_id)).first()
+                        if account and account.status == 'valid':
+                            key_to_verify = json.loads(account.public_key) if isinstance(account.public_key, str) else account.public_key
+                        else:
+                            return False, None, None, "Account not found or deactivated"
+                    except (ValueError, TypeError):
+                        return False, None, None, "Invalid KID format"
             
             if not key_to_verify:
                 return False, None, None, "No key available for verification"
@@ -292,7 +299,8 @@ def directory():
     
     # Check if EAB is required
     from models import SystemConfig
-    eab_required = SystemConfig.get('acme_eab_required', 'false').lower() == 'true'
+    eab_config = SystemConfig.query.filter_by(key='acme_eab_required').first()
+    eab_required = (eab_config.value if eab_config else 'false').lower() == 'true'
     
     # Add metadata
     directory_data['meta'] = {
@@ -383,7 +391,8 @@ def new_account():
         # Validate EAB if required (RFC 8555 §7.3.4)
         eab_data = payload.get('externalAccountBinding')
         from models import SystemConfig
-        eab_required = SystemConfig.get('acme_eab_required', 'false').lower() == 'true'
+        eab_config = SystemConfig.query.filter_by(key='acme_eab_required').first()
+        eab_required = (eab_config.value if eab_config else 'false').lower() == 'true'
         
         if eab_required and not eab_data:
             return acme_error('externalAccountRequired', 'External account binding required')
@@ -919,6 +928,8 @@ def respond_to_challenge(challenge_id: str):
             success = service.validate_http01_challenge(challenge, account)
         elif challenge.type == "dns-01":
             success = service.validate_dns01_challenge(challenge, account)
+        elif challenge.type == "tls-alpn-01":
+            success = service.validate_tls_alpn01_challenge(challenge, account)
         else:
             return acme_error('unsupportedType', f'Challenge type {challenge.type} not supported')
         
@@ -1144,11 +1155,20 @@ def key_change():
         if not old_key or old_key != current_jwk:
             return acme_error('malformed', 'Old key does not match account key')
         
+        # Verify new key differs from old key
+        if jwk == current_jwk:
+            return acme_error('malformed', 'New key must differ from old key')
+        
         # Update account JWK
         if jwk:
-            account.jwk = json.dumps(jwk)
-            account.jwk_thumbprint = service._compute_jwk_thumbprint(jwk)
-            db.session.commit()
+            try:
+                account.jwk = json.dumps(jwk)
+                account.jwk_thumbprint = service._compute_jwk_thumbprint(jwk)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.error(f"Failed to update account key: {e}")
+                return acme_error('serverInternal', 'Failed to update account key', 500)
         
         account_url_full = f"{service.base_url}/acme/acct/{account.account_id}"
         response_data = {

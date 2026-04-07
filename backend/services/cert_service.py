@@ -372,7 +372,7 @@ class CertificateService:
         ca_cert_pem = base64.b64decode(ca.crt)
         ca_cert = x509.load_pem_x509_certificate(ca_cert_pem, default_backend())
         
-        ca_key_pem = base64.b64decode(ca.prv)
+        ca_key_pem = base64.b64decode(decrypt_private_key(ca.prv))
         ca_private_key = serialization.load_pem_private_key(
             ca_key_pem, password=None, backend=default_backend()
         )
@@ -689,7 +689,7 @@ class CertificateService:
             if not certificate.prv:
                 raise ValueError("Certificate has no private key")
             
-            key_pem = base64.b64decode(certificate.prv)
+            key_pem = base64.b64decode(decrypt_private_key(certificate.prv))
             return TrustStoreService.export_pkcs12(
                 cert_pem, key_pem, password, certificate.descr
             )
@@ -781,7 +781,7 @@ class CertificateService:
             if not certificate.prv:
                 raise ValueError("Certificate has no private key")
             
-            key_pem = base64.b64decode(certificate.prv)
+            key_pem = base64.b64decode(decrypt_private_key(certificate.prv))
             return TrustStoreService.export_pkcs12(
                 cert_pem, key_pem, password, certificate.descr
             )
@@ -794,7 +794,7 @@ class CertificateService:
             result = cert_pem
             
             if include_key and certificate.prv:
-                key_pem = base64.b64decode(certificate.prv)
+                key_pem = base64.b64decode(decrypt_private_key(certificate.prv))
                 # Ensure proper newline separation
                 if not result.endswith(b'\n'):
                     result += b'\n'

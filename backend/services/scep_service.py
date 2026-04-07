@@ -16,6 +16,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.x509.oid import NameOID, ExtensionOID
 from Crypto.Cipher import DES3, AES
 from Crypto.Protocol.KDF import PBKDF2
+from security.encryption import decrypt_private_key
 import asn1crypto.core
 import asn1crypto.cms
 import asn1crypto.x509
@@ -73,7 +74,7 @@ class SCEPService:
             base64.b64decode(self.ca.crt), default_backend()
         )
         self.ca_key = serialization.load_pem_private_key(
-            base64.b64decode(self.ca.prv),
+            base64.b64decode(decrypt_private_key(self.ca.prv)),
             password=None,
             backend=default_backend()
         )
@@ -195,14 +196,10 @@ class SCEPService:
                     
                     # Decrypt the encrypted content to get CSR
                     if '1.3.14.3.2.7' in alg_oid:  # DES
-                        # DES-CBC
-                        from Crypto.Cipher import DES
-                        cipher = DES.new(content_encryption_key, DES.MODE_CBC, iv)
-                        csr_data = cipher.decrypt(encrypted_content_bytes)
-                        # Remove PKCS#7 padding
-                        pad_len = csr_data[-1]
-                        csr_data = csr_data[:-pad_len]
+                        logger.warning("SCEP client using DES encryption — rejected (insecure)")
+                        raise ValueError("DES encryption is not supported — use AES or 3DES")
                     elif '1.2.840.113549.3.7' in alg_oid:  # 3DES
+                        logger.warning("SCEP client using 3DES encryption — deprecated, prefer AES")
                         cipher = DES3.new(content_encryption_key, DES3.MODE_CBC, iv)
                         csr_data = cipher.decrypt(encrypted_content_bytes)
                         # Remove PKCS#7 padding

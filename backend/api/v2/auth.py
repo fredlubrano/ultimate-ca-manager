@@ -302,7 +302,8 @@ def _is_email_configured():
     """Check if email/SMTP is configured"""
     from models import SystemConfig
     try:
-        smtp_host = SystemConfig.get('smtp_host')
+        smtp_config = SystemConfig.query.filter_by(key='smtp_host').first()
+        smtp_host = smtp_config.value if smtp_config else ''
         return bool(smtp_host and smtp_host.strip())
     except Exception:
         return False

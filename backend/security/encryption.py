@@ -178,6 +178,44 @@ class KeyEncryption:
     def key_file_exists() -> bool:
         return MASTER_KEY_PATH.exists()
 
+    def encrypt_string(self, plaintext: str) -> str:
+        """Encrypt a plaintext string (e.g., LDAP bind password). Returns prefixed base64."""
+        if not self._enabled or not plaintext:
+            return plaintext
+        try:
+            encrypted = self._fernet.encrypt(plaintext.encode('utf-8'))
+            marked = ENCRYPTED_MARKER + encrypted
+            return base64.b64encode(marked).decode('utf-8')
+        except Exception as e:
+            logger.error(f"String encryption failed: {e}")
+            return plaintext
+
+    def decrypt_string(self, data: str) -> str:
+        """Decrypt a string encrypted with encrypt_string(). Returns plaintext."""
+        if not data:
+            return data
+        try:
+            decoded = base64.b64decode(data)
+            if not decoded.startswith(ENCRYPTED_MARKER):
+                return data
+            if not self._enabled:
+                logger.error("Cannot decrypt: encryption key not available")
+                return data
+            encrypted_data = decoded[len(ENCRYPTED_MARKER):]
+            return self._fernet.decrypt(encrypted_data).decode('utf-8')
+        except Exception:
+            return data
+
+    def is_string_encrypted(self, data: str) -> bool:
+        """Check if a string is encrypted with our marker."""
+        if not data:
+            return False
+        try:
+            decoded = base64.b64decode(data)
+            return decoded.startswith(ENCRYPTED_MARKER)
+        except Exception:
+            return False
+
 
 def decrypt_private_key(encoded_data: str) -> str:
     """Decrypt private key data. Handles both encrypted and unencrypted transparently."""
@@ -291,44 +329,6 @@ def has_encrypted_keys_in_db() -> bool:
     
     return False
 
-
-    def encrypt_string(self, plaintext: str) -> str:
-        """Encrypt a plaintext string (e.g., LDAP bind password). Returns prefixed base64."""
-        if not self._enabled or not plaintext:
-            return plaintext
-        try:
-            encrypted = self._fernet.encrypt(plaintext.encode('utf-8'))
-            marked = ENCRYPTED_MARKER + encrypted
-            return base64.b64encode(marked).decode('utf-8')
-        except Exception as e:
-            logger.error(f"String encryption failed: {e}")
-            return plaintext
-
-    def decrypt_string(self, data: str) -> str:
-        """Decrypt a string encrypted with encrypt_string(). Returns plaintext."""
-        if not data:
-            return data
-        try:
-            decoded = base64.b64decode(data)
-            if not decoded.startswith(ENCRYPTED_MARKER):
-                return data  # Not encrypted, return as-is
-            if not self._enabled:
-                logger.error("Cannot decrypt: encryption key not available")
-                return data
-            encrypted_data = decoded[len(ENCRYPTED_MARKER):]
-            return self._fernet.decrypt(encrypted_data).decode('utf-8')
-        except Exception:
-            return data  # Return as-is if decryption fails
-
-    def is_string_encrypted(self, data: str) -> bool:
-        """Check if a string is encrypted with our marker."""
-        if not data:
-            return False
-        try:
-            decoded = base64.b64decode(data)
-            return decoded.startswith(ENCRYPTED_MARKER)
-        except Exception:
-            return False
 
 # Singleton instance
 key_encryption = KeyEncryption()

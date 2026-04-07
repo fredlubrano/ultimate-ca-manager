@@ -693,7 +693,7 @@ def install_dependencies():
             )
         else:
             return error_response(
-                f'Installation failed: {result.stderr}',
+                'HSM dependency installation failed',
                 500
             )
             

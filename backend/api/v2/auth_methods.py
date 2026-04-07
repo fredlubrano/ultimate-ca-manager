@@ -197,10 +197,23 @@ def login_password():
         )
         return error_response('Invalid credentials', 401)
     
+    # Check account lockout (5 failed attempts = 15 min lockout)
+    MAX_FAILED = 5
+    LOCKOUT_MINUTES = 15
+    if user.locked_until and utc_now() < user.locked_until:
+        return error_response('Account temporarily locked. Try again later.', 429)
+    if user.locked_until and utc_now() >= user.locked_until:
+        user.locked_until = None
+        user.failed_logins = 0
+        db.session.commit()
+    
     # Verify password
     if not user.check_password(password):
         # Increment failed login counter
         user.failed_logins = (user.failed_logins or 0) + 1
+        if user.failed_logins >= MAX_FAILED:
+            user.locked_until = utc_now() + timedelta(minutes=LOCKOUT_MINUTES)
+            logger.warning(f"Account {username} locked after {MAX_FAILED} failed attempts")
         db.session.commit()
         AuditService.log_action(
             action='login_failure',
@@ -245,10 +258,13 @@ def login_password():
         )
     
     # No 2FA — create full session
+    now = utc_now()
     session.clear()
     session['user_id'] = user.id
     session['username'] = user.username
     session['auth_method'] = 'password'
+    session['login_time'] = now.isoformat()
+    session['last_activity'] = now.isoformat()
     session.permanent = True
     
     # Get permissions
@@ -375,10 +391,13 @@ def login_2fa():
     
     # 2FA verified — create full session
     _clear_2fa_failures(lockout_key, _2fa_failed_attempts)
+    now = utc_now()
     session.clear()
     session['user_id'] = user.id
     session['username'] = user.username
     session['auth_method'] = auth_method
+    session['login_time'] = now.isoformat()
+    session['last_activity'] = now.isoformat()
     session.permanent = True
     
     permissions = get_role_permissions(user.role)
@@ -458,11 +477,14 @@ def login_mtls():
     db.session.commit()
     
     # Create session
+    now = utc_now()
     session.clear()
     session['user_id'] = user.id
     session['username'] = user.username
     session['auth_method'] = 'mtls'
     session['cert_serial'] = auth_cert.cert_serial
+    session['login_time'] = now.isoformat()
+    session['last_activity'] = now.isoformat()
     session.permanent = True
     
     # Get permissions
@@ -609,10 +631,13 @@ def webauthn_verify():
         db.session.commit()
         
         # Create session
+        now = utc_now()
         session.clear()
         session['user_id'] = user.id
         session['username'] = user.username
         session['auth_method'] = 'webauthn'
+        session['login_time'] = now.isoformat()
+        session['last_activity'] = now.isoformat()
         session.permanent = True
         
         # Get permissions

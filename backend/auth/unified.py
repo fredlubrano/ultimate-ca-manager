@@ -306,9 +306,7 @@ def require_auth(permissions=None):
                         if not has_permission(perm, user_perms):
                             return jsonify({
                                 'error': 'Forbidden',
-                                'message': f'Missing permission: {perm}',
-                                'required': perm,
-                                'has': user_perms
+                                'message': 'Insufficient permissions'
                             }), 403
             
             # Inject auth info into Flask's g object

@@ -214,7 +214,7 @@ preload_app = True
 # Server mechanics
 daemon = False
 pidfile = None
-umask = 0
+umask = 0o027
 user = None
 group = None
 tmp_upload_dir = None

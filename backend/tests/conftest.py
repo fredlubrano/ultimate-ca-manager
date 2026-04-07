@@ -29,6 +29,7 @@ def app():
     os.environ['HTTP_REDIRECT'] = 'false'
     os.environ['INITIAL_ADMIN_PASSWORD'] = 'changeme123'
     os.environ['CSRF_DISABLED'] = 'true'
+    os.environ['UCM_DEV_MODE'] = 'true'
 
     with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as f:
         os.environ['UCM_DATABASE_PATH'] = f.name

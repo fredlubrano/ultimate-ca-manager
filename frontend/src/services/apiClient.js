@@ -131,7 +131,9 @@ class APIClient {
         const error = new Error(msg)
         error.status = response.status
         error.data = data
-        console.error(`❌ API error ${response.status}:`, error.message)
+        if (import.meta.env.DEV) {
+          console.error(`❌ API error ${response.status}:`, error.message)
+        }
         
         // Redirect to login on 401 (unless already on login page OR this is the login/verify request)
         const isLoginPage = window.location.pathname.includes('/login')

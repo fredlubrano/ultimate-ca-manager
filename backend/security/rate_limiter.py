@@ -367,7 +367,7 @@ def init_rate_limiter(app=None) -> RateLimiter:
             if request.path.startswith('/static') or request.path in ['/health', '/api/health', '/api/v2/health']:
                 return None
             
-            ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+            ip = request.remote_addr
             if ip and ',' in ip:
                 ip = ip.split(',')[0].strip()
             
@@ -425,7 +425,7 @@ def rate_limit(rpm: int = None, burst: int = None):
         def wrapper(*args, **kwargs):
             limiter = get_rate_limiter()
             
-            ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+            ip = request.remote_addr
             if ip and ',' in ip:
                 ip = ip.split(',')[0].strip()
             

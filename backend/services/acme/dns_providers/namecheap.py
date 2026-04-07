@@ -3,7 +3,7 @@ Namecheap DNS Provider
 https://www.namecheap.com/support/api/methods.aspx
 """
 import requests
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from typing import Tuple, Dict, Any, Optional, List
 import logging
 

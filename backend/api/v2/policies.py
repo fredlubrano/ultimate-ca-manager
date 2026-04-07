@@ -12,6 +12,7 @@ import json
 import logging
 import base64
 import uuid
+from security.encryption import decrypt_private_key
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ def _issue_approved_certificate(approval):
     # Load CA cert and key
     ca_cert_pem = base64.b64decode(ca.crt)
     ca_cert = x509.load_pem_x509_certificate(ca_cert_pem, default_backend())
-    ca_key_pem = base64.b64decode(ca.prv)
+    ca_key_pem = base64.b64decode(decrypt_private_key(ca.prv))
     ca_key = serialization.load_pem_private_key(ca_key_pem, password=None, backend=default_backend())
     
     # Generate key pair

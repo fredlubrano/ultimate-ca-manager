@@ -148,7 +148,8 @@ def reset_db():
             email='admin@localhost',
             password_hash=generate_password_hash('changeme123'),
             role='admin',
-            is_active=True
+            is_active=True,
+            force_password_change=True
         )
         db.session.add(admin)
         db.session.commit()

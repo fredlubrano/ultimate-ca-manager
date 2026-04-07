@@ -18,6 +18,7 @@ import hashlib
 import io
 import re
 import uuid
+from security.encryption import decrypt_private_key
 import logging
 logger = logging.getLogger(__name__)
 
@@ -841,7 +842,7 @@ def create_user_mtls_certificate(user_id):
             db.session.add(auth_cert)
             db.session.commit()
 
-            key_pem = base64.b64decode(result.prv).decode('utf-8') if result.prv else ''
+            key_pem = base64.b64decode(decrypt_private_key(result.prv)).decode('utf-8') if result.prv else ''
 
             AuditService.log_action(
                 action='admin_mtls_generate',

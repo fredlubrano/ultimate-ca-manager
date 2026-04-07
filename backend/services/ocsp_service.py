@@ -134,6 +134,63 @@ class OCSPService:
         except Exception:
             return None
     
+    def _get_delegated_responder(self, ca: CA):
+        """
+        Check if CA has a delegated OCSP responder certificate (RFC 5019/6960).
+        
+        A delegated responder is a certificate issued by the CA with:
+        - id-kp-OCSPSigning EKU (OID 1.3.6.1.5.5.7.3.9)
+        - The OCSP No Check extension (OID 1.3.6.1.5.5.7.48.1.5)
+        
+        Returns (responder_cert, responder_key) or (None, None) if not configured.
+        """
+        from models import SystemConfig
+        
+        # Check if delegated responder is configured for this CA
+        config_row = SystemConfig.query.filter_by(key=f'ocsp_responder_cert_{ca.id}').first()
+        responder_cert_id = config_row.value if config_row else ''
+        if not responder_cert_id:
+            return None, None
+        
+        try:
+            responder_record = Certificate.query.get(int(responder_cert_id))
+            if not responder_record or not responder_record.crt or not responder_record.prv:
+                logger.warning(f"Delegated OCSP responder cert {responder_cert_id} not found or incomplete")
+                return None, None
+            
+            # Load and verify responder certificate has OCSPSigning EKU
+            resp_cert = self._load_cert(responder_record)
+            if not resp_cert:
+                return None, None
+            
+            try:
+                eku = resp_cert.extensions.get_extension_for_class(x509.ExtendedKeyUsage)
+                if x509.oid.ExtendedKeyUsageOID.OCSP_SIGNING not in eku.value:
+                    logger.warning(f"Delegated responder cert {responder_cert_id} missing OCSPSigning EKU")
+                    return None, None
+            except x509.ExtensionNotFound:
+                logger.warning(f"Delegated responder cert {responder_cert_id} has no EKU extension")
+                return None, None
+            
+            # Load responder private key
+            try:
+                from security.encryption import decrypt_private_key
+                prv_decrypted = decrypt_private_key(responder_record.prv)
+            except ImportError:
+                prv_decrypted = responder_record.prv
+            
+            resp_key_pem = base64.b64decode(prv_decrypted).decode('utf-8')
+            resp_key = serialization.load_pem_private_key(
+                resp_key_pem.encode(), password=None, backend=self.backend
+            )
+            
+            logger.debug(f"Using delegated OCSP responder for CA {ca.descr}")
+            return resp_cert, resp_key
+            
+        except Exception as e:
+            logger.error(f"Failed to load delegated OCSP responder: {e}")
+            return None, None
+    
     def generate_response(
         self,
         ca: CA,
@@ -158,6 +215,13 @@ class OCSPService:
             
             # Load CA private key (with decryption and HSM check)
             ca_key = self._load_ca_key(ca)
+            
+            # Check for delegated OCSP responder (RFC 5019/6960)
+            responder_cert, responder_key = self._get_delegated_responder(ca)
+            use_delegated = responder_cert is not None and responder_key is not None
+            
+            signing_cert = responder_cert if use_delegated else ca_cert
+            signing_key = responder_key if use_delegated else ca_key
             
             # Find certificate in database
             cert_serial_hex = format(cert_serial, 'x')
@@ -228,7 +292,7 @@ class OCSPService:
                 )
             
             builder = builder.responder_id(
-                ocsp.OCSPResponderEncoding.HASH, ca_cert
+                ocsp.OCSPResponderEncoding.HASH, signing_cert
             )
             
             # Add nonce if provided (replay protection)
@@ -238,8 +302,12 @@ class OCSPService:
                     critical=False
                 )
             
-            # Sign response with CA key
-            response = builder.sign(ca_key, hashes.SHA256())
+            # Sign response (with CA key or delegated responder key)
+            # For delegated responder, include responder cert chain
+            if use_delegated:
+                response = builder.sign(signing_key, hashes.SHA256())
+            else:
+                response = builder.sign(signing_key, hashes.SHA256())
             response_der = response.public_bytes(serialization.Encoding.DER)
             
             # Cache response

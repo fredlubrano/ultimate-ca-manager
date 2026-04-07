@@ -97,7 +97,6 @@ class TrustStoreService:
     
     # Supported hash algorithms
     HASH_ALGORITHMS = {
-        'sha1': hashes.SHA1(),
         'sha224': hashes.SHA224(),
         'sha256': hashes.SHA256(),
         'sha384': hashes.SHA384(),

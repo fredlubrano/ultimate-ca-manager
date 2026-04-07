@@ -20,6 +20,7 @@ bp = Blueprint('dashboard_v2', __name__)
 
 
 @bp.route('/api/v2/stats/overview', methods=['GET'])
+@require_auth()
 def get_public_stats():
     """Get public overview statistics (no auth required - for login page)"""
     try:
@@ -306,6 +307,7 @@ def get_certificate_trend():
 
 
 @bp.route('/api/v2/dashboard/system-status', methods=['GET'])
+@require_auth()
 def get_system_status():
     """Get system services status (no auth required - for login page)"""
     

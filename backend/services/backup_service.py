@@ -940,7 +940,8 @@ class BackupService:
                     pass
             if ca.prv:
                 try:
-                    prv_pem = base64.b64decode(ca.prv)
+                    from security.encryption import decrypt_private_key
+                    prv_pem = base64.b64decode(decrypt_private_key(ca.prv))
                     p = ca_key_path(ca)
                     Config.PRIVATE_DIR.mkdir(parents=True, exist_ok=True)
                     p.write_bytes(prv_pem)
@@ -970,7 +971,8 @@ class BackupService:
                     pass
             if cert.prv:
                 try:
-                    prv_pem_bytes = base64.b64decode(cert.prv)
+                    from security.encryption import decrypt_private_key
+                    prv_pem_bytes = base64.b64decode(decrypt_private_key(cert.prv))
                     p = cert_key_path(cert)
                     Config.PRIVATE_DIR.mkdir(parents=True, exist_ok=True)
                     p.write_bytes(prv_pem_bytes)

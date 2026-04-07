@@ -621,7 +621,7 @@ def create_app(config_name=None):
     @app.before_request
     def redirect_to_fqdn():
         # Skip for health checks and static files
-        if request.path in ['/api/v2/health', '/api/health', '/health', '/api/auth/verify', '/api/v2/auth/verify'] or request.path.startswith(('/static/', '/assets/', '/cdp/', '/ca/', '/ocsp/', '/scep/', '/acme/', '/.well-known/')):
+        if request.path in ['/api/v2/health', '/api/health', '/health', '/api/auth/verify', '/api/v2/auth/verify'] or request.path.startswith(('/static/', '/assets/', '/cdp/', '/ca/', '/ocsp/', '/scep/', '/acme/', '/.well-known/', '/tsa')):
             return None
         
         # Get configured FQDN - check both UCM_FQDN (Docker) and FQDN env vars
@@ -665,7 +665,7 @@ def create_app(config_name=None):
         def enforce_https():
             if not request.is_secure and request.url.startswith('http://'):
                 # Skip protocol endpoints — CRL/OCSP/SCEP/ACME/EST clients often can't follow redirects
-                if request.path.startswith(('/cdp/', '/ca/', '/ocsp', '/scep/', '/acme/', '/.well-known/')):
+                if request.path.startswith(('/cdp/', '/ca/', '/ocsp', '/scep/', '/acme/', '/.well-known/', '/tsa')):
                     return None
                 url = request.url.replace('http://', 'https://', 1)
                 url = url.replace(f':{config.HTTPS_PORT}', f':{config.HTTPS_PORT}')
@@ -685,7 +685,7 @@ def create_app(config_name=None):
             '/static/', '/assets/', '/favicon',
             '/socket.io/',
             # Protocol endpoints must remain available (revocation, enrollment)
-            '/cdp/', '/ca/', '/ocsp', '/scep/', '/acme/', '/.well-known/',
+            '/cdp/', '/ca/', '/ocsp', '/scep/', '/acme/', '/.well-known/', '/tsa',
         )
         if request.path.startswith(allowed_prefixes):
             return None
@@ -1357,6 +1357,14 @@ def register_blueprints(app):
         from api.est_protocol import bp as est_bp
         app.register_blueprint(est_bp)
         app.logger.info("✓ EST protocol enabled (/.well-known/est)")
+    except ImportError:
+        pass
+    
+    # TSA Protocol (RFC 3161) - /tsa
+    try:
+        from api.tsa_protocol import bp as tsa_bp
+        app.register_blueprint(tsa_bp)
+        app.logger.info("✓ TSA protocol enabled (/tsa)")
     except ImportError:
         pass
     

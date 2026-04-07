@@ -63,31 +63,39 @@ class TestAuthRequired:
 # ============================================================
 
 class TestPublicEndpoints:
-    """Endpoints that do NOT require authentication."""
+    """Endpoints now require authentication (security hardening)."""
 
-    def test_stats_overview_no_auth(self, client):
+    def test_stats_overview_requires_auth(self, client):
         r = client.get(STATS_OVERVIEW)
+        assert r.status_code == 401
+
+    def test_stats_overview_with_auth(self, auth_client):
+        r = auth_client.get(STATS_OVERVIEW)
         data = assert_success(r)
         assert 'total_cas' in data
         assert 'total_certs' in data
         assert 'active_users' in data
 
-    def test_stats_overview_returns_integers(self, client):
-        r = client.get(STATS_OVERVIEW)
+    def test_stats_overview_returns_integers(self, auth_client):
+        r = auth_client.get(STATS_OVERVIEW)
         data = assert_success(r)
         assert isinstance(data['total_cas'], int)
         assert isinstance(data['total_certs'], int)
 
-    def test_system_status_no_auth(self, client):
+    def test_system_status_requires_auth(self, client):
         r = client.get(f'{DASH}/system-status')
+        assert r.status_code == 401
+
+    def test_system_status_with_auth(self, auth_client):
+        r = auth_client.get(f'{DASH}/system-status')
         data = assert_success(r)
         assert 'database' in data
         assert 'core' in data
         assert data['database']['status'] in ('online', 'offline')
         assert data['core']['status'] == 'online'
 
-    def test_system_status_has_services(self, client):
-        r = client.get(f'{DASH}/system-status')
+    def test_system_status_has_services(self, auth_client):
+        r = auth_client.get(f'{DASH}/system-status')
         data = assert_success(r)
         for svc in ('database', 'acme', 'scep', 'core'):
             assert svc in data

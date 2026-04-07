@@ -40,7 +40,9 @@ def global_search():
             'templates': []
         })
     
-    search_pattern = f'%{query}%'
+    # Escape LIKE wildcards in user input
+    safe_query = query.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+    search_pattern = f'%{safe_query}%'
     results = {}
     
     # Search certificates

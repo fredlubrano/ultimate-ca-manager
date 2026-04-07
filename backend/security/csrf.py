@@ -36,9 +36,11 @@ CSRF_EXEMPT_PATHS = [
     '/acme/',                   # ACME protocol
     '/scep/',                   # SCEP protocol  
     '/.well-known/acme',        # ACME challenge
+    '/.well-known/est',         # EST protocol
     '/ocsp',                    # OCSP protocol
     '/cdp/',                    # CRL distribution
     '/ca/',                     # AIA CA Issuers
+    '/tsa',                     # TSA timestamping (RFC 3161)
     '/api/health',              # Health checks
     '/api/v2/health',           # Health checks (v2)
     '/api/v2/mtls/',            # mTLS authentication (cert-based)
@@ -56,8 +58,11 @@ class CSRFProtection:
     @classmethod
     def is_enabled(cls) -> bool:
         """Check if CSRF protection is enabled"""
-        # Can be disabled via env for testing
-        return cls._enabled and os.getenv('CSRF_DISABLED', '').lower() != 'true'
+        # CSRF_DISABLED only honored in development
+        if os.getenv('CSRF_DISABLED', '').lower() == 'true':
+            if os.getenv('FLASK_ENV') == 'development' or os.getenv('UCM_DEV_MODE') == 'true':
+                return False
+        return cls._enabled
     
     @classmethod
     def generate_token(cls, user_id: int) -> str:

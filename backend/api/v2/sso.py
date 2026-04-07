@@ -1363,10 +1363,13 @@ def sso_callback(provider_type):
             db.session.commit()
             
             # Establish Flask session
+            _sso_now = utc_now()
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
             session['auth_method'] = 'sso'
+            session['login_time'] = _sso_now.isoformat()
+            session['last_activity'] = _sso_now.isoformat()
             session.permanent = True
             
             # SEC-07: Audit log SSO login
@@ -1465,10 +1468,13 @@ def sso_callback(provider_type):
             db.session.commit()
             
             # Establish Flask session
+            _saml_now = utc_now()
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
             session['auth_method'] = 'sso'
+            session['login_time'] = _saml_now.isoformat()
+            session['last_activity'] = _saml_now.isoformat()
             session.permanent = True
             
             # SEC-07: Audit log SAML SSO login
@@ -1578,10 +1584,13 @@ def ldap_login():
     db.session.commit()
     
     # Establish Flask session
+    _ldap_now = utc_now()
     session['user_id'] = user.id
     session['username'] = user.username
     session['role'] = user.role
     session['auth_method'] = 'ldap'
+    session['login_time'] = _ldap_now.isoformat()
+    session['last_activity'] = _ldap_now.isoformat()
     session.permanent = True
     
     # Audit log LDAP login success
@@ -1723,8 +1732,8 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
         last_login=utc_now()
     )
     
-    # SSO users don't have a password (they auth via SSO)
-    user.password_hash = ''
+    # SSO users don't have a password — use sentinel that cannot match any hash
+    user.password_hash = '!SSO_NO_PASSWORD!'
     
     db.session.add(user)
     db.session.commit()

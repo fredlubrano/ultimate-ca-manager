@@ -4,6 +4,8 @@ Implements RFC 8555 - Automatic Certificate Management Environment (ACME)
 """
 import secrets
 import json
+import ipaddress
+import socket
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Tuple
 import logging
@@ -37,7 +39,19 @@ class AcmeService:
     }
     
     # Challenge types supported
-    SUPPORTED_CHALLENGES = ["http-01", "dns-01"]
+    SUPPORTED_CHALLENGES = ["http-01", "dns-01", "tls-alpn-01"]
+
+    @staticmethod
+    def _validate_domain_not_private(domain: str) -> None:
+        """Prevent SSRF by blocking private/loopback IPs"""
+        try:
+            addrs = socket.getaddrinfo(domain, None)
+            for _, _, _, _, sockaddr in addrs:
+                ip = ipaddress.ip_address(sockaddr[0])
+                if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
+                    raise ValueError(f"Domain {domain} resolves to private/reserved IP")
+        except socket.gaierror:
+            raise ValueError(f"Cannot resolve domain {domain}")
     
     def __init__(self, base_url: str = "https://localhost:8443"):
         """Initialize ACME service
@@ -418,6 +432,18 @@ class AcmeService:
             validated=validated
         )
         auth.challenges.append(dns_challenge)
+        
+        # TLS-ALPN-01 Challenge (RFC 8737)
+        tls_token = secrets.token_urlsafe(32)
+        tls_challenge = AcmeChallenge(
+            authorization_id=auth.authorization_id,
+            type="tls-alpn-01",
+            status=status,
+            token=tls_token,
+            url=f"{self.base_url}/acme/challenge/{secrets.token_urlsafe(16)}",
+            validated=validated
+        )
+        auth.challenges.append(tls_challenge)
     
     def get_order(self, order_id: str) -> Optional[AcmeOrder]:
         """Get order by ID
@@ -474,7 +500,8 @@ class AcmeService:
         url = f"http://{domain}/.well-known/acme-challenge/{challenge.token}"
         
         try:
-            response = requests.get(url, timeout=10)
+            self._validate_domain_not_private(domain)
+            response = requests.get(url, timeout=10, allow_redirects=False)
             response.raise_for_status()
             
             if response.text.strip() == key_authz:
@@ -571,6 +598,102 @@ class AcmeService:
             challenge.status = "invalid"
             challenge.error = json.dumps({
                 "type": "urn:ietf:params:acme:error:dns",
+                "detail": str(e)
+            })
+            try:
+                db.session.commit()
+            except Exception as commit_err:
+                db.session.rollback()
+                logger.error(f"DB commit failed: {commit_err}")
+                raise
+            return False
+    
+    def validate_tls_alpn01_challenge(
+        self,
+        challenge: AcmeChallenge,
+        account: AcmeAccount
+    ) -> bool:
+        """Validate TLS-ALPN-01 challenge (RFC 8737)
+        
+        Connects to the domain on port 443 with the acme-tls/1 ALPN extension,
+        verifies the self-signed certificate contains the acmeIdentifier extension
+        with the correct key authorization hash.
+        
+        Args:
+            challenge: AcmeChallenge object
+            account: AcmeAccount object
+            
+        Returns:
+            True if validation successful
+        """
+        import ssl
+        import socket
+        
+        auth = challenge.authorization
+        identifier = json.loads(auth.identifier)
+        domain = identifier.get("value", "")
+        
+        # Compute key authorization hash
+        key_authz = self._compute_key_authorization(
+            challenge.token,
+            account.jwk_thumbprint
+        )
+        expected_hash = hashlib.sha256(key_authz.encode()).digest()
+        
+        try:
+            # Create SSL context with acme-tls/1 ALPN
+            ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            ctx.set_alpn_protocols(['acme-tls/1'])
+            
+            # Connect to domain (SSRF check)
+            self._validate_domain_not_private(domain)
+            with socket.create_connection((domain, 443), timeout=10) as sock:
+                with ctx.wrap_socket(sock, server_hostname=domain) as ssock:
+                    # Verify ALPN was negotiated
+                    negotiated = ssock.selected_alpn_protocol()
+                    if negotiated != 'acme-tls/1':
+                        raise ValueError(f"ALPN negotiation failed: {negotiated}")
+                    
+                    # Get peer certificate
+                    cert_der = ssock.getpeercert(binary_form=True)
+                    if not cert_der:
+                        raise ValueError("No certificate presented")
+                    
+                    # Parse certificate and check acmeIdentifier extension
+                    from cryptography import x509 as x509_mod
+                    cert = x509_mod.load_der_x509_certificate(cert_der, default_backend())
+                    
+                    # acmeIdentifier OID: 1.3.6.1.5.5.7.1.31
+                    acme_id_oid = x509_mod.ObjectIdentifier("1.3.6.1.5.5.7.1.31")
+                    
+                    try:
+                        ext = cert.extensions.get_extension_for_oid(acme_id_oid)
+                        # UnrecognizedExtension.value returns raw DER bytes directly
+                        ext_value = ext.value.value
+                        # DER-encoded: OCTET STRING tag (0x04) + length (0x20=32)
+                        if len(ext_value) > 2 and ext_value[0] == 0x04:
+                            # Skip the outer OCTET STRING wrapper
+                            actual_hash = ext_value[2:]
+                        else:
+                            actual_hash = ext_value
+                        
+                        if actual_hash == expected_hash:
+                            challenge.status = "valid"
+                            challenge.validated = utc_now()
+                            self._update_authorization_status(auth)
+                            db.session.commit()
+                            return True
+                        else:
+                            raise ValueError("acmeIdentifier hash mismatch")
+                    except x509_mod.ExtensionNotFound:
+                        raise ValueError("Certificate missing acmeIdentifier extension")
+        
+        except Exception as e:
+            challenge.status = "invalid"
+            challenge.error = json.dumps({
+                "type": "urn:ietf:params:acme:error:tls",
                 "detail": str(e)
             })
             try:
@@ -978,7 +1101,8 @@ class AcmeService:
             
             # Look up the HMAC key for this external account
             from models import SystemConfig
-            eab_keys_json = SystemConfig.get('acme_eab_keys', '{}')
+            eab_config = SystemConfig.query.filter_by(key='acme_eab_keys').first()
+            eab_keys_json = eab_config.value if eab_config else '{}'
             try:
                 eab_keys = json.loads(eab_keys_json)
             except Exception:

@@ -388,7 +388,7 @@ def create_certificate():
         # Load CA certificate and key
         ca_cert_pem = base64.b64decode(ca.crt)
         ca_cert = x509.load_pem_x509_certificate(ca_cert_pem, default_backend())
-        ca_key_pem = base64.b64decode(ca.prv)
+        ca_key_pem = base64.b64decode(decrypt_private_key(ca.prv))
         ca_key = serialization.load_pem_private_key(ca_key_pem, password=None, backend=default_backend())
         
         # Generate key pair
@@ -1473,7 +1473,7 @@ def renew_certificate(cert_id):
         # Load CA certificate and key
         ca_cert_pem = base64.b64decode(ca.crt)
         ca_cert = x509.load_pem_x509_certificate(ca_cert_pem, default_backend())
-        ca_key_pem = base64.b64decode(ca.prv)
+        ca_key_pem = base64.b64decode(decrypt_private_key(ca.prv))
         ca_key = serialization.load_pem_private_key(ca_key_pem, password=None, backend=default_backend())
         
         # Generate new key pair (same type and size as original)
@@ -1911,7 +1911,7 @@ def bulk_renew_certificates():
             orig_cert = x509.load_pem_x509_certificate(orig_cert_pem, default_backend())
             ca_cert_pem = base64.b64decode(ca.crt)
             ca_cert = x509.load_pem_x509_certificate(ca_cert_pem, default_backend())
-            ca_key_pem = base64.b64decode(ca.prv)
+            ca_key_pem = base64.b64decode(decrypt_private_key(ca.prv))
             ca_key = serialization.load_pem_private_key(ca_key_pem, password=None, backend=default_backend())
 
             orig_pub_key = orig_cert.public_key()

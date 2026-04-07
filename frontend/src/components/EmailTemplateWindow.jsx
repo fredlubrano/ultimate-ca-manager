@@ -230,7 +230,7 @@ export default function EmailTemplateWindow({ onClose }) {
                 {tab === 'html' ? (
                   <div className="flex-1 overflow-auto bg-[#f4f5f7]">
                     <iframe srcDoc={previewHtml} title="Email Preview"
-                      className="w-full h-full border-0" sandbox="allow-same-origin" style={{ minHeight: '100%' }} />
+                      className="w-full h-full border-0" sandbox="" style={{ minHeight: '100%' }} />
                   </div>
                 ) : (
                   <div className="flex-1 overflow-auto bg-bg-primary p-4">

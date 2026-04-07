@@ -1,0 +1,92 @@
+"""
+RFC 3161 Time-Stamp Protocol (TSP) API Endpoint
+
+Provides /tsa endpoint for timestamp requests.
+"""
+from flask import Blueprint, request, make_response
+import logging
+
+from models import CA
+from config.settings import Config
+
+logger = logging.getLogger(__name__)
+
+bp = Blueprint('tsa', __name__)
+
+
+@bp.route('/tsa', methods=['POST'])
+def timestamp_request():
+    """RFC 3161 Timestamp Request endpoint
+    
+    Accepts: application/timestamp-query (DER-encoded TimeStampReq)
+    Returns: application/timestamp-reply (DER-encoded TimeStampResp)
+    """
+    # Validate content type
+    content_type = request.content_type or ''
+    if 'timestamp-query' not in content_type and 'application/octet-stream' not in content_type:
+        response = make_response('Invalid content type', 400)
+        return response
+    
+    tsp_request = request.data
+    if not tsp_request:
+        response = make_response('Empty request', 400)
+        return response
+    
+    try:
+        from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives.serialization import load_pem_private_key
+        from services.tsa_service import TSAService
+        from models import SystemConfig
+        
+        # Get configured TSA CA
+        tsa_ca_config = SystemConfig.query.filter_by(key='tsa_ca_refid').first()
+        tsa_ca_refid = tsa_ca_config.value if tsa_ca_config else ''
+        if not tsa_ca_refid:
+            # Use first available CA
+            ca = CA.query.filter(CA.crt.isnot(None), CA.prv.isnot(None)).first()
+        else:
+            ca = CA.query.filter_by(refid=tsa_ca_refid).first()
+        
+        if not ca or not ca.crt or not ca.prv:
+            response = make_response('TSA not configured', 503)
+            response.headers['Content-Type'] = 'text/plain'
+            return response
+        
+        # Load CA cert and key
+        import base64
+        ca_cert = x509.load_pem_x509_certificate(
+            base64.b64decode(ca.crt), default_backend()
+        )
+        
+        # Decrypt private key (may be stored encrypted)
+        try:
+            from security.encryption import decrypt_private_key
+            prv_decrypted = decrypt_private_key(ca.prv)
+        except ImportError:
+            prv_decrypted = ca.prv
+        
+        ca_key = load_pem_private_key(
+            base64.b64decode(prv_decrypted), password=None, backend=default_backend()
+        )
+        
+        # Process timestamp request
+        tsa_policy_config = SystemConfig.query.filter_by(key='tsa_policy_oid').first()
+        tsa_policy = tsa_policy_config.value if tsa_policy_config else '1.2.3.4.1'
+        service = TSAService(ca_cert, ca_key, tsa_policy)
+        response_der, status_code = service.process_request(tsp_request)
+        
+        response = make_response(response_der)
+        response.headers['Content-Type'] = 'application/timestamp-reply'
+        return response
+        
+    except ImportError as e:
+        logger.error(f"TSA dependency missing: {e}")
+        response = make_response('TSA not available', 503)
+        response.headers['Content-Type'] = 'text/plain'
+        return response
+    except Exception as e:
+        logger.error(f"TSA error: {e}", exc_info=True)
+        response = make_response('Internal server error', 500)
+        response.headers['Content-Type'] = 'text/plain'
+        return response

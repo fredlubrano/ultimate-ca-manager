@@ -123,6 +123,17 @@ def change_password():
     if len(new_password) < 8:
         return error_response('Password must be at least 8 characters', 400)
     
+    # Password complexity check
+    import re
+    if not re.search(r'[A-Z]', new_password):
+        return error_response('Password must contain at least one uppercase letter', 400)
+    if not re.search(r'[a-z]', new_password):
+        return error_response('Password must contain at least one lowercase letter', 400)
+    if not re.search(r'[0-9]', new_password):
+        return error_response('Password must contain at least one digit', 400)
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~`]', new_password):
+        return error_response('Password must contain at least one special character', 400)
+    
     user = User.query.get(g.current_user.id)
     if not user:
         return error_response('User not found', 404)
@@ -198,13 +209,17 @@ def create_api_key():
     if not isinstance(data['permissions'], list):
         return error_response('Permissions must be a list', 400)
     
-    # Validate permissions format
+    # Validate permissions format — users cannot grant permissions they don't have
+    from auth.permissions import get_role_permissions
+    user_perms = get_role_permissions(g.current_user.role)
     valid_categories = ['read', 'write', 'delete', 'admin']
     valid_resources = ['cas', 'certificates', 'acme', 'scep', 'crl', 'settings', 'users', 'system']
     
     for perm in data['permissions']:
         if perm == '*':
-            continue  # Admin wildcard is OK
+            if '*' not in user_perms:
+                return error_response('Only admins can create wildcard API keys', 403)
+            continue
         
         if ':' in perm:
             category, resource = perm.split(':', 1)
