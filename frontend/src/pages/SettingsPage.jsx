@@ -51,6 +51,7 @@ const BASE_SETTINGS_CATEGORIES = [
   { id: 'https', labelKey: 'settings.tabs.https', icon: Lock, color: 'icon-bg-emerald' },
   { id: 'updates', labelKey: 'settings.tabs.updates', icon: Rocket, color: 'icon-bg-violet' },
   { id: 'webhooks', labelKey: 'settings.tabs.webhooks', icon: Bell, color: 'icon-bg-rose' },
+  { id: 'ct', labelKey: 'settings.tabs.ct', icon: Eye, color: 'icon-bg-cyan' },
   { id: 'microsoftCA', labelKey: 'settings.tabs.microsoftCA', icon: WindowsLogo, color: 'icon-bg-indigo' },
   { id: 'about', labelKey: 'settings.tabs.about', icon: Info, color: 'icon-bg-sky' },
 ]
@@ -1889,6 +1890,12 @@ export default function SettingsPage() {
   const [mtlsLoading, setMtlsLoading] = useState(false)
   const [mtlsSaving, setMtlsSaving] = useState(false)
 
+  // Certificate Transparency state
+  const [ctSettings, setCtSettings] = useState({ enabled: false, auto_submit: false, log_urls: [] })
+  const [ctLoading, setCtLoading] = useState(false)
+  const [ctSaving, setCtSaving] = useState(false)
+  const [ctNewLogUrl, setCtNewLogUrl] = useState('')
+
   // All settings categories (SSO now integrated directly)
   const SETTINGS_CATEGORIES = BASE_SETTINGS_CATEGORIES
 
@@ -1907,6 +1914,7 @@ export default function SettingsPage() {
     loadExpiryAlerts()
     loadSyslogConfig()
     loadMtlsSettings()
+    loadCtSettings()
     systemService.getServiceStatus().then(r => setIsDocker(r.data?.is_docker || false)).catch(() => {})
   }, [])
 

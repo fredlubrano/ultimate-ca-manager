@@ -1147,7 +1147,7 @@ def list_eligible_ocsp_responders(ca_id):
     if not ca:
         return error_response('CA not found', 404)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.utcnow()
     certs = Certificate.query.filter(
         Certificate.caref == ca.refid,
         Certificate.crt.isnot(None),
