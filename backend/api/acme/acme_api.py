@@ -494,6 +494,10 @@ def new_order():
         if not account:
             return acme_error('accountDoesNotExist', 'Account not found', 404)
         
+        # Reject deactivated accounts (RFC 8555 §7.3.6)
+        if account.status == 'deactivated':
+            return acme_error('unauthorized', 'Account is deactivated', 401)
+        
         # Extract order details from payload
         identifiers = payload.get('identifiers', [])
         if not identifiers:
@@ -773,6 +777,10 @@ def respond_to_challenge(challenge_id: str):
         account = service.get_account_by_kid(account_id)
         if not account:
             return acme_error('accountDoesNotExist', 'Account not found', 404)
+        
+        # Reject deactivated accounts (RFC 8555 §7.3.6)
+        if account.status == 'deactivated':
+            return acme_error('unauthorized', 'Account is deactivated', 401)
         
         # Trigger validation based on challenge type
         if challenge.type == "http-01":

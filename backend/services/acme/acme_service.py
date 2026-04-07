@@ -593,6 +593,37 @@ class AcmeService:
         if set(csr_domains) != set(order_domains):
             return False, f"CSR domains {csr_domains} don't match order domains {order_domains}"
         
+        # CAA record check (RFC 6844 + RFC 8555 §8.1)
+        try:
+            from utils.caa_checker import check_caa_for_domains
+            from models import SystemConfig
+            
+            caa_identifiers = []
+            try:
+                caa_cfg = SystemConfig.query.filter_by(key='acme_caa_identifiers').first()
+                if caa_cfg and caa_cfg.value:
+                    caa_identifiers = [v.strip() for v in caa_cfg.value.split(',') if v.strip()]
+            except Exception:
+                pass
+            
+            if not caa_identifiers:
+                # Use server hostname as default CAA identity
+                from flask import request as flask_request
+                try:
+                    caa_identifiers = [flask_request.host.split(':')[0]]
+                except Exception:
+                    pass
+            
+            caa_allowed, caa_reason = check_caa_for_domains(order_domains, caa_identifiers)
+            if not caa_allowed:
+                logger.warning(f"CAA check failed for order {order_id}: {caa_reason}")
+                return False, f"CAA check failed: {caa_reason}"
+            logger.debug(f"CAA check passed for {order_domains}: {caa_reason}")
+        except ImportError:
+            logger.debug("dns.resolver not available, skipping CAA check")
+        except Exception as e:
+            logger.warning(f"CAA check error (non-blocking): {e}")
+        
         # Resolve CA: domain-specific → global default → first available
         if not ca_refid:
             ca_refid = self._resolve_ca_for_domains(order_domains)

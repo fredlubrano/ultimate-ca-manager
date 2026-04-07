@@ -18,6 +18,69 @@ import ipaddress
 from utils.datetime_utils import utc_now
 
 
+def _name_value(name):
+    """Extract string value from an x509.GeneralName."""
+    if isinstance(name, x509.DNSName):
+        return name.value
+    elif isinstance(name, x509.RFC822Name):
+        return name.value
+    elif isinstance(name, x509.IPAddress):
+        return str(name.value)
+    return str(name)
+
+
+def _name_matches_subtree(name, subtree):
+    """Check if a GeneralName matches a NameConstraints subtree (RFC 5280 §4.2.1.10).
+    
+    DNS: ".example.com" matches "sub.example.com" and "example.com"
+    Email: ".example.com" matches "user@example.com" and "user@sub.example.com"
+    IP: network matching (e.g. 10.0.0.0/8 matches 10.1.2.3)
+    """
+    if type(name) != type(subtree):
+        return False
+    
+    if isinstance(name, x509.DNSName):
+        name_val = name.value.lower()
+        constraint_val = subtree.value.lower()
+        # Exact match
+        if name_val == constraint_val:
+            return True
+        # Subtree match: constraint ".example.com" matches "sub.example.com"
+        if constraint_val.startswith('.'):
+            return name_val.endswith(constraint_val) or name_val == constraint_val[1:]
+        # Constraint "example.com" matches "sub.example.com" too (RFC 5280)
+        return name_val == constraint_val or name_val.endswith('.' + constraint_val)
+    
+    elif isinstance(name, x509.RFC822Name):
+        name_val = name.value.lower()
+        constraint_val = subtree.value.lower()
+        if name_val == constraint_val:
+            return True
+        # Domain constraint matches email addresses in that domain
+        if constraint_val.startswith('.'):
+            domain = name_val.split('@')[-1] if '@' in name_val else name_val
+            return domain.endswith(constraint_val) or domain == constraint_val[1:]
+        if '@' not in constraint_val:
+            domain = name_val.split('@')[-1] if '@' in name_val else name_val
+            return domain == constraint_val or domain.endswith('.' + constraint_val)
+        return False
+    
+    elif isinstance(name, x509.IPAddress):
+        try:
+            name_addr = name.value
+            constraint_net = subtree.value
+            if hasattr(constraint_net, 'network_address'):
+                # It's a network — check if the IP is in it
+                if hasattr(name_addr, 'network_address'):
+                    return name_addr.subnet_of(constraint_net)
+                return name_addr in constraint_net
+            return name_addr == constraint_net
+        except Exception:
+            return False
+    
+    return False
+
+
 class TrustStoreService:
     """Service for all cryptographic operations"""
     
@@ -66,6 +129,68 @@ class TrustStoreService:
             elif ctype == 'email':
                 subtrees.append(x509.RFC822Name(value))
         return subtrees if subtrees else None
+    
+    @staticmethod
+    def _validate_name_constraints(ca_cert, subject, san_names=None):
+        """Validate subject and SANs against CA's NameConstraints (RFC 5280 §4.2.1.10).
+        
+        Args:
+            ca_cert: CA x509.Certificate object
+            subject: x509.Name of the certificate being issued
+            san_names: List of x509.GeneralName objects (SANs)
+            
+        Raises:
+            ValueError: If any name violates constraints
+        """
+        try:
+            nc_ext = ca_cert.extensions.get_extension_for_oid(ExtensionOID.NAME_CONSTRAINTS)
+            nc = nc_ext.value
+        except x509.ExtensionNotFound:
+            return  # No constraints — all names allowed
+        
+        permitted = nc.permitted_subtrees or []
+        excluded = nc.excluded_subtrees or []
+        
+        if not permitted and not excluded:
+            return
+        
+        # Collect all DNS names, IPs, emails to validate
+        names_to_check = []
+        
+        # Extract CN from subject
+        try:
+            cn_attrs = subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+            if cn_attrs:
+                cn_val = cn_attrs[0].value
+                # CN could be DNS-like or email-like
+                if '@' in cn_val:
+                    names_to_check.append(x509.RFC822Name(cn_val))
+                else:
+                    names_to_check.append(x509.DNSName(cn_val))
+        except Exception:
+            pass
+        
+        # Add SANs
+        if san_names:
+            names_to_check.extend(san_names)
+        
+        for name in names_to_check:
+            # Check excluded subtrees first (deny takes priority)
+            for exc in excluded:
+                if _name_matches_subtree(name, exc):
+                    raise ValueError(
+                        f"Name '{_name_value(name)}' is excluded by CA NameConstraints"
+                    )
+            
+            # Check permitted subtrees (if any exist, name must match at least one)
+            if permitted:
+                # Only check against permitted subtrees of the same type
+                same_type_permitted = [p for p in permitted if type(p) == type(name)]
+                if same_type_permitted:
+                    if not any(_name_matches_subtree(name, perm) for perm in same_type_permitted):
+                        raise ValueError(
+                            f"Name '{_name_value(name)}' is not in CA's permitted NameConstraints"
+                        )
     
     @staticmethod
     def generate_private_key(key_type: str):
@@ -613,7 +738,23 @@ class TrustStoreService:
                 critical=False,
             )
         
+        # NameConstraints enforcement (RFC 5280 §4.2.1.10)
+        san_names = []
+        if san_dns:
+            san_names.extend(x509.DNSName(d) for d in san_dns)
+        if san_ip:
+            san_names.extend(x509.IPAddress(ipaddress.ip_address(ip)) for ip in san_ip)
+        if san_email:
+            san_names.extend(x509.RFC822Name(e) for e in san_email)
+        TrustStoreService._validate_name_constraints(ca_cert, subject, san_names or None)
+        
         # Sign
+        hash_algo = TrustStoreService.HASH_ALGORITHMS.get(digest, hashes.SHA256())
+        certificate = builder.sign(
+            private_key=ca_private_key,
+            algorithm=hash_algo,
+            backend=default_backend()
+        )
         
         # Serialize
         cert_pem = certificate.public_bytes(serialization.Encoding.PEM)
@@ -726,6 +867,15 @@ class TrustStoreService:
         csr = x509.load_pem_x509_csr(csr_pem, default_backend())
         if not csr.is_signature_valid:
             raise ValueError("CSR has invalid signature")
+        
+        # NameConstraints enforcement (RFC 5280 §4.2.1.10)
+        csr_sans = None
+        try:
+            san_ext = csr.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+            csr_sans = list(san_ext.value)
+        except x509.ExtensionNotFound:
+            pass
+        TrustStoreService._validate_name_constraints(ca_cert, csr.subject, csr_sans)
         
         # If CSR has empty subject, populate CN from first SAN DNS name
         subject = csr.subject
