@@ -130,7 +130,8 @@ class AcmeAuthorization(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     authorization_id = db.Column(db.String(64), unique=True, nullable=False, index=True, default=lambda: secrets.token_urlsafe(32))
-    order_id = db.Column(db.String(64), db.ForeignKey('acme_orders.order_id'), nullable=False)
+    order_id = db.Column(db.String(64), db.ForeignKey('acme_orders.order_id'), nullable=True)
+    account_id = db.Column(db.String(64), db.ForeignKey('acme_accounts.account_id'), nullable=True)
     
     identifier = db.Column(db.Text, nullable=False)  # JSON of {"type": "dns", "value": "example.com"}
     

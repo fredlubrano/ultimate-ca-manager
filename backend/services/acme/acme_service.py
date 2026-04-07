@@ -31,6 +31,7 @@ class AcmeService:
         "newNonce": "/acme/new-nonce",
         "newAccount": "/acme/new-account",
         "newOrder": "/acme/new-order",
+        "newAuthz": "/acme/new-authz",
         "revokeCert": "/acme/revoke-cert",
         "keyChange": "/acme/key-change",
     }
@@ -282,13 +283,11 @@ class AcmeService:
         # Check for existing valid authorization for this account/identifier (Authorization Reuse)
         if account_id:
             try:
-                # Find valid authorization for same account and identifier
-                # We reuse the logic by creating a new valid authorization
-                # to avoid schema changes (many-to-many complexity)
                 identifier_json = json.dumps(identifier)
                 
-                valid_auth = AcmeAuthorization.query.join(AcmeOrder).filter(
-                    AcmeOrder.account_id == account_id,
+                # Check both order-linked and standalone (pre-auth) authorizations
+                valid_auth = AcmeAuthorization.query.filter(
+                    AcmeAuthorization.account_id == account_id,
                     AcmeAuthorization.identifier == identifier_json,
                     AcmeAuthorization.status == 'valid',
                     AcmeAuthorization.expires > utc_now()
@@ -298,9 +297,10 @@ class AcmeService:
                     # Reuse found! Create a new pre-validated authorization
                     auth = AcmeAuthorization(
                         order_id=order_id,
+                        account_id=account_id,
                         status="valid",
                         identifier=identifier_json,
-                        expires=valid_auth.expires  # Carry over expiration or extend? Let's carry over for safety
+                        expires=valid_auth.expires
                     )
                     
                     db.session.add(auth)
@@ -317,6 +317,7 @@ class AcmeService:
         # No reuse - create new pending authorization
         auth = AcmeAuthorization(
             order_id=order_id,
+            account_id=account_id,
             status="pending",
             identifier=json.dumps(identifier),
             expires=utc_now() + timedelta(days=7)
@@ -326,6 +327,61 @@ class AcmeService:
         db.session.flush()  # Get auth.authorization_id
         
         # Create pending challenges
+        self._create_challenges(auth, status="pending")
+        
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"DB commit failed: {e}")
+            raise
+        
+        return auth
+    
+    def create_pre_authorization(
+        self,
+        account_id: str,
+        identifier: Dict[str, str]
+    ) -> AcmeAuthorization:
+        """Create standalone pre-authorization (RFC 8555 §7.4.1)
+        
+        Pre-authorizations are created via newAuthz endpoint before
+        placing an order. They can be reused when the order is created.
+        
+        Args:
+            account_id: Account ID requesting pre-authorization
+            identifier: Identifier dict {"type": "dns", "value": "example.com"}
+            
+        Returns:
+            AcmeAuthorization object
+        """
+        # Check for existing valid authorization
+        identifier_json = json.dumps(identifier)
+        
+        existing = AcmeAuthorization.query.filter(
+            AcmeAuthorization.account_id == account_id,
+            AcmeAuthorization.identifier == identifier_json,
+            AcmeAuthorization.status == 'valid',
+            AcmeAuthorization.expires > utc_now()
+        ).first()
+        
+        if existing:
+            return existing
+        
+        # Create new pending authorization (no order_id)
+        is_wildcard = identifier.get('value', '').startswith('*.')
+        auth = AcmeAuthorization(
+            order_id=None,
+            account_id=account_id,
+            status="pending",
+            identifier=identifier_json,
+            wildcard=is_wildcard,
+            expires=utc_now() + timedelta(days=7)
+        )
+        
+        db.session.add(auth)
+        db.session.flush()
+        
         self._create_challenges(auth, status="pending")
         
         try:
@@ -884,6 +940,97 @@ class AcmeService:
             Key authorization string (token.thumbprint)
         """
         return f"{token}.{jwk_thumbprint}"
+    
+    def validate_eab(self, eab_data: Dict[str, Any], account_jwk: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+        """Validate External Account Binding (RFC 8555 §7.3.4)
+        
+        The EAB is a JWS signed with a pre-shared HMAC key, binding
+        the ACME account key to an external account.
+        
+        Args:
+            eab_data: The externalAccountBinding JWS object
+            account_jwk: The account JWK being registered
+            
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        try:
+            import hmac as hmac_lib
+            
+            # EAB must have protected, payload, signature
+            if not all(k in eab_data for k in ('protected', 'payload', 'signature')):
+                return False, "Missing required JWS fields"
+            
+            # Decode protected header
+            protected_b64 = eab_data['protected']
+            protected_json = base64.urlsafe_b64decode(protected_b64 + '==')
+            protected = json.loads(protected_json)
+            
+            # Verify algorithm is HS256 (HMAC-SHA256) per RFC 8555
+            alg = protected.get('alg', '')
+            if alg not in ('HS256', 'HS384', 'HS512'):
+                return False, f"Invalid EAB algorithm: {alg}. Must be HMAC-based"
+            
+            # Extract key ID (the external account identifier)
+            kid = protected.get('kid', '')
+            if not kid:
+                return False, "EAB missing kid (external account ID)"
+            
+            # Look up the HMAC key for this external account
+            from models import SystemConfig
+            eab_keys_json = SystemConfig.get('acme_eab_keys', '{}')
+            try:
+                eab_keys = json.loads(eab_keys_json)
+            except Exception:
+                eab_keys = {}
+            
+            hmac_key_b64 = eab_keys.get(kid)
+            if not hmac_key_b64:
+                return False, "Unknown external account"
+            
+            # Decode the HMAC key
+            hmac_key = base64.urlsafe_b64decode(hmac_key_b64 + '==')
+            
+            # Verify the payload is the account JWK
+            payload_b64 = eab_data['payload']
+            payload_bytes = base64.urlsafe_b64decode(payload_b64 + '==')
+            try:
+                payload_jwk = json.loads(payload_bytes)
+                # The payload should be the account public key
+                if payload_jwk.get('kty') != account_jwk.get('kty'):
+                    return False, "EAB payload does not match account key"
+            except Exception:
+                return False, "EAB payload is not valid JSON"
+            
+            # Verify HMAC signature
+            signing_input = f"{protected_b64}.{payload_b64}".encode('ascii')
+            
+            if alg == 'HS256':
+                mac = hmac_lib.new(hmac_key, signing_input, hashlib.sha256).digest()
+            elif alg == 'HS384':
+                mac = hmac_lib.new(hmac_key, signing_input, hashlib.sha384).digest()
+            else:  # HS512
+                mac = hmac_lib.new(hmac_key, signing_input, hashlib.sha512).digest()
+            
+            expected_sig = base64.urlsafe_b64encode(mac).rstrip(b'=').decode('ascii')
+            actual_sig = eab_data['signature']
+            
+            if not hmac_lib.compare_digest(expected_sig, actual_sig):
+                return False, "EAB signature verification failed"
+            
+            # Mark key as used (one-time use)
+            eab_keys.pop(kid, None)
+            SystemConfig.set('acme_eab_keys', json.dumps(eab_keys))
+            try:
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+            
+            return True, None
+            
+        except Exception as e:
+            logger.error(f"EAB validation error: {e}")
+            return False, str(e)
     
     def get_directory(self) -> Dict[str, str]:
         """Get ACME directory (RFC 8555 Section 7.1.1)

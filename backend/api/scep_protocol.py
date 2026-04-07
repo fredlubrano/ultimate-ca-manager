@@ -80,6 +80,8 @@ def scep_endpoint():
         return handle_get_ca_caps()
     elif operation == 'GetCACert':
         return handle_get_ca_cert()
+    elif operation == 'GetNextCACert':
+        return handle_get_next_ca_cert()
     elif operation == 'PKIOperation':
         return handle_pki_operation()
     else:
@@ -98,6 +100,7 @@ def handle_get_ca_caps():
         "AES",
         "SCEPStandard",
         "Renewal",
+        "GetNextCACert",
     ]
     
     response = make_response("\n".join(capabilities))
@@ -130,6 +133,66 @@ def handle_get_ca_cert():
         
     except Exception as e:
         logger.error(f"SCEP GetCACert error: {e}")
+        return make_error_response("SCEP server error", 500)
+
+
+def handle_get_next_ca_cert():
+    """Handle GetNextCACert operation (RFC 8894 §3.5)
+    
+    Returns the next CA certificate for CA rollover scenarios.
+    If the CA has a pending renewal certificate, return it in PKCS#7 format.
+    Otherwise return 404 (no rollover in progress).
+    """
+    service, error = get_scep_service()
+    
+    if error:
+        return make_error_response(error, 500)
+    
+    try:
+        ca = service.ca
+        
+        # Look for a newer CA certificate issued to the same subject
+        # that is not yet active (validity starts in the future)
+        # or a recently renewed CA cert
+        from utils.datetime_utils import utc_now
+        
+        next_ca = CA.query.filter(
+            CA.caref == ca.caref if ca.caref else CA.id != ca.id,
+            CA.id != ca.id,
+            CA.descr == ca.descr,
+        ).order_by(CA.id.desc()).first()
+        
+        if not next_ca or not next_ca.crt:
+            return make_error_response("No rollover CA certificate available", 404)
+        
+        # Parse the next CA cert to verify it's actually newer
+        from cryptography import x509 as x509_mod
+        from cryptography.hazmat.backends import default_backend
+        
+        try:
+            next_cert = x509_mod.load_pem_x509_certificate(
+                next_ca.crt.encode() if isinstance(next_ca.crt, str) else next_ca.crt,
+                default_backend()
+            )
+            current_cert = x509_mod.load_pem_x509_certificate(
+                ca.crt.encode() if isinstance(ca.crt, str) else ca.crt,
+                default_backend()
+            )
+            
+            if next_cert.not_valid_after_utc <= current_cert.not_valid_after_utc:
+                return make_error_response("No rollover CA certificate available", 404)
+        except Exception:
+            return make_error_response("No rollover CA certificate available", 404)
+        
+        # Return as degenerate PKCS#7 (same format as GetCACert for intermediates)
+        chain_der = service._create_degenerate_pkcs7([next_cert])
+        
+        response = make_response(chain_der)
+        response.headers['Content-Type'] = 'application/x-x509-next-ca-cert'
+        return response
+        
+    except Exception as e:
+        logger.error(f"SCEP GetNextCACert error: {e}")
         return make_error_response("SCEP server error", 500)
 
 

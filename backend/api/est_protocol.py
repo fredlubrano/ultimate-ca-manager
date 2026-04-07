@@ -277,8 +277,9 @@ def simple_reenroll():
 @bp.route('/csrattrs', methods=['GET'])
 def get_csr_attrs():
     """
-    EST /csrattrs - Get CSR attributes.
-    Returns suggested/required CSR attributes for enrollment.
+    EST /csrattrs - Get CSR attributes (RFC 7030 §4.5.2).
+    Returns suggested/required CSR attributes for enrollment as
+    ASN.1 DER-encoded SEQUENCE of OIDs, base64-encoded.
     """
     authenticated, _ = _authenticate_est_client()
     if not authenticated:
@@ -288,13 +289,52 @@ def get_csr_attrs():
             headers={'WWW-Authenticate': 'Basic realm="EST"'}
         )
     
-    # Return empty (no specific requirements)
-    # Could return ASN.1 sequence of OIDs for required attributes
-    return Response(
-        '',
-        status=204,
-        mimetype='application/csrattrs'
-    )
+    # Build ASN.1 DER-encoded CsrAttrs per RFC 7030 §4.5.2
+    # CsrAttrs ::= SEQUENCE SIZE (1..MAX) OF AttrOrOID
+    # AttrOrOID ::= CHOICE { oid OBJECT IDENTIFIER, attribute Attribute }
+    #
+    # We return commonly requested OIDs:
+    #   - subjectAltName (2.5.29.17)
+    #   - keyUsage (2.5.29.15)
+    #   - extendedKeyUsage (2.5.29.37)
+    #   - challengePassword (1.2.840.113549.1.9.7)
+    try:
+        from pyasn1.type import univ, tag
+        from pyasn1.codec.der import encoder as der_encoder
+        
+        oids = [
+            univ.ObjectIdentifier((2, 5, 29, 17)),   # subjectAltName
+            univ.ObjectIdentifier((2, 5, 29, 15)),   # keyUsage
+            univ.ObjectIdentifier((2, 5, 29, 37)),   # extendedKeyUsage
+            univ.ObjectIdentifier((1, 2, 840, 113549, 1, 9, 7)),  # challengePassword
+        ]
+        
+        seq = univ.Sequence()
+        for i, oid in enumerate(oids):
+            seq.setComponentByPosition(i, oid)
+        
+        der_bytes = der_encoder.encode(seq)
+        b64_content = base64.b64encode(der_bytes).decode('ascii')
+        
+        return Response(
+            b64_content,
+            status=200,
+            mimetype='application/csrattrs',
+            headers={'Content-Transfer-Encoding': 'base64'}
+        )
+    except ImportError:
+        # pyasn1 not available — return hardcoded DER
+        # SEQUENCE { OID 2.5.29.17, OID 2.5.29.15, OID 2.5.29.37 }
+        der_hex = '300e0603551d110603551d0f0603551d25'
+        der_bytes = bytes.fromhex(der_hex)
+        b64_content = base64.b64encode(der_bytes).decode('ascii')
+        
+        return Response(
+            b64_content,
+            status=200,
+            mimetype='application/csrattrs',
+            headers={'Content-Transfer-Encoding': 'base64'}
+        )
 
 
 @bp.route('/serverkeygen', methods=['POST'])

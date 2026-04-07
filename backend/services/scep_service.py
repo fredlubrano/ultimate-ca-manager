@@ -265,6 +265,49 @@ class SCEPService:
                         self.FAIL_BAD_MESSAGE_CHECK, "Invalid challenge password"
                     ), 200
             
+            # Renewal linkage validation (RFC 8894 §2.3)
+            # messageType 19 = RenewalReq — signer cert must be issued by this CA
+            if message_type == 19 or message_type == '19':
+                try:
+                    signer_certs = signed_data['certificates']
+                    if signer_certs and len(signer_certs) > 0:
+                        signer_cert_der = signer_certs[0].dump()
+                        signer_cert = x509.load_der_x509_certificate(
+                            signer_cert_der, default_backend()
+                        )
+                        # Verify signer cert was issued by this CA
+                        try:
+                            signer_cert.verify_directly_issued_by(self.ca_cert)
+                        except Exception:
+                            logger.warning(
+                                f"SCEP renewal: signer cert not issued by this CA "
+                                f"(subject={signer_cert.subject.rfc4514_string()})"
+                            )
+                            return self._create_error_response(
+                                self.FAIL_BAD_MESSAGE_CHECK,
+                                "Renewal: signer certificate not issued by this CA"
+                            ), 200
+                        
+                        # Verify signer cert subject matches CSR subject
+                        if signer_cert.subject != csr.subject:
+                            logger.warning(
+                                f"SCEP renewal: subject mismatch "
+                                f"(signer={signer_cert.subject.rfc4514_string()}, "
+                                f"csr={csr.subject.rfc4514_string()})"
+                            )
+                            return self._create_error_response(
+                                self.FAIL_BAD_MESSAGE_CHECK,
+                                "Renewal: CSR subject must match existing certificate"
+                            ), 200
+                    else:
+                        logger.warning("SCEP renewal: no signer certificate found")
+                        return self._create_error_response(
+                            self.FAIL_BAD_MESSAGE_CHECK,
+                            "Renewal: signer certificate required"
+                        ), 200
+                except Exception as e:
+                    logger.error(f"SCEP renewal validation error: {e}")
+            
             # Check if request already exists
             existing = SCEPRequest.query.filter_by(
                 transaction_id=transaction_id

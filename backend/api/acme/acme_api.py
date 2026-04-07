@@ -290,12 +290,16 @@ def directory():
     
     directory_data = service.get_directory()
     
+    # Check if EAB is required
+    from models import SystemConfig
+    eab_required = SystemConfig.get('acme_eab_required', 'false').lower() == 'true'
+    
     # Add metadata
     directory_data['meta'] = {
         'termsOfService': f'{service.base_url}/acme/terms',
         'website': 'https://github.com/fabriziosalmi/ultimate-ca-manager',
         'caaIdentities': [request.host],
-        'externalAccountRequired': False
+        'externalAccountRequired': eab_required
     }
     
     return acme_response(directory_data)
@@ -376,6 +380,19 @@ def new_account():
             response.headers['Location'] = account_url
             return response
         
+        # Validate EAB if required (RFC 8555 §7.3.4)
+        eab_data = payload.get('externalAccountBinding')
+        from models import SystemConfig
+        eab_required = SystemConfig.get('acme_eab_required', 'false').lower() == 'true'
+        
+        if eab_required and not eab_data:
+            return acme_error('externalAccountRequired', 'External account binding required')
+        
+        if eab_data:
+            eab_valid, eab_error = service.validate_eab(eab_data, jwk)
+            if not eab_valid:
+                return acme_error('malformed', f'Invalid external account binding: {eab_error}')
+        
         # Create or retrieve account
         account, is_new = service.create_account(
             jwk=jwk,
@@ -445,7 +462,122 @@ def account_info(account_id: str):
     return response
 
 
+@acme_bp.route('/acct/<account_id>/orders', methods=['POST'])
+def account_orders(account_id: str):
+    """List account orders (RFC 8555 §7.1.2.1)"""
+    service = get_acme_service()
+    
+    account = service.get_account_by_kid(account_id)
+    if not account:
+        return acme_error('accountDoesNotExist', 'Account not found', 404)
+    
+    if account.status == 'deactivated':
+        return acme_error('unauthorized', 'Account is deactivated', 401)
+    
+    # Verify JWS (POST-as-GET)
+    jws_data = request.get_json()
+    if jws_data:
+        expected_url = f"{service.base_url}/acme/acct/{account_id}/orders"
+        is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+        if not is_valid:
+            return acme_error('malformed', f'Invalid JWS: {error}')
+    
+    # Get orders for this account
+    orders = AcmeOrder.query.filter_by(account_id=account_id).order_by(
+        AcmeOrder.created_at.desc()
+    ).all()
+    
+    order_urls = [
+        f"{service.base_url}/acme/order/{order.order_id}"
+        for order in orders
+    ]
+    
+    response_data = {
+        "orders": order_urls
+    }
+    
+    return acme_response(response_data)
+
+
 # ==================== Order Management ====================
+
+@acme_bp.route('/new-authz', methods=['POST'])
+def new_authz():
+    """Pre-authorization for identifiers (RFC 8555 §7.4.1)
+    
+    Allows clients to pre-authorize identifiers before placing an order.
+    """
+    service = get_acme_service()
+    
+    try:
+        jws_data = request.get_json()
+        if not jws_data:
+            return acme_error('malformed', 'Request body required')
+        
+        expected_url = f"{service.base_url}/acme/new-authz"
+        is_valid, payload, jwk, error = verify_jws(jws_data, expected_url)
+        if not is_valid:
+            return acme_error('malformed', f'Invalid JWS: {error}')
+        
+        # Must use kid (account required)
+        protected = json.loads(base64.urlsafe_b64decode(jws_data['protected'] + '=='))
+        kid = protected.get('kid', '')
+        account_id = kid.split('/')[-1] if kid else None
+        
+        if not account_id:
+            return acme_error('malformed', 'Account kid required')
+        
+        account = service.get_account_by_kid(account_id)
+        if not account:
+            return acme_error('accountDoesNotExist', 'Account not found', 404)
+        
+        if account.status == 'deactivated':
+            return acme_error('unauthorized', 'Account is deactivated', 401)
+        
+        # Validate identifier
+        identifier = payload.get('identifier')
+        if not identifier or 'type' not in identifier or 'value' not in identifier:
+            return acme_error('malformed', 'Valid identifier required')
+        
+        if identifier['type'] != 'dns':
+            return acme_error('unsupportedIdentifier', f'Identifier type {identifier["type"]} not supported')
+        
+        auth = service.create_pre_authorization(account_id, identifier)
+        
+        authz_url = f"{service.base_url}/acme/authz/{auth.authorization_id}"
+        
+        # Build challenges
+        challenges = []
+        for challenge in auth.challenges:
+            challenge_data = {
+                "type": challenge.type,
+                "status": challenge.status,
+                "url": challenge.url,
+                "token": challenge.token
+            }
+            if challenge.validated:
+                challenge_data["validated"] = challenge.validated.isoformat() + 'Z'
+            challenges.append(challenge_data)
+        
+        response_data = {
+            "status": auth.status,
+            "identifier": json.loads(auth.identifier),
+            "challenges": challenges,
+            "expires": auth.expires.isoformat() + 'Z'
+        }
+        
+        if auth.wildcard:
+            response_data["wildcard"] = True
+        
+        response = acme_response(response_data, status_code=201)
+        response.headers['Location'] = authz_url
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"newAuthz error: {e}", exc_info=True)
+        return acme_error('serverInternal', 'Internal server error', 500)
+
 
 @acme_bp.route('/new-order', methods=['POST'])
 def new_order():
