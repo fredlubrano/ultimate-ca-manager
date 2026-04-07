@@ -149,6 +149,17 @@ export function CertificateExtensions({ extensions, defaultOpen = true }) {
             )}
           </div>
         )}
+
+        {/* Signed Certificate Timestamps (SCT) */}
+        {extensions.signed_certificate_timestamps && (
+          <div className="space-y-1">
+            <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+              {t('details.ext.sct')}
+              {extensions.signed_certificate_timestamps.critical && <Badge variant="danger" size="sm">Critical</Badge>}
+            </div>
+            <Badge variant="teal" size="sm">Present</Badge>
+          </div>
+        )}
       </div>
     </CompactSection>
   )

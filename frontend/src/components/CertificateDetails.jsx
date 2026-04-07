@@ -288,6 +288,22 @@ export function CertificateDetails({
       
       {/* X.509 Extensions — shared component */}
       <CertificateExtensions extensions={cert.extensions} />
+
+      {/* CT SCTs */}
+      <CompactSection title={t('certificates.ctScts')} icon={ShieldCheck} iconClass="icon-bg-cyan" collapsible defaultOpen={false}>
+        {cert.ct_scts && cert.ct_scts.length > 0 ? (
+          <div className="space-y-2">
+            <Badge variant="teal" size="sm">{t('certificates.ctSctsCount', { count: cert.ct_scts.length })}</Badge>
+            {cert.ct_scts.map((sct, i) => (
+              <div key={i} className="text-2xs font-mono text-text-secondary">
+                {sct.log_url || 'unknown'}{sct.timestamp ? ` — ${sct.timestamp}` : ''}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-xs text-text-tertiary">{t('certificates.ctNoScts')}</div>
+        )}
+      </CompactSection>
       
       {/* Issuer */}
       <CompactSection title={t('common.issuer')} icon={ShieldCheck} iconClass="icon-bg-orange">

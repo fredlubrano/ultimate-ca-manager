@@ -2384,6 +2384,42 @@ export default function SettingsPage() {
     }
   }
 
+  // Certificate Transparency
+  const loadCtSettings = async () => {
+    setCtLoading(true)
+    try {
+      const response = await settingsService.getCTSettings()
+      setCtSettings(response.data || { enabled: false, auto_submit: false, log_urls: [] })
+    } catch {
+    } finally {
+      setCtLoading(false)
+    }
+  }
+
+  const handleCtSave = async () => {
+    setCtSaving(true)
+    try {
+      await settingsService.updateCTSettings(ctSettings)
+      showSuccess(t('settings.ctSettingsUpdated'))
+    } catch (error) {
+      showError(error.message || t('settings.ctSettingsFailed'))
+    } finally {
+      setCtSaving(false)
+    }
+  }
+
+  const handleCtAddLogUrl = () => {
+    const url = ctNewLogUrl.trim()
+    if (!url) return
+    if (ctSettings.log_urls.includes(url)) return
+    setCtSettings(prev => ({ ...prev, log_urls: [...prev.log_urls, url] }))
+    setCtNewLogUrl('')
+  }
+
+  const handleCtRemoveLogUrl = (index) => {
+    setCtSettings(prev => ({ ...prev, log_urls: prev.log_urls.filter((_, i) => i !== index) }))
+  }
+
   const handleSave = async (section) => {
     setSaving(true)
     try {
@@ -3858,6 +3894,75 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                   )}
+                </div>
+              </DetailSection>
+            )}
+          </DetailContent>
+        )
+
+      case 'ct':
+        return (
+          <DetailContent>
+            <DetailHeader
+              icon={Eye}
+              title={t('settings.ct')}
+              subtitle={t('settings.ctDescription')}
+            />
+
+            {ctLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-accent-primary-op30 border-t-accent-primary rounded-full animate-spin" />
+              </div>
+            ) : (
+              <DetailSection title={t('settings.ct')} icon={Eye} iconClass="icon-bg-cyan">
+                <div className="space-y-4">
+                  <ToggleSwitch
+                    label={t('settings.ctEnabled')}
+                    checked={ctSettings.enabled}
+                    onChange={(val) => setCtSettings(prev => ({ ...prev, enabled: val }))}
+                  />
+
+                  <ToggleSwitch
+                    label={t('settings.ctAutoSubmit')}
+                    checked={ctSettings.auto_submit}
+                    onChange={(val) => setCtSettings(prev => ({ ...prev, auto_submit: val }))}
+                  />
+
+                  <div>
+                    <label className="text-sm font-medium text-text-primary mb-2 block">{t('settings.ctLogUrls')}</label>
+                    {ctSettings.log_urls?.length > 0 && (
+                      <div className="space-y-2 mb-3">
+                        {ctSettings.log_urls.map((url, i) => (
+                          <div key={i} className="flex items-center gap-2 p-2 bg-tertiary-50 border border-border rounded-lg">
+                            <span className="flex-1 text-xs font-mono text-text-secondary truncate">{url}</span>
+                            <Button type="button" size="sm" variant="danger" onClick={() => handleCtRemoveLogUrl(i)}>
+                              <Trash size={14} />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Input
+                        value={ctNewLogUrl}
+                        onChange={(e) => setCtNewLogUrl(e.target.value)}
+                        placeholder="https://ct.googleapis.com/logs/argon2025h1/"
+                        className="flex-1"
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCtAddLogUrl() } }}
+                      />
+                      <Button type="button" variant="secondary" onClick={handleCtAddLogUrl}>
+                        <Plus size={14} />
+                        {t('settings.ctAddLogUrl')}
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4 border-t border-border">
+                    <Button type="button" onClick={handleCtSave} disabled={ctSaving}>
+                      {ctSaving ? <ArrowsClockwise size={14} className="animate-spin mr-1" /> : <FloppyDisk size={14} className="mr-1" />}
+                      {t('common.save')}
+                    </Button>
+                  </div>
                 </div>
               </DetailSection>
             )}
