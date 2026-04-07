@@ -194,7 +194,12 @@ class CA(db.Model):
     
     # AIA CA Issuers (RFC 5280 §4.2.2.1)
     aia_ca_issuers_enabled = db.Column(db.Boolean, default=False)
-    aia_ca_issuers_url = db.Column(db.String(512))  # Ex: http://ucm.local:8080/ca/{ca_refid}.cer
+    aia_ca_issuers_url = db.Column(db.String(512))  # JSON array of URLs
+
+    # Certificate Policies / CPS (RFC 5280 §4.2.1.4)
+    cps_enabled = db.Column(db.Boolean, default=False)
+    cps_uri = db.Column(db.Text)  # CPS URI (e.g., http://ca.example.com/cps.pdf)
+    cps_oid = db.Column(db.Text, default='2.5.29.32.0')  # Policy OID (default: anyPolicy)
     
     # HSM Support - private key stored in Hardware Security Module
     hsm_key_id = db.Column(db.Integer, db.ForeignKey('hsm_keys.id'), nullable=True)
@@ -317,6 +322,62 @@ class CA(db.Model):
             return cert.signature_algorithm_oid._name.upper().replace('SHA', 'SHA-')
         except Exception:
             return "N/A"
+
+    # --- URL helpers (JSON array storage with backward compat) ---
+
+    def _get_urls(self, column_value):
+        """Parse URL column value: JSON array or plain string → list"""
+        if not column_value:
+            return []
+        if isinstance(column_value, str) and column_value.startswith('['):
+            try:
+                urls = json.loads(column_value)
+                if isinstance(urls, list):
+                    return [u for u in urls if u]
+            except (json.JSONDecodeError, TypeError):
+                pass
+        return [column_value]
+
+    def _get_primary_url(self, column_value):
+        """Get first URL from column value"""
+        urls = self._get_urls(column_value)
+        return urls[0] if urls else None
+
+    @staticmethod
+    def _encode_urls(urls):
+        """Encode URL list as JSON array string"""
+        if not urls:
+            return None
+        if isinstance(urls, str):
+            return json.dumps([urls])
+        return json.dumps([u for u in urls if u])
+
+    def get_cdp_urls(self):
+        return self._get_urls(self.cdp_url)
+
+    def get_primary_cdp_url(self):
+        return self._get_primary_url(self.cdp_url)
+
+    def set_cdp_urls(self, urls):
+        self.cdp_url = self._encode_urls(urls)
+
+    def get_ocsp_urls(self):
+        return self._get_urls(self.ocsp_url)
+
+    def get_primary_ocsp_url(self):
+        return self._get_primary_url(self.ocsp_url)
+
+    def set_ocsp_urls(self, urls):
+        self.ocsp_url = self._encode_urls(urls)
+
+    def get_aia_urls(self):
+        return self._get_urls(self.aia_ca_issuers_url)
+
+    def get_primary_aia_url(self):
+        return self._get_primary_url(self.aia_ca_issuers_url)
+
+    def set_aia_urls(self, urls):
+        self.aia_ca_issuers_url = self._encode_urls(urls)
     
     def to_dict(self, include_private=False):
         """Convert to dictionary"""
@@ -375,15 +436,22 @@ class CA(db.Model):
             "hash_algorithm": self.hash_algorithm,
             # CRL/CDP configuration
             "cdp_enabled": self.cdp_enabled,
-            "cdp_url": self.cdp_url,
+            "cdp_url": self.get_primary_cdp_url(),
+            "cdp_urls": self.get_cdp_urls(),
             "delta_crl_enabled": self.delta_crl_enabled,
             "delta_crl_interval": self.delta_crl_interval or 4,
             # OCSP configuration
             "ocsp_enabled": self.ocsp_enabled,
-            "ocsp_url": self.ocsp_url,
+            "ocsp_url": self.get_primary_ocsp_url(),
+            "ocsp_urls": self.get_ocsp_urls(),
             # AIA CA Issuers
             "aia_ca_issuers_enabled": self.aia_ca_issuers_enabled,
-            "aia_ca_issuers_url": self.aia_ca_issuers_url,
+            "aia_ca_issuers_url": self.get_primary_aia_url(),
+            "aia_ca_issuers_urls": self.get_aia_urls(),
+            # Certificate Policies / CPS (RFC 5280 §4.2.1.4)
+            "cps_enabled": self.cps_enabled,
+            "cps_uri": self.cps_uri,
+            "cps_oid": self.cps_oid or '2.5.29.32.0',
             # Ownership (Pro feature)
             "owner_group_id": self.owner_group_id,
             "owner_group_name": self.owner_group.name if self.owner_group else None,

@@ -291,8 +291,16 @@ class BackupService:
                 'caref': ca.caref,  # Parent CA for intermediates
                 'cdp_enabled': ca.cdp_enabled,
                 'cdp_url': ca.cdp_url,
+                'cdp_urls': ca.get_cdp_urls(),
                 'ocsp_enabled': ca.ocsp_enabled,
                 'ocsp_url': ca.ocsp_url,
+                'ocsp_urls': ca.get_ocsp_urls(),
+                'aia_ca_issuers_enabled': getattr(ca, 'aia_ca_issuers_enabled', False),
+                'aia_ca_issuers_url': getattr(ca, 'aia_ca_issuers_url', None),
+                'aia_ca_issuers_urls': ca.get_aia_urls(),
+                'cps_enabled': ca.cps_enabled,
+                'cps_uri': ca.cps_uri,
+                'cps_oid': ca.cps_oid,
                 'imported_from': ca.imported_from,
                 'certificate_pem': base64.b64decode(ca.crt).decode() if ca.crt else None,
                 'private_key_pem_encrypted': None  # Will be set in _encrypt_private_keys

@@ -120,15 +120,26 @@ def _issue_approved_certificate(approval):
     builder = builder.add_extension(x509.SubjectKeyIdentifier.from_public_key(new_key.public_key()), critical=False)
     builder = builder.add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(ca_key.public_key()), critical=False)
     
-    # CDP/OCSP
-    if ca.cdp_enabled and ca.cdp_url:
-        cdp_url = ca.cdp_url.replace('{ca_refid}', ca.refid or '')
-        builder = builder.add_extension(x509.CRLDistributionPoints([
-            x509.DistributionPoint(full_name=[x509.UniformResourceIdentifier(cdp_url)], relative_name=None, reasons=None, crl_issuer=None)
-        ]), critical=False)
-    if ca.ocsp_enabled and ca.ocsp_url:
-        builder = builder.add_extension(x509.AuthorityInformationAccess([
-            x509.AccessDescription(x509.oid.AuthorityInformationAccessOID.OCSP, x509.UniformResourceIdentifier(ca.ocsp_url))
+    # CDP/OCSP/CPS
+    if ca.cdp_enabled:
+        cdp_urls = [url.replace('{ca_refid}', ca.refid or '') for url in ca.get_cdp_urls()]
+        if cdp_urls:
+            builder = builder.add_extension(x509.CRLDistributionPoints([
+                x509.DistributionPoint(full_name=[x509.UniformResourceIdentifier(url)], relative_name=None, reasons=None, crl_issuer=None)
+                for url in cdp_urls
+            ]), critical=False)
+    aia_descs = []
+    if ca.ocsp_enabled:
+        for uri in ca.get_ocsp_urls():
+            aia_descs.append(x509.AccessDescription(x509.oid.AuthorityInformationAccessOID.OCSP, x509.UniformResourceIdentifier(uri)))
+    if ca.aia_ca_issuers_enabled:
+        for url in ca.get_aia_urls():
+            aia_descs.append(x509.AccessDescription(x509.oid.AuthorityInformationAccessOID.CA_ISSUERS, x509.UniformResourceIdentifier(url.replace('{ca_refid}', ca.refid or ''))))
+    if aia_descs:
+        builder = builder.add_extension(x509.AuthorityInformationAccess(aia_descs), critical=False)
+    if ca.cps_enabled and ca.cps_uri:
+        builder = builder.add_extension(x509.CertificatePolicies([
+            x509.PolicyInformation(policy_identifier=x509.ObjectIdentifier(ca.cps_oid or '2.5.29.32.0'), policy_qualifiers=[ca.cps_uri])
         ]), critical=False)
     
     # Sign

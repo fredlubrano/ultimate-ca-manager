@@ -130,20 +130,30 @@ class CertificateService:
         # Build subject
         subject = TrustStoreService.build_subject(dn)
         
-        # Prepare CDP URL if CA has it enabled
-        cdp_url = None
-        if ca.cdp_enabled and ca.cdp_url:
-            cdp_url = ca.cdp_url.replace('{ca_refid}', ca.refid)
+        # Prepare CDP URLs if CA has it enabled
+        cdp_urls = None
+        if ca.cdp_enabled:
+            cdp_urls = [url.replace('{ca_refid}', ca.refid) for url in ca.get_cdp_urls()]
+            if not cdp_urls:
+                cdp_urls = None
         
-        # Prepare OCSP URL if CA has it enabled
-        ocsp_url = None
-        if ca.ocsp_enabled and ca.ocsp_url:
-            ocsp_url = ca.ocsp_url  # OCSP URL doesn't need ca_refid, it's a global endpoint
+        # Prepare OCSP URLs if CA has it enabled
+        ocsp_urls = None
+        if ca.ocsp_enabled:
+            ocsp_urls = ca.get_ocsp_urls()
+            if not ocsp_urls:
+                ocsp_urls = None
         
-        # Prepare AIA CA Issuers URL if CA has it enabled
-        aia_ca_issuers_url = None
-        if ca.aia_ca_issuers_enabled and ca.aia_ca_issuers_url:
-            aia_ca_issuers_url = ca.aia_ca_issuers_url.replace('{ca_refid}', ca.refid)
+        # Prepare AIA CA Issuers URLs if CA has it enabled
+        aia_ca_issuers_urls = None
+        if ca.aia_ca_issuers_enabled:
+            aia_ca_issuers_urls = [url.replace('{ca_refid}', ca.refid) for url in ca.get_aia_urls()]
+            if not aia_ca_issuers_urls:
+                aia_ca_issuers_urls = None
+
+        # CPS
+        cps_uri = ca.cps_uri if ca.cps_enabled and ca.cps_uri else None
+        cps_oid = ca.cps_oid if cps_uri else None
         
         # Clamp certificate validity to CA's expiry
         from datetime import timedelta, timezone as _tz
@@ -166,9 +176,11 @@ class CertificateService:
             san_ip=san_ip,
             san_uri=san_uri,
             san_email=san_email,
-            ocsp_uri=ocsp_url,
-            cdp_url=cdp_url,
-            aia_ca_issuers_url=aia_ca_issuers_url
+            ocsp_uris=ocsp_urls,
+            cdp_urls=cdp_urls,
+            aia_ca_issuers_urls=aia_ca_issuers_urls,
+            cps_uri=cps_uri,
+            cps_oid=cps_oid,
         )
         
         # Parse certificate
@@ -372,9 +384,11 @@ class CertificateService:
             csr_pem = base64.b64decode(csr_data)
         
         # Sign CSR
-        cdp_url = ca.cdp_url.replace('{ca_refid}', ca.refid) if ca.cdp_enabled and ca.cdp_url else None
-        ocsp_url = ca.ocsp_url if ca.ocsp_enabled and ca.ocsp_url else None
-        aia_ca_issuers_url = ca.aia_ca_issuers_url.replace('{ca_refid}', ca.refid) if ca.aia_ca_issuers_enabled and ca.aia_ca_issuers_url else None
+        cdp_urls = [url.replace('{ca_refid}', ca.refid) for url in ca.get_cdp_urls()] if ca.cdp_enabled else None
+        ocsp_urls = ca.get_ocsp_urls() if ca.ocsp_enabled else None
+        aia_ca_issuers_urls = [url.replace('{ca_refid}', ca.refid) for url in ca.get_aia_urls()] if ca.aia_ca_issuers_enabled else None
+        cps_uri = ca.cps_uri if ca.cps_enabled and ca.cps_uri else None
+        cps_oid = ca.cps_oid if cps_uri else None
         cert_pem = TrustStoreService.sign_csr(
             csr_pem=csr_pem,
             ca_cert=ca_cert,
@@ -382,9 +396,11 @@ class CertificateService:
             validity_days=validity_days,
             digest=digest,
             cert_type=cert_type,
-            cdp_url=cdp_url,
-            ocsp_url=ocsp_url,
-            aia_ca_issuers_url=aia_ca_issuers_url
+            cdp_urls=cdp_urls,
+            ocsp_urls=ocsp_urls,
+            aia_ca_issuers_urls=aia_ca_issuers_urls,
+            cps_uri=cps_uri,
+            cps_oid=cps_oid,
         )
         
         # Parse signed certificate

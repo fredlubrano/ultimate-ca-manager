@@ -1061,7 +1061,13 @@
     "toggleAiaFailed": "Échec du basculement AIA CA Issuers",
     "urlNotConfigured": "URL non configurée — définissez le FQDN ou l'URL de base du protocole dans Paramètres",
     "autoRegen": "Auto-Regen",
-    "updates": "Mises à jour"
+    "updates": "Mises à jour",
+    "addUrl": "Ajouter une URL",
+    "cpsTitle": "Politiques de certificat (CPS)",
+    "cpsEnabled": "CPS activé",
+    "cpsUri": "URI CPS",
+    "cpsOid": "OID de politique",
+    "cpsOidNote": "Par défaut : 2.5.29.32.0 (anyPolicy). Utilisez un OID personnalisé pour les politiques spécifiques."
   },
   "csrs": {
     "uploadCSR": "Téléverser une CSR",

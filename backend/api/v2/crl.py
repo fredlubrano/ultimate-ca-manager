@@ -141,12 +141,13 @@ def toggle_auto_regen(ca_id):
     try:
         ca.cdp_enabled = enabled
         
-        # Auto-generate CDP URL if enabling and URL is empty or uses https://
-        if enabled and (not ca.cdp_url or ca.cdp_url.startswith('https://')):
+        # Auto-generate CDP URL if enabling and no URLs configured
+        primary_cdp = ca.get_primary_cdp_url()
+        if enabled and (not primary_cdp or primary_cdp.startswith('https://')):
             base_url = get_protocol_base_url()
             if not base_url:
                 return error_response('Cannot auto-generate CDP URL: configure a FQDN or Protocol Base URL in Settings first', 400)
-            ca.cdp_url = f"{base_url}/cdp/{ca.refid}.crl"
+            ca.set_cdp_urls([f"{base_url}/cdp/{ca.refid}.crl"])
         
         # Audit log
         username = getattr(g, 'user', {}).get('username', 'admin') if hasattr(g, 'user') else 'admin'

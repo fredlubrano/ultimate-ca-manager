@@ -1272,7 +1272,13 @@
     "toggleAiaFailed": "Не вдалося перемкнути AIA CA Issuers",
     "urlNotConfigured": "URL не налаштовано — встановіть FQDN або базову URL протоколу в Налаштуваннях",
     "autoRegen": "Авто-оновл.",
-    "updates": "Оновлення"
+    "updates": "Оновлення",
+    "addUrl": "Додати URL",
+    "cpsTitle": "Політики сертифікатів (CPS)",
+    "cpsEnabled": "CPS увімкнено",
+    "cpsUri": "URI CPS",
+    "cpsOid": "OID політики",
+    "cpsOidNote": "За замовчуванням: 2.5.29.32.0 (anyPolicy). Використовуйте власний OID для специфічних політик."
   },
   "trustStore": {
     "caTrust": "Довіра CA",

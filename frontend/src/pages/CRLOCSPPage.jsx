@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next'
 import { 
   FileX, ShieldCheck, ArrowsClockwise, Download, Copy,
   Database, Pulse, Calendar, Hash, XCircle,
-  Info as LinkIcon, TreeStructure, Link as LinkChain
+  Info as LinkIcon, TreeStructure, Link as LinkChain,
+  Plus, Trash, Certificate as CertificateIcon
 } from '@phosphor-icons/react'
 import { Tooltip } from '../components'
 import {
@@ -42,6 +43,10 @@ export default function CRLOCSPPage() {
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(25)
 
+  // URL editing state
+  const [newUrlField, setNewUrlField] = useState({ type: null, value: '' })
+  const [savingUrls, setSavingUrls] = useState(false)
+
   useEffect(() => {
     loadData()
   }, [])
@@ -56,10 +61,17 @@ export default function CRLOCSPPage() {
         crlService.getOcspStats()
       ])
       
-      setCas(casRes.data || [])
+      const casData = casRes.data || []
+      setCas(casData)
       setCrls(crlsRes.data || [])
       setOcspStatus(ocspStatusRes.data || { enabled: false, running: false })
       setOcspStats(ocspStatsRes.data || { total_requests: 0, cache_hits: 0 })
+      
+      // Re-select the current CA to sync updated data
+      if (selectedCA) {
+        const updated = casData.find(c => c.id === selectedCA.id)
+        if (updated) setSelectedCA(updated)
+      }
     } catch (error) {
       showError(error.message || t('messages.errors.loadFailed.crl'))
     } finally {
@@ -198,6 +210,57 @@ export default function CRLOCSPPage() {
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text)
     showInfo(t('common.copied'))
+  }
+
+  // URL management (multi-URL support)
+  const handleAddUrl = async (urlType) => {
+    const url = newUrlField.value.trim()
+    if (!url || !selectedCA) return
+    setSavingUrls(true)
+    try {
+      const fieldMap = { cdp: 'cdp_urls', ocsp: 'ocsp_urls', aia: 'aia_ca_issuers_urls' }
+      const currentMap = { cdp: selectedCA.cdp_urls || [], ocsp: selectedCA.ocsp_urls || [], aia: selectedCA.aia_ca_issuers_urls || [] }
+      const updated = [...currentMap[urlType], url]
+      await casService.update(selectedCA.id, { [fieldMap[urlType]]: updated })
+      setNewUrlField({ type: null, value: '' })
+      showSuccess(t('common.saved'))
+      await loadData()
+    } catch (error) {
+      showError(error.message || t('messages.errors.saveFailed'))
+    } finally {
+      setSavingUrls(false)
+    }
+  }
+
+  const handleRemoveUrl = async (urlType, index) => {
+    if (!selectedCA) return
+    setSavingUrls(true)
+    try {
+      const fieldMap = { cdp: 'cdp_urls', ocsp: 'ocsp_urls', aia: 'aia_ca_issuers_urls' }
+      const currentMap = { cdp: selectedCA.cdp_urls || [], ocsp: selectedCA.ocsp_urls || [], aia: selectedCA.aia_ca_issuers_urls || [] }
+      const updated = currentMap[urlType].filter((_, i) => i !== index)
+      await casService.update(selectedCA.id, { [fieldMap[urlType]]: updated })
+      showSuccess(t('common.saved'))
+      await loadData()
+    } catch (error) {
+      showError(error.message || t('messages.errors.saveFailed'))
+    } finally {
+      setSavingUrls(false)
+    }
+  }
+
+  const handleCpsUpdate = async (field, value) => {
+    if (!selectedCA) return
+    setSavingUrls(true)
+    try {
+      await casService.update(selectedCA.id, { [field]: value })
+      showSuccess(t('common.saved'))
+      await loadData()
+    } catch (error) {
+      showError(error.message || t('messages.errors.saveFailed'))
+    } finally {
+      setSavingUrls(false)
+    }
   }
 
   // Calculate stats
@@ -361,6 +424,20 @@ export default function CRLOCSPPage() {
             disabled={!row.has_private_key || !canWrite('crl')}
             size="sm"
           />
+        </div>
+      )
+    },
+    {
+      key: 'cps_enabled',
+      header: iconHeader(<CertificateIcon size={14} weight="duotone" className="text-text-tertiary" />, 'CPS'),
+      width: '48px',
+      compact: true,
+      priority: 6,
+      hideOnMobile: true,
+      sortable: false,
+      render: (v) => (
+        <div className="flex justify-center">
+          <StatusIndicator status={v ? 'active' : 'inactive'} size="sm" showLabel={false} />
         </div>
       )
     },
@@ -552,8 +629,8 @@ export default function CRLOCSPPage() {
             autoIcon="status" label={t('common.status')} 
             value={selectedCA.ocsp_enabled ? t('common.enabled') : t('common.disabled')} 
           />
-          {selectedCA.ocsp_enabled && selectedCA.ocsp_url && (
-            <CompactField autoIcon="url" label="OCSP URL" value={selectedCA.ocsp_url} mono />
+          {selectedCA.ocsp_enabled && (selectedCA.ocsp_urls || []).length > 0 && (
+            <CompactField autoIcon="url" label="OCSP URL" value={(selectedCA.ocsp_urls || [])[0]} mono />
           )}
           <CompactField autoIcon="totalRequests" label={t('crlOcsp.totalRequests')} value={ocspStats.total_requests} />
           <CompactField autoIcon="cacheHits" label={t('crlOcsp.cacheHits')} value={ocspStats.cache_hits} />
@@ -567,8 +644,8 @@ export default function CRLOCSPPage() {
             autoIcon="status" label={t('common.status')} 
             value={selectedCA.aia_ca_issuers_enabled ? t('common.enabled') : t('common.disabled')} 
           />
-          {selectedCA.aia_ca_issuers_enabled && selectedCA.aia_ca_issuers_url && (
-            <CompactField autoIcon="url" label={t('crlOcsp.aiaIssuersUrl')} value={selectedCA.aia_ca_issuers_url} mono />
+          {selectedCA.aia_ca_issuers_enabled && (selectedCA.aia_ca_issuers_urls || []).length > 0 && (
+            <CompactField autoIcon="url" label={t('crlOcsp.aiaIssuersUrl')} value={(selectedCA.aia_ca_issuers_urls || [])[0]} mono />
           )}
         </CompactGrid>
       </CompactSection>
@@ -576,54 +653,226 @@ export default function CRLOCSPPage() {
       {/* Distribution Points */}
       <CompactSection title={t('crlOcsp.cdpNote')} icon={LinkIcon}>
         <div className="space-y-3">
-          {selectedCA.cdp_url ? (
-            <div>
-              <p className="text-xs text-text-secondary mb-1">{t('crlOcsp.cdp')}</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs font-mono text-text-primary bg-bg-tertiary p-2 rounded break-all">
-                  {selectedCA.cdp_url}
-                </code>
-                <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(selectedCA.cdp_url)}>
-                  <Copy size={14} />
-                </Button>
+          {/* CDP URLs */}
+          <div>
+            <p className="text-xs font-medium text-text-secondary mb-1">{t('crlOcsp.cdp')}</p>
+            {(selectedCA.cdp_urls || []).length > 0 ? (
+              <div className="space-y-1">
+                {(selectedCA.cdp_urls || []).map((url, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    <code className="flex-1 text-xs font-mono text-text-primary bg-bg-tertiary px-2 py-1.5 rounded break-all">
+                      {url}
+                    </code>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(url)}>
+                      <Copy size={14} />
+                    </Button>
+                    {canWrite('crl') && (
+                      <Button type="button" size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => handleRemoveUrl('cdp', idx)} disabled={savingUrls}>
+                        <Trash size={14} />
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </div>
-            </div>
-          ) : selectedCA.cdp_enabled && (
-            <p className="text-xs text-text-tertiary italic">{t('crlOcsp.urlNotConfigured')}</p>
-          )}
-          {selectedCA.ocsp_url ? (
-            <div>
-              <p className="text-xs text-text-secondary mb-1">{t('crlOcsp.aia')} (OCSP)</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs font-mono text-text-primary bg-bg-tertiary p-2 rounded break-all">
-                  {selectedCA.ocsp_url}
-                </code>
-                <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(selectedCA.ocsp_url)}>
-                  <Copy size={14} />
+            ) : selectedCA.cdp_enabled ? (
+              <p className="text-xs text-text-tertiary italic">{t('crlOcsp.urlNotConfigured')}</p>
+            ) : null}
+            {canWrite('crl') && selectedCA.cdp_enabled && (
+              newUrlField.type === 'cdp' ? (
+                <div className="flex items-center gap-1 mt-1">
+                  <input
+                    type="url"
+                    className="flex-1 text-xs font-mono bg-bg-tertiary border border-border rounded px-2 py-1.5 text-text-primary"
+                    placeholder="http://cdp.example.com/crl.pem"
+                    value={newUrlField.value}
+                    onChange={(e) => setNewUrlField({ type: 'cdp', value: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddUrl('cdp')}
+                    autoFocus
+                  />
+                  <Button type="button" size="sm" onClick={() => handleAddUrl('cdp')} disabled={savingUrls || !newUrlField.value.trim()}>
+                    <Plus size={14} />
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setNewUrlField({ type: null, value: '' })}>
+                    <XCircle size={14} />
+                  </Button>
+                </div>
+              ) : (
+                <Button type="button" size="sm" variant="ghost" className="mt-1 text-xs" onClick={() => setNewUrlField({ type: 'cdp', value: '' })}>
+                  <Plus size={12} className="mr-1" /> {t('crlOcsp.addUrl')}
                 </Button>
+              )
+            )}
+          </div>
+
+          {/* OCSP URLs */}
+          <div>
+            <p className="text-xs font-medium text-text-secondary mb-1">OCSP</p>
+            {(selectedCA.ocsp_urls || []).length > 0 ? (
+              <div className="space-y-1">
+                {(selectedCA.ocsp_urls || []).map((url, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    <code className="flex-1 text-xs font-mono text-text-primary bg-bg-tertiary px-2 py-1.5 rounded break-all">
+                      {url}
+                    </code>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(url)}>
+                      <Copy size={14} />
+                    </Button>
+                    {canWrite('crl') && (
+                      <Button type="button" size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => handleRemoveUrl('ocsp', idx)} disabled={savingUrls}>
+                        <Trash size={14} />
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </div>
-            </div>
-          ) : selectedCA.ocsp_enabled && (
-            <p className="text-xs text-text-tertiary italic">{t('crlOcsp.urlNotConfigured')}</p>
-          )}
-          {selectedCA.aia_ca_issuers_url ? (
-            <div>
-              <p className="text-xs text-text-secondary mb-1">{t('crlOcsp.aia')} ({t('crlOcsp.aiaIssuers')})</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 text-xs font-mono text-text-primary bg-bg-tertiary p-2 rounded break-all">
-                  {selectedCA.aia_ca_issuers_url}
-                </code>
-                <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(selectedCA.aia_ca_issuers_url)}>
-                  <Copy size={14} />
+            ) : selectedCA.ocsp_enabled ? (
+              <p className="text-xs text-text-tertiary italic">{t('crlOcsp.urlNotConfigured')}</p>
+            ) : null}
+            {canWrite('crl') && selectedCA.ocsp_enabled && (
+              newUrlField.type === 'ocsp' ? (
+                <div className="flex items-center gap-1 mt-1">
+                  <input
+                    type="url"
+                    className="flex-1 text-xs font-mono bg-bg-tertiary border border-border rounded px-2 py-1.5 text-text-primary"
+                    placeholder="http://ocsp.example.com/"
+                    value={newUrlField.value}
+                    onChange={(e) => setNewUrlField({ type: 'ocsp', value: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddUrl('ocsp')}
+                    autoFocus
+                  />
+                  <Button type="button" size="sm" onClick={() => handleAddUrl('ocsp')} disabled={savingUrls || !newUrlField.value.trim()}>
+                    <Plus size={14} />
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setNewUrlField({ type: null, value: '' })}>
+                    <XCircle size={14} />
+                  </Button>
+                </div>
+              ) : (
+                <Button type="button" size="sm" variant="ghost" className="mt-1 text-xs" onClick={() => setNewUrlField({ type: 'ocsp', value: '' })}>
+                  <Plus size={12} className="mr-1" /> {t('crlOcsp.addUrl')}
                 </Button>
+              )
+            )}
+          </div>
+
+          {/* AIA CA Issuers URLs */}
+          <div>
+            <p className="text-xs font-medium text-text-secondary mb-1">{t('crlOcsp.aiaIssuers')}</p>
+            {(selectedCA.aia_ca_issuers_urls || []).length > 0 ? (
+              <div className="space-y-1">
+                {(selectedCA.aia_ca_issuers_urls || []).map((url, idx) => (
+                  <div key={idx} className="flex items-center gap-1">
+                    <code className="flex-1 text-xs font-mono text-text-primary bg-bg-tertiary px-2 py-1.5 rounded break-all">
+                      {url}
+                    </code>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(url)}>
+                      <Copy size={14} />
+                    </Button>
+                    {canWrite('crl') && (
+                      <Button type="button" size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={() => handleRemoveUrl('aia', idx)} disabled={savingUrls}>
+                        <Trash size={14} />
+                      </Button>
+                    )}
+                  </div>
+                ))}
               </div>
-            </div>
-          ) : selectedCA.aia_ca_issuers_enabled && (
-            <p className="text-xs text-text-tertiary italic">{t('crlOcsp.urlNotConfigured')}</p>
-          )}
+            ) : selectedCA.aia_ca_issuers_enabled ? (
+              <p className="text-xs text-text-tertiary italic">{t('crlOcsp.urlNotConfigured')}</p>
+            ) : null}
+            {canWrite('crl') && selectedCA.aia_ca_issuers_enabled && (
+              newUrlField.type === 'aia' ? (
+                <div className="flex items-center gap-1 mt-1">
+                  <input
+                    type="url"
+                    className="flex-1 text-xs font-mono bg-bg-tertiary border border-border rounded px-2 py-1.5 text-text-primary"
+                    placeholder="http://ca.example.com/ca.cer"
+                    value={newUrlField.value}
+                    onChange={(e) => setNewUrlField({ type: 'aia', value: e.target.value })}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddUrl('aia')}
+                    autoFocus
+                  />
+                  <Button type="button" size="sm" onClick={() => handleAddUrl('aia')} disabled={savingUrls || !newUrlField.value.trim()}>
+                    <Plus size={14} />
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setNewUrlField({ type: null, value: '' })}>
+                    <XCircle size={14} />
+                  </Button>
+                </div>
+              ) : (
+                <Button type="button" size="sm" variant="ghost" className="mt-1 text-xs" onClick={() => setNewUrlField({ type: 'aia', value: '' })}>
+                  <Plus size={12} className="mr-1" /> {t('crlOcsp.addUrl')}
+                </Button>
+              )
+            )}
+          </div>
+
           <p className="text-xs text-text-tertiary">
             {t('crlOcsp.includeURLsNote')}
           </p>
+        </div>
+      </CompactSection>
+
+      {/* Certificate Policies / CPS */}
+      <CompactSection title={t('crlOcsp.cpsTitle')} icon={CertificateIcon}>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-text-primary">{t('crlOcsp.cpsEnabled')}</span>
+            {canWrite('crl') ? (
+              <ToggleSwitch
+                checked={selectedCA.cps_enabled || false}
+                onChange={(val) => handleCpsUpdate('cps_enabled', val)}
+                disabled={savingUrls}
+              />
+            ) : (
+              <Badge variant={selectedCA.cps_enabled ? 'success' : 'secondary'}>
+                {selectedCA.cps_enabled ? t('common.enabled') : t('common.disabled')}
+              </Badge>
+            )}
+          </div>
+          {selectedCA.cps_enabled && (
+            <>
+              <div>
+                <label className="text-xs text-text-secondary mb-1 block">{t('crlOcsp.cpsUri')}</label>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="url"
+                    className="flex-1 text-xs font-mono bg-bg-tertiary border border-border rounded px-2 py-1.5 text-text-primary"
+                    placeholder="http://ca.example.com/cps.pdf"
+                    value={selectedCA.cps_uri || ''}
+                    onChange={(e) => setSelectedCA({ ...selectedCA, cps_uri: e.target.value })}
+                    onBlur={(e) => {
+                      if (e.target.value !== (cas.find(c => c.id === selectedCA.id)?.cps_uri || '')) {
+                        handleCpsUpdate('cps_uri', e.target.value)
+                      }
+                    }}
+                    disabled={!canWrite('crl')}
+                  />
+                  {selectedCA.cps_uri && (
+                    <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(selectedCA.cps_uri)}>
+                      <Copy size={14} />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-text-secondary mb-1 block">{t('crlOcsp.cpsOid')}</label>
+                <input
+                  type="text"
+                  className="w-full text-xs font-mono bg-bg-tertiary border border-border rounded px-2 py-1.5 text-text-primary"
+                  placeholder="2.5.29.32.0"
+                  value={selectedCA.cps_oid || '2.5.29.32.0'}
+                  onChange={(e) => setSelectedCA({ ...selectedCA, cps_oid: e.target.value })}
+                  onBlur={(e) => {
+                    if (e.target.value !== (cas.find(c => c.id === selectedCA.id)?.cps_oid || '2.5.29.32.0')) {
+                      handleCpsUpdate('cps_oid', e.target.value || '2.5.29.32.0')
+                    }
+                  }}
+                  disabled={!canWrite('crl')}
+                />
+                <p className="text-xs text-text-tertiary mt-1">{t('crlOcsp.cpsOidNote')}</p>
+              </div>
+            </>
+          )}
         </div>
       </CompactSection>
 

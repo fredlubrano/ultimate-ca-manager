@@ -1272,7 +1272,13 @@
     "toggleAiaFailed": "Error al alternar AIA CA Issuers",
     "urlNotConfigured": "URL no configurada — establezca el FQDN o la URL base del protocolo en Configuración",
     "autoRegen": "Auto-Regen",
-    "updates": "Actualizaciones"
+    "updates": "Actualizaciones",
+    "addUrl": "Añadir URL",
+    "cpsTitle": "Políticas de certificado (CPS)",
+    "cpsEnabled": "CPS habilitado",
+    "cpsUri": "URI CPS",
+    "cpsOid": "OID de política",
+    "cpsOidNote": "Predeterminado: 2.5.29.32.0 (anyPolicy). Use un OID personalizado para políticas específicas."
   },
   "trustStore": {
     "caTrust": "Confianza de CA",

@@ -433,31 +433,47 @@ def update_ca(ca_id):
         ca.descr = data['name']
     if 'ocsp_enabled' in data:
         ca.ocsp_enabled = bool(data['ocsp_enabled'])
-        if ca.ocsp_enabled and _needs_protocol_url(ca.ocsp_url):
+        primary_ocsp = ca.get_primary_ocsp_url()
+        if ca.ocsp_enabled and _needs_protocol_url(primary_ocsp):
             base_url = get_protocol_base_url()
             if not base_url:
                 return error_response('Cannot auto-generate OCSP URL: configure a FQDN or Protocol Base URL in Settings first', 400)
-            ca.ocsp_url = f"{base_url}/ocsp"
+            ca.set_ocsp_urls([f"{base_url}/ocsp"])
     if 'ocsp_url' in data:
-        ca.ocsp_url = data['ocsp_url']
+        ca.set_ocsp_urls([data['ocsp_url']] if isinstance(data['ocsp_url'], str) else data['ocsp_url'])
+    if 'ocsp_urls' in data:
+        ca.set_ocsp_urls(data['ocsp_urls'])
     if 'cdp_enabled' in data:
         ca.cdp_enabled = bool(data['cdp_enabled'])
-        if ca.cdp_enabled and _needs_protocol_url(ca.cdp_url):
+        primary_cdp = ca.get_primary_cdp_url()
+        if ca.cdp_enabled and _needs_protocol_url(primary_cdp):
             base_url = get_protocol_base_url()
             if not base_url:
                 return error_response('Cannot auto-generate CDP URL: configure a FQDN or Protocol Base URL in Settings first', 400)
-            ca.cdp_url = f"{base_url}/cdp/{ca.refid}.crl"
+            ca.set_cdp_urls([f"{base_url}/cdp/{ca.refid}.crl"])
     if 'cdp_url' in data:
-        ca.cdp_url = data['cdp_url']
+        ca.set_cdp_urls([data['cdp_url']] if isinstance(data['cdp_url'], str) else data['cdp_url'])
+    if 'cdp_urls' in data:
+        ca.set_cdp_urls(data['cdp_urls'])
     if 'aia_ca_issuers_enabled' in data:
         ca.aia_ca_issuers_enabled = bool(data['aia_ca_issuers_enabled'])
-        if ca.aia_ca_issuers_enabled and _needs_protocol_url(ca.aia_ca_issuers_url):
+        primary_aia = ca.get_primary_aia_url()
+        if ca.aia_ca_issuers_enabled and _needs_protocol_url(primary_aia):
             base_url = get_protocol_base_url()
             if not base_url:
                 return error_response('Cannot auto-generate AIA URL: configure a FQDN or Protocol Base URL in Settings first', 400)
-            ca.aia_ca_issuers_url = f"{base_url}/ca/{ca.refid}.cer"
+            ca.set_aia_urls([f"{base_url}/ca/{ca.refid}.cer"])
     if 'aia_ca_issuers_url' in data:
-        ca.aia_ca_issuers_url = data['aia_ca_issuers_url']
+        ca.set_aia_urls([data['aia_ca_issuers_url']] if isinstance(data['aia_ca_issuers_url'], str) else data['aia_ca_issuers_url'])
+    if 'aia_ca_issuers_urls' in data:
+        ca.set_aia_urls(data['aia_ca_issuers_urls'])
+    # CPS fields
+    if 'cps_enabled' in data:
+        ca.cps_enabled = bool(data['cps_enabled'])
+    if 'cps_uri' in data:
+        ca.cps_uri = data['cps_uri']
+    if 'cps_oid' in data:
+        ca.cps_oid = data['cps_oid'] or '2.5.29.32.0'
     if 'is_active' in data:
         ca.is_active = bool(data['is_active'])
     

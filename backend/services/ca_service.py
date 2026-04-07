@@ -71,8 +71,10 @@ class CAService:
         # Get parent CA if intermediate
         issuer = None
         issuer_private_key = None
-        parent_cdp_url = None
-        parent_ocsp_url = None
+        parent_cdp_urls = None
+        parent_ocsp_urls = None
+        parent_cps_uri = None
+        parent_cps_oid = None
         if caref:
             parent_ca = CA.query.filter_by(refid=caref).first()
             if not parent_ca:
@@ -98,10 +100,13 @@ class CAService:
             parent_ca.serial = (parent_ca.serial or 0) + 1
 
             # Resolve parent CDP/OCSP URLs for embedding in SubCA cert
-            if parent_ca.cdp_enabled and parent_ca.cdp_url:
-                parent_cdp_url = parent_ca.cdp_url.replace('{ca_refid}', parent_ca.refid or '')
-            if parent_ca.ocsp_enabled and parent_ca.ocsp_url:
-                parent_ocsp_url = parent_ca.ocsp_url.replace('{ca_refid}', parent_ca.refid or '')
+            if parent_ca.cdp_enabled:
+                parent_cdp_urls = [url.replace('{ca_refid}', parent_ca.refid or '') for url in parent_ca.get_cdp_urls()]
+            if parent_ca.ocsp_enabled:
+                parent_ocsp_urls = parent_ca.get_ocsp_urls()
+            if parent_ca.cps_enabled and parent_ca.cps_uri:
+                parent_cps_uri = parent_ca.cps_uri
+                parent_cps_oid = parent_ca.cps_oid
         
         # Create CA certificate
         cert_pem, key_pem = TrustStoreService.create_ca_certificate(
@@ -111,8 +116,10 @@ class CAService:
             issuer_private_key=issuer_private_key,
             validity_days=validity_days,
             digest=digest,
-            ocsp_uri=parent_ocsp_url or ocsp_uri,
-            cdp_url=parent_cdp_url,
+            ocsp_uris=parent_ocsp_urls,
+            cdp_urls=parent_cdp_urls,
+            cps_uri=parent_cps_uri,
+            cps_oid=parent_cps_oid,
         )
         
         # Parse certificate for details
@@ -162,7 +169,7 @@ class CAService:
             base_url = get_protocol_base_url()
             if base_url:
                 ca.cdp_enabled = True
-                ca.cdp_url = f"{base_url}/cdp/{ca.refid}.crl"
+                ca.set_cdp_urls([f"{base_url}/cdp/{ca.refid}.crl"])
                 db.session.commit()
         except Exception:
             pass  # Non-critical — user can enable CDP manually
@@ -596,13 +603,12 @@ class CAService:
             ca_key_pem, password=None, backend=default_backend()
         )
         
-        # Resolve CDP/OCSP URLs
-        cdp_url = None
-        ocsp_url = None
-        if ca.cdp_enabled and ca.cdp_url:
-            cdp_url = ca.cdp_url.replace('{ca_refid}', ca.refid or '')
-        if ca.ocsp_enabled and ca.ocsp_url:
-            ocsp_url = ca.ocsp_url.replace('{ca_refid}', ca.refid or '')
+        # Resolve CDP/OCSP/AIA URLs
+        cdp_urls = [url.replace('{ca_refid}', ca.refid or '') for url in ca.get_cdp_urls()] if ca.cdp_enabled else None
+        ocsp_urls = ca.get_ocsp_urls() if ca.ocsp_enabled else None
+        aia_ca_issuers_urls = [url.replace('{ca_refid}', ca.refid or '') for url in ca.get_aia_urls()] if ca.aia_ca_issuers_enabled else None
+        cps_uri = ca.cps_uri if ca.cps_enabled and ca.cps_uri else None
+        cps_oid = ca.cps_oid if cps_uri else None
         
         # Sign via TrustStoreService
         cert_pem_bytes = TrustStoreService.sign_csr(
@@ -611,8 +617,11 @@ class CAService:
             ca_private_key=ca_private_key,
             validity_days=validity_days,
             digest='sha256',
-            cdp_url=cdp_url,
-            ocsp_url=ocsp_url
+            cdp_urls=cdp_urls,
+            ocsp_urls=ocsp_urls,
+            aia_ca_issuers_urls=aia_ca_issuers_urls,
+            cps_uri=cps_uri,
+            cps_oid=cps_oid,
         )
         
         # Extract serial number

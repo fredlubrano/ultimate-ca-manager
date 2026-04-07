@@ -184,11 +184,12 @@ class CRLService:
                 pass  # Skip if neither AKI nor SKI available
         
         # Add FreshestCRL extension if delta CRL is enabled (RFC 5280 §5.2.6)
-        if ca.delta_crl_enabled and ca.cdp_url:
-            # Build delta URL from the known CDP route pattern: /cdp/<ca_id>-delta.crl
-            from urllib.parse import urlparse
-            parsed = urlparse(ca.cdp_url.replace('{ca_refid}', ca.refid))
-            delta_url = f"{parsed.scheme}://{parsed.netloc}/cdp/{ca.refid}-delta.crl"
+        if ca.delta_crl_enabled:
+            primary_cdp = ca.get_primary_cdp_url()
+            if primary_cdp:
+                from urllib.parse import urlparse
+                parsed = urlparse(primary_cdp.replace('{ca_refid}', ca.refid))
+                delta_url = f"{parsed.scheme}://{parsed.netloc}/cdp/{ca.refid}-delta.crl"
             try:
                 builder = builder.add_extension(
                     x509.FreshestCRL([
@@ -424,9 +425,10 @@ class CRLService:
         )
         
         # Add IssuingDistributionPoint (RFC 5280 §5.2.5) — CRITICAL for delta CRLs
-        if ca.cdp_url:
+        primary_cdp = ca.get_primary_cdp_url()
+        if primary_cdp:
             try:
-                cdp_resolved = ca.cdp_url.replace('{ca_refid}', ca.refid)
+                cdp_resolved = primary_cdp.replace('{ca_refid}', ca.refid)
                 builder = builder.add_extension(
                     x509.IssuingDistributionPoint(
                         full_name=[x509.UniformResourceIdentifier(cdp_resolved)],

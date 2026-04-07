@@ -1272,7 +1272,13 @@
     "toggleAiaFailed": "AIA CA Issuersの切り替えに失敗しました",
     "urlNotConfigured": "URL未設定 — 設定でFQDNまたはプロトコルベースURLを設定してください",
     "autoRegen": "自動更新",
-    "updates": "更新"
+    "updates": "更新",
+    "addUrl": "URL を追加",
+    "cpsTitle": "証明書ポリシー (CPS)",
+    "cpsEnabled": "CPS 有効",
+    "cpsUri": "CPS URI",
+    "cpsOid": "ポリシー OID",
+    "cpsOidNote": "デフォルト: 2.5.29.32.0 (anyPolicy)。組織固有のポリシーにはカスタム OID を使用してください。"
   },
   "trustStore": {
     "caTrust": "CAトラスト",

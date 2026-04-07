@@ -555,41 +555,58 @@ def create_certificate():
             critical=False
         )
         
-        # CRL Distribution Points — embed CA's CDP URL if enabled
-        if ca.cdp_enabled and ca.cdp_url:
-            cdp_url = ca.cdp_url.replace('{ca_refid}', ca.refid)
-            builder = builder.add_extension(
-                x509.CRLDistributionPoints([
+        # CRL Distribution Points — embed CA's CDP URLs if enabled
+        if ca.cdp_enabled:
+            cdp_urls = [url.replace('{ca_refid}', ca.refid) for url in ca.get_cdp_urls()]
+            if cdp_urls:
+                dist_points = [
                     x509.DistributionPoint(
-                        full_name=[x509.UniformResourceIdentifier(cdp_url)],
+                        full_name=[x509.UniformResourceIdentifier(url)],
                         relative_name=None,
                         reasons=None,
                         crl_issuer=None
                     )
-                ]),
-                critical=False
-            )
+                    for url in cdp_urls
+                ]
+                builder = builder.add_extension(
+                    x509.CRLDistributionPoints(dist_points),
+                    critical=False
+                )
         
-        # Authority Information Access — embed OCSP URI if enabled
+        # Authority Information Access — embed OCSP/AIA URLs if enabled
         aia_descriptions = []
-        if ca.ocsp_enabled and ca.ocsp_url:
-            aia_descriptions.append(
-                x509.AccessDescription(
-                    x509.oid.AuthorityInformationAccessOID.OCSP,
-                    x509.UniformResourceIdentifier(ca.ocsp_url)
+        if ca.ocsp_enabled:
+            for uri in ca.get_ocsp_urls():
+                aia_descriptions.append(
+                    x509.AccessDescription(
+                        x509.oid.AuthorityInformationAccessOID.OCSP,
+                        x509.UniformResourceIdentifier(uri)
+                    )
                 )
-            )
-        if ca.aia_ca_issuers_enabled and ca.aia_ca_issuers_url:
-            aia_url = ca.aia_ca_issuers_url.replace('{ca_refid}', ca.refid)
-            aia_descriptions.append(
-                x509.AccessDescription(
-                    x509.oid.AuthorityInformationAccessOID.CA_ISSUERS,
-                    x509.UniformResourceIdentifier(aia_url)
+        if ca.aia_ca_issuers_enabled:
+            for url in ca.get_aia_urls():
+                aia_descriptions.append(
+                    x509.AccessDescription(
+                        x509.oid.AuthorityInformationAccessOID.CA_ISSUERS,
+                        x509.UniformResourceIdentifier(url.replace('{ca_refid}', ca.refid))
+                    )
                 )
-            )
         if aia_descriptions:
             builder = builder.add_extension(
                 x509.AuthorityInformationAccess(aia_descriptions),
+                critical=False
+            )
+
+        # Certificate Policies / CPS
+        if ca.cps_enabled and ca.cps_uri:
+            policy_oid = x509.ObjectIdentifier(ca.cps_oid or '2.5.29.32.0')
+            builder = builder.add_extension(
+                x509.CertificatePolicies([
+                    x509.PolicyInformation(
+                        policy_identifier=policy_oid,
+                        policy_qualifiers=[ca.cps_uri]
+                    )
+                ]),
                 critical=False
             )
         

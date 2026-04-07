@@ -209,7 +209,10 @@ class ReportService:
                 'valid_to': ca.valid_to,
                 'key_type': ca.key_type,
                 'issued_certificates': cert_count,
-                'cdp_url': ca.cdp_url,
+                'cdp_url': ca.get_primary_cdp_url(),
+                'cdp_urls': ca.get_cdp_urls(),
+                'ocsp_urls': ca.get_ocsp_urls(),
+                'cps_uri': ca.cps_uri if ca.cps_enabled else None,
             })
         
         return {

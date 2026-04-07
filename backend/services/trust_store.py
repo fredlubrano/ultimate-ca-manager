@@ -112,7 +112,11 @@ class TrustStoreService:
         validity_days: int = 825,
         digest: str = 'sha256',
         ocsp_uri: Optional[str] = None,
+        ocsp_uris: Optional[List[str]] = None,
         cdp_url: Optional[str] = None,
+        cdp_urls: Optional[List[str]] = None,
+        cps_uri: Optional[str] = None,
+        cps_oid: Optional[str] = None,
         serial: Optional[int] = None
     ) -> Tuple[bytes, bytes]:
         """
@@ -125,13 +129,20 @@ class TrustStoreService:
             issuer_private_key: Issuer's private key (None for self-signed)
             validity_days: Certificate validity in days
             digest: Hash algorithm
-            ocsp_uri: Optional OCSP URI (parent CA's OCSP)
-            cdp_url: Optional CRL Distribution Point URL (parent CA's CDP)
+            ocsp_uri: Optional single OCSP URI (backward compat, use ocsp_uris for multiple)
+            ocsp_uris: Optional list of OCSP URIs (parent CA's OCSP)
+            cdp_url: Optional single CDP URL (backward compat, use cdp_urls for multiple)
+            cdp_urls: Optional list of CDP URLs (parent CA's CDPs)
+            cps_uri: Optional CPS URI for Certificate Policies extension
+            cps_oid: Optional Policy OID (default: anyPolicy 2.5.29.32.0)
             serial: Optional serial number
             
         Returns:
             Tuple of (certificate PEM bytes, private key PEM bytes)
         """
+        # Normalize URL params: merge singular into list
+        all_cdp_urls = cdp_urls or ([cdp_url] if cdp_url else [])
+        all_ocsp_uris = ocsp_uris or ([ocsp_uri] if ocsp_uri else [])
         # For self-signed, issuer is subject
         if issuer is None:
             issuer = subject
@@ -186,27 +197,44 @@ class TrustStoreService:
                 critical=False,
             )
         
-        # OCSP URI if provided
-        if ocsp_uri:
+        # Authority Information Access — OCSP URIs (parent CA's for SubCAs)
+        if all_ocsp_uris:
+            aia_descriptions = [
+                x509.AccessDescription(
+                    x509.oid.AuthorityInformationAccessOID.OCSP,
+                    x509.UniformResourceIdentifier(uri)
+                )
+                for uri in all_ocsp_uris
+            ]
             builder = builder.add_extension(
-                x509.AuthorityInformationAccess([
-                    x509.AccessDescription(
-                        x509.oid.AuthorityInformationAccessOID.OCSP,
-                        x509.UniformResourceIdentifier(ocsp_uri)
-                    )
-                ]),
+                x509.AuthorityInformationAccess(aia_descriptions),
                 critical=False,
             )
         
-        # CRL Distribution Point if provided (parent CA's CDP for SubCAs)
-        if cdp_url:
+        # CRL Distribution Points — multiple DPs (parent CA's CDPs for SubCAs)
+        if all_cdp_urls:
+            dist_points = [
+                x509.DistributionPoint(
+                    full_name=[x509.UniformResourceIdentifier(url)],
+                    relative_name=None,
+                    crl_issuer=None,
+                    reasons=None,
+                )
+                for url in all_cdp_urls
+            ]
             builder = builder.add_extension(
-                x509.CRLDistributionPoints([
-                    x509.DistributionPoint(
-                        full_name=[x509.UniformResourceIdentifier(cdp_url)],
-                        relative_name=None,
-                        crl_issuer=None,
-                        reasons=None,
+                x509.CRLDistributionPoints(dist_points),
+                critical=False,
+            )
+
+        # Certificate Policies / CPS (RFC 5280 §4.2.1.4)
+        if cps_uri:
+            policy_oid = x509.ObjectIdentifier(cps_oid or '2.5.29.32.0')
+            builder = builder.add_extension(
+                x509.CertificatePolicies([
+                    x509.PolicyInformation(
+                        policy_identifier=policy_oid,
+                        policy_qualifiers=[cps_uri]
                     )
                 ]),
                 critical=False,
@@ -246,8 +274,13 @@ class TrustStoreService:
         san_uri: Optional[List[str]] = None,
         san_email: Optional[List[str]] = None,
         ocsp_uri: Optional[str] = None,
+        ocsp_uris: Optional[List[str]] = None,
         cdp_url: Optional[str] = None,
+        cdp_urls: Optional[List[str]] = None,
         aia_ca_issuers_url: Optional[str] = None,
+        aia_ca_issuers_urls: Optional[List[str]] = None,
+        cps_uri: Optional[str] = None,
+        cps_oid: Optional[str] = None,
     ) -> Tuple[bytes, bytes]:
         """
         Create a certificate signed by a CA
@@ -436,19 +469,21 @@ class TrustStoreService:
         )
         
         # Authority Information Access (RFC 5280 §4.2.2.1)
+        all_ocsp = ocsp_uris or ([ocsp_uri] if ocsp_uri else [])
+        all_aia = aia_ca_issuers_urls or ([aia_ca_issuers_url] if aia_ca_issuers_url else [])
         aia_descriptions = []
-        if ocsp_uri:
+        for uri in all_ocsp:
             aia_descriptions.append(
                 x509.AccessDescription(
                     x509.oid.AuthorityInformationAccessOID.OCSP,
-                    x509.UniformResourceIdentifier(ocsp_uri)
+                    x509.UniformResourceIdentifier(uri)
                 )
             )
-        if aia_ca_issuers_url:
+        for url in all_aia:
             aia_descriptions.append(
                 x509.AccessDescription(
                     x509.oid.AuthorityInformationAccessOID.CA_ISSUERS,
-                    x509.UniformResourceIdentifier(aia_ca_issuers_url)
+                    x509.UniformResourceIdentifier(url)
                 )
             )
         if aia_descriptions:
@@ -457,15 +492,31 @@ class TrustStoreService:
                 critical=False,
             )
         
-        # CRL Distribution Points (RFC 5280 - Section 4.2.1.13)
-        if cdp_url:
+        # CRL Distribution Points (RFC 5280 §4.2.1.13)
+        all_cdp = cdp_urls or ([cdp_url] if cdp_url else [])
+        if all_cdp:
+            dist_points = [
+                x509.DistributionPoint(
+                    full_name=[x509.UniformResourceIdentifier(url)],
+                    relative_name=None,
+                    reasons=None,
+                    crl_issuer=None
+                )
+                for url in all_cdp
+            ]
             builder = builder.add_extension(
-                x509.CRLDistributionPoints([
-                    x509.DistributionPoint(
-                        full_name=[x509.UniformResourceIdentifier(cdp_url)],
-                        relative_name=None,
-                        reasons=None,
-                        crl_issuer=None
+                x509.CRLDistributionPoints(dist_points),
+                critical=False,
+            )
+
+        # Certificate Policies / CPS (RFC 5280 §4.2.1.4)
+        if cps_uri:
+            policy_oid = x509.ObjectIdentifier(cps_oid or '2.5.29.32.0')
+            builder = builder.add_extension(
+                x509.CertificatePolicies([
+                    x509.PolicyInformation(
+                        policy_identifier=policy_oid,
+                        policy_qualifiers=[cps_uri]
                     )
                 ]),
                 critical=False,
@@ -563,8 +614,13 @@ class TrustStoreService:
         digest: str = 'sha256',
         cert_type: str = 'server_cert',
         cdp_url: str = None,
+        cdp_urls: Optional[List[str]] = None,
         ocsp_url: str = None,
-        aia_ca_issuers_url: str = None
+        ocsp_urls: Optional[List[str]] = None,
+        aia_ca_issuers_url: str = None,
+        aia_ca_issuers_urls: Optional[List[str]] = None,
+        cps_uri: Optional[str] = None,
+        cps_oid: Optional[str] = None,
     ) -> bytes:
         """
         Sign a CSR with a CA
@@ -689,37 +745,42 @@ class TrustStoreService:
                     critical=False,
                 )
         
-        # CRL Distribution Points — embed CA's CDP URL if enabled
-        if cdp_url:
+        # CRL Distribution Points — embed CA's CDP URLs
+        all_cdp = cdp_urls or ([cdp_url] if cdp_url else [])
+        if all_cdp:
             try:
                 csr.extensions.get_extension_for_oid(ExtensionOID.CRL_DISTRIBUTION_POINTS)
             except x509.ExtensionNotFound:
+                dist_points = [
+                    x509.DistributionPoint(
+                        full_name=[x509.UniformResourceIdentifier(url)],
+                        relative_name=None,
+                        reasons=None,
+                        crl_issuer=None
+                    )
+                    for url in all_cdp
+                ]
                 builder = builder.add_extension(
-                    x509.CRLDistributionPoints([
-                        x509.DistributionPoint(
-                            full_name=[x509.UniformResourceIdentifier(cdp_url)],
-                            relative_name=None,
-                            reasons=None,
-                            crl_issuer=None
-                        )
-                    ]),
+                    x509.CRLDistributionPoints(dist_points),
                     critical=False
                 )
 
         # Authority Information Access (RFC 5280 §4.2.2.1)
+        all_ocsp = ocsp_urls or ([ocsp_url] if ocsp_url else [])
+        all_aia = aia_ca_issuers_urls or ([aia_ca_issuers_url] if aia_ca_issuers_url else [])
         aia_descriptions = []
-        if ocsp_url:
+        for uri in all_ocsp:
             aia_descriptions.append(
                 x509.AccessDescription(
                     x509.oid.AuthorityInformationAccessOID.OCSP,
-                    x509.UniformResourceIdentifier(ocsp_url)
+                    x509.UniformResourceIdentifier(uri)
                 )
             )
-        if aia_ca_issuers_url:
+        for url in all_aia:
             aia_descriptions.append(
                 x509.AccessDescription(
                     x509.oid.AuthorityInformationAccessOID.CA_ISSUERS,
-                    x509.UniformResourceIdentifier(aia_ca_issuers_url)
+                    x509.UniformResourceIdentifier(url)
                 )
             )
         if aia_descriptions:
@@ -728,6 +789,22 @@ class TrustStoreService:
             except x509.ExtensionNotFound:
                 builder = builder.add_extension(
                     x509.AuthorityInformationAccess(aia_descriptions),
+                    critical=False
+                )
+
+        # Certificate Policies / CPS (RFC 5280 §4.2.1.4)
+        if cps_uri:
+            try:
+                csr.extensions.get_extension_for_oid(ExtensionOID.CERTIFICATE_POLICIES)
+            except x509.ExtensionNotFound:
+                policy_oid_obj = x509.ObjectIdentifier(cps_oid or '2.5.29.32.0')
+                builder = builder.add_extension(
+                    x509.CertificatePolicies([
+                        x509.PolicyInformation(
+                            policy_identifier=policy_oid_obj,
+                            policy_qualifiers=[cps_uri]
+                        )
+                    ]),
                     critical=False
                 )
 
