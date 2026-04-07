@@ -402,7 +402,8 @@
     },
     "enable": "Aktivieren",
     "disable": "Deaktivieren",
-    "digest": "Hash-Algorithmus"
+    "digest": "Hash-Algorithmus",
+    "tsa": "TSA"
   },
   "commandPalette": {
     "searchPlaceholder": "Befehle, Zertifikate, CAs, Benutzer suchen...",
@@ -2724,7 +2725,8 @@
         "templates": "Vorlagen konnten nicht geladen werden",
         "truststore": "Trust Store konnte nicht geladen werden",
         "users": "Benutzer konnten nicht geladen werden",
-        "est": "EST-Daten konnten nicht geladen werden"
+        "est": "EST-Daten konnten nicht geladen werden",
+        "tsa": "TSA-Konfiguration konnte nicht geladen werden"
       },
       "revokeFailed": {
         "certificate": "Zertifikat konnte nicht widerrufen werden"
@@ -3484,6 +3486,34 @@
       "error": "Verbindungsfehler",
       "live": "Live",
       "offline": "Offline"
+    }
+  },
+  "tsa": {
+    "title": "TSA-Protokoll",
+    "enableTsa": "TSA-Server aktivieren",
+    "enableTsaDesc": "Zeitstempelanfragen über TSA-Protokoll (RFC 3161) erlauben",
+    "serverSettings": "Servereinstellungen",
+    "signingCA": "Signatur-CA",
+    "selectCA": "CA für Zeitstempelsignierung auswählen",
+    "policyOid": "Richtlinien-OID",
+    "policyOidHelp": "OID zur Identifizierung der TSA-Richtlinie, unter der Zeitstempel ausgestellt werden",
+    "endpoint": "TSA-Endpunkt",
+    "endpointDesc": "Verwenden Sie diese URL in Ihrer TSA-Client-Konfiguration",
+    "timestampRequest": "Zeitstempelanfrage",
+    "copied": "URL in Zwischenablage kopiert",
+    "tsaDisabled": "TSA ist deaktiviert",
+    "tsaDisabledDesc": "Aktivieren Sie TSA in den Einstellungen, um Zeitstempelanfragen zuzulassen",
+    "aboutTsa": "Über TSA",
+    "aboutTsaDesc": "Die Zeitstempelautorität (TSA, RFC 3161) stellt vertrauenswürdige Zeitstempel bereit, die belegen, dass ein Dokument oder Hash zu einem bestimmten Zeitpunkt existierte. Wird für Codesignierung, rechtliche Compliance und Prüfprotokolle verwendet.",
+    "totalRequests": "Gesamtanfragen",
+    "usage": "Verwendungsbeispiele",
+    "usageCreateRequest": "1. Zeitstempelanfrage erstellen:",
+    "usageSendRequest": "2. Anfrage an TSA senden:",
+    "usageVerify": "3. Zeitstempel überprüfen:",
+    "groups": {
+      "management": "Verwaltung",
+      "settings": "Einstellungen",
+      "info": "Informationen"
     }
   }
 }

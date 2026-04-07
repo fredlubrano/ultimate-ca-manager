@@ -402,7 +402,8 @@
     },
     "enable": "Enable",
     "disable": "Disable",
-    "digest": "Digest"
+    "digest": "Digest",
+    "tsa": "TSA"
   },
   "commandPalette": {
     "searchPlaceholder": "Search commands, certificates, CAs, users...",
@@ -2815,7 +2816,8 @@
         "approvals": "Failed to load approval requests",
         "reports": "Failed to load reports",
         "generic": "Failed to load data",
-        "est": "Failed to load EST data"
+        "est": "Failed to load EST data",
+        "tsa": "Failed to load TSA configuration"
       },
       "createFailed": {
         "certificate": "Failed to create certificate",
@@ -3487,6 +3489,34 @@
       "error": "Connection error",
       "live": "Live",
       "offline": "Offline"
+    }
+  },
+  "tsa": {
+    "title": "TSA Protocol",
+    "enableTsa": "Enable TSA Server",
+    "enableTsaDesc": "Allow timestamp requests via TSA (RFC 3161) protocol",
+    "serverSettings": "Server Settings",
+    "signingCA": "Signing CA",
+    "selectCA": "Select a CA for timestamp signing",
+    "policyOid": "Policy OID",
+    "policyOidHelp": "OID identifying the TSA policy under which timestamps are issued",
+    "endpoint": "TSA Endpoint",
+    "endpointDesc": "Use this URL in your TSA client configuration",
+    "timestampRequest": "Timestamp Request",
+    "copied": "URL copied to clipboard",
+    "tsaDisabled": "TSA is disabled",
+    "tsaDisabledDesc": "Enable TSA in settings to allow timestamp requests",
+    "aboutTsa": "About TSA",
+    "aboutTsaDesc": "Time Stamp Authority (TSA, RFC 3161) provides trusted timestamps that prove a document or hash existed at a specific point in time. Used for code signing, legal compliance, and audit trails.",
+    "totalRequests": "Total Requests",
+    "usage": "Usage Examples",
+    "usageCreateRequest": "1. Create a timestamp request:",
+    "usageSendRequest": "2. Send request to TSA:",
+    "usageVerify": "3. Verify the timestamp:",
+    "groups": {
+      "management": "Management",
+      "settings": "Settings",
+      "info": "Information"
     }
   }
 }

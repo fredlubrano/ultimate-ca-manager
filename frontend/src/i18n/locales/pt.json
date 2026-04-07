@@ -402,7 +402,8 @@
     },
     "enable": "Ativar",
     "disable": "Desativar",
-    "digest": "Algoritmo de hash"
+    "digest": "Algoritmo de hash",
+    "tsa": "TSA"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
@@ -2724,7 +2725,8 @@
         "templates": "Falha ao carregar templates",
         "truststore": "Falha ao carregar trust store",
         "users": "Falha ao carregar usuários",
-        "est": "Falha ao carregar dados EST"
+        "est": "Falha ao carregar dados EST",
+        "tsa": "Falha ao carregar configuração TSA"
       },
       "revokeFailed": {
         "certificate": "Falha ao revogar certificado"
@@ -3484,6 +3486,34 @@
       "error": "Erro de conexão",
       "live": "Ao vivo",
       "offline": "Offline"
+    }
+  },
+  "tsa": {
+    "title": "Protocolo TSA",
+    "enableTsa": "Habilitar servidor TSA",
+    "enableTsaDesc": "Permitir solicitações de carimbo de data/hora via protocolo TSA (RFC 3161)",
+    "serverSettings": "Configurações do servidor",
+    "signingCA": "CA de assinatura",
+    "selectCA": "Selecione uma CA para assinatura de carimbos de data/hora",
+    "policyOid": "OID de política",
+    "policyOidHelp": "OID que identifica a política TSA sob a qual os carimbos de data/hora são emitidos",
+    "endpoint": "Endpoint TSA",
+    "endpointDesc": "Use esta URL na configuração do seu cliente TSA",
+    "timestampRequest": "Solicitação de carimbo de data/hora",
+    "copied": "URL copiada para a área de transferência",
+    "tsaDisabled": "TSA está desabilitado",
+    "tsaDisabledDesc": "Habilite o TSA nas configurações para permitir solicitações de carimbo de data/hora",
+    "aboutTsa": "Sobre TSA",
+    "aboutTsaDesc": "A autoridade de carimbo de data/hora (TSA, RFC 3161) fornece carimbos de data/hora confiáveis que provam que um documento ou hash existia em um momento específico. Usado para assinatura de código, conformidade legal e trilhas de auditoria.",
+    "totalRequests": "Total de solicitações",
+    "usage": "Exemplos de uso",
+    "usageCreateRequest": "1. Criar uma solicitação de carimbo de data/hora:",
+    "usageSendRequest": "2. Enviar solicitação ao TSA:",
+    "usageVerify": "3. Verificar o carimbo de data/hora:",
+    "groups": {
+      "management": "Gerenciamento",
+      "settings": "Configurações",
+      "info": "Informações"
     }
   }
 }

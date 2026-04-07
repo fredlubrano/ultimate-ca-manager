@@ -67,7 +67,7 @@ export function AppShell() {
   // Extract current page from pathname (empty string for dashboard)
   const rawPage = location.pathname.split('/')[1] || ''
   // Map URL segments to nav item IDs when they differ
-  const pageIdMap = { 'scep-config': 'scep', 'est-config': 'est' }
+  const pageIdMap = { 'scep-config': 'scep', 'est-config': 'est', 'tsa-config': 'tsa' }
   const activePage = pageIdMap[rawPage] || rawPage
   
   // Map URL paths to helpContent keys
@@ -84,7 +84,7 @@ export function AppShell() {
   const pagesWithHelp = [
     // Core pages
     'certificates', 'cas', 'csrs', 'users', 'templates', 
-    'acme', 'scep', 'est', 'settings', 'truststore', 'crl-ocsp', 
+    'acme', 'scep', 'est', 'tsa', 'settings', 'truststore', 'crl-ocsp', 
     'tools', 'audit', 'account', 'operations',
     // Pro pages
     'rbac', 'hsm'

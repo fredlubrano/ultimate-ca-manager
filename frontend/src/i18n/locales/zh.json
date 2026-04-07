@@ -402,7 +402,8 @@
     },
     "enable": "启用",
     "disable": "禁用",
-    "digest": "摘要算法"
+    "digest": "摘要算法",
+    "tsa": "TSA"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",
@@ -2724,7 +2725,8 @@
         "templates": "加载模板失败",
         "truststore": "加载信任库失败",
         "users": "加载用户失败",
-        "est": "加载EST数据失败"
+        "est": "加载EST数据失败",
+        "tsa": "加载TSA配置失败"
       },
       "revokeFailed": {
         "certificate": "吊销证书失败"
@@ -3484,6 +3486,34 @@
       "error": "连接错误",
       "live": "实时",
       "offline": "离线"
+    }
+  },
+  "tsa": {
+    "title": "TSA协议",
+    "enableTsa": "启用TSA服务器",
+    "enableTsaDesc": "允许通过TSA（RFC 3161）协议发送时间戳请求",
+    "serverSettings": "服务器设置",
+    "signingCA": "签名CA",
+    "selectCA": "选择用于时间戳签名的CA",
+    "policyOid": "策略OID",
+    "policyOidHelp": "标识时间戳发行所依据的TSA策略的OID",
+    "endpoint": "TSA端点",
+    "endpointDesc": "在TSA客户端配置中使用此URL",
+    "timestampRequest": "时间戳请求",
+    "copied": "URL已复制到剪贴板",
+    "tsaDisabled": "TSA已禁用",
+    "tsaDisabledDesc": "在设置中启用TSA以允许时间戳请求",
+    "aboutTsa": "关于TSA",
+    "aboutTsaDesc": "时间戳机构（TSA，RFC 3161）提供可信的时间戳，证明文档或哈希在特定时间点存在。用于代码签名、法律合规和审计追踪。",
+    "totalRequests": "总请求数",
+    "usage": "使用示例",
+    "usageCreateRequest": "1. 创建时间戳请求：",
+    "usageSendRequest": "2. 向TSA发送请求：",
+    "usageVerify": "3. 验证时间戳：",
+    "groups": {
+      "management": "管理",
+      "settings": "设置",
+      "info": "信息"
     }
   }
 }

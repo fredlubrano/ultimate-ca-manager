@@ -9,7 +9,8 @@ import {
   House, Certificate, ShieldCheck, FileText, List, User, Key, Gear,
   SignOut, Check, UserCircle, Lightning, ClockCounterClockwise, Robot,
   UsersThree, Shield, Lock, FileX, Vault, Wrench, Globe, CaretRight,
-  Gavel, Stamp, ChartBar, Stack, Broadcast, CaretDown, MagnifyingGlass
+  Gavel, Stamp, ChartBar, Stack, Broadcast, CaretDown, MagnifyingGlass,
+  Clock
 } from '@phosphor-icons/react'
 import { Link, useNavigate } from 'react-router-dom'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
@@ -44,6 +45,7 @@ const navGroups = [
       { id: 'acme', icon: Key, labelKey: 'common.acme', path: '/acme', permission: 'read:acme' },
       { id: 'scep', icon: Robot, labelKey: 'common.scep', path: '/scep-config', permission: 'read:scep' },
       { id: 'est', icon: Globe, labelKey: 'common.est', path: '/est-config', permission: 'read:est' },
+      { id: 'tsa', icon: Clock, labelKey: 'common.tsa', path: '/tsa-config', permission: 'read:settings' },
       { id: 'crl-ocsp', icon: FileX, labelKey: 'common.crlOcsp', path: '/crl-ocsp', permission: 'read:crl' },
     ]
   },

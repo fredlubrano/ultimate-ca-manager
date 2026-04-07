@@ -10,7 +10,7 @@ import {
   ShieldCheck, Key, Users, Gear, Database, Lock, Globe,
   ListChecks, CloudArrowUp, HardDrive, UsersFour, Fingerprint,
   ArrowClockwise, Wrench, Stack, Robot, Gavel, CalendarBlank, FilePdf,
-  WindowsLogo, UserSwitch
+  WindowsLogo, UserSwitch, Clock
 } from '@phosphor-icons/react'
 
 export const helpContent = {
@@ -364,6 +364,52 @@ export const helpContent = {
       'mTLS authentication requires proper TLS termination config (reverse proxy must forward client certs)',
     ],
     related: ['Certificates', 'CAs', 'SCEP', 'ACME']
+  },
+
+  // ===== TSA =====
+  tsa: {
+    title: 'TSA',
+    subtitle: 'Time Stamp Authority',
+    overview: 'TSA (RFC 3161) provides trusted timestamps that prove a document or hash existed at a specific point in time. Used for code signing, legal compliance, and audit trails.',
+    sections: [
+      {
+        title: 'Tabs',
+        icon: ListChecks,
+        items: [
+          { label: 'Settings', text: 'Enable TSA, select the signing CA, and configure the TSA policy OID' },
+          { label: 'Information', text: 'TSA endpoint URL, usage examples with OpenSSL, and request statistics' },
+        ]
+      },
+      {
+        title: 'Configuration',
+        icon: Gear,
+        items: [
+          { label: 'Signing CA', text: 'The CA whose private key signs timestamp tokens — must be a valid, non-expired CA' },
+          { label: 'Policy OID', text: 'Object Identifier for the TSA policy (e.g., 1.2.3.4.1) — included in every timestamp response' },
+          { label: 'Enable/Disable', text: 'Toggle the TSA endpoint on or off without losing configuration' },
+        ]
+      },
+      {
+        title: 'Usage',
+        icon: Clock,
+        items: [
+          { label: 'Create Request', text: 'openssl ts -query -data file.txt -sha256 -no_nonce -out request.tsq' },
+          { label: 'Send to TSA', text: 'curl -H "Content-Type: application/timestamp-query" --data-binary @request.tsq https://your-server/tsa -o response.tsr' },
+          { label: 'Verify', text: 'openssl ts -verify -data file.txt -in response.tsr -CAfile ca-chain.pem' },
+        ]
+      },
+    ],
+    tips: [
+      'TSA timestamps are used in code signing to ensure signatures remain valid after certificate expiry',
+      'The TSA endpoint accepts HTTP POST with Content-Type: application/timestamp-query',
+      'Use SHA-256 or stronger hash algorithms when creating timestamp requests',
+      'No authentication is required — the TSA endpoint is publicly accessible like CRL/OCSP',
+    ],
+    warnings: [
+      'A valid signing CA must be configured before enabling TSA',
+      'The TSA endpoint is a public protocol endpoint — do not put sensitive data in timestamp requests',
+    ],
+    related: ['CAs', 'Certificates', 'CRL & OCSP']
   },
 
   // ===== ACME =====

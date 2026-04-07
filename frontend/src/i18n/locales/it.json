@@ -402,7 +402,8 @@
     },
     "enable": "Attiva",
     "disable": "Disattiva",
-    "digest": "Algoritmo di hash"
+    "digest": "Algoritmo di hash",
+    "tsa": "TSA"
   },
   "commandPalette": {
     "searchPlaceholder": "Cerca comandi, certificati, CA, utenti...",
@@ -2724,7 +2725,8 @@
         "templates": "Impossibile caricare i modelli",
         "truststore": "Impossibile caricare il trust store",
         "users": "Impossibile caricare gli utenti",
-        "est": "Impossibile caricare i dati EST"
+        "est": "Impossibile caricare i dati EST",
+        "tsa": "Impossibile caricare la configurazione TSA"
       },
       "revokeFailed": {
         "certificate": "Impossibile revocare il certificato"
@@ -3484,6 +3486,34 @@
       "error": "Errore di connessione",
       "live": "In diretta",
       "offline": "Offline"
+    }
+  },
+  "tsa": {
+    "title": "Protocollo TSA",
+    "enableTsa": "Abilita server TSA",
+    "enableTsaDesc": "Consenti richieste di marca temporale tramite protocollo TSA (RFC 3161)",
+    "serverSettings": "Impostazioni server",
+    "signingCA": "CA di firma",
+    "selectCA": "Seleziona una CA per la firma delle marche temporali",
+    "policyOid": "OID della politica",
+    "policyOidHelp": "OID che identifica la politica TSA sotto la quale vengono emesse le marche temporali",
+    "endpoint": "Endpoint TSA",
+    "endpointDesc": "Usa questo URL nella configurazione del tuo client TSA",
+    "timestampRequest": "Richiesta marca temporale",
+    "copied": "URL copiato negli appunti",
+    "tsaDisabled": "TSA è disabilitato",
+    "tsaDisabledDesc": "Abilita TSA nelle impostazioni per consentire le richieste di marca temporale",
+    "aboutTsa": "Informazioni su TSA",
+    "aboutTsaDesc": "L'autorità di marca temporale (TSA, RFC 3161) fornisce marche temporali affidabili che dimostrano che un documento o hash esisteva in un momento specifico. Usato per firma del codice, conformità legale e tracce di audit.",
+    "totalRequests": "Richieste totali",
+    "usage": "Esempi di utilizzo",
+    "usageCreateRequest": "1. Creare una richiesta di marca temporale:",
+    "usageSendRequest": "2. Inviare la richiesta al TSA:",
+    "usageVerify": "3. Verificare la marca temporale:",
+    "groups": {
+      "management": "Gestione",
+      "settings": "Impostazioni",
+      "info": "Informazioni"
     }
   }
 }

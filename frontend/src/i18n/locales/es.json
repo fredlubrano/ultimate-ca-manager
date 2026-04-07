@@ -402,7 +402,8 @@
     },
     "enable": "Activar",
     "disable": "Desactivar",
-    "digest": "Algoritmo de hash"
+    "digest": "Algoritmo de hash",
+    "tsa": "TSA"
   },
   "commandPalette": {
     "searchPlaceholder": "Buscar comandos, certificados, CAs, usuarios...",
@@ -2724,7 +2725,8 @@
         "templates": "Error al cargar las plantillas",
         "truststore": "Error al cargar el almacén de confianza",
         "users": "Error al cargar los usuarios",
-        "est": "Error al cargar los datos EST"
+        "est": "Error al cargar los datos EST",
+        "tsa": "Error al cargar la configuración TSA"
       },
       "revokeFailed": {
         "certificate": "Error al revocar el certificado"
@@ -3484,6 +3486,34 @@
       "error": "Error de conexión",
       "live": "En vivo",
       "offline": "Desconectado"
+    }
+  },
+  "tsa": {
+    "title": "Protocolo TSA",
+    "enableTsa": "Habilitar servidor TSA",
+    "enableTsaDesc": "Permitir solicitudes de marca de tiempo a través del protocolo TSA (RFC 3161)",
+    "serverSettings": "Configuración del servidor",
+    "signingCA": "CA de firma",
+    "selectCA": "Seleccione una CA para la firma de marcas de tiempo",
+    "policyOid": "OID de política",
+    "policyOidHelp": "OID que identifica la política TSA bajo la cual se emiten las marcas de tiempo",
+    "endpoint": "Punto de acceso TSA",
+    "endpointDesc": "Use esta URL en la configuración de su cliente TSA",
+    "timestampRequest": "Solicitud de marca de tiempo",
+    "copied": "URL copiada al portapapeles",
+    "tsaDisabled": "TSA está deshabilitado",
+    "tsaDisabledDesc": "Habilite TSA en la configuración para permitir solicitudes de marca de tiempo",
+    "aboutTsa": "Acerca de TSA",
+    "aboutTsaDesc": "La autoridad de marca de tiempo (TSA, RFC 3161) proporciona marcas de tiempo confiables que prueban que un documento o hash existía en un momento específico. Se usa para firma de código, cumplimiento legal y pistas de auditoría.",
+    "totalRequests": "Total de solicitudes",
+    "usage": "Ejemplos de uso",
+    "usageCreateRequest": "1. Crear una solicitud de marca de tiempo:",
+    "usageSendRequest": "2. Enviar solicitud al TSA:",
+    "usageVerify": "3. Verificar la marca de tiempo:",
+    "groups": {
+      "management": "Gestión",
+      "settings": "Configuración",
+      "info": "Información"
     }
   }
 }

@@ -995,7 +995,8 @@
     },
     "enable": "Activer",
     "disable": "Désactiver",
-    "digest": "Algorithme de hachage"
+    "digest": "Algorithme de hachage",
+    "tsa": "TSA"
   },
   "compare": {
     "title": "Comparer les certificats",
@@ -2815,7 +2816,8 @@
         "approvals": "Échec du chargement des demandes d'approbation",
         "reports": "Échec du chargement des rapports",
         "generic": "Échec du chargement des données",
-        "est": "Échec du chargement des données EST"
+        "est": "Échec du chargement des données EST",
+        "tsa": "Échec du chargement de la configuration TSA"
       },
       "createFailed": {
         "certificate": "Échec de la création du certificat",
@@ -3487,6 +3489,34 @@
       "error": "Erreur de connexion",
       "live": "En direct",
       "offline": "Hors ligne"
+    }
+  },
+  "tsa": {
+    "title": "Protocole TSA",
+    "enableTsa": "Activer le serveur TSA",
+    "enableTsaDesc": "Autoriser les requêtes d'horodatage via le protocole TSA (RFC 3161)",
+    "serverSettings": "Paramètres du serveur",
+    "signingCA": "CA de signature",
+    "selectCA": "Sélectionnez une CA pour la signature d'horodatage",
+    "policyOid": "OID de politique",
+    "policyOidHelp": "OID identifiant la politique TSA sous laquelle les horodatages sont émis",
+    "endpoint": "Point d'accès TSA",
+    "endpointDesc": "Utilisez cette URL dans la configuration de votre client TSA",
+    "timestampRequest": "Requête d'horodatage",
+    "copied": "URL copiée dans le presse-papiers",
+    "tsaDisabled": "TSA est désactivé",
+    "tsaDisabledDesc": "Activez TSA dans les paramètres pour autoriser les requêtes d'horodatage",
+    "aboutTsa": "À propos de TSA",
+    "aboutTsaDesc": "L'autorité d'horodatage (TSA, RFC 3161) fournit des horodatages de confiance prouvant qu'un document ou un hash existait à un moment précis. Utilisé pour la signature de code, la conformité légale et les pistes d'audit.",
+    "totalRequests": "Total des requêtes",
+    "usage": "Exemples d'utilisation",
+    "usageCreateRequest": "1. Créer une requête d'horodatage :",
+    "usageSendRequest": "2. Envoyer la requête au TSA :",
+    "usageVerify": "3. Vérifier l'horodatage :",
+    "groups": {
+      "management": "Gestion",
+      "settings": "Paramètres",
+      "info": "Informations"
     }
   }
 }

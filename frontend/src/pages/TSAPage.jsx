@@ -1,0 +1,254 @@
+/**
+ * TSA Management Page
+ * Time Stamp Authority (RFC 3161) configuration and information
+ */
+import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  Clock, Gear, Copy, Info, Plugs, Warning, CheckCircle,
+  ChartBar, Shield
+} from '@phosphor-icons/react'
+import {
+  ResponsiveLayout,
+  Button, Input, Select, Card,
+  LoadingSpinner, HelpCard,
+  CompactStats
+} from '../components'
+import { tsaService, casService } from '../services'
+import { useNotification } from '../contexts'
+import { usePermission } from '../hooks'
+import { ToggleSwitch } from '../components/ui/ToggleSwitch'
+
+export default function TSAPage() {
+  const { t } = useTranslation()
+  const { showSuccess, showError, showInfo } = useNotification()
+  const { hasPermission, canWrite } = usePermission()
+
+  const [loading, setLoading] = useState(true)
+  const [config, setConfig] = useState({})
+  const [cas, setCas] = useState([])
+  const [stats, setStats] = useState({ total_requests: 0 })
+  const [activeTab, setActiveTab] = useState('settings')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      const [configRes, casRes, statsRes] = await Promise.all([
+        tsaService.getConfig(),
+        casService.getAll(),
+        tsaService.getStats()
+      ])
+      setConfig(configRes.data || {})
+      setCas(casRes.data || [])
+      setStats(statsRes.data || { total_requests: 0 })
+    } catch (error) {
+      showError(error.message || t('messages.errors.loadFailed.tsa'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveConfig = async () => {
+    if (!canWrite('settings')) return
+    setSaving(true)
+    try {
+      await tsaService.updateConfig(config)
+      showSuccess(t('messages.success.update.settings'))
+    } catch (error) {
+      showError(error.message || t('messages.errors.updateFailed.settings'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text)
+    showInfo(t('tsa.copied'))
+  }
+
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+
+  const tabs = useMemo(() => [
+    { id: 'settings', label: t('tsa.groups.settings'), icon: Gear },
+    { id: 'info', label: t('tsa.endpoint'), icon: Info }
+  ], [t])
+
+  const headerStats = useMemo(() => [
+    { icon: ChartBar, label: t('tsa.totalRequests'), value: stats.total_requests },
+    { icon: CheckCircle, label: t('common.status'), value: config.enabled ? t('common.enabled') : t('common.disabled'), variant: config.enabled ? 'success' : 'default' },
+  ], [stats, config.enabled, t])
+
+  const helpContent = (
+    <div className="p-4 space-y-4">
+      <div className="space-y-3">
+        <HelpCard variant="info" title={t('tsa.aboutTsa')}>
+          {t('tsa.aboutTsaDesc')}
+        </HelpCard>
+      </div>
+    </div>
+  )
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full w-full">
+        <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
+
+  return (
+    <ResponsiveLayout
+      title={t('tsa.title')}
+      icon={Clock}
+      subtitle={config.enabled ? t('common.enabled') : t('common.disabled')}
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      tabLayout="sidebar"
+      sidebarContentClass=""
+      tabGroups={[
+        { labelKey: 'tsa.groups.management', tabs: ['settings'], color: 'icon-bg-blue' },
+        { labelKey: 'tsa.groups.info', tabs: ['info'], color: 'icon-bg-emerald' },
+      ]}
+      stats={headerStats}
+      helpPageKey="tsa"
+    >
+      {/* Settings Tab */}
+      {activeTab === 'settings' && (
+        <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
+          <Card className="p-4">
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                config.enabled ? 'status-success-bg' : 'bg-bg-tertiary'
+              }`}>
+                <Plugs size={24} className={config.enabled ? 'status-success-text' : 'text-text-tertiary'} weight="duotone" />
+              </div>
+              <div className="flex-1">
+                <ToggleSwitch
+                  checked={config.enabled || false}
+                  onChange={(val) => setConfig({ ...config, enabled: val })}
+                  label={t('tsa.enableTsa')}
+                  description={t('tsa.enableTsaDesc')}
+                />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Gear size={16} />
+              {t('tsa.serverSettings')}
+            </h3>
+
+            <Select
+              label={t('tsa.signingCA')}
+              placeholder={t('tsa.selectCA')}
+              options={cas.map(ca => ({ value: ca.refid || ca.id.toString(), label: ca.name || ca.subject }))}
+              value={config.ca_refid || ''}
+              onChange={(val) => setConfig({ ...config, ca_refid: val })}
+              disabled={!config.enabled}
+            />
+
+            <Input
+              label={t('tsa.policyOid')}
+              value={config.policy_oid || '1.2.3.4.1'}
+              onChange={(e) => setConfig({ ...config, policy_oid: e.target.value })}
+              disabled={!config.enabled}
+              helperText={t('tsa.policyOidHelp')}
+              placeholder="1.2.3.4.1"
+            />
+          </Card>
+
+          {hasPermission('write:settings') && (
+            <div className="flex justify-end">
+              <Button type="button" onClick={handleSaveConfig} disabled={saving}>
+                {saving ? <LoadingSpinner size="sm" /> : <Gear size={14} />}
+                {saving ? t('common.saving') : t('common.saveConfiguration')}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Endpoint / Info Tab */}
+      {activeTab === 'info' && (
+        <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-4">
+          {!config.enabled && (
+            <Card className="p-4 status-warning-border status-warning-bg border">
+              <div className="flex items-start gap-3">
+                <Warning size={20} className="status-warning-text flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium status-warning-text">{t('tsa.tsaDisabled')}</p>
+                  <p className="text-xs text-text-secondary">{t('tsa.tsaDisabledDesc')}</p>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          <Card className="p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Clock size={16} />
+              {t('tsa.endpoint')}
+            </h3>
+            <p className="text-xs text-text-secondary">{t('tsa.endpointDesc')}</p>
+
+            <div className="p-3 bg-bg-tertiary rounded-lg">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <div>
+                  <p className="text-sm font-medium text-text-primary">{t('tsa.timestampRequest')}</p>
+                  <p className="text-xs text-text-secondary">POST application/timestamp-query</p>
+                </div>
+                <Button type="button" size="sm" variant="ghost" onClick={() => copyToClipboard(`${baseUrl}/tsa`)}>
+                  <Copy size={14} />
+                </Button>
+              </div>
+              <code className="text-xs font-mono text-text-primary break-all">
+                {baseUrl}/tsa
+              </code>
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Shield size={16} />
+              {t('tsa.usage')}
+            </h3>
+            <div className="space-y-3">
+              <div className="p-3 bg-bg-tertiary rounded-lg">
+                <p className="text-xs font-medium text-text-primary mb-2">{t('tsa.usageCreateRequest')}</p>
+                <code className="text-xs font-mono text-text-secondary break-all block">
+                  openssl ts -query -data file.pdf -sha256 -out request.tsq
+                </code>
+              </div>
+              <div className="p-3 bg-bg-tertiary rounded-lg">
+                <p className="text-xs font-medium text-text-primary mb-2">{t('tsa.usageSendRequest')}</p>
+                <code className="text-xs font-mono text-text-secondary break-all block">
+                  {`curl -X POST -H "Content-Type: application/timestamp-query" --data-binary @request.tsq ${baseUrl}/tsa -o response.tsr`}
+                </code>
+              </div>
+              <div className="p-3 bg-bg-tertiary rounded-lg">
+                <p className="text-xs font-medium text-text-primary mb-2">{t('tsa.usageVerify')}</p>
+                <code className="text-xs font-mono text-text-secondary break-all block">
+                  openssl ts -reply -in response.tsr -text
+                </code>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Info size={16} />
+              {t('tsa.aboutTsa')}
+            </h3>
+            <p className="text-sm text-text-secondary">{t('tsa.aboutTsaDesc')}</p>
+          </Card>
+        </div>
+      )}
+    </ResponsiveLayout>
+  )
+}

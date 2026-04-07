@@ -402,7 +402,8 @@
     },
     "enable": "有効にする",
     "disable": "無効にする",
-    "digest": "ダイジェスト"
+    "digest": "ダイジェスト",
+    "tsa": "TSA"
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",
@@ -2724,7 +2725,8 @@
         "templates": "テンプレートの読み込みに失敗しました",
         "truststore": "トラストストアの読み込みに失敗しました",
         "users": "ユーザーの読み込みに失敗しました",
-        "est": "ESTデータの読み込みに失敗しました"
+        "est": "ESTデータの読み込みに失敗しました",
+        "tsa": "TSA設定の読み込みに失敗しました"
       },
       "revokeFailed": {
         "certificate": "証明書の失効に失敗しました"
@@ -3484,6 +3486,34 @@
       "error": "接続エラー",
       "live": "ライブ",
       "offline": "オフライン"
+    }
+  },
+  "tsa": {
+    "title": "TSAプロトコル",
+    "enableTsa": "TSAサーバーを有効化",
+    "enableTsaDesc": "TSA（RFC 3161）プロトコルによるタイムスタンプリクエストを許可",
+    "serverSettings": "サーバー設定",
+    "signingCA": "署名CA",
+    "selectCA": "タイムスタンプ署名用のCAを選択",
+    "policyOid": "ポリシーOID",
+    "policyOidHelp": "タイムスタンプが発行されるTSAポリシーを識別するOID",
+    "endpoint": "TSAエンドポイント",
+    "endpointDesc": "TSAクライアント設定でこのURLを使用してください",
+    "timestampRequest": "タイムスタンプリクエスト",
+    "copied": "URLをクリップボードにコピーしました",
+    "tsaDisabled": "TSAは無効です",
+    "tsaDisabledDesc": "タイムスタンプリクエストを許可するには設定でTSAを有効にしてください",
+    "aboutTsa": "TSAについて",
+    "aboutTsaDesc": "タイムスタンプ局（TSA、RFC 3161）は、ドキュメントやハッシュが特定の時点に存在したことを証明する信頼できるタイムスタンプを提供します。コード署名、法的コンプライアンス、監査証跡に使用されます。",
+    "totalRequests": "総リクエスト数",
+    "usage": "使用例",
+    "usageCreateRequest": "1. タイムスタンプリクエストを作成:",
+    "usageSendRequest": "2. TSAにリクエストを送信:",
+    "usageVerify": "3. タイムスタンプを検証:",
+    "groups": {
+      "management": "管理",
+      "settings": "設定",
+      "info": "情報"
     }
   }
 }
