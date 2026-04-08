@@ -840,7 +840,48 @@ class AcmeService:
             logger.error(f"DB commit failed: {e}")
             raise
         
+        # Auto-supersede: revoke previous certs for same domains if enabled
+        self._auto_supersede(order, cert_id)
+        
         return True, None
+    
+    def _auto_supersede(self, new_order, new_cert_id: int):
+        """Revoke previous certificates for the same domains if revoke_on_renewal is enabled."""
+        try:
+            from models import SystemConfig, Certificate
+            from models.acme_models import AcmeOrder
+            
+            setting = SystemConfig.query.filter_by(key='acme.revoke_on_renewal').first()
+            if not setting or setting.value != 'true':
+                return
+            
+            # Find previous orders with same identifiers and account
+            previous_orders = AcmeOrder.query.filter(
+                AcmeOrder.account_id == new_order.account_id,
+                AcmeOrder.identifiers == new_order.identifiers,
+                AcmeOrder.certificate_id.isnot(None),
+                AcmeOrder.certificate_id != new_cert_id,
+                AcmeOrder.status == 'valid'
+            ).all()
+            
+            if not previous_orders:
+                return
+            
+            from services.cert_service import CertificateService
+            for prev_order in previous_orders:
+                cert = Certificate.query.get(prev_order.certificate_id)
+                if cert and not cert.revoked:
+                    try:
+                        CertificateService.revoke_certificate(
+                            cert_id=cert.id,
+                            reason='superseded',
+                            username='system'
+                        )
+                        logger.info(f"Auto-superseded certificate {cert.id} (replaced by {new_cert_id})")
+                    except Exception as e:
+                        logger.warning(f"Failed to supersede certificate {cert.id}: {e}")
+        except Exception as e:
+            logger.warning(f"Auto-supersede check failed: {e}")
     
     def _extract_domains_from_csr(self, csr) -> List[str]:
         """Extract domain names from CSR
