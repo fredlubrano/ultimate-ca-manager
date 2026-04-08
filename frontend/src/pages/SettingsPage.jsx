@@ -4129,7 +4129,7 @@ export default function SettingsPage() {
         tabLayout="sidebar"
         tabGroups={[
           { labelKey: 'settings.groups.system', tabs: ['general', 'updates', 'database', 'https', 'backup'], color: 'icon-bg-blue' },
-          { labelKey: 'settings.groups.security', tabs: ['security', 'sso'], color: 'icon-bg-amber' },
+          { labelKey: 'settings.groups.security', tabs: ['security', 'sso', 'ct'], color: 'icon-bg-amber' },
           { labelKey: 'settings.groups.notifications', tabs: ['email', 'webhooks'], color: 'icon-bg-teal' },
           { labelKey: 'settings.groups.integrations', tabs: ['microsoftCA'], color: 'icon-bg-indigo' },
           { labelKey: 'settings.groups.interface', tabs: ['appearance', 'audit'], color: 'icon-bg-violet' },
