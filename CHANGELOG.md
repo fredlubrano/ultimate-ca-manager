@@ -15,6 +15,30 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.109] - 2026-04-08
+
+### Added
+- **Multiple CDP/OCSP/AIA URLs** — Support multiple CRL Distribution Point, OCSP responder, and AIA URLs per CA with add/remove UI in the CRL/OCSP page; migration converts single-URL columns to JSON arrays with backward compatibility (#49)
+- **Certificate Practice Statement (CPS)** — Per-CA CPS URI and Policy OID configuration; embedded in issued certificates as CertificatePolicies extension (RFC 5280 §4.2.1.4); toggle, URI input, and OID input in CRL/OCSP page (#49)
+- **RFC 5280 Extensions** — PathLength constraints, NameConstraints (permitted/excluded subtrees), PolicyConstraints, InhibitAnyPolicy, Subject Information Access (SIA), OCSP Must-Staple
+- **RFC 6844 CAA Checking** — Validate CAA DNS records before certificate issuance; NameConstraints enforcement on certificate creation; ACME account lifecycle (deactivate)
+- **ACME Enhancements** — Order management, newAuthz endpoint, External Account Binding (EAB) support; EST csrattrs endpoint; SCEP GetNextCACert and renewal support
+- **TSA (RFC 3161)** — Full Time Stamping Authority: backend API (`/api/v2/settings/tsa`), protocol endpoint (`/tsa`), frontend management page with signing CA, policy OID, hash algorithms, and accuracy settings
+- **Certificate Transparency (RFC 6962)** — CT log URL management, enable/disable toggle, auto-submit on certificate creation, manual CT submission endpoint, SCT extension parsing and display in certificate details
+- **OCSP Delegated Responder (RFC 5019)** — API to assign/remove delegated OCSP responders per CA with OCSPSigning EKU validation; eligible responder listing; UI section in CRL/OCSP page
+- **In-App Help Translations** — 208 help content files across 8 languages (fr, de, es, it, ja, pt, uk, zh) for all 26 sections; per-section lazy loading with English fallback
+
+### Security
+- **6 CRITICAL fixes** — CSRF token rotation, password complexity enforcement, account lockout on all auth paths, audit log integrity, session security hardening, input sanitization
+- **14 HIGH fixes** — Rate limiting on sensitive endpoints, generic error messages (no username enumeration), secure session cookie attributes, WebAuthn origin validation
+- **18 MEDIUM fixes** — Content Security Policy headers, X-Frame-Options, request size limits, backup file access controls, password history enforcement
+
+### Improved
+- **Help Button** — Translated "Help" button text in all 9 languages
+- **CT Settings UX** — Configure CT log URLs first, then enable — more intuitive workflow
+
+---
+
 ## [2.108] - 2026-04-03
 
 ### Fixed
