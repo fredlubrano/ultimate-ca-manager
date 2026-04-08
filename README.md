@@ -150,13 +150,19 @@ Docker: data at `/opt/ucm/data/` (mount as volume), config via environment varia
 ## Roadmap
 
 - [ ] **Code Signing** — Issue and manage code signing certificates (Authenticode, JAR, macOS)
-- [ ] **RFC 3161 Timestamp Authority (TSA)** — Code signing timestamp server ([#37](https://github.com/NeySlim/ultimate-ca-manager/issues/37))
 - [ ] **High Availability / Clustering** — Active-passive or active-active HA deployment
 - [ ] **Kubernetes / Helm** — Helm chart and cert-manager integration
 - [ ] **Post-Quantum Cryptography** — ML-DSA, ML-KEM, SLH-DSA key types (NIST FIPS 203/204/205)
 - [ ] **SSH Certificates** — Issue and manage SSH host and user certificates
 - [ ] **CMP Protocol (RFC 4210)** — Certificate Management Protocol support
 - [ ] **Key Archival & Recovery** — Secure key escrow with recovery workflows
+- [x] **Certificate Transparency (RFC 6962)** — CT log submission, SCT parsing, auto-submit on issuance *(v2.109)*
+- [x] **OCSP Delegated Responder (RFC 5019)** — Per-CA delegated responder assignment with EKU validation *(v2.109)*
+- [x] **Certificate Practice Statement (CPS)** — Per-CA CPS URI and Policy OID in CertificatePolicies extension *(v2.109)*
+- [x] **Multiple CDP/OCSP/AIA URLs** — Multiple distribution points and access descriptions per CA *(v2.109)*
+- [x] **RFC 3161 Timestamp Authority (TSA)** — Time stamping server with configurable policy, hash algorithms, and accuracy *(v2.109)*
+- [x] **Security Audit** — CRITICAL/HIGH/MEDIUM vulnerability fixes, CSP headers, rate limiting, account lockout *(v2.109)*
+- [x] **In-App Help Translations** — 208 help files across 8 languages for all 26 sections *(v2.109)*
 - [x] **Delta CRL** — Incremental CRL updates for large deployments *(v2.75)*
 
 ## Contributing
