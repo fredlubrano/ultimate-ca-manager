@@ -273,15 +273,18 @@ export default function CertificateToolsPage() {
   }
 
   // Read file content (PEM as text, binary as base64)
+  // Always reads as ArrayBuffer first, then detects PEM vs DER
+  // because .crt/.cer files can be either PEM or DER format
   const readFileContent = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader()
       reader.onload = (event) => {
-        const content = event.target.result
-        if (typeof content === 'string') {
-          resolve(content)
+        const bytes = new Uint8Array(event.target.result)
+        // Check if content starts with "-----BEGIN" (PEM text)
+        const header = String.fromCharCode(...bytes.slice(0, 11))
+        if (header.startsWith('-----BEGIN')) {
+          resolve(new TextDecoder().decode(bytes))
         } else {
-          const bytes = new Uint8Array(content)
           let binary = ''
           for (let i = 0; i < bytes.length; i++) {
             binary += String.fromCharCode(bytes[i])
@@ -289,11 +292,7 @@ export default function CertificateToolsPage() {
           resolve('BASE64:' + btoa(binary))
         }
       }
-      if (file.name.match(/\.(pem|crt|cer|key|csr)$/i)) {
-        reader.readAsText(file)
-      } else {
-        reader.readAsArrayBuffer(file)
-      }
+      reader.readAsArrayBuffer(file)
     })
   }
 
