@@ -239,6 +239,8 @@ export function SmartImportWidget({ onImportComplete, onCancel, compact = false 
   }, [])
   
   // Read a single file
+  // Always reads as ArrayBuffer first, then detects PEM vs DER by content
+  // because .crt/.cer files can be either PEM or DER format
   const readFile = async (file) => {
     const ext = '.' + file.name.split('.').pop().toLowerCase()
     const allFormats = [...SUPPORTED_FORMATS.text, ...SUPPORTED_FORMATS.binary]
@@ -248,16 +250,19 @@ export function SmartImportWidget({ onImportComplete, onCancel, compact = false 
       return null
     }
     
-    const isBinary = SUPPORTED_FORMATS.binary.includes(ext)
-    
     try {
-      if (isBinary) {
-        const buffer = await file.arrayBuffer()
-        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
-        return { name: file.name, type: 'binary', data: base64, size: file.size, ext }
-      } else {
-        const text = await file.text()
+      const buffer = await file.arrayBuffer()
+      const bytes = new Uint8Array(buffer)
+      // Detect PEM by checking for "-----BEGIN" header in content
+      const header = String.fromCharCode(...bytes.slice(0, 11))
+      const isPem = header.startsWith('-----BEGIN')
+      
+      if (isPem) {
+        const text = new TextDecoder().decode(bytes)
         return { name: file.name, type: 'text', data: text, size: file.size, ext }
+      } else {
+        const base64 = btoa(String.fromCharCode(...bytes))
+        return { name: file.name, type: 'binary', data: base64, size: file.size, ext }
       }
     } catch (err) {
       return null

@@ -231,12 +231,20 @@ export default function CertificateToolsPage() {
     }
   }
 
-  // Helper to read file as text
+  // Helper to read file — detects PEM vs DER by content
   const readFileAsText = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader()
-      reader.onload = (e) => resolve(e.target.result)
-      reader.readAsText(file)
+      reader.onload = (e) => {
+        const bytes = new Uint8Array(e.target.result)
+        const header = String.fromCharCode(...bytes.slice(0, 11))
+        if (header.startsWith('-----BEGIN')) {
+          resolve(new TextDecoder().decode(bytes))
+        } else {
+          resolve('BASE64:' + btoa(String.fromCharCode(...bytes)))
+        }
+      }
+      reader.readAsArrayBuffer(file)
     })
   }
 

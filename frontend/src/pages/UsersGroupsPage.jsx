@@ -365,9 +365,16 @@ export default function UsersGroupsPage() {
     if (!file) return
     const reader = new FileReader()
     reader.onload = (evt) => {
-      setMtlsImportForm(prev => ({ ...prev, pem: evt.target.result }))
+      const bytes = new Uint8Array(evt.target.result)
+      const header = String.fromCharCode(...bytes.slice(0, 11))
+      if (header.startsWith('-----BEGIN')) {
+        setMtlsImportForm(prev => ({ ...prev, pem: new TextDecoder().decode(bytes) }))
+      } else {
+        const b64 = btoa(String.fromCharCode(...bytes))
+        setMtlsImportForm(prev => ({ ...prev, pem: 'BASE64:' + b64 }))
+      }
     }
-    reader.readAsText(file)
+    reader.readAsArrayBuffer(file)
   }
 
   const loadAvailableCerts = async () => {
