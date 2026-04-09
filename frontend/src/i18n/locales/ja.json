@@ -407,7 +407,8 @@
     "sshCas": "SSH CA",
     "sshCertificates": "SSH証明書",
     "navSsh": "SSH",
-    "ssh": "SSH"
+    "ssh": "SSH",
+    "showingOf": "{{total}}件中{{count}}件を表示"
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",
@@ -1921,7 +1922,8 @@
     "ctLogUrls": "CTログURL",
     "ctAddLogUrl": "CTログURLを追加",
     "ctSettingsUpdated": "CT設定が更新されました",
-    "ctSettingsFailed": "CT設定の更新に失敗しました"
+    "ctSettingsFailed": "CT設定の更新に失敗しました",
+    "certPickerSearch": "名前、サブジェクト、発行者で検索..."
   },
   "account": {
     "profile": "プロフィール",

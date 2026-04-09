@@ -407,7 +407,8 @@
     "sshCas": "SSH CA",
     "sshCertificates": "SSH 证书",
     "navSsh": "SSH",
-    "ssh": "SSH"
+    "ssh": "SSH",
+    "showingOf": "显示 {{count}} / {{total}}"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",
@@ -1921,7 +1922,8 @@
     "ctLogUrls": "CT日志URL",
     "ctAddLogUrl": "添加CT日志URL",
     "ctSettingsUpdated": "CT设置已更新",
-    "ctSettingsFailed": "更新CT设置失败"
+    "ctSettingsFailed": "更新CT设置失败",
+    "certPickerSearch": "按名称、主题或颁发者搜索..."
   },
   "account": {
     "profile": "个人资料",

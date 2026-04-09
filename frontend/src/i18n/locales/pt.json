@@ -407,7 +407,8 @@
     "sshCas": "CAs SSH",
     "sshCertificates": "Certificados SSH",
     "navSsh": "SSH",
-    "ssh": "SSH"
+    "ssh": "SSH",
+    "showingOf": "Exibindo {{count}} de {{total}}"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
@@ -1921,7 +1922,8 @@
     "ctLogUrls": "URLs de logs CT",
     "ctAddLogUrl": "Adicionar URL de log CT",
     "ctSettingsUpdated": "Configurações CT atualizadas",
-    "ctSettingsFailed": "Falha ao atualizar configurações CT"
+    "ctSettingsFailed": "Falha ao atualizar configurações CT",
+    "certPickerSearch": "Pesquisar por nome, assunto ou emissor..."
   },
   "account": {
     "profile": "Perfil",

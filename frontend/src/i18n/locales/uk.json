@@ -407,7 +407,8 @@
     "sshCas": "SSH ЦС",
     "sshCertificates": "SSH сертифікати",
     "navSsh": "SSH",
-    "ssh": "SSH"
+    "ssh": "SSH",
+    "showingOf": "Показано {{count}} з {{total}}"
   },
   "commandPalette": {
     "searchPlaceholder": "Пошук команд, сертифікатів, ЦС, користувачів...",
@@ -1921,7 +1922,8 @@
     "ctLogUrls": "URL журналів CT",
     "ctAddLogUrl": "Додати URL журналу CT",
     "ctSettingsUpdated": "Налаштування CT оновлено",
-    "ctSettingsFailed": "Не вдалося оновити налаштування CT"
+    "ctSettingsFailed": "Не вдалося оновити налаштування CT",
+    "certPickerSearch": "Пошук за назвою, темою або видавцем..."
   },
   "account": {
     "profile": "Профіль",

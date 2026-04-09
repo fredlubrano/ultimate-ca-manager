@@ -1006,7 +1006,8 @@
     "sshCas": "CA SSH",
     "sshCertificates": "Certificats SSH",
     "navSsh": "SSH",
-    "ssh": "SSH"
+    "ssh": "SSH",
+    "showingOf": "Affichage de {{count}} sur {{total}}"
   },
   "compare": {
     "title": "Comparer les certificats",
@@ -2107,7 +2108,8 @@
     "ctLogUrls": "URL des journaux CT",
     "ctAddLogUrl": "Ajouter une URL de journal CT",
     "ctSettingsUpdated": "Paramètres CT mis à jour",
-    "ctSettingsFailed": "Échec de la mise à jour des paramètres CT"
+    "ctSettingsFailed": "Échec de la mise à jour des paramètres CT",
+    "certPickerSearch": "Rechercher par nom, sujet ou émetteur..."
   },
   "sso": {
     "subtitle": "Configurez des fournisseurs LDAP, OAuth2 ou SAML pour une authentification centralisée",

@@ -24,9 +24,10 @@ import {
   UpdateChecker, ServiceReconnectOverlay
 } from '../components'
 import { SmartImportModal } from '../components/SmartImport'
+import CertificatePickerModal from '../components/CertificatePickerModal'
 import CertificateInput from '../components/CertificateInput'
 import LanguageSelector from '../components/ui/LanguageSelector'
-import { settingsService, systemService, casService, certificatesService, ssoService, mtlsService, mscaService } from '../services'
+import { settingsService, systemService, casService, ssoService, mtlsService, mscaService } from '../services'
 import { useNotification, useMobile } from '../contexts'
 import { useServiceReconnect } from '../hooks'
 import { usePermission } from '../hooks'
@@ -1807,8 +1808,8 @@ export default function SettingsPage() {
   const [backups, setBackups] = useState([])
   const [dbStats, setDbStats] = useState(null)
   const [httpsInfo, setHttpsInfo] = useState(null)
-  const [certificates, setCertificates] = useState([])
-  const [selectedHttpsCert, setSelectedHttpsCert] = useState('')
+  const [selectedHttpsCert, setSelectedHttpsCert] = useState(null)
+  const [showCertPicker, setShowCertPicker] = useState(false)
   const [cas, setCas] = useState([])
   const [isDocker, setIsDocker] = useState(false)  
   // Expiry alert settings
@@ -1904,7 +1905,6 @@ export default function SettingsPage() {
     loadBackups()
     loadHttpsInfo()
     loadCAs()
-    loadCertificates()
     loadDbStats()
     loadSsoProviders()
     loadWebhooks()
@@ -2249,18 +2249,6 @@ export default function SettingsPage() {
     }
   }
 
-  const loadCertificates = async () => {
-    try {
-      const data = await certificatesService.getAll({ status: 'valid' })
-      const validCerts = (data.data || []).filter(cert => 
-        cert.has_private_key && 
-        cert.status === 'valid' &&
-        new Date(cert.valid_to) > new Date()
-      )
-      setCertificates(validCerts)
-    } catch (error) {
-    }
-  }
 
   // Encryption management
   const loadEncryptionStatus = async () => {
@@ -2634,7 +2622,7 @@ export default function SettingsPage() {
     
     try {
       const response = await systemService.applyHttpsCert({
-        cert_id: selectedHttpsCert
+        cert_id: selectedHttpsCert.id
       })
       if (response.data?.requires_container_restart) {
         showSuccess(t('settings.dockerCertNotice'))
@@ -3751,30 +3739,42 @@ export default function SettingsPage() {
                 <p className="text-xs text-text-secondary">
                   {t('settings.useUcmCertificateDesc')}
                 </p>
-                <Select
-                  label={t('settings.selectCertificate')}
-                  value={selectedHttpsCert}
-                  onChange={setSelectedHttpsCert}
-                  placeholder={t('settings.chooseCertificate')}
-                  options={certificates.map(cert => ({
-                    value: cert.id,
-                    label: `${cert.common_name || t('common.certificate')} (${t('common.expires')} ${formatDate(cert.valid_to)})`
-                  }))}
-                />
-                {certificates.length === 0 && (
-                  <p className="text-xs text-text-secondary">
-                    {t('settings.noValidCertificates')}
-                  </p>
-                )}
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={handleApplyUcmCert}
-                  disabled={!selectedHttpsCert}
-                >
-                  <ShieldCheck size={16} />
-                  {t('settings.applySelectedCertificate')}
-                </Button>
+                {selectedHttpsCert ? (
+                  <div className="flex items-center gap-3 p-3 rounded-lg border border-accent-primary/30 bg-accent-primary/5">
+                    <Certificate size={20} className="text-accent-primary shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-text-primary truncate">
+                        {selectedHttpsCert.common_name || t('common.certificate')}
+                      </div>
+                      <div className="text-xs text-text-secondary">
+                        {t('common.expires')} {formatDate(selectedHttpsCert.valid_to)}
+                      </div>
+                    </div>
+                    <Button type="button" variant="ghost" size="xs" onClick={() => setSelectedHttpsCert(null)}>
+                      ×
+                    </Button>
+                  </div>
+                ) : null}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setShowCertPicker(true)}
+                  >
+                    <MagnifyingGlass size={16} />
+                    {t('settings.chooseCertificate')}
+                  </Button>
+                  <Button 
+                    variant="primary" 
+                    size="sm"
+                    onClick={handleApplyUcmCert}
+                    disabled={!selectedHttpsCert}
+                  >
+                    <ShieldCheck size={16} />
+                    {t('settings.applySelectedCertificate')}
+                  </Button>
+                </div>
               </div>
             </DetailSection>
 
@@ -4420,12 +4420,21 @@ export default function SettingsPage() {
               }
             }
           } else {
-            // Refresh cert list
-            loadCertificates()
             showSuccess(t('common.importSuccess'))
           }
         }}
         defaultType="certificate"
+      />
+
+      {/* Certificate Picker Modal for HTTPS cert selection */}
+      <CertificatePickerModal
+        isOpen={showCertPicker}
+        onClose={() => setShowCertPicker(false)}
+        onSelect={(cert) => {
+          setSelectedHttpsCert(cert)
+          setShowCertPicker(false)
+        }}
+        filters={{ status: 'valid', has_private_key: true }}
       />
     </>
   )
