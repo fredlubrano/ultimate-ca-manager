@@ -15,6 +15,13 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.111] - 2026-04-09
+
+### Fixed
+- **PKCS7/PKCS12 Decode Support** — Certificate decoder now handles DER/PEM PKCS7 bundles (.p7b/.p7c) and passwordless PKCS12 files in addition to standard PEM/DER certificates; returns chain info when multiple certs found in a bundle
+
+---
+
 ## [2.110] - 2026-04-09
 
 ### Added
