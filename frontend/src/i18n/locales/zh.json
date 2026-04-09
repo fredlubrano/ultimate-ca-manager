@@ -3624,7 +3624,10 @@
     },
     "searchPlaceholder": "搜索 SSH CA...",
     "downloadSetupScript": "下载配置脚本",
-    "setupScriptDescription": "下载 shell 脚本来配置您的 SSH 服务器信任此 CA"
+    "setupScriptDescription": "下载 shell 脚本来配置您的 SSH 服务器信任此 CA",
+    "quickInstall": "快速安装",
+    "quickInstallDescription": "在服务器上运行此命令以信任此CA：",
+    "curlCopied": "安装命令已复制到剪贴板"
   },
   "sshCertificates": {
     "title": "SSH 证书",

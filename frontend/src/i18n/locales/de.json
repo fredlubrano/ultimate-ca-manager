@@ -3624,7 +3624,10 @@
     },
     "searchPlaceholder": "SSH-CAs durchsuchen...",
     "downloadSetupScript": "Einrichtungsskript herunterladen",
-    "setupScriptDescription": "Laden Sie ein Shell-Skript herunter, um Ihren SSH-Server für das Vertrauen in diese CA zu konfigurieren"
+    "setupScriptDescription": "Laden Sie ein Shell-Skript herunter, um Ihren SSH-Server für das Vertrauen in diese CA zu konfigurieren",
+    "quickInstall": "Schnellinstallation",
+    "quickInstallDescription": "Führen Sie diesen Befehl auf einem Server aus, um dieser CA zu vertrauen:",
+    "curlCopied": "Installationsbefehl in die Zwischenablage kopiert"
   },
   "sshCertificates": {
     "title": "SSH-Zertifikate",

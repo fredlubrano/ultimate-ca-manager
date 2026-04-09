@@ -3624,7 +3624,10 @@
     },
     "searchPlaceholder": "Шукати SSH CA...",
     "downloadSetupScript": "Завантажити скрипт налаштування",
-    "setupScriptDescription": "Завантажте shell-скрипт для налаштування вашого SSH-сервера на довіру цьому CA"
+    "setupScriptDescription": "Завантажте shell-скрипт для налаштування вашого SSH-сервера на довіру цьому CA",
+    "quickInstall": "Швидке встановлення",
+    "quickInstallDescription": "Виконайте цю команду на сервері, щоб довіряти цій CA:",
+    "curlCopied": "Команду встановлення скопійовано до буфера обміну"
   },
   "sshCertificates": {
     "title": "SSH-сертифікати",

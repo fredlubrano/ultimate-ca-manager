@@ -3624,7 +3624,10 @@
     },
     "searchPlaceholder": "SSH CAを検索...",
     "downloadSetupScript": "セットアップスクリプトをダウンロード",
-    "setupScriptDescription": "このCAを信頼するようにSSHサーバーを構成するシェルスクリプトをダウンロード"
+    "setupScriptDescription": "このCAを信頼するようにSSHサーバーを構成するシェルスクリプトをダウンロード",
+    "quickInstall": "クイックインストール",
+    "quickInstallDescription": "サーバーでこのコマンドを実行して、このCAを信頼します：",
+    "curlCopied": "インストールコマンドをクリップボードにコピーしました"
   },
   "sshCertificates": {
     "title": "SSH証明書",

@@ -41,6 +41,7 @@ CSRF_EXEMPT_PATHS = [
     '/cdp/',                    # CRL distribution
     '/ca/',                     # AIA CA Issuers
     '/tsa',                     # TSA timestamping (RFC 3161)
+    '/ssh/setup/',              # Public SSH CA setup scripts
     '/api/health',              # Health checks
     '/api/v2/health',           # Health checks (v2)
     '/api/v2/mtls/',            # mTLS authentication (cert-based)

@@ -68,6 +68,7 @@ export default function SSHCAsPage() {
 
   // Copy state
   const [copied, setCopied] = useState(false)
+  const [curlCopied, setCurlCopied] = useState(false)
 
   // Load data
   useEffect(() => {
@@ -184,6 +185,22 @@ export default function SSHCAsPage() {
       setCopied(true)
       showSuccess(t('sshCas.publicKeyCopied'))
       setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      showError(error.message || t('messages.errors.copyFailed.publicKey'))
+    }
+  }
+
+  const getCurlCommand = (ca) => {
+    const baseUrl = window.location.origin
+    return `curl -sSL ${baseUrl}/ssh/setup/${ca.refid} | sudo bash`
+  }
+
+  const handleCopyCurlCommand = async (ca) => {
+    try {
+      await navigator.clipboard.writeText(getCurlCommand(ca))
+      setCurlCopied(true)
+      showSuccess(t('sshCas.curlCopied'))
+      setTimeout(() => setCurlCopied(false), 2000)
     } catch (error) {
       showError(error.message || t('messages.errors.copyFailed.publicKey'))
     }
@@ -369,6 +386,19 @@ export default function SSHCAsPage() {
           </Button>
         )}
       </div>
+
+      {/* Quick Install */}
+      <CompactSection title={t('sshCas.quickInstall')} icon={Terminal}>
+        <p className="text-xs text-secondary mb-2">{t('sshCas.quickInstallDescription')}</p>
+        <div className="flex items-center gap-2">
+          <code className="flex-1 text-xs bg-tertiary rounded px-3 py-2 font-mono text-primary overflow-x-auto whitespace-nowrap">
+            {getCurlCommand(selectedCA)}
+          </code>
+          <Button type="button" size="sm" variant="secondary" onClick={() => handleCopyCurlCommand(selectedCA)}>
+            {curlCopied ? <Check size={14} /> : <Copy size={14} />}
+          </Button>
+        </div>
+      </CompactSection>
 
       {/* CA Information */}
       <CompactSection title={t('sshCas.caInformation')} icon={Key}>

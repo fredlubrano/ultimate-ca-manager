@@ -3627,7 +3627,10 @@
       "keySizeLabel": "Key Size (RSA only)",
       "principalsHelperText": "Comma-separated list of allowed principals"
     },
-    "searchPlaceholder": "Search SSH CAs..."
+    "searchPlaceholder": "Search SSH CAs...",
+    "quickInstall": "Quick Install",
+    "quickInstallDescription": "Run this command on any server to trust this CA:",
+    "curlCopied": "Install command copied to clipboard"
   },
   "sshCertificates": {
     "title": "SSH Certificates",
