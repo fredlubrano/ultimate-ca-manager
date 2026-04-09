@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/license-BSD--3--Clause%20%2B%20Commons%20Clause-green.svg)
 ![Docker Hub](https://img.shields.io/docker/v/neyslim/ultimate-ca-manager?label=docker%20hub&color=blue)
 ![GHCR](https://img.shields.io/badge/ghcr.io-available-blue)
-![Tests](https://img.shields.io/badge/tests-1814%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-1817%20passing-brightgreen)
 
 **Ultimate Certificate Manager (UCM)** is a web-based Certificate Authority management platform with PKI protocol support (ACME, SCEP, EST, OCSP, CRL/CDP), Microsoft ADCS integration, multi-factor authentication, and certificate lifecycle management.
 
@@ -163,6 +163,9 @@ Docker: data at `/opt/ucm/data/` (mount as volume), config via environment varia
 - [x] **RFC 3161 Timestamp Authority (TSA)** — Time stamping server with configurable policy, hash algorithms, and accuracy *(v2.109)*
 - [x] **Security Audit** — CRITICAL/HIGH/MEDIUM vulnerability fixes, CSP headers, rate limiting, account lockout *(v2.109)*
 - [x] **In-App Help Translations** — 208 help files across 8 languages for all 26 sections *(v2.109)*
+- [x] **ACME Auto-Supersede** — Automatically revoke old certificates on ACME renewal *(v2.110)*
+- [x] **Universal Format Detection** — DER/PEM detection by content across all file uploads *(v2.110)*
+- [x] **PKCS7/PKCS12 Decode** — Certificate decoder supports P7B bundles and PKCS12 files *(v2.111)*
 - [x] **Delta CRL** — Incremental CRL updates for large deployments *(v2.75)*
 
 ## Contributing
