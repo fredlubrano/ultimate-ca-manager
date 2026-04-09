@@ -1236,7 +1236,9 @@
     "widgetTrustStoreExpiry": "Expiration Trust Store",
     "trustStoreExpiry": "Expiration Trust Store",
     "noTrustStoreExpiring": "Tous les certificats de confiance sont valides",
-    "loading": "Chargement du tableau de bord..."
+    "loading": "Chargement du tableau de bord...",
+    "sshCertificates": "Certificats SSH",
+    "sshCasCount": "{{count}} CA SSH"
   },
   "details": {
     "pemCertificate": "Certificat PEM",
@@ -1656,7 +1658,7 @@
       "trustStore": "Magasin de confiance",
       "hsmManagement": "Gestion HSM",
       "singleSignOn": "Authentification unique",
-      "ssh": "SSH Certificates"
+      "ssh": "Certificats SSH"
     },
     "stats": {},
     "subtitle_one": "{{count}} rôle",
@@ -1676,7 +1678,10 @@
     "permissions": {
       "readSsh": "View SSH CAs & certificates",
       "writeSsh": "Create & manage SSH CAs & certificates",
-      "deleteSsh": "Delete SSH CAs & certificates"
+      "deleteSsh": "Delete SSH CAs & certificates",
+      "read:ssh": "Voir les CA et certificats SSH",
+      "write:ssh": "Créer et signer des certificats SSH",
+      "delete:ssh": "Supprimer les CA et certificats SSH"
     }
   },
   "scep": {

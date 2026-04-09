@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from auth.unified import require_auth
 from utils.response import success_response
 from models import db, CA, Certificate
+from models.ssh import SSHCertificateAuthority, SSHCertificate
 from sqlalchemy import text
 from utils.datetime_utils import utc_now
 
@@ -110,6 +111,19 @@ def get_dashboard_stats():
     
     valid = max(0, total_certs - expired - revoked)
 
+    # SSH statistics
+    ssh_cas = 0
+    ssh_certs = 0
+    ssh_user_certs = 0
+    ssh_host_certs = 0
+    try:
+        ssh_cas = SSHCertificateAuthority.query.count()
+        ssh_certs = SSHCertificate.query.count()
+        ssh_user_certs = SSHCertificate.query.filter_by(cert_type='user').count()
+        ssh_host_certs = SSHCertificate.query.filter_by(cert_type='host').count()
+    except Exception:
+        logger.debug("SSH stats query failed - tables may not exist")
+
     return success_response(data={
         'total_cas': total_cas,
         'total_certificates': total_certs,
@@ -118,7 +132,11 @@ def get_dashboard_stats():
         'expired': expired,
         'revoked': revoked,
         'pending_csrs': pending_csrs,
-        'acme_renewals': acme_renewals
+        'acme_renewals': acme_renewals,
+        'ssh_cas': ssh_cas,
+        'ssh_certificates': ssh_certs,
+        'ssh_user_certs': ssh_user_certs,
+        'ssh_host_certs': ssh_host_certs
     })
 
 

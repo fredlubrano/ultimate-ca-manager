@@ -390,6 +390,8 @@ export default function DashboardPage() {
   const pendingCSRs = stats?.pending_csrs || 0
   const acmeAccounts = recentAcme.length
   const expiringCount = stats?.expiring_soon || 0
+  const sshCAs = stats?.ssh_cas || 0
+  const sshCerts = stats?.ssh_certificates || 0
 
   // Build widget map for rendering
   const isVisible = (id) => widgets.find(w => w.id === id)?.visible
@@ -496,7 +498,7 @@ export default function DashboardPage() {
           {/* Stats Widget */}
           {isVisible('stats') && (
           <div key="stats">
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-3 h-full">
+            <div className={`grid ${sshCerts > 0 ? 'grid-cols-5' : 'grid-cols-4'} gap-1.5 sm:gap-3 h-full`}>
               <StatCard 
                 icon={Certificate}
                 label={t('common.certificates')}
@@ -528,6 +530,16 @@ export default function DashboardPage() {
                 color="emerald"
                 onClick={() => navigate('/acme')}
               />
+              {sshCerts > 0 && (
+                <StatCard
+                  icon={Key}
+                  label={t('dashboard.sshCertificates')}
+                  value={sshCerts}
+                  color="cyan"
+                  badge={t('dashboard.sshCasCount', { count: sshCAs })}
+                  onClick={() => navigate('/ssh/certificates')}
+                />
+              )}
             </div>
           </div>
           )}
@@ -998,11 +1010,14 @@ export default function DashboardPage() {
           <div className="space-y-2 pb-4">
             {isVisible('stats') && (
             <div>
-              <div className="grid grid-cols-4 gap-1.5 sm:gap-3">
+              <div className={`grid ${sshCerts > 0 ? 'grid-cols-5' : 'grid-cols-4'} gap-1.5 sm:gap-3`}>
                 <StatCard icon={Certificate} label={t('common.certificates')} value={totalCerts} color="blue" live={isConnected} onClick={() => navigate('/certificates')} />
                 <StatCard icon={ShieldCheck} label={t('common.cas')} value={totalCAs} color="purple" live={isConnected} onClick={() => navigate('/cas')} />
                 <StatCard icon={ListChecks} label={t('common.csrs')} value={pendingCSRs} color={pendingCSRs > 0 ? 'yellow' : 'slate'} badge={pendingCSRs > 0 ? t('common.pending') : null} onClick={() => navigate('/csrs')} />
                 <StatCard icon={Globe} label={t('common.acme')} value={acmeAccounts} color="emerald" onClick={() => navigate('/acme')} />
+                {sshCerts > 0 && (
+                  <StatCard icon={Key} label={t('dashboard.sshCertificates')} value={sshCerts} color="cyan" badge={t('dashboard.sshCasCount', { count: sshCAs })} onClick={() => navigate('/ssh/certificates')} />
+                )}
               </div>
             </div>
             )}
@@ -1349,6 +1364,7 @@ function StatCard({ icon: Icon, label, value, color, onClick, live, badge }) {
     purple: '--accent-pro',
     yellow: '--accent-warning',
     emerald: '--accent-success',
+    cyan: '--accent-primary',
     slate: '--text-tertiary',
   }
   
@@ -1357,6 +1373,7 @@ function StatCard({ icon: Icon, label, value, color, onClick, live, badge }) {
     purple: 'pro',
     yellow: 'warning',
     emerald: 'success',
+    cyan: 'info',
     slate: '',
   }
   
@@ -1365,6 +1382,7 @@ function StatCard({ icon: Icon, label, value, color, onClick, live, badge }) {
     purple: 'icon-bg-violet',
     yellow: 'icon-bg-amber',
     emerald: 'icon-bg-emerald',
+    cyan: 'icon-bg-teal',
     slate: 'icon-bg-teal',
   }
   

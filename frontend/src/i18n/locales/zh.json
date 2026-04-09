@@ -618,7 +618,9 @@
     "widgetTrustStoreExpiry": "信任存储过期",
     "trustStoreExpiry": "信任存储过期",
     "noTrustStoreExpiring": "没有即将过期的证书",
-    "loading": "加载仪表板..."
+    "loading": "加载仪表板...",
+    "sshCertificates": "SSH证书",
+    "sshCasCount": "{{count}} 个SSH CA"
   },
   "certificates": {
     "createCertificate": "创建证书",
@@ -2077,7 +2079,7 @@
       "trustStore": "信任存储",
       "hsmManagement": "HSM管理",
       "singleSignOn": "单点登录",
-      "ssh": "SSH Certificates"
+      "ssh": "SSH证书"
     },
     "subtitle_one": "{{count}} 个角色",
     "subtitle_other": "{{count}} 个角色",
@@ -2096,7 +2098,10 @@
     "permissions": {
       "readSsh": "View SSH CAs & certificates",
       "writeSsh": "Create & manage SSH CAs & certificates",
-      "deleteSsh": "Delete SSH CAs & certificates"
+      "deleteSsh": "Delete SSH CAs & certificates",
+      "read:ssh": "查看SSH CA和证书",
+      "write:ssh": "创建和签署SSH证书",
+      "delete:ssh": "删除SSH CA和证书"
     }
   },
   "hsm": {

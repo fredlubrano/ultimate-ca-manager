@@ -618,7 +618,9 @@
     "widgetTrustStoreExpiry": "Expiração do Trust Store",
     "trustStoreExpiry": "Expiração do Trust Store",
     "noTrustStoreExpiring": "Sem certificados a expirar em breve",
-    "loading": "Carregando painel..."
+    "loading": "Carregando painel...",
+    "sshCertificates": "Certificados SSH",
+    "sshCasCount": "{{count}} CAs SSH"
   },
   "certificates": {
     "createCertificate": "Criar certificado",
@@ -2077,7 +2079,7 @@
       "trustStore": "Armazém de confiança",
       "hsmManagement": "Gestão de HSM",
       "singleSignOn": "Início de sessão único",
-      "ssh": "SSH Certificates"
+      "ssh": "Certificados SSH"
     },
     "subtitle_one": "{{count}} função",
     "subtitle_other": "{{count}} funções",
@@ -2096,7 +2098,10 @@
     "permissions": {
       "readSsh": "View SSH CAs & certificates",
       "writeSsh": "Create & manage SSH CAs & certificates",
-      "deleteSsh": "Delete SSH CAs & certificates"
+      "deleteSsh": "Delete SSH CAs & certificates",
+      "read:ssh": "Ver CAs e certificados SSH",
+      "write:ssh": "Criar e assinar certificados SSH",
+      "delete:ssh": "Excluir CAs e certificados SSH"
     }
   },
   "hsm": {

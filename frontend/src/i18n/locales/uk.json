@@ -618,7 +618,9 @@
     "widgetTrustStoreExpiry": "Термін дії Trust Store",
     "trustStoreExpiry": "Термін дії Trust Store",
     "noTrustStoreExpiring": "Немає сертифікатів з терміном дії, що спливає",
-    "loading": "Завантаження панелі..."
+    "loading": "Завантаження панелі...",
+    "sshCertificates": "Сертифікати SSH",
+    "sshCasCount": "{{count}} SSH ЦС"
   },
   "certificates": {
     "createCertificate": "Створити сертифікат",
@@ -2077,7 +2079,7 @@
       "trustStore": "Сховище довіри",
       "hsmManagement": "Керування HSM",
       "singleSignOn": "Єдиний вхід",
-      "ssh": "SSH Certificates"
+      "ssh": "Сертифікати SSH"
     },
     "subtitle_one": "{{count}} роль",
     "subtitle_other": "{{count}} ролей",
@@ -2096,7 +2098,10 @@
     "permissions": {
       "readSsh": "View SSH CAs & certificates",
       "writeSsh": "Create & manage SSH CAs & certificates",
-      "deleteSsh": "Delete SSH CAs & certificates"
+      "deleteSsh": "Delete SSH CAs & certificates",
+      "read:ssh": "Переглядати SSH ЦС та сертифікати",
+      "write:ssh": "Створювати та підписувати SSH сертифікати",
+      "delete:ssh": "Видаляти SSH ЦС та сертифікати"
     }
   },
   "hsm": {

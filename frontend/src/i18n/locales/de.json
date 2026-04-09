@@ -618,7 +618,9 @@
     "widgetTrustStoreExpiry": "Ablauf des Trust Store",
     "trustStoreExpiry": "Ablauf des Trust Store",
     "noTrustStoreExpiring": "Keine bald ablaufenden Zertifikate",
-    "loading": "Dashboard wird geladen..."
+    "loading": "Dashboard wird geladen...",
+    "sshCertificates": "SSH-Zertifikate",
+    "sshCasCount": "{{count}} SSH-CAs"
   },
   "certificates": {
     "createCertificate": "Zertifikat erstellen",
@@ -2077,7 +2079,7 @@
       "trustStore": "Vertrauensspeicher",
       "hsmManagement": "HSM-Verwaltung",
       "singleSignOn": "Single Sign-On",
-      "ssh": "SSH Certificates"
+      "ssh": "SSH-Zertifikate"
     },
     "subtitle_one": "{{count}} Rolle",
     "subtitle_other": "{{count}} Rollen",
@@ -2096,7 +2098,10 @@
     "permissions": {
       "readSsh": "View SSH CAs & certificates",
       "writeSsh": "Create & manage SSH CAs & certificates",
-      "deleteSsh": "Delete SSH CAs & certificates"
+      "deleteSsh": "Delete SSH CAs & certificates",
+      "read:ssh": "SSH-CAs und Zertifikate anzeigen",
+      "write:ssh": "SSH-Zertifikate erstellen und signieren",
+      "delete:ssh": "SSH-CAs und Zertifikate löschen"
     }
   },
   "hsm": {

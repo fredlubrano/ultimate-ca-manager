@@ -618,7 +618,9 @@
     "widgetTrustStoreExpiry": "トラストストアの有効期限",
     "trustStoreExpiry": "トラストストアの有効期限",
     "noTrustStoreExpiring": "期限切れ間近の証明書はありません",
-    "loading": "ダッシュボードを読み込み中..."
+    "loading": "ダッシュボードを読み込み中...",
+    "sshCertificates": "SSH証明書",
+    "sshCasCount": "{{count}} SSH CA"
   },
   "certificates": {
     "createCertificate": "証明書を作成",
@@ -2077,7 +2079,7 @@
       "trustStore": "トラストストア",
       "hsmManagement": "HSM管理",
       "singleSignOn": "シングルサインオン",
-      "ssh": "SSH Certificates"
+      "ssh": "SSH証明書"
     },
     "subtitle_one": "{{count}} 件のロール",
     "subtitle_other": "{{count}} 件のロール",
@@ -2096,7 +2098,10 @@
     "permissions": {
       "readSsh": "View SSH CAs & certificates",
       "writeSsh": "Create & manage SSH CAs & certificates",
-      "deleteSsh": "Delete SSH CAs & certificates"
+      "deleteSsh": "Delete SSH CAs & certificates",
+      "read:ssh": "SSH CAと証明書を表示",
+      "write:ssh": "SSH証明書を作成・署名",
+      "delete:ssh": "SSH CAと証明書を削除"
     }
   },
   "hsm": {

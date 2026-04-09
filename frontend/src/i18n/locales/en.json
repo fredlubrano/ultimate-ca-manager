@@ -618,7 +618,9 @@
     "widgetTrustStoreExpiry": "Trust Store Expiry",
     "trustStoreExpiry": "Trust Store Expiry",
     "noTrustStoreExpiring": "All trusted certificates are valid",
-    "loading": "Loading dashboard..."
+    "loading": "Loading dashboard...",
+    "sshCertificates": "SSH Certificates",
+    "sshCasCount": "{{count}} SSH CAs"
   },
   "certificates": {
     "createCertificate": "Create Certificate",
@@ -2098,7 +2100,10 @@
     "permissions": {
       "readSsh": "View SSH CAs & certificates",
       "writeSsh": "Create & manage SSH CAs & certificates",
-      "deleteSsh": "Delete SSH CAs & certificates"
+      "deleteSsh": "Delete SSH CAs & certificates",
+      "read:ssh": "View SSH CAs and certificates",
+      "write:ssh": "Create and sign SSH certificates",
+      "delete:ssh": "Delete SSH CAs and certificates"
     }
   },
   "hsm": {
