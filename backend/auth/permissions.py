@@ -17,7 +17,7 @@ ROLE_PERMISSIONS = {
         'read:scep',
         'read:est',
         'read:hsm',
-        'read:ssh', 'write:ssh',
+        'read:ssh', 'write:ssh', 'delete:ssh',
         'read:policies', 'read:approvals', 'write:approvals',
         'read:audit',
         'read:settings', 'write:settings',
