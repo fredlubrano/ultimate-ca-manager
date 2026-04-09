@@ -404,8 +404,8 @@
     "disable": "Вимкнути",
     "digest": "Алгоритм хешування",
     "tsa": "TSA",
-    "sshCas": "SSH CAs",
-    "sshCertificates": "SSH Certificates",
+    "sshCas": "SSH ЦС",
+    "sshCertificates": "SSH сертифікати",
     "navSsh": "SSH",
     "ssh": "SSH"
   },

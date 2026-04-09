@@ -404,8 +404,8 @@
     "disable": "Desactivar",
     "digest": "Algoritmo de hash",
     "tsa": "TSA",
-    "sshCas": "SSH CAs",
-    "sshCertificates": "SSH Certificates",
+    "sshCas": "CAs SSH",
+    "sshCertificates": "Certificados SSH",
     "navSsh": "SSH",
     "ssh": "SSH"
   },

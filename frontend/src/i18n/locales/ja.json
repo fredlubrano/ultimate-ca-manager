@@ -404,8 +404,8 @@
     "disable": "無効にする",
     "digest": "ダイジェスト",
     "tsa": "TSA",
-    "sshCas": "SSH CAs",
-    "sshCertificates": "SSH Certificates",
+    "sshCas": "SSH CA",
+    "sshCertificates": "SSH証明書",
     "navSsh": "SSH",
     "ssh": "SSH"
   },

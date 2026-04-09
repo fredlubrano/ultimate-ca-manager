@@ -404,8 +404,8 @@
     "disable": "禁用",
     "digest": "摘要算法",
     "tsa": "TSA",
-    "sshCas": "SSH CAs",
-    "sshCertificates": "SSH Certificates",
+    "sshCas": "SSH CA",
+    "sshCertificates": "SSH 证书",
     "navSsh": "SSH",
     "ssh": "SSH"
   },

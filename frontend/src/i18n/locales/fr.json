@@ -1003,8 +1003,8 @@
     "disable": "Désactiver",
     "digest": "Algorithme de hachage",
     "tsa": "TSA",
-    "sshCas": "SSH CAs",
-    "sshCertificates": "SSH Certificates",
+    "sshCas": "CA SSH",
+    "sshCertificates": "Certificats SSH",
     "navSsh": "SSH",
     "ssh": "SSH"
   },
