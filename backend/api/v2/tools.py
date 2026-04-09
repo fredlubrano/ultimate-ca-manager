@@ -366,19 +366,56 @@ def decode_cert():
         return error_response('Certificate data is required', 400)
     
     try:
-        cert = None
+        certs = []
         
         # Check for BASE64-encoded binary (DER)
         if pem_data.startswith('BASE64:'):
             raw_bytes = base64.b64decode(pem_data[7:])
-            cert = x509.load_der_x509_certificate(raw_bytes, default_backend())
+            # Try DER certificate first
+            try:
+                certs = [x509.load_der_x509_certificate(raw_bytes, default_backend())]
+            except Exception:
+                pass
+            # Try PKCS7 DER
+            if not certs:
+                try:
+                    from cryptography.hazmat.primitives.serialization import pkcs7
+                    certs = pkcs7.load_der_pkcs7_certificates(raw_bytes)
+                except Exception:
+                    pass
+            # Try PKCS12
+            if not certs:
+                try:
+                    from cryptography.hazmat.primitives.serialization import pkcs12 as p12mod
+                    _, cert, chain = p12mod.load_key_and_certificates(raw_bytes, None)
+                    if cert:
+                        certs = [cert]
+                    if chain:
+                        certs.extend(chain)
+                except Exception:
+                    pass
         else:
-            # Try to load as PEM
-            if '-----BEGIN' not in pem_data:
-                pem_data = f"-----BEGIN CERTIFICATE-----\n{pem_data}\n-----END CERTIFICATE-----"
-            cert = x509.load_pem_x509_certificate(pem_data.encode(), default_backend())
+            # Try PEM certificate
+            try:
+                if '-----BEGIN CERTIFICATE-----' in pem_data:
+                    certs = [x509.load_pem_x509_certificate(pem_data.encode(), default_backend())]
+                elif '-----BEGIN PKCS7-----' in pem_data:
+                    from cryptography.hazmat.primitives.serialization import pkcs7
+                    certs = pkcs7.load_pem_pkcs7_certificates(pem_data.encode())
+                else:
+                    # Try wrapping as PEM cert
+                    wrapped = f"-----BEGIN CERTIFICATE-----\n{pem_data}\n-----END CERTIFICATE-----"
+                    certs = [x509.load_pem_x509_certificate(wrapped.encode(), default_backend())]
+            except Exception:
+                pass
         
-        result = cert_to_dict(cert)
+        if not certs:
+            return error_response('Failed to decode certificate. Supported formats: PEM, DER, PKCS7, PKCS12', 400)
+        
+        # Return first cert details, plus chain info if multiple
+        result = cert_to_dict(certs[0])
+        if len(certs) > 1:
+            result['chain'] = [cert_to_dict(c) for c in certs[1:]]
         return success_response(data=result)
     
     except Exception as e:
