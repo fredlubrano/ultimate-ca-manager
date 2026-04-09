@@ -162,6 +162,20 @@ export default function SSHCAsPage() {
     }
   }
 
+  const handleDownloadSetupScript = async (ca) => {
+    try {
+      const blob = await sshCasService.getSetupScript(ca.id)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `ssh_ca_setup_${(ca.descr || 'ca').replace(/[^a-zA-Z0-9_-]/g, '_')}.sh`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      showError(error.message || t('common.operationFailed'))
+    }
+  }
+
   const handleCopyPublicKey = async (ca) => {
     try {
       const res = await sshCasService.getPublicKey(ca.id)
@@ -340,6 +354,9 @@ export default function SSHCAsPage() {
         <Button type="button" size="sm" variant="secondary" onClick={() => handleCopyPublicKey(selectedCA)}>
           {copied ? <Check size={14} /> : <Copy size={14} />}
           {copied ? t('sshCas.publicKeyCopied') : t('sshCas.copyPublicKey')}
+        </Button>
+        <Button type="button" size="sm" variant="primary" onClick={() => handleDownloadSetupScript(selectedCA)}>
+          <Terminal size={14} /> {t('sshCertificates.downloadSetupScript')}
         </Button>
         {canWrite('ssh') && (
           <Button type="button" size="sm" variant="secondary" onClick={() => { setEditingCA(selectedCA); setShowModal(true) }}>

@@ -3619,8 +3619,10 @@
       "descriptionPlaceholder": "e.g. Production User CA",
       "ttlPlaceholder": "e.g. 24h, 7d, 365d",
       "principalsPlaceholder": "e.g. root,admin,deploy (comma-separated)",
-      "keySizeLabel": "Key Size (RSA only)"
-    }
+      "keySizeLabel": "Key Size (RSA only)",
+      "principalsHelperText": "Elenco separato da virgole dei principal consentiti"
+    },
+    "searchPlaceholder": "Cerca CA SSH..."
   },
   "sshCertificates": {
     "title": "SSH Certificates",
@@ -3693,6 +3695,9 @@
     },
     "privateKeyWarning": "Save this private key now — it cannot be retrieved later",
     "generatedPrivateKey": "Generated Private Key",
-    "generatedCertificate": "Generated Certificate"
+    "generatedCertificate": "Generated Certificate",
+    "certificateIssued": "Certificato SSH emesso con successo",
+    "downloadSetupScript": "Scarica script di configurazione",
+    "setupScriptDescription": "Scarica uno script shell per configurare il tuo server SSH per fidarsi di questa CA"
   }
 }

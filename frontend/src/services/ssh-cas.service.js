@@ -31,4 +31,8 @@ export const sshCasService = {
   async getKRL(id) {
     return apiClient.get(`/ssh/cas/${id}/krl`, { responseType: 'blob' })
   },
+
+  async getSetupScript(id) {
+    return apiClient.get(`/ssh/cas/${id}/setup-script`, { responseType: 'blob' })
+  },
 }

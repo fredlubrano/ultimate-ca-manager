@@ -3619,8 +3619,10 @@
       "descriptionPlaceholder": "e.g. Production User CA",
       "ttlPlaceholder": "e.g. 24h, 7d, 365d",
       "principalsPlaceholder": "e.g. root,admin,deploy (comma-separated)",
-      "keySizeLabel": "Key Size (RSA only)"
-    }
+      "keySizeLabel": "Key Size (RSA only)",
+      "principalsHelperText": "カンマ区切りの許可プリンシパルリスト"
+    },
+    "searchPlaceholder": "SSH CAを検索..."
   },
   "sshCertificates": {
     "title": "SSH Certificates",
@@ -3693,6 +3695,9 @@
     },
     "privateKeyWarning": "Save this private key now — it cannot be retrieved later",
     "generatedPrivateKey": "Generated Private Key",
-    "generatedCertificate": "Generated Certificate"
+    "generatedCertificate": "Generated Certificate",
+    "certificateIssued": "SSH証明書が正常に発行されました",
+    "downloadSetupScript": "セットアップスクリプトをダウンロード",
+    "setupScriptDescription": "このCAを信頼するようにSSHサーバーを設定するシェルスクリプトをダウンロードします"
   }
 }

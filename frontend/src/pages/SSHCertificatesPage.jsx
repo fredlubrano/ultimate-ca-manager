@@ -241,14 +241,14 @@ export default function SSHCertificatesPage() {
   const handleIssueSubmit = async (data) => {
     try {
       muteToasts()
+      const { mode, ...payload } = data
       let res
-      if (data.mode === 'generate') {
-        res = await sshCertificatesService.generate(data)
+      if (mode === 'generate') {
+        res = await sshCertificatesService.generate(payload)
       } else {
-        res = await sshCertificatesService.sign(data)
+        res = await sshCertificatesService.sign(payload)
       }
       showSuccess(t('messages.success.create.sshCertificate'))
-      setShowIssueModal(false)
       loadData()
       return res
     } catch (error) {
@@ -753,14 +753,21 @@ function IssueCertificateForm({ cas, onSubmit, onCancel }) {
     try {
       const principals = principalsText.split(',').map(p => p.trim()).filter(Boolean)
 
+      // Convert validity preset to seconds for backend
+      const preset = VALIDITY_PRESETS.find(p => p.value === validityPreset)
+      const validitySeconds = preset?.seconds || null
+
       const data = {
         mode,
         ca_id: parseInt(caId, 10),
         cert_type: certType,
         key_id: keyId.trim(),
         principals,
-        validity_preset: validityPreset,
         extensions: certType === 'user' ? extensions : [],
+      }
+
+      if (validitySeconds) {
+        data.validity_seconds = validitySeconds
       }
 
       if (mode === 'sign') {
@@ -782,8 +789,8 @@ function IssueCertificateForm({ cas, onSubmit, onCancel }) {
       }
 
       const res = await onSubmit(data)
-      if (mode === 'generate' && res?.data) {
-        setResult(res.data)
+      if (res?.data) {
+        setResult({ ...res.data, _mode: mode })
       } else {
         onCancel()
       }
@@ -1047,6 +1054,7 @@ function IssueCertificateForm({ cas, onSubmit, onCancel }) {
 function GeneratedResultView({ result, onClose }) {
   const { t } = useTranslation()
   const { showSuccess } = useNotification()
+  const isGenerated = result._mode === 'generate'
 
   const handleCopy = (text) => {
     navigator.clipboard.writeText(text).then(() => {
@@ -1054,31 +1062,60 @@ function GeneratedResultView({ result, onClose }) {
     }).catch(() => {})
   }
 
+  const handleDownload = (content, filename) => {
+    const blob = new Blob([content], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const keyId = result.key_id || 'ssh_cert'
+  const safeKeyId = keyId.replace(/[^a-zA-Z0-9_-]/g, '_')
+
   return (
     <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
-      {/* Warning about private key */}
-      <div className="p-3 rounded-lg bg-status-warning-op10 border border-status-warning-op30">
-        <div className="flex items-center gap-2 text-status-warning text-xs font-medium">
-          <Warning size={16} />
-          {t('sshCertificates.privateKeyWarning')}
+      {/* Success banner */}
+      <div className="p-3 rounded-lg bg-status-success-op10 border border-status-success-op30">
+        <div className="flex items-center gap-2 text-status-success text-xs font-medium">
+          <CheckCircle size={16} />
+          {t('sshCertificates.certificateIssued')}
         </div>
       </div>
 
-      {/* Private Key */}
-      {result.private_key && (
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-xs font-medium text-text-primary">
-              {t('sshCertificates.generatedPrivateKey')}
-            </label>
-            <Button type="button" size="sm" variant="ghost" onClick={() => handleCopy(result.private_key)}>
-              <Copy size={12} /> {t('common.copy')}
-            </Button>
+      {/* Private Key (generate mode only) */}
+      {isGenerated && result.private_key && (
+        <>
+          <div className="p-3 rounded-lg bg-status-warning-op10 border border-status-warning-op30">
+            <div className="flex items-center gap-2 text-status-warning text-xs font-medium">
+              <Warning size={16} />
+              {t('sshCertificates.privateKeyWarning')}
+            </div>
           </div>
-          <pre className="font-mono text-2xs text-text-secondary bg-tertiary-op50 p-2 rounded overflow-x-auto max-h-40 whitespace-pre-wrap break-all">
-            {result.private_key}
-          </pre>
-        </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-text-primary">
+                {t('sshCertificates.generatedPrivateKey')}
+              </label>
+              <div className="flex items-center gap-1">
+                <Button type="button" size="sm" variant="ghost" onClick={() => handleDownload(result.private_key, safeKeyId)}>
+                  <Download size={12} /> {t('common.download')}
+                </Button>
+                <Button type="button" size="sm" variant="ghost" onClick={() => handleCopy(result.private_key)}>
+                  <Copy size={12} /> {t('common.copy')}
+                </Button>
+              </div>
+            </div>
+            <pre className="font-mono text-2xs text-text-secondary bg-tertiary-op50 p-2 rounded overflow-x-auto max-h-40 whitespace-pre-wrap break-all">
+              {result.private_key}
+            </pre>
+          </div>
+        </>
       )}
 
       {/* Certificate */}
@@ -1088,9 +1125,14 @@ function GeneratedResultView({ result, onClose }) {
             <label className="text-xs font-medium text-text-primary">
               {t('sshCertificates.generatedCertificate')}
             </label>
-            <Button type="button" size="sm" variant="ghost" onClick={() => handleCopy(result.certificate)}>
-              <Copy size={12} /> {t('common.copy')}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button type="button" size="sm" variant="ghost" onClick={() => handleDownload(result.certificate, `${safeKeyId}-cert.pub`)}>
+                <Download size={12} /> {t('common.download')}
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => handleCopy(result.certificate)}>
+                <Copy size={12} /> {t('common.copy')}
+              </Button>
+            </div>
           </div>
           <pre className="font-mono text-2xs text-text-secondary bg-tertiary-op50 p-2 rounded overflow-x-auto max-h-40 whitespace-pre-wrap break-all">
             {result.certificate}
@@ -1105,9 +1147,14 @@ function GeneratedResultView({ result, onClose }) {
             <label className="text-xs font-medium text-text-primary">
               {t('sshCertificates.publicKey')}
             </label>
-            <Button type="button" size="sm" variant="ghost" onClick={() => handleCopy(result.public_key)}>
-              <Copy size={12} /> {t('common.copy')}
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button type="button" size="sm" variant="ghost" onClick={() => handleDownload(result.public_key, `${safeKeyId}.pub`)}>
+                <Download size={12} /> {t('common.download')}
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => handleCopy(result.public_key)}>
+                <Copy size={12} /> {t('common.copy')}
+              </Button>
+            </div>
           </div>
           <pre className="font-mono text-2xs text-text-secondary bg-tertiary-op50 p-2 rounded overflow-x-auto max-h-20 whitespace-pre-wrap break-all">
             {result.public_key}
