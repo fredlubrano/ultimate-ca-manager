@@ -2902,6 +2902,9 @@
         "template": "テンプレートが更新されました",
         "user": "ユーザーが更新されました",
         "sshCa": "SSH CA updated successfully"
+      },
+      "revoke": {
+        "sshCertificate": "SSH証明書が正常に失効されました"
       }
     }
   },

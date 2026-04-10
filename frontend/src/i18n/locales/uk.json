@@ -2902,6 +2902,9 @@
         "template": "Шаблон оновлено успішно",
         "user": "Користувача оновлено успішно",
         "sshCa": "SSH CA updated successfully"
+      },
+      "revoke": {
+        "sshCertificate": "SSH сертифікат успішно відкликано"
       }
     }
   },

@@ -101,12 +101,15 @@ def import_ssh_certificate():
         certificate_data = (data.get('certificate') or '').strip()
         if not certificate_data:
             return error_response('Certificate data is required', 400)
+        if len(certificate_data) > 32768:
+            return error_response('Certificate data too large', 400)
 
+        descr = (data.get('descr') or '').strip()[:255] or None
         username = g.current_user.username if hasattr(g, 'current_user') else 'system'
 
         cert = SSHCertificateService.import_certificate(
             certificate_data=certificate_data,
-            descr=data.get('descr'),
+            descr=descr,
             ssh_ca_id=data.get('ssh_ca_id'),
             username=username,
         )
@@ -133,9 +136,23 @@ def import_ssh_certificate():
         )
 
     except ValueError as e:
+        AuditService.log_action(
+            action='ssh_cert_import_failed',
+            resource_type='ssh_certificate',
+            details=str(e)[:200],
+            success=False,
+            username=g.current_user.username if hasattr(g, 'current_user') else 'system',
+        )
         return error_response(str(e), 400)
     except Exception as e:
         logger.error(f"Failed to import SSH certificate: {e}")
+        AuditService.log_action(
+            action='ssh_cert_import_failed',
+            resource_type='ssh_certificate',
+            details='Internal error during SSH certificate import',
+            success=False,
+            username=g.current_user.username if hasattr(g, 'current_user') else 'system',
+        )
         return error_response('Failed to import SSH certificate', 500)
 
 

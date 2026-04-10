@@ -2902,6 +2902,9 @@
         "template": "模板更新成功",
         "user": "用户更新成功",
         "sshCa": "SSH CA updated successfully"
+      },
+      "revoke": {
+        "sshCertificate": "SSH证书已成功吊销"
       }
     }
   },

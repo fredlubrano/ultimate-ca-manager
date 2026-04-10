@@ -4,6 +4,7 @@ SSH Certificate Authorities API
 CRUD endpoints for SSH CAs + public key export + KRL download.
 """
 
+import re
 import logging
 from flask import Blueprint, request, g, Response
 
@@ -74,12 +75,16 @@ def import_ssh_ca():
         private_key = (data.get('private_key') or '').strip()
         if not private_key:
             return error_response('Private key is required', 400)
+        if len(private_key) > 16384:
+            return error_response('Private key data too large', 400)
 
-        descr = (data.get('descr') or data.get('name') or '').strip()
+        descr = (data.get('descr') or data.get('name') or '').strip()[:255]
         if not descr:
             return error_response('Description is required', 400)
 
         ca_type = (data.get('ca_type') or 'user').strip().lower()
+        if ca_type not in ('user', 'host'):
+            return error_response('Invalid CA type. Must be "user" or "host".', 400)
         username = g.current_user.username if hasattr(g, 'current_user') else 'system'
 
         ca = SSHCAService.import_ca(
@@ -115,9 +120,23 @@ def import_ssh_ca():
         )
 
     except ValueError as e:
+        AuditService.log_action(
+            action='ssh_ca_import_failed',
+            resource_type='ssh_ca',
+            details=str(e)[:200],
+            success=False,
+            username=g.current_user.username if hasattr(g, 'current_user') else 'system',
+        )
         return error_response(str(e), 400)
     except Exception as e:
         logger.error(f"Failed to import SSH CA: {e}")
+        AuditService.log_action(
+            action='ssh_ca_import_failed',
+            resource_type='ssh_ca',
+            details='Internal error during SSH CA import',
+            success=False,
+            username=g.current_user.username if hasattr(g, 'current_user') else 'system',
+        )
         return error_response('Failed to import SSH CA', 500)
 
 
@@ -288,7 +307,7 @@ def get_ssh_ca_public_key(ca_id):
             pub_key,
             mimetype='text/plain',
             headers={
-                'Content-Disposition': f'attachment; filename="ssh_ca_{ca.descr.replace(" ", "_")}.pub"'
+                'Content-Disposition': f'attachment; filename="ssh_ca_{re.sub(r"[^a-zA-Z0-9_.-]", "_", ca.descr)}.pub"'
             }
         )
     except ValueError as e:
@@ -316,9 +335,11 @@ def get_ssh_ca_setup_script(ca_id):
             ca_type = ca.ca_type
 
         hostname = request.args.get('hostname', '').strip()
+        if hostname and not re.match(r'^[a-zA-Z0-9._-]+$', hostname):
+            return error_response('Invalid hostname format', 400)
 
         script = _generate_setup_script(ca, pub_key, ca_type, hostname)
-        safe_name = ca.descr.replace(' ', '_').replace('"', '')
+        safe_name = re.sub(r'[^a-zA-Z0-9_.-]', '_', ca.descr)
 
         return Response(
             script,
@@ -879,7 +900,7 @@ def get_ssh_ca_krl(ca_id):
             krl_data,
             mimetype='application/octet-stream',
             headers={
-                'Content-Disposition': f'attachment; filename="ssh_ca_{ca_name.replace(" ", "_")}_krl"'
+                'Content-Disposition': f'attachment; filename="ssh_ca_{re.sub(r"[^a-zA-Z0-9_.-]", "_", ca_name)}_krl"'
             }
         )
     except ValueError as e:

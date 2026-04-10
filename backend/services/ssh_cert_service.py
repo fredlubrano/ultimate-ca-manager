@@ -373,7 +373,8 @@ class SSHCertificateService:
         try:
             cert = ssh_serialization.load_ssh_public_identity(cert_data)
         except Exception as e:
-            raise ValueError(f"Failed to parse SSH certificate: {e}")
+            logger.warning(f"SSH certificate parse failed: {e}")
+            raise ValueError("Invalid SSH certificate format. Provide a valid OpenSSH certificate.")
 
         # Verify it's actually a certificate, not just a public key
         if not hasattr(cert, 'serial'):
@@ -464,6 +465,15 @@ class SSHCertificateService:
         cert_obj = ssh_serialization.load_ssh_public_identity(cert_bytes)
         public_key = cert_obj.public_key()
         pub_openssh = ssh_serialization.serialize_ssh_public_key(public_key).decode('utf-8')
+
+        # Check for duplicate certificate (same serial + CA)
+        existing = SSHCertificate.query.filter_by(
+            ssh_ca_id=matched_ca.id, serial=decoded['serial']
+        ).first()
+        if existing:
+            raise ValueError(
+                f"A certificate with serial {decoded['serial']} from this CA already exists"
+            )
 
         principals = decoded['principals']
         cert_type = decoded['type']

@@ -36,6 +36,10 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+if not HAS_ENCRYPTION:
+    logger.warning("SSH CA key encryption unavailable — private keys will be stored unencrypted. "
+                   "Configure a master key for at-rest encryption.")
+
 # Mapping of key type names to generation parameters
 KEY_TYPE_MAP = {
     'ed25519': ('ed25519', None),
@@ -226,7 +230,8 @@ class SSHCAService:
         try:
             private_key = load_ssh_private_key(private_key_pem, password=None)
         except Exception as e:
-            raise ValueError(f"Failed to load SSH private key: {e}")
+            logger.warning(f"SSH private key load failed: {e}")
+            raise ValueError("Invalid SSH private key format. Ensure it is in OpenSSH PEM format.")
 
         public_key = private_key.public_key()
         key_type = SSHCAService._detect_key_type(private_key)
@@ -334,7 +339,7 @@ class SSHCAService:
     @staticmethod
     def get_next_serial(ca_id):
         """Atomically increment and return next serial number for a CA."""
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = SSHCertificateAuthority.query.with_for_update().get(ca_id)
         if not ca:
             raise ValueError(f"SSH CA not found: {ca_id}")
 

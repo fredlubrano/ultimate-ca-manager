@@ -189,7 +189,7 @@ export default function SSHCertificatesPage() {
     try {
       muteToasts()
       await sshCertificatesService.revoke(revokingCert.id, reason)
-      showSuccess(t('messages.success.create.sshCertificate').replace('issued', 'revoked'))
+      showSuccess(t('messages.success.revoke.sshCertificate'))
       setShowRevokeModal(false)
       setRevokingCert(null)
       if (selectedCert?.id === revokingCert.id) setSelectedCert(null)
@@ -723,7 +723,7 @@ export default function SSHCertificatesPage() {
       </Modal>
 
       {/* Import Certificate Modal */}
-      <Modal open={showImportModal} onOpenChange={setShowImportModal} title={t('sshCertificates.importCertificate')} size="lg">
+      <Modal open={showImportModal} onOpenChange={(open) => { setShowImportModal(open); if (!open) setImportCertData('') }} title={t('sshCertificates.importCertificate')} size="lg">
         <form onSubmit={handleImportCert} className="p-4 space-y-4">
           <p className="text-sm text-secondary">{t('sshCertificates.importCertDescription')}</p>
           <Textarea
@@ -734,7 +734,7 @@ export default function SSHCertificatesPage() {
             rows={8}
             required
           />
-          <Input label={t('sshCas.description')} name="descr" />
+          <Input label={t('common.description')} name="descr" />
           <div className="flex justify-end gap-2 pt-4 border-t border-border">
             <Button type="button" variant="secondary" onClick={() => setShowImportModal(false)}>
               {t('common.cancel')}

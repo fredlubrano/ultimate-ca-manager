@@ -91,6 +91,8 @@ class RateLimitConfig:
             '/api/v2/import': {'rpm': heavy_rpm // 3, 'burst': 2},
             '/api/v2/export': {'rpm': heavy_rpm // 3, 'burst': 2},
             '/api/v2/backup': {'rpm': heavy_rpm // 6, 'burst': 2},
+            '/api/v2/ssh/cas/import': {'rpm': 10, 'burst': 3},
+            '/api/v2/ssh/certificates/import': {'rpm': 30, 'burst': 5},
             
             # Standard endpoints - reasonable limits
             '/api/v2/users': {'rpm': standard_rpm // 2, 'burst': standard_burst // 2},

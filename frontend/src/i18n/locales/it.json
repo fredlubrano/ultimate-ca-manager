@@ -2902,6 +2902,9 @@
         "template": "Modello aggiornato con successo",
         "user": "Utente aggiornato con successo",
         "sshCa": "SSH CA updated successfully"
+      },
+      "revoke": {
+        "sshCertificate": "Certificato SSH revocato con successo"
       }
     }
   },

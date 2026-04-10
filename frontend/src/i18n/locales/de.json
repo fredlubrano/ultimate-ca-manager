@@ -2902,6 +2902,9 @@
         "template": "Vorlage erfolgreich aktualisiert",
         "user": "Benutzer erfolgreich aktualisiert",
         "sshCa": "SSH CA updated successfully"
+      },
+      "revoke": {
+        "sshCertificate": "SSH-Zertifikat erfolgreich widerrufen"
       }
     }
   },

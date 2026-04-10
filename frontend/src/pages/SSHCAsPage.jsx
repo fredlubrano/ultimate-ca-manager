@@ -135,6 +135,7 @@ export default function SSHCAsPage() {
       setImportPrivateKey('')
       loadData()
     } catch (error) {
+      setImportPrivateKey('')
       showError(error.message || t('messages.errors.createFailed.sshCa'))
     }
   }
@@ -627,7 +628,7 @@ export default function SSHCAsPage() {
       )}
 
       {/* Import CA Modal */}
-      <Modal open={showImportModal} onOpenChange={setShowImportModal} title={t('sshCas.importCA')} size="lg">
+      <Modal open={showImportModal} onOpenChange={(open) => { setShowImportModal(open); if (!open) { setImportCaType('user'); setImportPrivateKey('') } }} title={t('sshCas.importCA')} size="lg">
         <form onSubmit={handleImportCA} className="p-4 space-y-4">
           <p className="text-sm text-secondary">{t('sshCas.importCADescription')}</p>
           <Input label={t('sshCas.description')} name="descr" required />
@@ -648,7 +649,7 @@ export default function SSHCAsPage() {
             rows={8}
             required
           />
-          <Input label={t('sshCas.configuration')} name="comment" />
+          <Input label={t('common.notes')} name="comment" />
           <div className="flex justify-end gap-2 pt-4 border-t border-border">
             <Button type="button" variant="secondary" onClick={() => setShowImportModal(false)}>
               {t('common.cancel')}

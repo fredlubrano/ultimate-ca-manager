@@ -3054,6 +3054,9 @@
       },
       "sso": {
         "connectionOk": "Connection successful"
+      },
+      "revoke": {
+        "sshCertificate": "SSH certificate revoked successfully"
       }
     },
     "confirm": {
