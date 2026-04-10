@@ -15,6 +15,29 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.112] - 2026-04-10
+
+### Added
+- **SSH Certificate Authority** — Full SSH CA support: create ED25519/RSA/ECDSA SSH CAs, sign host and user certificates with configurable validity and principals, manage and revoke SSH certificates; RBAC-enforced with 6 dedicated permissions; dashboard widget shows SSH certificate stats; curl-friendly setup script endpoint (`/api/v2/ssh/cas/:id/setup-script`) for one-command client trust configuration
+- **SSH Import** — Import existing SSH CAs (public+private key) and SSH certificates with full validation; supports OpenSSH key formats
+- **HTTPS Certificate Picker** — Settings HTTPS certificate selection now uses a searchable modal with pagination instead of a limited dropdown; supports filtering by name, subject, or issuer across all certificates
+
+### Security
+- **Session Fixation Prevention** — Added `session.clear()` before session assignment in OAuth2, SAML, LDAP, and mTLS login paths
+- **Export Password Protection** — Certificate/CA export endpoints now accept POST with password in request body instead of GET with password in URL query string
+- **EST Password Hashing** — EST authentication password stored with `generate_password_hash()` instead of plaintext; seamless migration for existing deployments
+- **LDAP Settings Allowlist** — LDAP configuration endpoint restricted to known keys, preventing arbitrary SystemConfig injection
+- **LIKE Injection Prevention** — Search wildcards (`%`, `_`) properly escaped in groups, users, templates, truststore, and user-certificates endpoints
+- **Self-Approval Prevention** — Users cannot approve their own certificate requests
+- **OPNsense Credentials** — Moved from persistent `localStorage` to session-scoped `sessionStorage`
+- **RBAC Hardening** — Added audit logging and try/except to all RBAC and policy write operations; Discovery profile edit/delete buttons now gated by permissions
+
+### Fixed
+- **Dependency Update** — Bumped `cryptography` 46.0.6 → 46.0.7 (CVE-2026-39892)
+- **SSH i18n** — Navigation menu items and help content translated in all 8 languages
+
+---
+
 ## [2.111] - 2026-04-09
 
 ### Fixed
