@@ -64,6 +64,63 @@ def get_ssh_ca(ca_id):
     return success_response(data=ca.to_dict())
 
 
+@bp.route('/api/v2/ssh/cas/import', methods=['POST'])
+@require_auth(['write:ssh'])
+def import_ssh_ca():
+    """Import an existing SSH CA from a private key."""
+    try:
+        data = request.json or {}
+
+        private_key = (data.get('private_key') or '').strip()
+        if not private_key:
+            return error_response('Private key is required', 400)
+
+        descr = (data.get('descr') or data.get('name') or '').strip()
+        if not descr:
+            return error_response('Description is required', 400)
+
+        ca_type = (data.get('ca_type') or 'user').strip().lower()
+        username = g.current_user.username if hasattr(g, 'current_user') else 'system'
+
+        ca = SSHCAService.import_ca(
+            descr=descr,
+            ca_type=ca_type,
+            private_key_pem=private_key,
+            username=username,
+            default_ttl=data.get('default_ttl'),
+            max_ttl=data.get('max_ttl', 0),
+            comment=data.get('comment'),
+            owner_group_id=data.get('owner_group_id'),
+        )
+
+        AuditService.log_action(
+            action='ssh_ca_imported',
+            resource_type='ssh_ca',
+            resource_id=str(ca.id),
+            resource_name=ca.descr,
+            details=f'SSH CA "{ca.descr}" imported ({ca_type}, {ca.key_type})',
+            success=True,
+            username=username,
+        )
+
+        try:
+            from websocket.emitters import on_ssh_ca_created
+            on_ssh_ca_created(ca.id, ca.descr, ca_type, username)
+        except Exception:
+            pass
+
+        return created_response(
+            data=ca.to_dict(),
+            message='SSH CA imported successfully'
+        )
+
+    except ValueError as e:
+        return error_response(str(e), 400)
+    except Exception as e:
+        logger.error(f"Failed to import SSH CA: {e}")
+        return error_response('Failed to import SSH CA', 500)
+
+
 @bp.route('/api/v2/ssh/cas', methods=['POST'])
 @require_auth(['write:ssh'])
 def create_ssh_ca():

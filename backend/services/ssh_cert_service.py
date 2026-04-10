@@ -423,6 +423,90 @@ class SSHCertificateService:
         }
 
     @staticmethod
+    def import_certificate(certificate_data, descr=None, ssh_ca_id=None, username=None):
+        """Import an existing SSH certificate.
+
+        Decodes the certificate, tries to match the signing CA by fingerprint,
+        and stores it in the database.
+
+        Args:
+            certificate_data: Certificate in OpenSSH format (string)
+            descr: Optional human-readable description
+            ssh_ca_id: Optional SSH CA ID to link (verified against cert's CA fingerprint)
+            username: Who imported it
+
+        Returns:
+            SSHCertificate instance
+        """
+        decoded = SSHCertificateService.decode_certificate(certificate_data)
+
+        ca_fingerprint = decoded['ca_fingerprint']
+
+        # Try to match the CA fingerprint to a local SSH CA
+        matched_ca = SSHCertificateAuthority.query.filter_by(fingerprint=ca_fingerprint).first()
+
+        if ssh_ca_id is not None:
+            provided_ca = SSHCertificateAuthority.query.get(ssh_ca_id)
+            if not provided_ca:
+                raise ValueError(f"SSH CA not found: {ssh_ca_id}")
+            if provided_ca.fingerprint != ca_fingerprint:
+                raise ValueError(
+                    "Provided SSH CA fingerprint does not match the certificate's signing CA"
+                )
+            matched_ca = provided_ca
+        elif matched_ca is None:
+            raise ValueError(
+                "The signing CA is not in the system. Import the CA first or provide ssh_ca_id."
+            )
+
+        # Extract public key in OpenSSH format from the certificate
+        cert_bytes = certificate_data.strip().encode('utf-8') if isinstance(certificate_data, str) else certificate_data.strip()
+        cert_obj = ssh_serialization.load_ssh_public_identity(cert_bytes)
+        public_key = cert_obj.public_key()
+        pub_openssh = ssh_serialization.serialize_ssh_public_key(public_key).decode('utf-8')
+
+        principals = decoded['principals']
+        cert_type = decoded['type']
+
+        if not descr:
+            descr = f"Imported {cert_type} cert for {decoded['key_id']}"
+
+        valid_from_dt = datetime.fromtimestamp(decoded['valid_after'], tz=timezone.utc)
+        valid_to_dt = datetime.fromtimestamp(decoded['valid_before'], tz=timezone.utc)
+
+        ssh_cert = SSHCertificate(
+            refid=str(uuid.uuid4()),
+            descr=descr,
+            ssh_ca_id=matched_ca.id,
+            cert_type=cert_type,
+            key_id=decoded['key_id'],
+            public_key=pub_openssh,
+            certificate=certificate_data.strip(),
+            principals=json.dumps(principals),
+            serial=decoded['serial'],
+            valid_from=valid_from_dt,
+            valid_to=valid_to_dt,
+            key_type=decoded['key_type'],
+            fingerprint=decoded['fingerprint'],
+            extensions=json.dumps(decoded['extensions']) if decoded['extensions'] else None,
+            critical_options=json.dumps(decoded['critical_options']) if decoded['critical_options'] else None,
+            source='imported',
+            created_by=username,
+        )
+
+        try:
+            db.session.add(ssh_cert)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to store imported SSH certificate: {e}")
+            raise
+
+        logger.info(f"Imported SSH {cert_type} certificate #{decoded['serial']} "
+                     f"(key_id: {decoded['key_id']}, CA: {matched_ca.descr})")
+        return ssh_cert
+
+    @staticmethod
     def export_certificate(cert_id):
         """Export an SSH certificate in OpenSSH format.
 

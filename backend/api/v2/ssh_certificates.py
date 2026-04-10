@@ -91,6 +91,54 @@ def get_ssh_certificate(cert_id):
     return success_response(data=cert.to_dict())
 
 
+@bp.route('/api/v2/ssh/certificates/import', methods=['POST'])
+@require_auth(['write:ssh'])
+def import_ssh_certificate():
+    """Import an existing SSH certificate."""
+    try:
+        data = request.json or {}
+
+        certificate_data = (data.get('certificate') or '').strip()
+        if not certificate_data:
+            return error_response('Certificate data is required', 400)
+
+        username = g.current_user.username if hasattr(g, 'current_user') else 'system'
+
+        cert = SSHCertificateService.import_certificate(
+            certificate_data=certificate_data,
+            descr=data.get('descr'),
+            ssh_ca_id=data.get('ssh_ca_id'),
+            username=username,
+        )
+
+        AuditService.log_action(
+            action='ssh_cert_imported',
+            resource_type='ssh_certificate',
+            resource_id=str(cert.id),
+            resource_name=cert.key_id,
+            details=f'SSH {cert.cert_type} certificate imported (serial: {cert.serial})',
+            success=True,
+            username=username,
+        )
+
+        try:
+            from websocket.emitters import on_ssh_certificate_issued
+            on_ssh_certificate_issued(cert.id, cert.key_id, cert.ssh_ca_id, cert.cert_type)
+        except Exception:
+            pass
+
+        return created_response(
+            data=cert.to_dict(),
+            message='SSH certificate imported successfully'
+        )
+
+    except ValueError as e:
+        return error_response(str(e), 400)
+    except Exception as e:
+        logger.error(f"Failed to import SSH certificate: {e}")
+        return error_response('Failed to import SSH certificate', 500)
+
+
 @bp.route('/api/v2/ssh/certificates', methods=['POST'])
 @require_auth(['write:ssh'])
 def sign_ssh_certificate():
