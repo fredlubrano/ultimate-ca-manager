@@ -90,6 +90,7 @@ def process_client_certificate():
     user, auth_cert, error = MTLSAuthService.authenticate_certificate(cert_info)
 
     if user:
+        session.clear()
         session['user_id'] = user.id
         session['username'] = user.username
         session['role'] = user.role

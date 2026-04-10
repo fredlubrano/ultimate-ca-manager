@@ -72,7 +72,8 @@ def update_est_config():
     if 'username' in data:
         set_config('est_username', data['username'])
     if 'password' in data and data['password']:
-        set_config('est_password', data['password'])
+        from werkzeug.security import generate_password_hash
+        set_config('est_password', generate_password_hash(data['password']))
     if 'validity_days' in data:
         set_config('est_validity_days', str(data['validity_days']))
 

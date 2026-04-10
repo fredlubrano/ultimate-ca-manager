@@ -500,22 +500,26 @@ export default function DiscoveryPage() {
           >
             <Play size={14} />
           </button>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setEditingProfile(row); setShowProfileForm(true) }}
-            className="p-1.5 rounded-md hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary transition-colors"
-            title={t('common.edit')}
-          >
-            <Pencil size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ type: 'profile', id: row.id }) }}
-            className="p-1.5 rounded-md hover:bg-bg-tertiary text-text-tertiary hover:text-status-danger transition-colors"
-            title={t('common.delete')}
-          >
-            <Trash size={14} />
-          </button>
+          {canWrite('certificates') && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setEditingProfile(row); setShowProfileForm(true) }}
+              className="p-1.5 rounded-md hover:bg-bg-tertiary text-text-tertiary hover:text-text-primary transition-colors"
+              title={t('common.edit')}
+            >
+              <Pencil size={14} />
+            </button>
+          )}
+          {canWrite('certificates') && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ type: 'profile', id: row.id }) }}
+              className="p-1.5 rounded-md hover:bg-bg-tertiary text-text-tertiary hover:text-status-danger transition-colors"
+              title={t('common.delete')}
+            >
+              <Trash size={14} />
+            </button>
+          )}
         </div>
       )
     }

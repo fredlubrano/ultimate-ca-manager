@@ -148,7 +148,8 @@ def list_users():
         query = query.filter_by(active=active)
     
     if search:
-        search_pattern = f'%{search}%'
+        safe_search = search.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        search_pattern = f'%{safe_search}%'
         query = query.filter(
             db.or_(
                 User.username.ilike(search_pattern),
@@ -419,8 +420,7 @@ def delete_user(user_id):
         )
     except Exception as e:
         db.session.rollback()
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Failed to delete user: {e}", exc_info=True)
         return error_response('Failed to delete user', 500)
 
 

@@ -8,6 +8,10 @@ from auth.unified import require_auth
 from utils.response import success_response, error_response
 from models import db
 from models.rbac import CustomRole, RolePermission
+from services.audit_service import AuditService
+import logging
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint('rbac_pro', __name__)
 
@@ -77,7 +81,21 @@ def create_custom_role():
         inherits_from=data.get('inherits_from')  # Parent role ID
     )
     db.session.add(role)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to create custom role: {e}")
+        return error_response('Failed to create role', 500)
+    
+    AuditService.log_action(
+        action='create',
+        resource_type='rbac_role',
+        resource_id=role.id,
+        resource_name=role.name,
+        details=f'Created custom role: {role.name}',
+        success=True
+    )
     
     return success_response(data=role.to_dict(), message="Custom role created")
 
@@ -104,7 +122,22 @@ def update_custom_role(role_id):
     if 'inherits_from' in data:
         role.inherits_from = data['inherits_from']
     
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to update custom role {role_id}: {e}")
+        return error_response('Failed to update role', 500)
+    
+    AuditService.log_action(
+        action='update',
+        resource_type='rbac_role',
+        resource_id=role.id,
+        resource_name=role.name,
+        details=f'Updated custom role: {role.name}',
+        success=True
+    )
+    
     return success_response(data=role.to_dict(), message="Role updated")
 
 @bp.route('/api/v2/rbac/roles/<int:role_id>', methods=['DELETE'])
@@ -122,8 +155,24 @@ def delete_custom_role(role_id):
     if user_count > 0:
         return error_response(f"Role is assigned to {user_count} user(s). Remove assignments first.", 409)
     
+    role_name = role.name
     db.session.delete(role)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to delete custom role {role_id}: {e}")
+        return error_response('Failed to delete role', 500)
+    
+    AuditService.log_action(
+        action='delete',
+        resource_type='rbac_role',
+        resource_id=role_id,
+        resource_name=role_name,
+        details=f'Deleted custom role: {role_name}',
+        success=True
+    )
+    
     return success_response(message="Role deleted")
 
 @bp.route('/api/v2/rbac/effective-permissions/<int:user_id>', methods=['GET'])

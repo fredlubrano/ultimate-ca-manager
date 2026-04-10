@@ -454,8 +454,10 @@ export default function LoginPage() {
                   onClick={() => {
                     setUsername('')
                     setHasSavedUsername(false)
-                    localStorage.removeItem(STORAGE_KEY)
-                    localStorage.removeItem(STORAGE_AUTH_METHOD_KEY)
+                    try {
+                      localStorage.removeItem(STORAGE_KEY)
+                      localStorage.removeItem(STORAGE_AUTH_METHOD_KEY)
+                    } catch { /* Safari private mode */ }
                   }}
                   className="w-full text-sm text-text-secondary hover:text-accent transition-colors py-2"
                   disabled={loading}

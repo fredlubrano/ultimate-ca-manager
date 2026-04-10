@@ -574,12 +574,16 @@ def delete_ca(ca_id):
         return error_response('Failed to delete CA', 500)
 
 
-@bp.route('/api/v2/cas/export', methods=['GET'])
+@bp.route('/api/v2/cas/export', methods=['GET', 'POST'])
 @require_auth(['read:cas'])
 def export_all_cas():
     """Export all CA certificates in various formats"""
     
-    export_format = request.args.get('format', 'pem').lower()
+    if request.method == 'POST' and request.is_json:
+        data = request.get_json()
+        export_format = data.get('format', 'pem').lower()
+    else:
+        export_format = request.args.get('format', 'pem').lower()
     
     cas = CA.query.filter(CA.crt.isnot(None)).all()
     if not cas:
@@ -631,13 +635,13 @@ def export_all_cas():
         return error_response('Export failed', 500)
 
 
-@bp.route('/api/v2/cas/<int:ca_id>/export', methods=['GET'])
+@bp.route('/api/v2/cas/<int:ca_id>/export', methods=['GET', 'POST'])
 @require_auth(['read:cas'])
 def export_ca(ca_id):
     """
     Export CA certificate in various formats
     
-    Query params:
+    Params (query or POST body):
         format: pem (default), der, pkcs12
         include_key: bool - Include private key
         include_chain: bool - Include parent CA chain
@@ -651,10 +655,17 @@ def export_ca(ca_id):
     if not ca.crt:
         return error_response('CA certificate data not available', 400)
     
-    export_format = request.args.get('format', 'pem').lower()
-    include_key = request.args.get('include_key', 'false').lower() == 'true'
-    include_chain = request.args.get('include_chain', 'false').lower() == 'true'
-    password = request.args.get('password')
+    if request.method == 'POST' and request.is_json:
+        data = request.get_json()
+        export_format = data.get('format', 'pem').lower()
+        include_key = bool(data.get('include_key', False))
+        include_chain = bool(data.get('include_chain', False))
+        password = data.get('password')
+    else:
+        export_format = request.args.get('format', 'pem').lower()
+        include_key = request.args.get('include_key', 'false').lower() == 'true'
+        include_chain = request.args.get('include_chain', 'false').lower() == 'true'
+        password = request.args.get('password')
     
     # Private key export requires write permission (operator+)
     if include_key or export_format in ('pkcs12', 'pfx', 'key', 'jks'):

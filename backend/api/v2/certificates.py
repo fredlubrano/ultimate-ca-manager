@@ -877,13 +877,21 @@ def delete_certificate(cert_id):
         return error_response('Failed to delete certificate', 500)
 
 
-@bp.route('/api/v2/certificates/export', methods=['GET'])
+@bp.route('/api/v2/certificates/export', methods=['GET', 'POST'])
 @require_auth(['read:certificates'])
 def export_all_certificates():
     """Export all certificates in various formats"""
     
-    export_format = request.args.get('format', 'pem').lower()
-    include_chain = request.args.get('include_chain', 'false').lower() == 'true'
+    # Support both GET (query params) and POST (body) for security
+    if request.method == 'POST' and request.is_json:
+        data = request.get_json()
+        export_format = data.get('format', 'pem').lower()
+        include_chain = bool(data.get('include_chain', False))
+        password = data.get('password')
+    else:
+        export_format = request.args.get('format', 'pem').lower()
+        include_chain = request.args.get('include_chain', 'false').lower() == 'true'
+        password = request.args.get('password')
     
     certificates = Certificate.query.filter(Certificate.crt.isnot(None)).all()
     if not certificates:
@@ -937,7 +945,7 @@ def export_all_certificates():
         return error_response('Export failed', 500)
 
 
-@bp.route('/api/v2/certificates/<int:cert_id>/export', methods=['GET'])
+@bp.route('/api/v2/certificates/<int:cert_id>/export', methods=['GET', 'POST'])
 @require_auth(['read:certificates'])
 def export_certificate(cert_id):
     """
@@ -957,10 +965,18 @@ def export_certificate(cert_id):
     if not certificate.crt:
         return error_response('Certificate data not available', 400)
     
-    export_format = request.args.get('format', 'pem').lower()
-    include_key = request.args.get('include_key', 'false').lower() == 'true'
-    include_chain = request.args.get('include_chain', 'false').lower() == 'true'
-    password = request.args.get('password')
+    # Support both GET (query params) and POST (body) for security
+    if request.method == 'POST' and request.is_json:
+        data = request.get_json()
+        export_format = data.get('format', 'pem').lower()
+        include_key = bool(data.get('include_key', False))
+        include_chain = bool(data.get('include_chain', False))
+        password = data.get('password')
+    else:
+        export_format = request.args.get('format', 'pem').lower()
+        include_key = request.args.get('include_key', 'false').lower() == 'true'
+        include_chain = request.args.get('include_chain', 'false').lower() == 'true'
+        password = request.args.get('password')
     
     # Private key export requires write permission (operator+)
     if include_key or export_format in ('pkcs12', 'pfx', 'key', 'jks'):

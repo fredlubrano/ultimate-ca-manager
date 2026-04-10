@@ -194,7 +194,8 @@ def list_trusted_certificates():
         query = query.filter_by(purpose=purpose)
     
     if search:
-        search_pattern = f'%{search}%'
+        safe_search = search.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        search_pattern = f'%{safe_search}%'
         query = query.filter(
             db.or_(
                 TrustedCertificate.name.ilike(search_pattern),

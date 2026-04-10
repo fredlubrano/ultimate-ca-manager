@@ -77,21 +77,28 @@ describe('casService', () => {
     expect(mockApiClient.upload).toHaveBeenCalledWith('/cas/import', formData)
   })
 
-  it('export → GET /cas/:id/export with query params', async () => {
+  it('export → POST /cas/:id/export with body', async () => {
     await casService.export(1, 'pem', { includeKey: true, includeChain: true })
-    const call = mockApiClient.get.mock.calls[0]
-    expect(call[0]).toContain('/cas/1/export')
-    expect(call[0]).toContain('format=pem')
-    expect(call[0]).toContain('include_key=true')
-    expect(call[0]).toContain('include_chain=true')
-    expect(call[1]).toEqual({ responseType: 'blob' })
+    const call = mockApiClient.post.mock.calls[0]
+    expect(call[0]).toBe('/cas/1/export')
+    expect(call[1]).toEqual({
+      format: 'pem',
+      include_key: true,
+      include_chain: true,
+      password: undefined
+    })
+    expect(call[2]).toEqual({ responseType: 'blob' })
   })
 
-  it('exportAll → GET /cas/export', async () => {
+  it('exportAll → POST /cas/export with body', async () => {
     await casService.exportAll('der')
-    const call = mockApiClient.get.mock.calls[0]
-    expect(call[0]).toContain('/cas/export')
-    expect(call[0]).toContain('format=der')
+    const call = mockApiClient.post.mock.calls[0]
+    expect(call[0]).toBe('/cas/export')
+    expect(call[1]).toEqual({
+      format: 'der',
+      include_chain: false,
+      password: undefined
+    })
   })
 
   it('getCertificates → GET /cas/:id/certificates', async () => {
@@ -153,13 +160,17 @@ describe('certificatesService', () => {
     expect(mockApiClient.delete).toHaveBeenCalledWith('/certificates/5')
   })
 
-  it('export → GET /certificates/:id/export with blob response', async () => {
+  it('export → POST /certificates/:id/export with body', async () => {
     await certificatesService.export(1, 'pkcs12', { password: 'test' })
-    const call = mockApiClient.get.mock.calls[0]
-    expect(call[0]).toContain('/certificates/1/export')
-    expect(call[0]).toContain('format=pkcs12')
-    expect(call[0]).toContain('password=test')
-    expect(call[1]).toEqual({ responseType: 'blob' })
+    const call = mockApiClient.post.mock.calls.find(c => c[0].includes('/certificates/1/export'))
+    expect(call[0]).toBe('/certificates/1/export')
+    expect(call[1]).toEqual({
+      format: 'pkcs12',
+      include_key: false,
+      include_chain: false,
+      password: 'test'
+    })
+    expect(call[2]).toEqual({ responseType: 'blob' })
   })
 
   it('import → upload /certificates/import', async () => {

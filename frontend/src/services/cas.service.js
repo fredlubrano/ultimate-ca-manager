@@ -30,20 +30,20 @@ export const casService = {
   },
 
   async export(id, format = 'pem', options = {}) {
-    return apiClient.get(`/cas/${id}/export${buildQueryString({
+    return apiClient.post(`/cas/${id}/export`, {
       format,
       include_key: options.includeKey ?? false,
       include_chain: options.includeChain ?? false,
       password: options.password
-    })}`, { responseType: 'blob' })
+    }, { responseType: 'blob' })
   },
 
   async exportAll(format = 'pem', options = {}) {
-    return apiClient.get(`/cas/export${buildQueryString({
+    return apiClient.post(`/cas/export`, {
       format,
       include_chain: options.includeChain ?? false,
       password: options.password
-    })}`, { responseType: 'blob' })
+    }, { responseType: 'blob' })
   },
 
   async getCertificates(id, filters = {}) {

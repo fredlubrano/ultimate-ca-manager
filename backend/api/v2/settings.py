@@ -92,7 +92,12 @@ def update_general_settings():
                 value = 'true' if value else 'false'
             set_config(key, value)
     
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to update general settings: {e}")
+        return error_response('Failed to update settings', 500)
     
     AuditService.log_action(
         action='settings_update',
@@ -380,7 +385,12 @@ def update_email_settings():
     if 'from_email' in data:
         smtp.smtp_from = data['from_email']  # Model uses smtp_from
     
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to update email settings: {e}")
+        return error_response('Failed to update email settings', 500)
     
     AuditService.log_action(
         action='settings_update',
@@ -460,7 +470,12 @@ def update_email_template():
         smtp.email_template = data['template']
     if 'text_template' in data:
         smtp.email_text_template = data['text_template']
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to update email template: {e}")
+        return error_response('Failed to update email template', 500)
     
     AuditService.log_action(
         action='settings_update',
@@ -483,7 +498,12 @@ def reset_email_template():
     if smtp:
         smtp.email_template = None
         smtp.email_text_template = None
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to reset email template: {e}")
+            return error_response('Failed to reset email template', 500)
     
     AuditService.log_action(
         action='settings_update',
@@ -584,7 +604,12 @@ def update_notification_settings():
     if 'cooldown_hours' in data:
         config.cooldown_hours = int(data['cooldown_hours'])
     
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to update notification settings: {e}")
+        return error_response('Failed to update notification settings', 500)
     
     AuditService.log_action(
         action='settings_update',
@@ -716,8 +741,17 @@ def update_ldap_settings():
     if not data:
         return error_response('No data provided', 400)
     
-    # Save each LDAP setting
+    # Save each LDAP setting — allowlist to prevent arbitrary key injection
+    ALLOWED_LDAP_KEYS = {
+        'server', 'port', 'use_ssl', 'use_starttls', 'base_dn', 'bind_dn',
+        'bind_password', 'user_filter', 'username_attribute', 'email_attribute',
+        'display_name_attribute', 'group_filter', 'group_attribute',
+        'sync_enabled', 'sync_interval', 'default_role', 'enabled',
+        'timeout', 'verify_ssl', 'ca_cert'
+    }
     for key, value in data.items():
+        if key not in ALLOWED_LDAP_KEYS:
+            continue
         config = SystemConfig.query.filter_by(key=f'ldap_{key}').first()
         if config:
             config.value = str(value) if value is not None else ''
@@ -725,7 +759,12 @@ def update_ldap_settings():
             config = SystemConfig(key=f'ldap_{key}', value=str(value) if value is not None else '')
             db.session.add(config)
     
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to update LDAP settings: {e}")
+        return error_response('Failed to update LDAP settings', 500)
     
     AuditService.log_action(
         action='settings_update',
@@ -797,7 +836,12 @@ def save_webhooks(webhooks):
     else:
         config = SystemConfig(key='webhooks', value=json.dumps(webhooks))
         db.session.add(config)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to save webhooks: {e}")
+        raise
 
 
 @bp.route('/api/v2/settings/webhooks', methods=['GET'])

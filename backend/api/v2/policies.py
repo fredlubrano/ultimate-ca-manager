@@ -13,6 +13,7 @@ import logging
 import base64
 import uuid
 from security.encryption import decrypt_private_key
+from services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
 
@@ -253,7 +254,21 @@ def create_policy():
         policy.notification_emails = json.dumps(data['notification_emails'])
     
     db.session.add(policy)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to create policy: {e}")
+        return error_response('Failed to create policy', 500)
+    
+    AuditService.log_action(
+        action='create',
+        resource_type='policy',
+        resource_id=policy.id,
+        resource_name=policy.name,
+        details=f'Created policy: {policy.name}',
+        success=True
+    )
     
     return success_response(data=policy.to_dict(), message="Policy created")
 
@@ -298,6 +313,16 @@ def update_policy(policy_id):
         policy.notification_emails = json.dumps(data['notification_emails'])
     
     db.session.commit()
+    
+    AuditService.log_action(
+        action='update',
+        resource_type='policy',
+        resource_id=policy.id,
+        resource_name=policy.name,
+        details=f'Updated policy: {policy.name}',
+        success=True
+    )
+    
     return success_response(data=policy.to_dict(), message="Policy updated")
 
 
@@ -320,8 +345,18 @@ def delete_policy(policy_id):
         # Clean up completed/rejected approval requests
         ApprovalRequest.query.filter_by(policy_id=policy_id).delete()
         
+        policy_name = policy.name
         db.session.delete(policy)
         db.session.commit()
+        
+        AuditService.log_action(
+            action='delete',
+            resource_type='policy',
+            resource_id=policy_id,
+            resource_name=policy_name,
+            details=f'Deleted policy: {policy_name}',
+            success=True
+        )
         
         return success_response(message="Policy deleted")
     except Exception as e:
@@ -382,6 +417,10 @@ def approve_request(request_id):
     data = request.get_json() or {}
     user = request.current_user if hasattr(request, 'current_user') else {}
     
+    # Prevent self-approval
+    if user.get('id') and approval.requester_id == user.get('id'):
+        return error_response("Cannot approve your own request", 403)
+    
     approval.add_approval(
         user_id=user.get('id'),
         username=user.get('username', 'system'),
@@ -404,7 +443,7 @@ def approve_request(request_id):
         except Exception as e:
             logger.error(f"Failed to issue certificate for approval #{approval.id}: {e}")
             result['certificate_issued'] = False
-            result['issue_error'] = str(e)
+            result['issue_error'] = 'Certificate issuance failed. Check server logs.'
     
     return success_response(data=result, message="Approval recorded")
 

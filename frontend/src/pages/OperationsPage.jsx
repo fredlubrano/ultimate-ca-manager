@@ -299,7 +299,7 @@ export default function OperationsPage() {
   // Load on mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY)
+      const saved = sessionStorage.getItem(STORAGE_KEY)
       if (saved) {
         const config = JSON.parse(saved)
         setOpnsenseHost(config.host || '')
@@ -378,7 +378,7 @@ export default function OperationsPage() {
   // ===== IMPORT HANDLERS (from ImportExportPage) =====
   const saveOpnsenseConfig = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
         host: opnsenseHost, port: opnsensePort,
         api_key: opnsenseApiKey, api_secret: opnsenseApiSecret,
         verify_ssl: opnsenseVerifySsl

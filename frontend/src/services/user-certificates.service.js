@@ -7,12 +7,12 @@ export const userCertificatesService = {
   getStats: () => apiClient.get(`${BASE}/stats`),
   getById: (id) => apiClient.get(`${BASE}/${id}`),
   export: (id, format = 'pem', { password, includeKey = true, includeChain = true } = {}) => {
-    return apiClient.get(`${BASE}/${id}/export${buildQueryString({
+    return apiClient.post(`${BASE}/${id}/export`, {
       format,
       include_key: includeKey,
       include_chain: includeChain,
       password
-    })}`, { responseType: 'blob' })
+    }, { responseType: 'blob' })
   },
   revoke: (id, reason = 'unspecified') => apiClient.post(`${BASE}/${id}/revoke`, { reason }),
   delete: (id) => apiClient.delete(`${BASE}/${id}`),

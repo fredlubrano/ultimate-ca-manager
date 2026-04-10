@@ -33,20 +33,20 @@ export const certificatesService = {
   },
 
   async export(id, format = 'pem', options = {}) {
-    return apiClient.get(`/certificates/${id}/export${buildQueryString({
+    return apiClient.post(`/certificates/${id}/export`, {
       format,
       include_key: options.includeKey ?? false,
       include_chain: options.includeChain ?? false,
       password: options.password
-    })}`, { responseType: 'blob' })
+    }, { responseType: 'blob' })
   },
 
   async exportAll(format = 'pem', options = {}) {
-    return apiClient.get(`/certificates/export${buildQueryString({
+    return apiClient.post(`/certificates/export`, {
       format,
       include_chain: options.includeChain ?? false,
       password: options.password
-    })}`, { responseType: 'blob' })
+    }, { responseType: 'blob' })
   },
 
   async delete(id) {

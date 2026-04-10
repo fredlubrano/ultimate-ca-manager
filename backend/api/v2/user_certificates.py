@@ -134,7 +134,8 @@ def list_user_certificates():
 
     # Search
     if search:
-        search_pattern = f'%{search}%'
+        safe_search = search.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        search_pattern = f'%{safe_search}%'
         query = query.filter(
             db.or_(
                 AuthCertificate.name.ilike(search_pattern),
@@ -253,7 +254,7 @@ def get_user_certificate(cert_id):
     return success_response(data=_build_cert_response(auth_cert, cert, owner))
 
 
-@bp.route('/<int:cert_id>/export', methods=['GET'])
+@bp.route('/<int:cert_id>/export', methods=['GET', 'POST'])
 @require_auth(['read:user_certificates'])
 def export_user_certificate(cert_id):
     """Export user certificate (PEM or PKCS12). Auditors cannot export."""
@@ -273,10 +274,17 @@ def export_user_certificate(cert_id):
     if not cert:
         return error_response('Certificate data not found', 404)
 
-    export_format = request.args.get('format', 'pem').lower()
-    password = request.args.get('password', '')
-    include_key = request.args.get('include_key', 'true').lower() == 'true'
-    include_chain = request.args.get('include_chain', 'true').lower() == 'true'
+    if request.method == 'POST' and request.is_json:
+        data = request.get_json()
+        export_format = data.get('format', 'pem').lower()
+        password = data.get('password', '')
+        include_key = bool(data.get('include_key', True))
+        include_chain = bool(data.get('include_chain', True))
+    else:
+        export_format = request.args.get('format', 'pem').lower()
+        password = request.args.get('password', '')
+        include_key = request.args.get('include_key', 'true').lower() == 'true'
+        include_chain = request.args.get('include_chain', 'true').lower() == 'true'
 
     try:
         cert_pem = base64.b64decode(cert.crt)

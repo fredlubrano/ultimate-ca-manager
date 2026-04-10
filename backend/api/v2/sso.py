@@ -1362,8 +1362,9 @@ def sso_callback(provider_type):
                 db.session.add(sso_session)
             db.session.commit()
             
-            # Establish Flask session
+            # Establish Flask session (clear first to prevent session fixation)
             _sso_now = utc_now()
+            session.clear()
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
@@ -1467,8 +1468,9 @@ def sso_callback(provider_type):
                 db.session.add(sso_session)
             db.session.commit()
             
-            # Establish Flask session
+            # Establish Flask session (clear first to prevent session fixation)
             _saml_now = utc_now()
+            session.clear()
             session['user_id'] = user.id
             session['username'] = user.username
             session['role'] = user.role
@@ -1583,8 +1585,9 @@ def ldap_login():
         db.session.add(sso_session)
     db.session.commit()
     
-    # Establish Flask session
+    # Establish Flask session (clear first to prevent session fixation)
     _ldap_now = utc_now()
+    session.clear()
     session['user_id'] = user.id
     session['username'] = user.username
     session['role'] = user.role

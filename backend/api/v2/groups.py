@@ -52,7 +52,8 @@ def list_groups():
     query = Group.query
     
     if search:
-        search_pattern = f'%{search}%'
+        safe_search = search.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+        search_pattern = f'%{safe_search}%'
         query = query.filter(
             db.or_(
                 Group.name.ilike(search_pattern),
