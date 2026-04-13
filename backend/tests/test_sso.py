@@ -331,7 +331,6 @@ class TestLDAPRateLimiting:
                 _record_ldap_failed_attempt,
                 _check_ldap_lockout,
                 _clear_ldap_failed_attempts,
-                LDAP_MAX_FAILED_ATTEMPTS,
             )
             from models import db, User
 
@@ -344,8 +343,11 @@ class TestLDAPRateLimiting:
             user.locked_until = None
             db.session.commit()
 
+            # Default max attempts is 5
+            max_attempts = 5
+
             # Record failures up to threshold
-            for i in range(LDAP_MAX_FAILED_ATTEMPTS):
+            for i in range(max_attempts):
                 assert _check_ldap_lockout('admin') is False
                 _record_ldap_failed_attempt('admin')
 

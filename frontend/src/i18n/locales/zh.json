@@ -1691,7 +1691,7 @@
     "layoutMode": "布局模式",
     "layoutModeDesc": "控制较小窗口的响应式布局行为",
     "loadingSettings": "加载设置中...",
-    "lockoutDuration": "锁定时长",
+    "lockoutDuration": "锁定时间（分钟）",
     "logRetention": "日志保留",
     "maintenance": "维护",
     "maxLoginAttempts": "最大登录尝试",
@@ -1925,7 +1925,9 @@
     "ctAddLogUrl": "添加CT日志URL",
     "ctSettingsUpdated": "CT设置已更新",
     "ctSettingsFailed": "更新CT设置失败",
-    "certPickerSearch": "按名称、主题或颁发者搜索..."
+    "certPickerSearch": "按名称、主题或颁发者搜索...",
+    "lockoutDurationHelper": "超过最大登录尝试次数后的账户锁定时间（分钟）。",
+    "maxLoginAttemptsHelper": "账户被临时锁定前的失败登录尝试次数。"
   },
   "account": {
     "profile": "个人资料",

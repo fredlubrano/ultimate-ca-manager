@@ -4,7 +4,6 @@ Implements RFC 8555 - Automatic Certificate Management Environment (ACME)
 """
 import secrets
 import json
-import ipaddress
 import socket
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List, Tuple
@@ -41,17 +40,6 @@ class AcmeService:
     # Challenge types supported
     SUPPORTED_CHALLENGES = ["http-01", "dns-01", "tls-alpn-01"]
 
-    @staticmethod
-    def _validate_domain_not_private(domain: str) -> None:
-        """Prevent SSRF by blocking private/loopback IPs"""
-        try:
-            addrs = socket.getaddrinfo(domain, None)
-            for _, _, _, _, sockaddr in addrs:
-                ip = ipaddress.ip_address(sockaddr[0])
-                if ip.is_private or ip.is_loopback or ip.is_reserved or ip.is_link_local:
-                    raise ValueError(f"Domain {domain} resolves to private/reserved IP")
-        except socket.gaierror:
-            raise ValueError(f"Cannot resolve domain {domain}")
     
     def __init__(self, base_url: str = "https://localhost:8443"):
         """Initialize ACME service
@@ -500,7 +488,6 @@ class AcmeService:
         url = f"http://{domain}/.well-known/acme-challenge/{challenge.token}"
         
         try:
-            self._validate_domain_not_private(domain)
             response = requests.get(url, timeout=10, allow_redirects=False)
             response.raise_for_status()
             
@@ -647,8 +634,7 @@ class AcmeService:
             ctx.verify_mode = ssl.CERT_NONE
             ctx.set_alpn_protocols(['acme-tls/1'])
             
-            # Connect to domain (SSRF check)
-            self._validate_domain_not_private(domain)
+            # Connect to domain
             with socket.create_connection((domain, 443), timeout=10) as sock:
                 with ctx.wrap_socket(sock, server_hostname=domain) as ssock:
                     # Verify ALPN was negotiated

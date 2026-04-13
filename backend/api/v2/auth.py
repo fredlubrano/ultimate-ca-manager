@@ -38,9 +38,23 @@ try:
 except ImportError:
     HAS_LIMITER = False
 
-# Track failed login attempts for account lockout (now persisted in DB)
-MAX_FAILED_ATTEMPTS = 5
-LOCKOUT_DURATION_MINUTES = 15
+# Default lockout settings (overridden by DB config)
+DEFAULT_MAX_ATTEMPTS = 5
+DEFAULT_LOCKOUT_SECONDS = 900  # 15 minutes
+
+
+def _get_lockout_settings():
+    """Read lockout settings from DB config, fallback to defaults"""
+    from models import SystemConfig
+    try:
+        max_cfg = SystemConfig.query.filter_by(key='max_login_attempts').first()
+        dur_cfg = SystemConfig.query.filter_by(key='lockout_duration').first()
+        max_attempts = int(max_cfg.value) if max_cfg and max_cfg.value else DEFAULT_MAX_ATTEMPTS
+        lockout_seconds = int(dur_cfg.value) if dur_cfg and dur_cfg.value else DEFAULT_LOCKOUT_SECONDS
+    except Exception:
+        max_attempts = DEFAULT_MAX_ATTEMPTS
+        lockout_seconds = DEFAULT_LOCKOUT_SECONDS
+    return max_attempts, lockout_seconds
 
 
 def _check_account_lockout(username):
@@ -67,12 +81,13 @@ def _record_failed_attempt(username):
     if not user:
         return
     
+    max_attempts, lockout_seconds = _get_lockout_settings()
     user.failed_logins = (user.failed_logins or 0) + 1
     
-    if user.failed_logins >= MAX_FAILED_ATTEMPTS:
+    if user.failed_logins >= max_attempts:
         from datetime import timedelta
-        user.locked_until = utc_now() + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
-        current_app.logger.warning(f"Account locked for {username} after {MAX_FAILED_ATTEMPTS} failed attempts")
+        user.locked_until = utc_now() + timedelta(seconds=lockout_seconds)
+        current_app.logger.warning(f"Account locked for {username} after {max_attempts} failed attempts")
         
         # Send security alert notification
         try:

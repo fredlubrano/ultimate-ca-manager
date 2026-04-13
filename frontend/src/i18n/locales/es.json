@@ -1691,7 +1691,7 @@
     "layoutMode": "Modo de diseño",
     "layoutModeDesc": "Controle el comportamiento del diseño responsivo para ventanas pequeñas",
     "loadingSettings": "Cargando configuración...",
-    "lockoutDuration": "Duración de bloqueo",
+    "lockoutDuration": "Duración del bloqueo (minutos)",
     "logRetention": "Retención de registros",
     "maintenance": "Mantenimiento",
     "maxLoginAttempts": "Intentos máximos",
@@ -1925,7 +1925,9 @@
     "ctAddLogUrl": "Agregar URL de registro CT",
     "ctSettingsUpdated": "Configuración CT actualizada",
     "ctSettingsFailed": "Error al actualizar configuración CT",
-    "certPickerSearch": "Buscar por nombre, sujeto o emisor..."
+    "certPickerSearch": "Buscar por nombre, sujeto o emisor...",
+    "lockoutDurationHelper": "Duración del bloqueo de cuenta en minutos tras superar el máximo de intentos de inicio de sesión.",
+    "maxLoginAttemptsHelper": "Número de intentos fallidos de inicio de sesión antes del bloqueo temporal de la cuenta."
   },
   "account": {
     "profile": "Perfil",

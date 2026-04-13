@@ -1691,7 +1691,7 @@
     "layoutMode": "Layoutmodus",
     "layoutModeDesc": "Steuern Sie das responsive Layout-Verhalten für kleinere Fenster",
     "loadingSettings": "Einstellungen werden geladen...",
-    "lockoutDuration": "Sperrdauer",
+    "lockoutDuration": "Sperrdauer (Minuten)",
     "logRetention": "Protokollaufbewahrung",
     "maintenance": "Wartung",
     "maxLoginAttempts": "Max. Anmeldeversuche",
@@ -1925,7 +1925,9 @@
     "ctAddLogUrl": "CT-Log-URL hinzufügen",
     "ctSettingsUpdated": "CT-Einstellungen aktualisiert",
     "ctSettingsFailed": "CT-Einstellungen konnten nicht aktualisiert werden",
-    "certPickerSearch": "Nach Name, Betreff oder Aussteller suchen..."
+    "certPickerSearch": "Nach Name, Betreff oder Aussteller suchen...",
+    "lockoutDurationHelper": "Kontosperrdauer in Minuten nach Überschreitung der maximalen Anmeldeversuche.",
+    "maxLoginAttemptsHelper": "Anzahl fehlgeschlagener Anmeldeversuche vor der temporären Kontosperre."
   },
   "account": {
     "profile": "Profil",

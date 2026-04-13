@@ -2729,6 +2729,24 @@ export default function SettingsPage() {
                   max="1440"
                   helperText={t('settings.sessionTimeoutHelper')}
                 />
+                <Input
+                  label={t('settings.maxLoginAttempts')}
+                  type="number"
+                  value={settings.max_login_attempts || 5}
+                  onChange={(e) => updateSetting('max_login_attempts', parseInt(e.target.value))}
+                  min="3"
+                  max="20"
+                  helperText={t('settings.maxLoginAttemptsHelper')}
+                />
+                <Input
+                  label={t('settings.lockoutDuration')}
+                  type="number"
+                  value={Math.round((settings.lockout_duration || 900) / 60)}
+                  onChange={(e) => updateSetting('lockout_duration', parseInt(e.target.value) * 60)}
+                  min="1"
+                  max="60"
+                  helperText={t('settings.lockoutDurationHelper')}
+                />
                 <Select
                   label={t('settings.timezone')}
                   options={[

@@ -575,6 +575,43 @@ def toggle_user_status(user_id):
         return error_response('Failed to toggle user status', 500)
 
 
+@bp.route('/api/v2/users/<int:user_id>/unlock', methods=['POST'])
+@require_auth(['write:users'])
+def unlock_user(user_id):
+    """
+    Unlock a locked user account (admin only)
+    
+    POST /api/v2/users/{user_id}/unlock
+    """
+    if g.current_user.role != 'admin':
+        return error_response('Insufficient permissions', 403)
+    
+    user = User.query.get(user_id)
+    if not user:
+        return error_response('User not found', 404)
+    
+    if not user.locked_until and not user.failed_logins:
+        return success_response(data=user.to_dict(), message='Account is not locked')
+    
+    try:
+        user.failed_logins = 0
+        user.locked_until = None
+        db.session.commit()
+        AuditService.log_action(
+            action='user_unlock',
+            resource_type='user',
+            resource_id=str(user_id),
+            resource_name=user.username,
+            details=f'User {user.username} account unlocked by admin',
+            success=True
+        )
+        return success_response(data=user.to_dict(), message=f'User {user.username} unlocked successfully')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to unlock user {user_id}: {e}")
+        return error_response('Failed to unlock user', 500)
+
+
 @bp.route('/api/v2/users/import', methods=['POST'])
 @require_auth(['write:users'])
 def import_users():

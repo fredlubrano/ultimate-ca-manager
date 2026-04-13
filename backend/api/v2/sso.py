@@ -132,8 +132,21 @@ def _parse_json_field(value):
 
 
 # LDAP brute-force protection (reuses User model's lockout fields)
-LDAP_MAX_FAILED_ATTEMPTS = 5
-LDAP_LOCKOUT_MINUTES = 15
+# Settings read from DB config via _get_lockout_settings in auth.py
+
+
+def _get_ldap_lockout_settings():
+    """Read lockout settings from DB config, fallback to defaults"""
+    from models import SystemConfig
+    try:
+        max_cfg = SystemConfig.query.filter_by(key='max_login_attempts').first()
+        dur_cfg = SystemConfig.query.filter_by(key='lockout_duration').first()
+        max_attempts = int(max_cfg.value) if max_cfg and max_cfg.value else 5
+        lockout_seconds = int(dur_cfg.value) if dur_cfg and dur_cfg.value else 900
+    except Exception:
+        max_attempts = 5
+        lockout_seconds = 900
+    return max_attempts, lockout_seconds
 
 
 def _check_ldap_lockout(username):
@@ -155,10 +168,11 @@ def _record_ldap_failed_attempt(username):
     user = User.query.filter_by(username=username).first()
     if not user:
         return
+    max_attempts, lockout_seconds = _get_ldap_lockout_settings()
     user.failed_logins = (user.failed_logins or 0) + 1
-    if user.failed_logins >= LDAP_MAX_FAILED_ATTEMPTS:
-        user.locked_until = utc_now() + timedelta(minutes=LDAP_LOCKOUT_MINUTES)
-        logger.warning(f"LDAP account locked for {username} after {LDAP_MAX_FAILED_ATTEMPTS} failed attempts")
+    if user.failed_logins >= max_attempts:
+        user.locked_until = utc_now() + timedelta(seconds=lockout_seconds)
+        logger.warning(f"LDAP account locked for {username} after {max_attempts} failed attempts")
     db.session.commit()
 
 

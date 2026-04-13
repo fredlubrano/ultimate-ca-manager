@@ -53,8 +53,20 @@ bp = Blueprint('auth_methods', __name__)
 # password attempts provides adequate protection.
 _2fa_failed_attempts = {}  # key: pending_user_id, value: {'count': int, 'locked_until': datetime}
 _WEBAUTHN_FAILED = {}      # key: username, value: {'count': int, 'locked_until': datetime}
-_MAX_2FA_ATTEMPTS = 5
-_2FA_LOCKOUT_SECONDS = 900  # 15 minutes
+
+
+def _get_2fa_lockout_settings():
+    """Read lockout settings from DB config, fallback to defaults"""
+    from models import SystemConfig
+    try:
+        max_cfg = SystemConfig.query.filter_by(key='max_login_attempts').first()
+        dur_cfg = SystemConfig.query.filter_by(key='lockout_duration').first()
+        max_attempts = int(max_cfg.value) if max_cfg and max_cfg.value else 5
+        lockout_seconds = int(dur_cfg.value) if dur_cfg and dur_cfg.value else 900
+    except Exception:
+        max_attempts = 5
+        lockout_seconds = 900
+    return max_attempts, lockout_seconds
 
 
 def _check_2fa_lockout(key: str, tracker: dict) -> bool:
@@ -72,10 +84,11 @@ def _check_2fa_lockout(key: str, tracker: dict) -> bool:
 def _record_2fa_failure(key: str, tracker: dict):
     """Record a failed 2FA/WebAuthn attempt."""
     from datetime import timedelta
+    max_attempts, lockout_seconds = _get_2fa_lockout_settings()
     entry = tracker.setdefault(key, {'count': 0, 'locked_until': None})
     entry['count'] += 1
-    if entry['count'] >= _MAX_2FA_ATTEMPTS:
-        entry['locked_until'] = utc_now() + timedelta(seconds=_2FA_LOCKOUT_SECONDS)
+    if entry['count'] >= max_attempts:
+        entry['locked_until'] = utc_now() + timedelta(seconds=lockout_seconds)
 
 
 def _clear_2fa_failures(key: str, tracker: dict):

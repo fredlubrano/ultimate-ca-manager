@@ -1806,7 +1806,7 @@
     "requireSpecial": "Exiger des caractères spéciaux",
     "sessionTimeout": "Délai de session (minutes)",
     "maxLoginAttempts": "Tentatives de connexion max",
-    "lockoutDuration": "Durée de verrouillage",
+    "lockoutDuration": "Durée de verrouillage (minutes)",
     "createBackup": "Créer une sauvegarde",
     "restoreBackup": "Restaurer une sauvegarde",
     "encryptedBackup": "Créer une sauvegarde chiffrée",
@@ -2114,7 +2114,9 @@
     "ctAddLogUrl": "Ajouter une URL de journal CT",
     "ctSettingsUpdated": "Paramètres CT mis à jour",
     "ctSettingsFailed": "Échec de la mise à jour des paramètres CT",
-    "certPickerSearch": "Rechercher par nom, sujet ou émetteur..."
+    "certPickerSearch": "Rechercher par nom, sujet ou émetteur...",
+    "lockoutDurationHelper": "Durée de verrouillage du compte en minutes après dépassement du nombre maximal de tentatives.",
+    "maxLoginAttemptsHelper": "Nombre de tentatives de connexion échouées avant le verrouillage temporaire du compte."
   },
   "sso": {
     "subtitle": "Configurez des fournisseurs LDAP, OAuth2 ou SAML pour une authentification centralisée",

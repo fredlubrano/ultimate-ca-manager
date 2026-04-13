@@ -1692,7 +1692,7 @@
     "layoutMode": "Layout Mode",
     "layoutModeDesc": "Control adaptive layout behavior for small windows",
     "loadingSettings": "Loading settings...",
-    "lockoutDuration": "Lockout Duration",
+    "lockoutDuration": "Lockout Duration (minutes)",
     "logRetention": "Log Retention (days)",
     "maintenance": "Maintenance",
     "maxLoginAttempts": "Max Login Attempts",
@@ -1926,7 +1926,9 @@
     "ctAddLogUrl": "Add CT Log URL",
     "ctSettingsUpdated": "CT settings updated",
     "ctSettingsFailed": "Failed to update CT settings",
-    "certPickerSearch": "Search by name, subject, or issuer..."
+    "certPickerSearch": "Search by name, subject, or issuer...",
+    "lockoutDurationHelper": "Account lockout duration in minutes after exceeding max login attempts.",
+    "maxLoginAttemptsHelper": "Number of failed login attempts before the account is temporarily locked."
   },
   "account": {
     "profile": "Profile",
