@@ -37,6 +37,7 @@ export default defineConfig({
     {
       name: 'setup',
       testMatch: /.*\.setup\.ts/,
+      timeout: 60000, // WebAuthn detection may take time
     },
     
     // Main tests with authenticated state

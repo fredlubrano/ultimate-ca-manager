@@ -19,7 +19,7 @@ from models import db, CA, Certificate, AuditLog, CertificateTemplate
 from services.trust_store import TrustStoreService
 from services.template_service import TemplateService
 from config.settings import Config
-from utils.file_naming import cert_cert_path, cert_key_path, cert_csr_path, cleanup_old_files
+from utils.file_naming import cert_cert_path, cert_key_path, cert_csr_path, ca_cert_path, ca_key_path, cleanup_old_files
 from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
@@ -491,18 +491,74 @@ class CertificateService:
         # Increment CA serial
         ca.serial = (ca.serial or 0) + 1
         
+        # If signing as intermediate CA, create a CA record
+        new_ca = None
+        if cert_type == 'intermediate_ca':
+            # Get private key from the CSR certificate record (if it was generated in UCM)
+            prv = certificate.prv if certificate.prv else None
+            
+            # Extract SKI from signed cert
+            ski_hex = None
+            try:
+                ski_ext = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_KEY_IDENTIFIER)
+                ski_hex = ski_ext.value.digest.hex(':')
+            except x509.ExtensionNotFound:
+                pass
+            
+            # Extract pathLength from BasicConstraints
+            path_length = None
+            try:
+                bc_ext = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.BASIC_CONSTRAINTS)
+                path_length = bc_ext.value.path_length
+            except x509.ExtensionNotFound:
+                pass
+            
+            new_ca = CA(
+                refid=str(uuid.uuid4()),
+                descr=certificate.descr or cn_value or 'Intermediate CA',
+                crt=base64.b64encode(cert_pem).decode('utf-8'),
+                prv=prv,
+                serial=0,
+                caref=caref,
+                subject=subject_str,
+                issuer=cert.issuer.rfc4514_string(),
+                serial_number=str(cert.serial_number),
+                ski=ski_hex,
+                valid_from=cert.not_valid_before,
+                valid_to=cert.not_valid_after,
+                path_length=path_length,
+                imported_from='csr_signed',
+                created_by=username,
+            )
+            db.session.add(new_ca)
+            
+            # Remove the certificate record — it's now a CA
+            db.session.delete(certificate)
+        
         db.session.commit()
         
         # Audit log with centralized service
         from services.audit_service import AuditService
-        AuditService.log_certificate('csr_signed', certificate, f'Signed CSR: {certificate.descr}')
-        
-        # Save signed certificate
-        cert_path = cert_cert_path(certificate)
-        with open(cert_path, 'wb') as f:
-            f.write(cert_pem)
-        
-        return certificate
+        if new_ca:
+            AuditService.log_ca('ca_created', new_ca, f'Intermediate CA created from signed CSR: {new_ca.descr}')
+            # Save CA cert file
+            ca_path = ca_cert_path(new_ca)
+            with open(ca_path, 'wb') as f:
+                f.write(cert_pem)
+            if new_ca.prv:
+                key_path = ca_key_path(new_ca)
+                key_data = base64.b64decode(decrypt_private_key(new_ca.prv))
+                with open(key_path, 'wb') as f:
+                    f.write(key_data)
+                key_path.chmod(0o600)
+            return new_ca
+        else:
+            AuditService.log_certificate('csr_signed', certificate, f'Signed CSR: {certificate.descr}')
+            # Save signed certificate
+            cert_path = cert_cert_path(certificate)
+            with open(cert_path, 'wb') as f:
+                f.write(cert_pem)
+            return certificate
     
     @staticmethod
     def import_certificate(

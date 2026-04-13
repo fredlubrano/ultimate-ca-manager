@@ -19,6 +19,7 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ### Fixed
 - **ACME Private Network Support** — Removed SSRF filter that blocked ACME challenge validation on private networks (10.x, 172.16.x, 192.168.x), which is the primary self-hosted use case
+- **CSR Intermediate CA Signing** — Signing a CSR as "Intermediate CA" now correctly creates a Certificate Authority record instead of leaving it as a regular certificate ([#54](https://github.com/NeySlim/ultimate-ca-manager/issues/54))
 
 ### Added
 - **Configurable Lockout Settings** — Account lockout duration and max login attempts are now configurable from the Settings page instead of hardcoded constants; applies to password, LDAP, and 2FA authentication

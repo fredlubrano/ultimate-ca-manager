@@ -31,23 +31,26 @@ setup('authenticate', async ({ page }) => {
   const continueButton = page.locator('button[type="submit"]').first()
   await continueButton.click()
   
-  // Wait for auth method detection and WebAuthn timeout
-  // WebAuthn will timeout after ~30s if no key is touched
-  // The "Use password instead" link appears when loading=false
-  await page.waitForTimeout(3000)
+  // Wait for password field or "Use password instead" link
+  // Login flow may show password directly or require clicking through WebAuthn
+  await page.waitForTimeout(2000)
   
-  // Try to find and click "Use password instead" link (may need to wait for WebAuthn to stop loading)
+  const passwordField = page.locator('input[type="password"]')
   const usePasswordLink = page.locator('text=Use password instead')
-  try {
-    await usePasswordLink.waitFor({ state: 'visible', timeout: 35000 })
-    await usePasswordLink.click()
-  } catch {
-    // If link doesn't appear, password field might already be visible
-    console.log('Password link not found, checking for password field directly')
-  }
   
-  // Step 2: Enter password
-  await page.waitForSelector('input[type="password"]', { timeout: 10000 })
+  // Check if password field is already visible
+  if (await passwordField.isVisible().catch(() => false)) {
+    // Password field already shown — proceed
+  } else {
+    // Wait for "Use password instead" link (WebAuthn timeout)
+    try {
+      await usePasswordLink.waitFor({ state: 'visible', timeout: 40000 })
+      await usePasswordLink.click()
+    } catch {
+      console.log('Password link not found, checking for password field directly')
+    }
+    await passwordField.waitFor({ state: 'visible', timeout: 10000 })
+  }
   const passwordInput = page.locator('input[type="password"]')
   await passwordInput.fill(config.credentials.password)
   

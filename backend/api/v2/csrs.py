@@ -635,25 +635,29 @@ def sign_csr(csr_id):
     
     try:
         # Sign the CSR - use CA refid
-        signed_cert = CertificateService.sign_csr(
+        signed_result = CertificateService.sign_csr(
             cert_id=csr_id,
             caref=ca.refid,
             validity_days=validity_days,
             cert_type=backend_cert_type
         )
         
+        # Determine if result is a CA or Certificate
+        is_ca_result = isinstance(signed_result, CA)
+        
         # Audit log
         AuditService.log_action(
             action='csr_signed',
-            resource_type='certificate',
-            resource_id=csr_id,
-            resource_name=cert.subject,
-            details=f'CSR signed by CA {ca.descr} (id={ca_id}), validity={validity_days} days'
+            resource_type='ca' if is_ca_result else 'certificate',
+            resource_id=signed_result.id,
+            resource_name=signed_result.descr if is_ca_result else cert.subject,
+            details=f'CSR signed as {"Intermediate CA" if is_ca_result else "certificate"} by CA {ca.descr} (id={ca_id}), validity={validity_days} days'
         )
         
+        msg = 'CSR signed as Intermediate CA' if is_ca_result else 'CSR signed successfully'
         return success_response(
-            data=signed_cert.to_dict(),
-            message='CSR signed successfully'
+            data=signed_result.to_dict(),
+            message=msg
         )
     except Exception as e:
         logger.error(f"CSR Sign Error: {e}", exc_info=True)
