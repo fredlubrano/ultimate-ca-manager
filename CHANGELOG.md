@@ -15,6 +15,17 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.113] - 2026-04-13
+
+### Fixed
+- **ACME Private Network Support** — Removed SSRF filter that blocked ACME challenge validation on private networks (10.x, 172.16.x, 192.168.x), which is the primary self-hosted use case
+
+### Added
+- **Configurable Lockout Settings** — Account lockout duration and max login attempts are now configurable from the Settings page instead of hardcoded constants; applies to password, LDAP, and 2FA authentication
+- **Admin User Unlock** — New `POST /api/v2/users/{id}/unlock` endpoint allows administrators to unlock locked-out user accounts
+
+---
+
 ## [2.112] - 2026-04-10
 
 ### Added
