@@ -67,7 +67,7 @@ export default function SSHCAsPage() {
   const [perPage, setPerPage] = useState(25)
 
   // Filters
-  const [filterType, setFilterType] = useState('')
+  const [filterType, setFilterType] = useState([])
 
   // Copy state
   const [copied, setCopied] = useState(false)
@@ -233,8 +233,8 @@ export default function SSHCAsPage() {
   // ============= FILTERED DATA =============
 
   const filteredCAs = useMemo(() => {
-    if (!filterType) return sshCas
-    return sshCas.filter(ca => ca.ca_type === filterType)
+    if (filterType.length === 0) return sshCas
+    return sshCas.filter(ca => filterType.includes(ca.ca_type))
   }, [sshCas, filterType])
 
   // ============= STATS =============
@@ -565,6 +565,8 @@ export default function SSHCAsPage() {
           toolbarFilters={[
             {
               key: 'ca_type',
+              label: t('common.type'),
+              type: 'multiSelect',
               value: filterType,
               onChange: setFilterType,
               placeholder: t('common.allTypes'),

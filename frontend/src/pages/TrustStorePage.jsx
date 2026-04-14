@@ -565,6 +565,8 @@ export default function TrustStorePage() {
           toolbarFilters={[
             {
               key: 'purpose',
+              label: t('common.type'),
+              type: 'multiSelect',
               placeholder: t('trustStore.allPurposes'),
               options: [
                 { value: 'root_ca', label: t('common.rootCA') },
@@ -577,6 +579,8 @@ export default function TrustStorePage() {
             },
             {
               key: '_expiry_status',
+              label: t('common.status'),
+              type: 'multiSelect',
               placeholder: t('trustStore.allStatuses'),
               options: [
                 { value: 'valid', label: t('common.valid') },

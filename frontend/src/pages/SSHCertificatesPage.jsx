@@ -93,15 +93,15 @@ export default function SSHCertificatesPage() {
   const [sortOrder, setSortOrder] = useState('desc')
 
   // Filters
-  const [filterStatus, setFilterStatus] = useState('')
-  const [filterType, setFilterType] = useState('')
+  const [filterStatus, setFilterStatus] = useState([])
+  const [filterType, setFilterType] = useState([])
   const [filterCA, setFilterCA] = useState('')
 
   // ============= DATA LOADING =============
 
   useEffect(() => {
     loadData()
-  }, [page, perPage, sortBy, sortOrder, filterStatus, filterType, filterCA])
+  }, [page, perPage, sortBy, sortOrder, JSON.stringify(filterStatus), JSON.stringify(filterType), filterCA])
 
   const loadData = async () => {
     try {
@@ -112,8 +112,8 @@ export default function SSHCertificatesPage() {
         sort_by: sortBy,
         sort_order: sortOrder,
       }
-      if (filterStatus) params.status = filterStatus
-      if (filterType) params.type = filterType
+      if (filterStatus.length > 0) params.status = filterStatus
+      if (filterType.length > 0) params.type = filterType
       if (filterCA) params.ca_id = filterCA
 
       const [certsRes, casRes, statsRes] = await Promise.all([
@@ -165,8 +165,17 @@ export default function SSHCertificatesPage() {
 
   const handleStatClick = useCallback((filterValue) => {
     setPage(1)
-    setFilterStatus(filterValue === filterStatus ? '' : filterValue)
-  }, [filterStatus])
+    if (filterValue === '') {
+      setFilterStatus([])
+    } else {
+      setFilterStatus(prev => {
+        if (prev.includes(filterValue)) {
+          return prev.filter(v => v !== filterValue)
+        }
+        return [...prev, filterValue]
+      })
+    }
+  }, [])
 
   // ============= ACTIONS =============
 
@@ -294,8 +303,8 @@ export default function SSHCertificatesPage() {
 
   const handleApplyFilterPreset = useCallback((filters) => {
     setPage(1)
-    setFilterStatus(filters.status || '')
-    setFilterType(filters.type || '')
+    setFilterStatus(filters.status ? (Array.isArray(filters.status) ? filters.status : [filters.status]) : [])
+    setFilterType(filters.type ? (Array.isArray(filters.type) ? filters.type : [filters.type]) : [])
     setFilterCA(filters.ca || '')
   }, [])
 
@@ -635,6 +644,8 @@ export default function SSHCertificatesPage() {
           toolbarFilters={[
             {
               key: 'type',
+              label: t('common.type'),
+              type: 'multiSelect',
               value: filterType,
               onChange: (v) => { setFilterType(v); setPage(1) },
               placeholder: t('common.allTypes'),
@@ -645,6 +656,8 @@ export default function SSHCertificatesPage() {
             },
             {
               key: 'status',
+              label: t('common.status'),
+              type: 'multiSelect',
               value: filterStatus,
               onChange: (v) => { setFilterStatus(v); setPage(1) },
               placeholder: t('common.allStatus'),
