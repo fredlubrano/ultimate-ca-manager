@@ -39,6 +39,8 @@ export default function TrustStorePage() {
   const [selectedCert, setSelectedCert] = useState(null)
   const [syncing, setSyncing] = useState(false)
   const [showImportModal, setShowImportModal] = useState(false)
+  const [filterPurpose, setFilterPurpose] = useState([])
+  const [filterExpiryStatus, setFilterExpiryStatus] = useState([])
   
   // Add from managed CAs modal state
   const [managedCAs, setManagedCAs] = useState([])
@@ -85,6 +87,17 @@ export default function TrustStorePage() {
       setLoading(false)
     }
   }
+
+  const filteredCertificates = useMemo(() => {
+    let result = certificates
+    if (filterPurpose.length > 0) {
+      result = result.filter(c => filterPurpose.includes(c.purpose))
+    }
+    if (filterExpiryStatus.length > 0) {
+      result = result.filter(c => filterExpiryStatus.includes(c._expiry_status))
+    }
+    return result
+  }, [certificates, filterPurpose, filterExpiryStatus])
 
   const handleSelectCert = async (cert) => {
     // Desktop: floating window
@@ -554,7 +567,7 @@ export default function TrustStorePage() {
         onSlideOverClose={() => setSelectedCert(null)}
       >
         <ResponsiveDataTable
-          data={certificates}
+          data={filteredCertificates}
           columns={columns}
           loading={loading}
           onRowClick={handleSelectCert}
@@ -567,6 +580,8 @@ export default function TrustStorePage() {
               key: 'purpose',
               label: t('common.type'),
               type: 'multiSelect',
+              value: filterPurpose,
+              onChange: setFilterPurpose,
               placeholder: t('trustStore.allPurposes'),
               options: [
                 { value: 'root_ca', label: t('common.rootCA') },
@@ -581,6 +596,8 @@ export default function TrustStorePage() {
               key: '_expiry_status',
               label: t('common.status'),
               type: 'multiSelect',
+              value: filterExpiryStatus,
+              onChange: setFilterExpiryStatus,
               placeholder: t('trustStore.allStatuses'),
               options: [
                 { value: 'valid', label: t('common.valid') },

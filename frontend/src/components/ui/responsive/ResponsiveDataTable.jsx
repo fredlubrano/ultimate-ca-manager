@@ -14,6 +14,8 @@ import {
 import { useMobile } from '../../../contexts'
 import { cn, exportToCSV, exportToJSON } from '../../../lib/utils'
 import { FilterSelect } from '../Select'
+import { MultiSelectFilter } from '../MultiSelectFilter'
+import { FilterChips } from '../FilterChips'
 
 export function ResponsiveDataTable({
   // Data
@@ -245,10 +247,65 @@ export function ResponsiveDataTable({
   const hasActiveFilters = useMemo(() => {
     if (searchValue) return true
     if (!toolbarFilters) return false
-    return toolbarFilters.some(f => 
-      f.type === 'dateRange' ? (f.from || f.to) : f.value
-    )
+    return toolbarFilters.some(f => {
+      if (f.type === 'dateRange') return f.from || f.to
+      if (f.type === 'multiSelect') return Array.isArray(f.value) && f.value.length > 0
+      return f.value
+    })
   }, [toolbarFilters, searchValue])
+
+  // Build filter chips from active toolbar filters
+  const filterChipsArray = useMemo(() => {
+    if (!toolbarFilters) return []
+    return toolbarFilters
+      .filter(f => {
+        if (f.type === 'multiSelect') return Array.isArray(f.value) && f.value.length > 0
+        if (f.type === 'dateRange') return f.from || f.to
+        return f.value !== '' && f.value !== null && f.value !== undefined
+      })
+      .map(f => {
+        const optMap = {}
+        ;(f.options || []).forEach(o => { optMap[o.value] = o.label })
+        return {
+          key: f.key,
+          label: f.label || f.placeholder || f.key,
+          value: f.value,
+          options: optMap
+        }
+      })
+  }, [toolbarFilters])
+
+  const handleRemoveChip = useCallback((key, value) => {
+    if (!toolbarFilters) return
+    const filter = toolbarFilters.find(f => {
+      if (f.type === 'dateRange') return key === `${f.key}_from` || key === `${f.key}_to`
+      return f.key === key
+    })
+    if (!filter) return
+    if (filter.type === 'dateRange') {
+      if (key.endsWith('_from')) filter.onFromChange?.('')
+      else filter.onToChange?.('')
+    } else if (filter.type === 'multiSelect' && Array.isArray(filter.value)) {
+      filter.onChange(filter.value.filter(v => v !== value))
+    } else {
+      filter.onChange('')
+    }
+  }, [toolbarFilters])
+
+  const handleClearAllChips = useCallback(() => {
+    setSearchValue('')
+    toolbarFilters?.forEach(f => {
+      if (f.type === 'dateRange') {
+        f.onFromChange?.('')
+        f.onToChange?.('')
+      } else if (f.type === 'multiSelect') {
+        f.onChange([])
+      } else {
+        f.onChange('')
+      }
+    })
+  }, [toolbarFilters])
+
   
   // Save current filters as preset
   const savePreset = () => {
@@ -542,11 +599,13 @@ export function ResponsiveDataTable({
               onClick={() => {
                 setSearchValue('')
                 toolbarFilters?.forEach(f => {
-                  f.onChange?.('')
-                  // Clear date range filters
                   if (f.type === 'dateRange') {
                     f.onFromChange?.('')
                     f.onToChange?.('')
+                  } else if (f.type === 'multiSelect') {
+                    f.onChange?.([])
+                  } else {
+                    f.onChange?.('')
                   }
                 })
               }}
@@ -601,6 +660,17 @@ export function ResponsiveDataTable({
           handleExportJSON={handleExportJSON}
           dataCount={sortedData.length}
         />
+      )}
+
+      {/* ACTIVE FILTER CHIPS */}
+      {hasActiveFilters && filterChipsArray.length > 0 && (
+        <div className="px-1 pb-1">
+          <FilterChips
+            filters={filterChipsArray}
+            onRemove={handleRemoveChip}
+            onClearAll={handleClearAllChips}
+          />
+        </div>
       )}
       
       {/* BULK ACTION BAR */}
@@ -802,6 +872,18 @@ function SearchBar({
                       title={filter.toPlaceholder || t('table.toDate')}
                     />
                   </div>
+                )
+              }
+              // Multi-select filter
+              if (filter.type === 'multiSelect') {
+                return (
+                  <MultiSelectFilter
+                    key={filter.key}
+                    options={filter.options || []}
+                    selected={filter.value || []}
+                    onChange={filter.onChange}
+                    label={filter.placeholder || t('common.all')}
+                  />
                 )
               }
               // Default: FilterSelect

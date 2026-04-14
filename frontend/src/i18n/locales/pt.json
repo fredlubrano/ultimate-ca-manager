@@ -408,7 +408,23 @@
     "sshCertificates": "Certificados SSH",
     "navSsh": "SSH",
     "ssh": "SSH",
-    "showingOf": "Exibindo {{count}} de {{total}}"
+    "showingOf": "Exibindo {{count}} de {{total}}",
+    "clearAll": "Limpar tudo",
+    "selected": "selecionado(s)",
+    "nSelected": "{{count}} selecionado(s)",
+    "passwordStrength": "Força da senha",
+    "weak": "Fraca",
+    "fair": "Regular",
+    "good": "Boa",
+    "strong": "Forte",
+    "preview": "Pré-visualizar",
+    "send": "Enviar",
+    "clone": "Clonar",
+    "quickActions": "Ações rápidas",
+    "issueCertificate": "Emitir certificado",
+    "scanNetwork": "Escanear rede",
+    "generateReport": "Gerar relatório",
+    "healthStatus": "Estado de saúde"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
@@ -2613,7 +2629,11 @@
     "exportData": "Exportar dados",
     "exportItems": "Exportar {{count}} itens",
     "exportCSV": "Exportar como CSV",
-    "exportJSON": "Exportar como JSON"
+    "exportJSON": "Exportar como JSON",
+    "activeFilters": "Filtros ativos",
+    "density": "Densidade",
+    "compact": "Compacto",
+    "comfortable": "Confortável"
   },
   "reconnect": {
     "countdown": "O serviço está reiniciando...",
@@ -3725,5 +3745,12 @@
     "importCertificate": "Importar certificado",
     "importCertDescription": "Importar um certificado SSH existente no formato OpenSSH",
     "certificateDataPlaceholder": "Cole os dados do certificado SSH"
+  },
+  "filters": {
+    "persistEnabled": "Os filtros serão salvos",
+    "persistCleared": "Filtros salvos limpos",
+    "preset": "Predefinição",
+    "savePreset": "Salvar predefinição",
+    "managePresets": "Gerenciar predefinições"
   }
 }

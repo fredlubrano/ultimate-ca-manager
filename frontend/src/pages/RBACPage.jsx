@@ -294,6 +294,14 @@ export default function RBACPage() {
     ]
   }, [roles, t])
 
+  const filteredRoles = useMemo(() => {
+    if (filterType.length === 0) return roles
+    return roles.filter(r => {
+      const val = r.is_system ? 'true' : 'false'
+      return filterType.includes(val)
+    })
+  }, [roles, filterType])
+
   // Help content
   // Help content now provided via FloatingHelpPanel (helpPageKey="rbac")
 
@@ -441,7 +449,7 @@ export default function RBACPage() {
       >
         <div className="flex flex-col h-full min-h-0">
           <ResponsiveDataTable
-            data={roles}
+            data={filteredRoles}
             columns={columns}
             loading={loading}
             onRowClick={setSelectedRole}
