@@ -280,6 +280,20 @@ export default function HSMPage() {
     ]
   }, [providers, t])
 
+  const filteredProviders = useMemo(() => {
+    let result = providers
+    if (filterType.length > 0) {
+      result = result.filter(p => filterType.includes(p.provider_type))
+    }
+    if (filterStatus.length > 0) {
+      result = result.filter(p => {
+        const status = p.enabled ? 'enabled' : 'disabled'
+        return filterStatus.includes(status)
+      })
+    }
+    return result
+  }, [providers, filterType, filterStatus])
+
   // Help content
   // Help content now provided via FloatingHelpPanel (helpPageKey="hsm")
 
@@ -465,7 +479,7 @@ export default function HSMPage() {
       >
         <div className="flex flex-col h-full min-h-0">
           <ResponsiveDataTable
-            data={providers}
+            data={filteredProviders}
             columns={columns}
             loading={loading}
             onRowClick={setSelectedProvider}

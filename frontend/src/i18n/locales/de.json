@@ -408,7 +408,23 @@
     "sshCertificates": "SSH-Zertifikate",
     "navSsh": "SSH",
     "ssh": "SSH",
-    "showingOf": "{{count}} von {{total}} angezeigt"
+    "showingOf": "{{count}} von {{total}} angezeigt",
+    "clearAll": "Alle löschen",
+    "selected": "ausgewählt",
+    "nSelected": "{{count}} ausgewählt",
+    "passwordStrength": "Passwortstärke",
+    "weak": "Schwach",
+    "fair": "Mittel",
+    "good": "Gut",
+    "strong": "Stark",
+    "preview": "Vorschau",
+    "send": "Senden",
+    "clone": "Klonen",
+    "quickActions": "Schnellaktionen",
+    "issueCertificate": "Zertifikat ausstellen",
+    "scanNetwork": "Netzwerk scannen",
+    "generateReport": "Bericht generieren",
+    "healthStatus": "Gesundheitsstatus"
   },
   "commandPalette": {
     "searchPlaceholder": "Befehle, Zertifikate, CAs, Benutzer suchen...",
@@ -2613,7 +2629,11 @@
     "exportData": "Daten exportieren",
     "exportItems": "{{count}} Einträge exportieren",
     "exportCSV": "Als CSV exportieren",
-    "exportJSON": "Als JSON exportieren"
+    "exportJSON": "Als JSON exportieren",
+    "activeFilters": "Aktive Filter",
+    "density": "Dichte",
+    "compact": "Kompakt",
+    "comfortable": "Komfortabel"
   },
   "reconnect": {
     "countdown": "Dienst wird neu gestartet...",
@@ -3725,5 +3745,12 @@
     "importCertificate": "Zertifikat importieren",
     "importCertDescription": "Vorhandenes SSH-Zertifikat im OpenSSH-Format importieren",
     "certificateDataPlaceholder": "SSH-Zertifikatsdaten einfügen"
+  },
+  "filters": {
+    "persistEnabled": "Filter werden gespeichert",
+    "persistCleared": "Gespeicherte Filter gelöscht",
+    "preset": "Voreinstellung",
+    "savePreset": "Voreinstellung speichern",
+    "managePresets": "Voreinstellungen verwalten"
   }
 }

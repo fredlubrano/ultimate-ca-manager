@@ -45,7 +45,7 @@ export default function TemplatesPage() {
   const [perPage, setPerPage] = useState(25)
   
   // Filters
-  const [filterType, setFilterType] = useState('')
+  const [filterType, setFilterType] = useState([])
   
   // Import state
   const [importFile, setImportFile] = useState(null)
@@ -184,8 +184,8 @@ export default function TemplatesPage() {
       ...t,
       type: getTemplateType(t)
     }))
-    if (filterType) {
-      result = result.filter(t => t.type === filterType)
+    if (filterType.length > 0) {
+      result = result.filter(t => filterType.includes(t.type))
     }
     return result
   }, [templates, filterType, getTemplateType])
@@ -475,6 +475,8 @@ export default function TemplatesPage() {
           toolbarFilters={[
             {
               key: 'type',
+              type: 'multiSelect',
+              label: t('common.type'),
               value: filterType,
               onChange: setFilterType,
               placeholder: t('common.allTypes'),

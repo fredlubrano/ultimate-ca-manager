@@ -68,7 +68,7 @@ export default function UsersGroupsPage() {
   const [perPage, setPerPage] = useState(25)
   
   // Filters
-  const [filterRole, setFilterRole] = useState('')
+  const [filterRole, setFilterRole] = useState([])
   const [filterStatus, setFilterStatus] = useState('')
 
   // Tab change
@@ -412,7 +412,7 @@ export default function UsersGroupsPage() {
   
   const filteredUsers = useMemo(() => {
     let result = [...users]
-    if (filterRole) result = result.filter(u => u.role === filterRole)
+    if (filterRole.length > 0) result = result.filter(u => filterRole.includes(u.role))
     if (filterStatus === 'active') result = result.filter(u => u.active)
     if (filterStatus === 'disabled') result = result.filter(u => !u.active)
     return result
@@ -926,6 +926,8 @@ export default function UsersGroupsPage() {
           toolbarFilters={activeTab === 'users' ? [
             {
               key: 'role',
+              type: 'multiSelect',
+              label: t('common.role'),
               value: filterRole,
               onChange: setFilterRole,
               placeholder: t('common.allRoles'),
