@@ -45,8 +45,8 @@ export default function HSMPage() {
   const [modalMode, setModalMode] = useState('create')
   const [showKeyModal, setShowKeyModal] = useState(false)
   const [testing, setTesting] = useState(false)
-  const [filterType, setFilterType] = useState('')
-  const [filterStatus, setFilterStatus] = useState('')
+  const [filterType, setFilterType] = useState([])
+  const [filterStatus, setFilterStatus] = useState([])
   const [hsmStatus, setHsmStatus] = useState(null)
   const { showSuccess, showError, showConfirm } = useNotification()
   const { isMobile } = useMobile()
@@ -476,6 +476,8 @@ export default function HSMPage() {
             toolbarFilters={[
               {
                 key: 'enabled',
+                label: t('common.status'),
+                type: 'multiSelect',
                 value: filterStatus,
                 onChange: setFilterStatus,
                 placeholder: t('common.allStatus'),
@@ -486,6 +488,8 @@ export default function HSMPage() {
               },
               {
                 key: 'provider_type',
+                label: t('common.type'),
+                type: 'multiSelect',
                 value: filterType,
                 onChange: setFilterType,
                 placeholder: t('common.allTypes'),

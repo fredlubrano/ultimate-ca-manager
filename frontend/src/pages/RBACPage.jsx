@@ -91,7 +91,7 @@ export default function RBACPage() {
   const [loading, setLoading] = useState(true)
   const [roles, setRoles] = useState([])
   const [selectedRole, setSelectedRole] = useState(null)
-  const [filterType, setFilterType] = useState('')
+  const [filterType, setFilterType] = useState([])
   
   const [formData, setFormData] = useState({
     name: '',
@@ -452,6 +452,8 @@ export default function RBACPage() {
             toolbarFilters={[
               {
                 key: 'is_system',
+                label: t('common.type'),
+                type: 'multiSelect',
                 value: filterType,
                 onChange: setFilterType,
                 placeholder: t('common.allTypes'),

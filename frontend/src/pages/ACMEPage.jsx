@@ -83,7 +83,7 @@ export default function ACMEPage() {
   const [perPage, setPerPage] = useState(25)
   
   // History filters
-  const [historyFilterStatus, setHistoryFilterStatus] = useState('')
+  const [historyFilterStatus, setHistoryFilterStatus] = useState([])
   const [historyFilterCA, setHistoryFilterCA] = useState('')
   const [historyFilterSource, setHistoryFilterSource] = useState('')
 
@@ -2119,10 +2119,12 @@ export default function ACMEPage() {
   // Filter history data
   const filteredHistory = useMemo(() => {
     let filtered = history
-    if (historyFilterStatus) {
-      filtered = filtered.filter(cert => 
-        historyFilterStatus === 'revoked' ? cert.revoked : !cert.revoked
-      )
+    if (historyFilterStatus.length > 0) {
+      filtered = filtered.filter(cert => {
+        if (historyFilterStatus.includes('revoked') && cert.revoked) return true
+        if (historyFilterStatus.includes('valid') && !cert.revoked) return true
+        return false
+      })
     }
     if (historyFilterCA) {
       filtered = filtered.filter(cert => cert.issuer === historyFilterCA)
@@ -2167,6 +2169,8 @@ export default function ACMEPage() {
         },
         {
           key: 'status',
+          label: t('common.status'),
+          type: 'multiSelect',
           value: historyFilterStatus,
           onChange: setHistoryFilterStatus,
           placeholder: t('common.allStatus'),
