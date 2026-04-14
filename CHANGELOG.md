@@ -15,6 +15,16 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.114] - 2026-04-14
+
+### Fixed
+- **ACME Proxy: Account not found after KID fix** — Proxy `new-account` returned a hardcoded static account ID that didn't exist in the database after the KID verification refactor (issue #55). Now creates real persistent `AcmeAccount` records with proper JWK storage and deduplication via thumbprint. Certbot and other ACME clients work correctly again with the proxy.
+
+### Added
+- **ACME proxy protocol tests** — 6 new regression tests covering account creation, deduplication, KID-based JWS verification, and wrong-key rejection to prevent future proxy breakage.
+
+---
+
 ## [2.113] - 2026-04-13
 
 ### Fixed

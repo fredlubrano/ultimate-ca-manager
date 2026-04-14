@@ -114,24 +114,39 @@ def new_nonce():
 def new_account():
     """New account (RFC 8555 §7.3)
 
-    The proxy uses a shared upstream account. Client accounts are acknowledged
-    locally with a static ID to keep the proxy stateless.
+    The proxy stores client accounts locally for JWS verification on
+    subsequent requests, while using a shared upstream account for
+    actual certificate issuance.
     """
     is_valid, payload, jwk, err = verify_proxy_jws()
     if not is_valid:
         return proxy_error("malformed", err)
 
-    acct_url = f"{request.scheme}://{request.host}/acme/proxy/acct/1"
+    if not jwk:
+        return proxy_error("malformed", "Missing JWK in protected header")
 
-    resp_data = {
-        "status": "valid",
-        "contact": payload.get("contact", []),
-        "orders": f"{acct_url}/orders"
-    }
+    try:
+        acme_svc = AcmeService()
+        account, is_new = acme_svc.create_account(
+            jwk=jwk,
+            contact=payload.get("contact", []),
+            terms_of_service_agreed=payload.get("termsOfServiceAgreed", False)
+        )
 
-    resp = proxy_response(resp_data, 201)
-    resp.headers['Location'] = acct_url
-    return resp
+        acct_url = f"{request.scheme}://{request.host}/acme/proxy/acct/{account.account_id}"
+
+        resp_data = {
+            "status": account.status,
+            "contact": account.contact_list,
+            "orders": f"{acct_url}/orders"
+        }
+
+        resp = proxy_response(resp_data, 201 if is_new else 200)
+        resp.headers['Location'] = acct_url
+        return resp
+    except Exception as e:
+        logger.error(f"ACME proxy new-account error: {e}")
+        return proxy_error("serverInternal", "Failed to create account", 500)
 
 
 @acme_proxy_bp.route('/new-order', methods=['POST'])

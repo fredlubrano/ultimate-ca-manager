@@ -923,6 +923,189 @@ class TestAcmeLocalDomainsCRUD:
 
 
 # ============================================================
+# ACME Proxy Protocol — RFC 8555 proxy endpoint tests
+# ============================================================
+
+class TestAcmeProxyProtocol:
+    """Tests for the ACME proxy protocol endpoints (/acme/proxy/*).
+
+    These test the actual ACME protocol flow (directory, nonce, new-account,
+    new-order) using JWS-signed requests, NOT the management API.
+    Covers regression from issue #55: proxy KID-based JWS verification.
+    """
+
+    @staticmethod
+    def _get_nonce(client):
+        """Get a valid nonce from the proxy nonce endpoint."""
+        r = client.get('/acme/proxy/new-nonce')
+        return r.headers.get('Replay-Nonce', 'fallback-nonce')
+
+    @staticmethod
+    def _build_jws(url, payload, jwk, private_key, nonce='test-nonce', use_kid=None):
+        """Build a valid JWS request body for ACME endpoints."""
+        import base64 as b64
+        from cryptography.hazmat.primitives.asymmetric import padding
+        from cryptography.hazmat.primitives import hashes
+
+        protected = {'alg': 'RS256', 'nonce': nonce, 'url': url}
+        if use_kid:
+            protected['kid'] = use_kid
+        else:
+            protected['jwk'] = jwk
+
+        protected_b64 = b64.urlsafe_b64encode(
+            json.dumps(protected).encode()
+        ).rstrip(b'=').decode()
+
+        if payload is not None:
+            payload_b64 = b64.urlsafe_b64encode(
+                json.dumps(payload).encode()
+            ).rstrip(b'=').decode()
+        else:
+            payload_b64 = ''
+
+        signing_input = f'{protected_b64}.{payload_b64}'.encode()
+        signature = private_key.sign(signing_input, padding.PKCS1v15(), hashes.SHA256())
+        sig_b64 = b64.urlsafe_b64encode(signature).rstrip(b'=').decode()
+
+        return {'protected': protected_b64, 'payload': payload_b64, 'signature': sig_b64}
+
+    @staticmethod
+    def _generate_rsa_key_and_jwk():
+        """Generate an RSA key pair and JWK dict."""
+        import base64 as b64
+        from cryptography.hazmat.primitives.asymmetric import rsa
+
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        pub = private_key.public_key().public_numbers()
+
+        def int_to_b64(n):
+            b = n.to_bytes((n.bit_length() + 7) // 8, 'big')
+            return b64.urlsafe_b64encode(b).rstrip(b'=').decode()
+
+        jwk = {'kty': 'RSA', 'n': int_to_b64(pub.n), 'e': int_to_b64(pub.e)}
+        return private_key, jwk
+
+    def test_directory(self, client):
+        """GET /acme/proxy/directory returns proper directory object."""
+        r = client.get('/acme/proxy/directory')
+        assert r.status_code == 200
+        data = r.get_json()
+        assert 'newAccount' in data
+        assert 'newOrder' in data
+        assert 'newNonce' in data
+
+    def test_new_nonce(self, client):
+        """GET /acme/proxy/new-nonce returns nonce header."""
+        r = client.get('/acme/proxy/new-nonce')
+        assert r.status_code == 200
+        assert 'Replay-Nonce' in r.headers
+
+    def test_new_account_creates_persistent_account(self, client):
+        """POST /acme/proxy/new-account stores account for KID verification."""
+        private_key, jwk = self._generate_rsa_key_and_jwk()
+        nonce = self._get_nonce(client)
+
+        url = 'http://localhost/acme/proxy/new-account'
+        payload = {'termsOfServiceAgreed': True, 'contact': ['mailto:test@test.com']}
+        jws = self._build_jws(url, payload, jwk, private_key, nonce=nonce)
+
+        r = client.post('/acme/proxy/new-account',
+                        data=json.dumps(jws),
+                        content_type='application/jose+json')
+        assert r.status_code == 201
+        data = r.get_json()
+        assert data['status'] == 'valid'
+        assert 'Location' in r.headers
+        location = r.headers['Location']
+        assert '/acme/proxy/acct/' in location
+        # Account ID should NOT be a static "1"
+        acct_id = location.rstrip('/').split('/')[-1]
+        assert acct_id != '1'
+        assert len(acct_id) > 10  # Real token, not a fake ID
+
+    def test_new_account_deduplication(self, client):
+        """Same JWK → same account (idempotent)."""
+        private_key, jwk = self._generate_rsa_key_and_jwk()
+        url = 'http://localhost/acme/proxy/new-account'
+        payload = {'termsOfServiceAgreed': True}
+
+        nonce1 = self._get_nonce(client)
+        jws1 = self._build_jws(url, payload, jwk, private_key, nonce=nonce1)
+        r1 = client.post('/acme/proxy/new-account',
+                         data=json.dumps(jws1),
+                         content_type='application/jose+json')
+        loc1 = r1.headers['Location']
+
+        nonce2 = self._get_nonce(client)
+        jws2 = self._build_jws(url, payload, jwk, private_key, nonce=nonce2)
+        r2 = client.post('/acme/proxy/new-account',
+                         data=json.dumps(jws2),
+                         content_type='application/jose+json')
+        loc2 = r2.headers['Location']
+
+        assert loc1 == loc2  # Same account
+
+    def test_kid_based_jws_after_registration(self, client):
+        """After new-account, KID-based JWS verification must succeed (issue #55)."""
+        private_key, jwk = self._generate_rsa_key_and_jwk()
+
+        # Step 1: Register account
+        nonce1 = self._get_nonce(client)
+        url_acct = 'http://localhost/acme/proxy/new-account'
+        payload_acct = {'termsOfServiceAgreed': True}
+        jws_acct = self._build_jws(url_acct, payload_acct, jwk, private_key, nonce=nonce1)
+        r_acct = client.post('/acme/proxy/new-account',
+                             data=json.dumps(jws_acct),
+                             content_type='application/jose+json')
+        assert r_acct.status_code == 201
+        kid = r_acct.headers['Location']
+
+        # Step 2: Use KID in new-order (this was broken in issue #55)
+        nonce2 = self._get_nonce(client)
+        url_order = 'http://localhost/acme/proxy/new-order'
+        payload_order = {'identifiers': [{'type': 'dns', 'value': 'test.example.com'}]}
+        jws_order = self._build_jws(url_order, payload_order, jwk, private_key,
+                                     nonce=nonce2, use_kid=kid)
+        r_order = client.post('/acme/proxy/new-order',
+                              data=json.dumps(jws_order),
+                              content_type='application/jose+json')
+        # Should NOT return 400 "Account not found" — that was the bug
+        assert 'Account not found' not in (r_order.get_json() or {}).get('detail', '')
+        # May return 400 for "No DNS provider" which is correct business logic
+        if r_order.status_code == 400:
+            detail = r_order.get_json().get('detail', '')
+            assert 'DNS provider' in detail or 'dns' in detail.lower()
+
+    def test_kid_with_wrong_key_fails(self, client):
+        """KID-based request signed with wrong key must fail."""
+        private_key1, jwk1 = self._generate_rsa_key_and_jwk()
+        private_key2, jwk2 = self._generate_rsa_key_and_jwk()
+
+        # Register with key1
+        nonce1 = self._get_nonce(client)
+        url_acct = 'http://localhost/acme/proxy/new-account'
+        jws_acct = self._build_jws(url_acct, {'termsOfServiceAgreed': True}, jwk1, private_key1, nonce=nonce1)
+        r_acct = client.post('/acme/proxy/new-account',
+                             data=json.dumps(jws_acct),
+                             content_type='application/jose+json')
+        kid = r_acct.headers['Location']
+
+        # Use KID but sign with key2 (wrong key)
+        nonce2 = self._get_nonce(client)
+        url_order = 'http://localhost/acme/proxy/new-order'
+        jws_bad = self._build_jws(url_order, {'identifiers': [{'type': 'dns', 'value': 'x.com'}]},
+                                   jwk2, private_key2, nonce=nonce2, use_kid=kid)
+        r = client.post('/acme/proxy/new-order',
+                        data=json.dumps(jws_bad),
+                        content_type='application/jose+json')
+        # Should fail verification
+        assert r.status_code == 400
+        detail = r.get_json().get('detail', '')
+        assert 'Signature verification failed' in detail or 'malformed' in detail.lower()
+
+
+# ============================================================
 # Viewer Role — ACME read-only access
 # ============================================================
 
