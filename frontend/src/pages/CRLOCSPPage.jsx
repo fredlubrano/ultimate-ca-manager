@@ -1087,6 +1087,7 @@ export default function CRLOCSPPage() {
         selectedId={selectedCA?.id}
         onRowClick={handleSelectCA}
         sortable
+        densityStorageKey="ucm-crlocsp-density"
         pagination={{
           page,
           total: filteredCAs.length,

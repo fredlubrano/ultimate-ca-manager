@@ -627,6 +627,7 @@ export default function DiscoveryPage() {
             searchPlaceholder={t('discovery.searchDiscovered')}
             searchKeys={['subject', 'target', 'issuer', 'serial_number']}
             columnStorageKey="ucm-discovery-columns"
+            densityStorageKey="ucm-discovery-density"
             sortable
             defaultSort={{ key: 'cn', direction: 'asc' }}
             pagination={{

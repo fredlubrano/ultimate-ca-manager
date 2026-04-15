@@ -1015,6 +1015,7 @@ export default function OperationsPage() {
             searchPlaceholder={t('common.search')}
             searchKeys={['cn', 'descr', 'name', 'subject', 'username', 'email', 'common_name']}
             sortable
+            densityStorageKey="ucm-operations-density"
             toolbarFilters={isMobile ? bulkToolbarFilters : undefined}
             loading={bulkLoading}
             pagination={true}

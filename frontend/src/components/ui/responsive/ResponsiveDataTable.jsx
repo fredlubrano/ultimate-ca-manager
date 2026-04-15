@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next'
 import { 
   MagnifyingGlass, CaretUp, CaretDown, DotsThreeVertical,
   CaretLeft, CaretRight, X, Columns, Check,
-  BookmarkSimple, FloppyDisk, Trash, Export
+  BookmarkSimple, FloppyDisk, Trash, Export, Rows
 } from '@phosphor-icons/react'
 import { useMobile } from '../../../contexts'
 import { cn, exportToCSV, exportToJSON } from '../../../lib/utils'
@@ -81,13 +81,34 @@ export function ResponsiveDataTable({
   // 'compact': Dense rows (py-1, gap-2) - default for tables
   // 'default': Standard rows (py-1.5, gap-3)
   // 'comfortable': Spacious rows (py-2, gap-4)
-  density = 'compact',
+  density: densityProp = 'compact',
+  
+  // Density toggle - when provided, enables density toggle button
+  densityStorageKey, // localStorage key for density preference (e.g. 'ucm-certs-density')
   
   // Custom class
   className
 }) {
   const { isMobile, isDesktop, isTouch } = useMobile()
   const { t } = useTranslation()
+  
+  // Density state (persisted if key provided)
+  const [density, setDensity] = useState(() => {
+    if (densityStorageKey) {
+      try {
+        return localStorage.getItem(densityStorageKey) || densityProp
+      } catch { return densityProp }
+    }
+    return densityProp
+  })
+  
+  const cycleDensity = useCallback(() => {
+    const next = density === 'compact' ? 'default' : density === 'default' ? 'comfortable' : 'compact'
+    setDensity(next)
+    if (densityStorageKey) {
+      try { localStorage.setItem(densityStorageKey, next) } catch {}
+    }
+  }, [density, densityStorageKey])
   
   // Support both individual props and emptyState object
   const EmptyIcon = emptyState?.icon || EmptyIconProp
@@ -659,6 +680,9 @@ export function ResponsiveDataTable({
           handleExportCSV={handleExportCSV}
           handleExportJSON={handleExportJSON}
           dataCount={sortedData.length}
+          densityStorageKey={densityStorageKey}
+          density={density}
+          cycleDensity={cycleDensity}
         />
       )}
 
@@ -784,7 +808,11 @@ function SearchBar({
   exportMenuRef,
   handleExportCSV,
   handleExportJSON,
-  dataCount
+  dataCount,
+  // Density toggle
+  densityStorageKey,
+  density,
+  cycleDensity
 }) {
   const { t } = useTranslation()
   return (
@@ -964,6 +992,22 @@ function SearchBar({
               </div>
             )}
           </div>
+        )}
+        
+        {/* Density toggle (desktop only) */}
+        {!isMobile && densityStorageKey && (
+          <button
+            type="button"
+            onClick={cycleDensity}
+            aria-label={t('table.density')}
+            className={cn(
+              'flex items-center gap-1.5 h-7 px-2 rounded-md border text-xs font-medium transition-colors shrink-0',
+              'border-border bg-bg-primary text-text-secondary hover:text-text-primary hover:border-border-hover'
+            )}
+            title={`${t('table.density')}: ${t(`table.${density}`)}`}
+          >
+            <Rows size={14} weight={density === 'comfortable' ? 'fill' : density === 'default' ? 'duotone' : 'regular'} />
+          </button>
         )}
         
         {/* Filter Presets (desktop only) */}
