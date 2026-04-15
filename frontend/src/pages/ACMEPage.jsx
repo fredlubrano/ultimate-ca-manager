@@ -13,7 +13,8 @@ import {
   Key, Plus, Trash, CheckCircle, XCircle, FloppyDisk, ShieldCheck, 
   Globe, Lightning, Database, Gear, ClockCounterClockwise, Certificate, Clock,
   ArrowsClockwise, CloudArrowUp, PlugsConnected, Play, Warning,
-  DownloadSimple, Eye, LockKey, GlobeHemisphereWest, PencilSimple, MagnifyingGlass, Copy
+  DownloadSimple, Eye, LockKey, GlobeHemisphereWest, PencilSimple, MagnifyingGlass, Copy,
+  CaretRight
 } from '@phosphor-icons/react'
 import { ToggleSwitch } from '../components/ui/ToggleSwitch'
 import {
@@ -1234,15 +1235,16 @@ export default function ACMEPage() {
           />
 
           {/* Custom ACME Directory — collapsed advanced option */}
-          <details className="group">
-            <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary select-none">
-              <Globe size={14} />
+          <details className="group rounded-lg border border-border/50 hover:border-border transition-colors">
+            <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary select-none px-3 py-2.5 rounded-lg hover:bg-bg-tertiary/30 transition-colors list-none [&::-webkit-details-marker]:hidden">
+              <CaretRight size={14} weight="bold" className="shrink-0 transition-transform duration-200 group-open:rotate-90" />
+              <Globe size={14} className="shrink-0" />
               {t('acme.customDirectoryOverride')}
               {localDirectoryUrl && (
                 <Badge variant="outline" size="sm">{t('common.configured')}</Badge>
               )}
             </summary>
-            <div className="mt-2 space-y-3 pl-1">
+            <div className="px-3 pb-3 space-y-3">
               <p className="text-xs text-text-tertiary">{t('acme.customDirectoryOverrideHelper')}</p>
               <Input
                 label={t('acme.directoryUrl')}
@@ -1413,15 +1415,16 @@ export default function ACMEPage() {
               </div>
 
               {/* EAB Credentials (collapsible section) */}
-              <details className="group">
-                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary select-none">
-                  <LockKey size={14} />
+              <details className="group rounded-lg border border-border/50 hover:border-border transition-colors">
+                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary select-none px-3 py-2.5 rounded-lg hover:bg-bg-tertiary/30 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                  <CaretRight size={14} weight="bold" className="shrink-0 transition-transform duration-200 group-open:rotate-90" />
+                  <LockKey size={14} className="shrink-0" />
                   {t('acme.proxyEabCredentials')}
                   {(clientSettings.proxy_eab_hmac_key_set || localProxyEabKid) && (
                     <Badge variant="outline" size="sm">{t('common.configured')}</Badge>
                   )}
                 </summary>
-                <div className="mt-2 space-y-3 pl-1">
+                <div className="px-3 pb-3 space-y-3">
                   <Input
                     label={t('acme.proxyEabKid')}
                     value={localProxyEabKid}
