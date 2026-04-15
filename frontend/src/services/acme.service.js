@@ -74,6 +74,10 @@ export const acmeService = {
     return apiClient.post('/acme/client/proxy/unregister')
   },
 
+  async testProxyConnection(url) {
+    return apiClient.post('/acme/client/proxy/test-connection', url ? { url } : {})
+  },
+
   // Client Account (Let's Encrypt account)
   async registerClientAccount(email, environment = 'staging') {
     return apiClient.post('/acme/client/account', { email, environment })

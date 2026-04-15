@@ -28,10 +28,12 @@ export default {
       {
         title: 'Proxy ACME',
         items: [
-          { label: 'Modo proxy', text: 'Reenviar solicitudes ACME a un CA ascendente (Let\'s Encrypt, ZeroSSL, etc.) a través de UCM para gestión centralizada' },
-          { label: 'URL ascendente', text: 'La URL del directorio ACME del CA ascendente al que se reenvían las solicitudes' },
-          { label: 'EAB del proxy', text: 'Credenciales EAB para la conexión al CA ascendente (separadas del EAB del cliente)' },
-          { label: 'Desafíos DNS', text: 'UCM gestiona los desafíos DNS-01 en nombre de los clientes usando los proveedores DNS configurados' },
+          { label: 'CA upstream', text: 'Seleccione un preajuste (Let\'s Encrypt Producción/Staging) o introduzca una URL personalizada para cualquier CA RFC 8555' },
+          { label: 'Estado de cuenta', text: 'Muestra si UCM está registrado con la CA upstream. Las cuentas se registran automáticamente en la primera solicitud proxy' },
+          { label: 'Probar conexión', text: 'Verifique la conectividad con la CA upstream y compruebe si se requieren credenciales EAB' },
+          { label: 'Restablecer cuenta', text: 'Borre las credenciales de la cuenta upstream para forzar un nuevo registro (usar después de cambiar de CA)' },
+          { label: 'Credenciales EAB', text: 'Credenciales External Account Binding para CAs que las requieren (ej: ZeroSSL, Google Trust)' },
+          { label: 'Desafíos DNS', text: 'UCM maneja los desafíos DNS-01 en nombre de los clientes usando los proveedores DNS configurados' },
         ]
       },
       {
@@ -136,28 +138,36 @@ Mapea tus dominios a proveedores DNS. Al solicitar un certificado para un domini
 
 ## Modo Proxy ACME
 
-El proxy ACME permite a los clientes internos solicitar certificados de un CA público (Let's Encrypt, ZeroSSL, etc.) a través de UCM, sin acceso directo a Internet. UCM actúa como intermediario, gestionando los desafíos DNS-01 y reenviando las solicitudes al CA ascendente.
+El proxy ACME permite a los clientes internos solicitar certificados de una CA pública (Let's Encrypt, ZeroSSL, etc.) a través de UCM, sin acceso directo a Internet. UCM actúa como intermediario, gestionando los desafíos DNS-01 y reenviando las solicitudes a la CA upstream.
 
 ### Cuándo usar el modo proxy
-- Los clientes internos no tienen acceso directo a Internet
-- Desea centralizar la gestión de certificados públicos
-- Necesita auditar todas las emisiones de certificados a través de un único punto
-- Las políticas de red prohíben conexiones directas a CAs públicos
+- Servidores internos sin acceso directo a Internet
+- Gestión centralizada de desafíos DNS-01 a través de los proveedores DNS configurados en UCM
+- Auditoría y seguimiento de todas las emisiones de certificados públicos
 
 ### Configuración
-1. Vaya a **ACME** → **Configuración**
-2. Active el **Modo proxy**
-3. Ingrese la **URL ACME ascendente** (ej. \`https://acme-v02.api.letsencrypt.org/directory\`)
-4. Si el CA ascendente requiere EAB, ingrese el **ID de clave EAB del proxy** y la **Clave HMAC**
-5. Haga clic en **Guardar**
+1. Vaya a **ACME** → pestaña **Let's Encrypt**
+2. Desplácese hasta la sección **Proxy ACME**
+3. Active el interruptor **Proxy ACME**
+4. Seleccione una **CA upstream**: Let's Encrypt Producción, Let's Encrypt Staging o Personalizado
+5. Para CAs personalizadas, introduzca la URL del directorio ACME manualmente
+6. Si la CA upstream requiere EAB, expanda **Credenciales EAB** e introduzca el Key ID y la clave HMAC
+7. Haga clic en **Probar conexión** para verificar la conectividad con la CA upstream
+8. UCM registra automáticamente una cuenta en la primera solicitud proxy
+
+### Gestión de cuentas
+- La **insignia de estado de cuenta** muestra si UCM está registrado con la CA upstream
+- Cambiar de CA upstream borra automáticamente las credenciales obsoletas y fuerza un nuevo registro
+- Use el botón **Restablecer cuenta** para borrar credenciales manualmente si es necesario
+- **Probar conexión** verifica si el directorio upstream es accesible y si se requiere EAB
 
 ### Uso del proxy
-Dirija sus clientes ACME internos al directorio del proxy:
+Dirija sus clientes ACME internos al directorio proxy:
 \`\`\`
 https://su-servidor-ucm:8443/acme/proxy/directory
 \`\`\`
 
-> 💡 Las credenciales EAB del proxy son distintas del EAB del cliente — autentican UCM ante el CA ascendente, no sus clientes ante UCM.
+> 💡 Las credenciales EAB del proxy son distintas de las del cliente — autentican UCM ante la CA upstream, no sus clientes ante UCM.
 
 > ⚠ El modo proxy requiere al menos un proveedor DNS configurado en UCM para la resolución de desafíos.
 

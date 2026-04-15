@@ -752,11 +752,20 @@ ACME Proxy lets internal clients request certificates from a public CA (Let's En
 - Audit and tracking of all public certificate issuance
 
 ### Configuration
-1. Go to **ACME** → **Client Settings**
-2. Enable **Proxy Mode**
-3. Set the **Upstream URL** — the ACME directory URL of the target CA
-4. If the upstream CA requires EAB, enter the **Proxy EAB Key ID** and **HMAC Key**
-5. Click **Register** to create an account at the upstream CA
+1. Go to **ACME** → **Let's Encrypt** tab
+2. Scroll down to the **ACME Proxy** section
+3. Enable the **ACME Proxy** toggle
+4. Select an **Upstream CA**: Let's Encrypt Production, Let's Encrypt Staging, or Custom
+5. For custom CAs, enter the ACME directory URL manually
+6. If the upstream CA requires EAB, expand **EAB Credentials** and enter the Key ID and HMAC Key
+7. Click **Test Connection** to verify connectivity with the upstream CA
+8. UCM automatically registers an account on first proxy request
+
+### Account Management
+- The **account status badge** shows whether UCM is registered with the upstream CA
+- Switching upstream CA automatically clears stale credentials and forces re-registration
+- Use the **Reset Account** button to manually clear credentials if needed
+- **Test Connection** checks if the upstream directory is reachable and whether EAB is required
 
 ### Using the Proxy
 Point your internal ACME clients to the proxy directory:

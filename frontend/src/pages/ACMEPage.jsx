@@ -80,6 +80,8 @@ export default function ACMEPage() {
   const [localProxyUpstreamUrl, setLocalProxyUpstreamUrl] = useState('')
   const [localProxyEabKid, setLocalProxyEabKid] = useState('')
   const [proxyEabHmacInput, setProxyEabHmacInput] = useState(null)
+  const [testingConnection, setTestingConnection] = useState(false)
+  const [connectionResult, setConnectionResult] = useState(null)
   
   // Pagination state
   const [page, setPage] = useState(1)
@@ -198,6 +200,43 @@ export default function ACMEPage() {
       loadData()
     } catch (error) {
       showError(error.message || t('acme.proxyUnregistrationFailed'))
+    }
+  }
+
+  const handleProxyModeChange = async (mode) => {
+    try {
+      setClientSettings(prev => ({ ...prev, proxy_upstream_mode: mode, proxy_account_registered: false, proxy_account_url: null }))
+      setConnectionResult(null)
+      await acmeService.updateClientSettings({ proxy_upstream_mode: mode })
+      loadData()
+    } catch (error) {
+      showError(error.message || t('messages.errors.updateFailed.settings'))
+      loadData()
+    }
+  }
+
+  const handleResetProxyAccount = async () => {
+    const confirmed = await showConfirm(t('acme.resetAccountConfirm'))
+    if (!confirmed) return
+    try {
+      await acmeService.updateClientSettings({ reset_proxy_account: true })
+      showSuccess(t('acme.resetAccountSuccess'))
+      loadData()
+    } catch (error) {
+      showError(error.message || t('messages.errors.updateFailed.settings'))
+    }
+  }
+
+  const handleTestConnection = async () => {
+    setTestingConnection(true)
+    setConnectionResult(null)
+    try {
+      const res = await acmeService.testProxyConnection()
+      setConnectionResult(res.data || res)
+    } catch (error) {
+      setConnectionResult({ connected: false, error: error.message })
+    } finally {
+      setTestingConnection(false)
     }
   }
 
@@ -1240,72 +1279,163 @@ export default function ACMEPage() {
         </div>
       </CompactSection>
 
-      {/* Let's Encrypt Proxy */}
-      <CompactSection title={t('acme.letsEncryptProxy')} icon={ShieldCheck}>
+      {/* ACME Proxy */}
+      <CompactSection title={t('acme.acmeProxy')} icon={ShieldCheck}>
         <div className="space-y-3">
           <ToggleSwitch
             checked={clientSettings.proxy_enabled || false}
             onChange={(val) => handleUpdateClientSetting('proxy_enabled', val)}
             disabled={!canWrite('acme')}
-            label={t('acme.enableLetsEncryptProxy')}
-            description={t('acme.enableLetsEncryptProxyDesc')}
+            label={t('acme.enableAcmeProxy')}
+            description={t('acme.enableAcmeProxyDesc')}
           />
 
           {clientSettings.proxy_enabled && (
             <>
-              <CompactGrid columns={1}>
-                <CompactField 
-                  autoIcon="environment"
-                  label={t('acme.proxyEndpoint')} 
-                  value={`${window.location.origin}/acme/proxy/directory`}
-                  mono
-                  copyable
+              {/* Upstream CA Mode Selector */}
+              <Select
+                label={t('acme.upstreamCA')}
+                value={clientSettings.proxy_upstream_mode || 'staging'}
+                onChange={handleProxyModeChange}
+                disabled={!canWrite('acme')}
+                options={[
+                  { value: 'staging', label: t('acme.letsEncryptStaging') },
+                  { value: 'production', label: t('acme.letsEncryptProduction') },
+                  { value: 'custom', label: t('acme.customCA') },
+                ]}
+                helperText={t('acme.upstreamCAHelper')}
+              />
+
+              {/* Custom URL (only in custom mode) */}
+              {(clientSettings.proxy_upstream_mode === 'custom') && (
+                <Input
+                  label={t('acme.customCAUrl')}
+                  type="url"
+                  value={localProxyUpstreamUrl}
+                  onChange={(e) => setLocalProxyUpstreamUrl(e.target.value)}
+                  onBlur={() => handleBlurSave('proxy_upstream_url', localProxyUpstreamUrl, setLocalProxyUpstreamUrl)}
+                  disabled={!canWrite('acme')}
+                  placeholder="https://acme.zerossl.com/v2/DV90"
+                  helperText={t('acme.customCAUrlHelper')}
                 />
-              </CompactGrid>
-              
-              <Input
-                label={t('acme.proxyUpstreamUrl')}
-                type="url"
-                value={localProxyUpstreamUrl}
-                onChange={(e) => setLocalProxyUpstreamUrl(e.target.value)}
-                onBlur={() => handleBlurSave('proxy_upstream_url', localProxyUpstreamUrl, setLocalProxyUpstreamUrl)}
-                disabled={!canWrite('acme')}
-                placeholder="https://acme-staging-v02.api.letsencrypt.org/directory"
-                helperText={t('acme.proxyUpstreamUrlHelper')}
-              />
-              
-              <Input
-                label={t('acme.proxyEabKid')}
-                value={localProxyEabKid}
-                onChange={(e) => setLocalProxyEabKid(e.target.value)}
-                onBlur={() => handleBlurSave('proxy_eab_kid', localProxyEabKid, setLocalProxyEabKid)}
-                disabled={!canWrite('acme')}
-                placeholder="key-id-from-upstream-ca"
-                helperText={t('acme.proxyEabKidHelper')}
-              />
-              
-              <Input
-                label={t('acme.proxyEabHmacKey')}
-                type="password"
-                value={proxyEabHmacInput !== null ? proxyEabHmacInput : (clientSettings.proxy_eab_hmac_key_set ? '••••••••' : '')}
-                onChange={(e) => setProxyEabHmacInput(e.target.value)}
-                onBlur={() => {
-                  if (proxyEabHmacInput !== null && proxyEabHmacInput !== '') {
-                    handleUpdateClientSetting('proxy_eab_hmac_key', proxyEabHmacInput)
-                  }
-                }}
-                onFocus={() => {
-                  if (proxyEabHmacInput === null && clientSettings.proxy_eab_hmac_key_set) {
-                    setProxyEabHmacInput('')
-                  }
-                }}
-                disabled={!canWrite('acme')}
-                placeholder={t('acme.proxyEabHmacKeyPlaceholder')}
-                helperText={t('acme.proxyEabHmacKeyHelper')}
-              />
-              
+              )}
+
+              {/* Account Registration Status */}
+              {clientSettings.proxy_account_registered ? (
+                <div className="p-3 rounded-lg status-success-bg status-success-border border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle size={18} className="status-success-text" weight="fill" />
+                      <div>
+                        <p className="text-sm font-medium text-text-primary">{t('acme.upstreamAccountRegistered')}</p>
+                        <p className="text-xs text-text-secondary font-mono">
+                          {clientSettings.proxy_account_url
+                            ? `...${clientSettings.proxy_account_url.slice(-30)}`
+                            : t('acme.accountRegistered')}
+                        </p>
+                      </div>
+                    </div>
+                    {canWrite('acme') && (
+                      <Button 
+                        type="button"
+                        variant="ghost" 
+                        size="sm"
+                        onClick={handleResetProxyAccount}
+                        title={t('acme.resetAccount')}
+                        className="status-danger-text hover:status-danger-bg"
+                      >
+                        <ArrowsClockwise size={14} />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-lg bg-tertiary-op30 border border-border">
+                  <div className="flex items-center gap-2">
+                    <Warning size={18} className="text-text-tertiary" />
+                    <div>
+                      <p className="text-sm text-text-secondary">{t('acme.upstreamAccountNotRegistered')}</p>
+                      <p className="text-xs text-text-tertiary">{t('acme.willAutoRegister')}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Connection Test */}
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleTestConnection}
+                  disabled={testingConnection}
+                >
+                  {testingConnection ? <ArrowsClockwise size={14} className="animate-spin" /> : <PlugsConnected size={14} />}
+                  {t('acme.testConnection')}
+                </Button>
+                {connectionResult && (
+                  <span className={cn('text-xs', connectionResult.connected ? 'status-success-text' : 'status-danger-text')}>
+                    {connectionResult.connected
+                      ? `✓ ${connectionResult.ca_name || t('common.connected')}${connectionResult.eab_required ? ` (${t('acme.eabRequired')})` : ''}`
+                      : `✗ ${connectionResult.error || t('acme.connectionFailed')}`}
+                  </span>
+                )}
+              </div>
+
+              {/* EAB Credentials (collapsible section) */}
+              <details className="group">
+                <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary select-none">
+                  <LockKey size={14} />
+                  {t('acme.proxyEabCredentials')}
+                  {(clientSettings.proxy_eab_hmac_key_set || localProxyEabKid) && (
+                    <Badge variant="outline" size="sm">{t('common.configured')}</Badge>
+                  )}
+                </summary>
+                <div className="mt-2 space-y-3 pl-1">
+                  <Input
+                    label={t('acme.proxyEabKid')}
+                    value={localProxyEabKid}
+                    onChange={(e) => setLocalProxyEabKid(e.target.value)}
+                    onBlur={() => handleBlurSave('proxy_eab_kid', localProxyEabKid, setLocalProxyEabKid)}
+                    disabled={!canWrite('acme')}
+                    placeholder="key-id-from-upstream-ca"
+                    helperText={t('acme.proxyEabKidHelper')}
+                  />
+                  
+                  <Input
+                    label={t('acme.proxyEabHmacKey')}
+                    type="password"
+                    value={proxyEabHmacInput !== null ? proxyEabHmacInput : (clientSettings.proxy_eab_hmac_key_set ? '••••••••' : '')}
+                    onChange={(e) => setProxyEabHmacInput(e.target.value)}
+                    onBlur={() => {
+                      if (proxyEabHmacInput !== null && proxyEabHmacInput !== '') {
+                        handleUpdateClientSetting('proxy_eab_hmac_key', proxyEabHmacInput)
+                      }
+                    }}
+                    onFocus={() => {
+                      if (proxyEabHmacInput === null && clientSettings.proxy_eab_hmac_key_set) {
+                        setProxyEabHmacInput('')
+                      }
+                    }}
+                    disabled={!canWrite('acme')}
+                    placeholder={t('acme.proxyEabHmacKeyPlaceholder')}
+                    helperText={t('acme.proxyEabHmacKeyHelper')}
+                  />
+                </div>
+              </details>
+
+              {/* Proxy Endpoint & Usage */}
               <div className="p-3 bg-tertiary-op50 rounded-lg space-y-2">
-                <p className="text-xs font-medium text-text-secondary">{t('acme.proxyUsage')}</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-text-secondary">{t('acme.yourProxyUrl')}</p>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => copy(`${window.location.origin}/acme/proxy/directory`)}>
+                    <Copy size={12} />
+                  </Button>
+                </div>
+                <code className="block text-xs text-accent-primary font-mono bg-bg-secondary p-2 rounded">
+                  {window.location.origin}/acme/proxy/directory
+                </code>
+                <p className="text-xs font-medium text-text-secondary mt-3">{t('acme.proxyUsage')}</p>
                 <pre className="text-xs text-text-primary bg-bg-secondary p-2 rounded overflow-x-auto font-mono">
 {`certbot certonly \\
   --server ${window.location.origin}/acme/proxy/directory \\
@@ -1315,6 +1445,7 @@ export default function ACMEPage() {
                 <p className="text-xs text-text-tertiary">{t('acme.proxyUsageNote')}</p>
               </div>
               
+              {/* Proxy Registration */}
               {clientSettings.proxy_registered ? (
                 <div className="p-3 rounded-lg status-success-bg status-success-border border">
                   <div className="flex items-center justify-between">
@@ -1326,6 +1457,7 @@ export default function ACMEPage() {
                       </div>
                     </div>
                     <Button 
+                      type="button"
                       variant="ghost" 
                       size="sm"
                       onClick={handleUnregisterProxy}
@@ -1346,6 +1478,7 @@ export default function ACMEPage() {
                     helperText={t('common.emailRequired')}
                   />
                   <Button 
+                    type="button"
                     variant="secondary" 
                     size="sm"
                     onClick={handleRegisterProxy}

@@ -28,9 +28,11 @@ export default {
       {
         title: 'Proxy ACME',
         items: [
-          { label: 'Mode proxy', text: 'Transférer les requêtes ACME vers un CA en amont (Let\'s Encrypt, ZeroSSL, etc.) via UCM pour une gestion centralisée' },
-          { label: 'URL en amont', text: 'L\'URL du répertoire ACME du CA en amont vers lequel les requêtes sont transférées' },
-          { label: 'EAB proxy', text: 'Identifiants EAB pour la connexion au CA en amont (distincts de l\'EAB client)' },
+          { label: 'CA en amont', text: 'Sélectionnez un préréglage (Let\'s Encrypt Production/Staging) ou entrez une URL personnalisée pour tout CA RFC 8555' },
+          { label: 'État du compte', text: 'Indique si UCM est enregistré auprès du CA en amont. Les comptes sont auto-enregistrés à la première requête proxy' },
+          { label: 'Test de connexion', text: 'Vérifiez la connectivité avec le CA en amont et vérifiez si des identifiants EAB sont requis' },
+          { label: 'Réinitialiser le compte', text: 'Effacez les identifiants du compte en amont pour forcer une réinscription (à utiliser après un changement de CA)' },
+          { label: 'Identifiants EAB', text: 'Identifiants External Account Binding pour les CAs qui les exigent (ex: ZeroSSL, Google Trust)' },
           { label: 'Défis DNS', text: 'UCM gère les défis DNS-01 pour le compte des clients en utilisant les fournisseurs DNS configurés' },
         ]
       },
@@ -139,17 +141,25 @@ Associez vos domaines aux fournisseurs DNS. Lors de la demande d'un certificat p
 Le proxy ACME permet aux clients internes de demander des certificats à un CA public (Let's Encrypt, ZeroSSL, etc.) via UCM, sans accès direct à Internet. UCM agit comme intermédiaire, gérant les défis DNS-01 et transférant les requêtes au CA en amont.
 
 ### Quand utiliser le mode proxy
-- Les clients internes n'ont pas d'accès Internet direct
-- Vous souhaitez centraliser la gestion des certificats publics
-- Vous devez auditer toutes les émissions de certificats à travers un point unique
-- Les politiques réseau interdisent les connexions directes aux CA publics
+- Serveurs internes sans accès direct à Internet
+- Gestion centralisée des défis DNS-01 via les fournisseurs DNS configurés dans UCM
+- Audit et suivi de toutes les émissions de certificats publics
 
 ### Configuration
-1. Allez dans **ACME** → **Paramètres**
-2. Activez le **Mode proxy**
-3. Entrez l'**URL ACME en amont** (ex. \`https://acme-v02.api.letsencrypt.org/directory\`)
-4. Si le CA en amont nécessite un EAB, entrez le **Key ID EAB proxy** et la **Clé HMAC**
-5. Cliquez sur **Enregistrer**
+1. Allez dans **ACME** → onglet **Let's Encrypt**
+2. Faites défiler jusqu'à la section **Proxy ACME**
+3. Activez le bouton **Proxy ACME**
+4. Sélectionnez un **CA en amont** : Let's Encrypt Production, Let's Encrypt Staging ou Personnalisé
+5. Pour les CAs personnalisés, entrez l'URL du répertoire ACME manuellement
+6. Si le CA en amont nécessite un EAB, développez **Identifiants EAB** et entrez le Key ID et la clé HMAC
+7. Cliquez sur **Test de connexion** pour vérifier la connectivité avec le CA en amont
+8. UCM enregistre automatiquement un compte à la première requête proxy
+
+### Gestion des comptes
+- Le **badge de statut du compte** indique si UCM est enregistré auprès du CA en amont
+- Changer de CA en amont efface automatiquement les identifiants obsolètes et force une réinscription
+- Utilisez le bouton **Réinitialiser le compte** pour effacer manuellement les identifiants si nécessaire
+- **Test de connexion** vérifie si le répertoire en amont est accessible et si un EAB est requis
 
 ### Utilisation du proxy
 Dirigez vos clients ACME internes vers le répertoire proxy :
