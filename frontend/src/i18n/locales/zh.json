@@ -424,7 +424,8 @@
     "issueCertificate": "签发证书",
     "scanNetwork": "扫描网络",
     "generateReport": "生成报告",
-    "healthStatus": "健康状态"
+    "healthStatus": "健康状态",
+    "remove": "移除"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",
@@ -2633,6 +2634,7 @@
     "activeFilters": "活动筛选器",
     "density": "密度",
     "compact": "紧凑",
+    "default": "默认",
     "comfortable": "舒适"
   },
   "reconnect": {

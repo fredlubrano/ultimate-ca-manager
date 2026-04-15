@@ -746,7 +746,7 @@ export default function UsersGroupsPage() {
                       <Badge variant={cert.enabled ? 'success' : 'warning'} size="xs">
                         {cert.enabled ? t('common.active') : t('common.disabled')}
                       </Badge>
-                      <Button type="button" size="xs" variant="ghost" onClick={() => handleDeleteUserMtls(cert.id)}>
+                      <Button type="button" size="xs" variant="ghost" onClick={() => handleDeleteUserMtls(cert.id)} aria-label={t('common.delete')}>
                         <Trash size={14} className="text-status-danger" />
                       </Button>
                     </div>

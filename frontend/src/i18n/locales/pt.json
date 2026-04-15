@@ -424,7 +424,8 @@
     "issueCertificate": "Emitir certificado",
     "scanNetwork": "Escanear rede",
     "generateReport": "Gerar relatório",
-    "healthStatus": "Estado de saúde"
+    "healthStatus": "Estado de saúde",
+    "remove": "Remover"
   },
   "commandPalette": {
     "searchPlaceholder": "Pesquisar comandos, certificados, CAs, usuários...",
@@ -2633,6 +2634,7 @@
     "activeFilters": "Filtros ativos",
     "density": "Densidade",
     "compact": "Compacto",
+    "default": "Padrão",
     "comfortable": "Confortável"
   },
   "reconnect": {

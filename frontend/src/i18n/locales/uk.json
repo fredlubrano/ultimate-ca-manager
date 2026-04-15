@@ -424,7 +424,8 @@
     "issueCertificate": "Видати сертифікат",
     "scanNetwork": "Сканувати мережу",
     "generateReport": "Згенерувати звіт",
-    "healthStatus": "Стан здоров'я"
+    "healthStatus": "Стан здоров'я",
+    "remove": "Видалити"
   },
   "commandPalette": {
     "searchPlaceholder": "Пошук команд, сертифікатів, ЦС, користувачів...",
@@ -2633,6 +2634,7 @@
     "activeFilters": "Активні фільтри",
     "density": "Щільність",
     "compact": "Компактний",
+    "default": "За замовчуванням",
     "comfortable": "Комфортний"
   },
   "reconnect": {
