@@ -1025,7 +1025,8 @@
     "issueCertificate": "Émettre un certificat",
     "scanNetwork": "Scanner le réseau",
     "generateReport": "Générer un rapport",
-    "healthStatus": "État de santé"
+    "healthStatus": "État de santé",
+    "remove": "Supprimer"
   },
   "compare": {
     "title": "Comparer les certificats",
@@ -2636,6 +2637,7 @@
     "activeFilters": "Filtres actifs",
     "density": "Densité",
     "compact": "Compact",
+    "default": "Défaut",
     "comfortable": "Confortable"
   },
   "reconnect": {

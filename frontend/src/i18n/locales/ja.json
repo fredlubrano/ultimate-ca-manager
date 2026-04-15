@@ -424,7 +424,8 @@
     "issueCertificate": "証明書を発行",
     "scanNetwork": "ネットワークスキャン",
     "generateReport": "レポート生成",
-    "healthStatus": "ヘルスステータス"
+    "healthStatus": "ヘルスステータス",
+    "remove": "削除"
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",
@@ -2633,6 +2634,7 @@
     "activeFilters": "アクティブフィルター",
     "density": "密度",
     "compact": "コンパクト",
+    "default": "デフォルト",
     "comfortable": "快適"
   },
   "reconnect": {

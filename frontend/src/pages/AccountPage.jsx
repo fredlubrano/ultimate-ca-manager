@@ -621,7 +621,7 @@ export default function AccountPage() {
                     </p>
                   </div>
                 </div>
-                <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteWebAuthn(cred.id)}>
+                <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteWebAuthn(cred.id)} aria-label={t('common.delete')}>
                   <Trash size={16} className="text-status-danger" />
                 </Button>
               </div>
@@ -674,7 +674,7 @@ export default function AccountPage() {
                   <Button type="button" size="sm" variant="ghost" aria-label={t('common.export')} onClick={() => setExportCert({ id: cert.id, name: cert.name || cert.cert_subject, hasPrivateKey: true })}>
                     <Download size={16} className="text-accent-primary" />
                   </Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteMTLS(cert.id)}>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteMTLS(cert.id)} aria-label={t('common.delete')}>
                     <Trash size={16} className="text-status-danger" />
                   </Button>
                 </div>
@@ -738,7 +738,7 @@ export default function AccountPage() {
                     </p>
                   </div>
                 </div>
-                <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteApiKey(key.id)}>
+                <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteApiKey(key.id)} aria-label={t('common.delete')}>
                   <Trash size={16} className="text-status-danger" />
                 </Button>
               </div>

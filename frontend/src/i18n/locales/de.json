@@ -424,7 +424,8 @@
     "issueCertificate": "Zertifikat ausstellen",
     "scanNetwork": "Netzwerk scannen",
     "generateReport": "Bericht generieren",
-    "healthStatus": "Gesundheitsstatus"
+    "healthStatus": "Gesundheitsstatus",
+    "remove": "Entfernen"
   },
   "commandPalette": {
     "searchPlaceholder": "Befehle, Zertifikate, CAs, Benutzer suchen...",
@@ -2633,6 +2634,7 @@
     "activeFilters": "Aktive Filter",
     "density": "Dichte",
     "compact": "Kompakt",
+    "default": "Standard",
     "comfortable": "Komfortabel"
   },
   "reconnect": {

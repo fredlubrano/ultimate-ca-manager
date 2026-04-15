@@ -420,7 +420,7 @@ export default function HSMPage() {
                       {key.status}
                     </Badge>
                     {canDelete('hsm') && (
-                    <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteKey(key)}>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteKey(key)} aria-label={t('common.delete')}>
                       <Trash size={12} className="text-status-danger" />
                     </Button>
                     )}

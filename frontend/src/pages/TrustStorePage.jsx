@@ -267,7 +267,7 @@ export default function TrustStorePage() {
   const toolbarActions = (
     <div className="flex gap-2">
       {certificates.length > 0 && (
-        <Button type="button" size="sm" variant="ghost" onClick={() => handleExportBundle('pem')} title={t('trustStore.exportBundle')}>
+        <Button type="button" size="sm" variant="ghost" onClick={() => handleExportBundle('pem')} title={t('trustStore.exportBundle')} aria-label={t('trustStore.exportBundle')}>
           <Download size={14} />
           <span className="hidden sm:inline">{t('trustStore.exportBundle')}</span>
         </Button>
