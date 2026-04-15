@@ -28,10 +28,12 @@ export default {
       {
         title: 'ACME 代理',
         items: [
-          { label: '代理模式', text: '通过 UCM 将 ACME 请求转发到上游 CA（Let\'s Encrypt、ZeroSSL 等），实现集中管理' },
-          { label: '上游 URL', text: '要转发请求的上游 CA 的 ACME 目录 URL' },
-          { label: '代理 EAB', text: '上游 CA 连接的 EAB 凭据（与客户端 EAB 分开）' },
-          { label: 'DNS 挑战', text: 'UCM 使用已配置的 DNS 提供商代表客户端处理 DNS-01 挑战' },
+          { label: '上游CA', text: '选择预设（Let\'s Encrypt 生产/测试）或输入任何 RFC 8555 CA 的自定义URL' },
+          { label: '账户状态', text: '显示UCM是否已在上游CA注册。账户在首次代理请求时自动注册' },
+          { label: '测试连接', text: '验证与上游CA的连接性并检查是否需要EAB凭据' },
+          { label: '重置账户', text: '清除保存的上游账户凭据以强制重新注册（更改CA后使用）' },
+          { label: 'EAB凭据', text: '需要EAB的CA的External Account Binding凭据（如ZeroSSL、Google Trust）' },
+          { label: 'DNS挑战', text: 'UCM使用配置的DNS提供商代表客户端处理DNS-01挑战' },
         ]
       },
       {
@@ -134,32 +136,40 @@ ECDSA 密钥推荐用于现代部署——更小、更快且同样安全。
 > 💡 通配符证书（\`*.example.com\`）需要 DNS-01 验证。
 
 
-## ACME 代理模式
+## ACME代理模式
 
-ACME 代理允许内部客户端通过 UCM 从公共 CA（Let's Encrypt、ZeroSSL 等）请求证书，无需直接访问互联网。UCM 充当中间人，处理 DNS-01 挑战并将请求转发到上游 CA。
+ACME代理允许内部客户端通过UCM从公共CA（Let's Encrypt、ZeroSSL等）请求证书，无需直接访问互联网。UCM作为中间人，管理DNS-01挑战并将请求转发到上游CA。
 
 ### 何时使用代理模式
-- 内部客户端无法直接访问互联网
-- 希望集中管理公共证书
-- 需要通过单一点审计所有证书签发
-- 网络策略禁止直接连接到公共 CA
+- 无法直接访问互联网的内部服务器
+- 通过UCM配置的DNS提供商集中处理DNS-01挑战
+- 审计和跟踪所有公共证书的签发
 
 ### 配置
-1. 前往 **ACME** → **设置**
-2. 启用 **代理模式**
-3. 输入 **上游 ACME URL**（例如 \`https://acme-v02.api.letsencrypt.org/directory\`）
-4. 如果上游 CA 需要 EAB，输入 **代理 EAB 密钥 ID** 和 **HMAC 密钥**
-5. 点击 **保存**
+1. 转到 **ACME** → **Let's Encrypt** 选项卡
+2. 滚动到 **ACME代理** 部分
+3. 启用 **ACME代理** 开关
+4. 选择 **上游CA**：Let's Encrypt 生产、Let's Encrypt 测试或自定义
+5. 对于自定义CA，手动输入ACME目录URL
+6. 如果上游CA需要EAB，展开 **EAB凭据** 并输入Key ID和HMAC密钥
+7. 点击 **测试连接** 验证与上游CA的连接性
+8. UCM在首次代理请求时自动注册账户
+
+### 账户管理
+- **账户状态标记** 显示UCM是否已在上游CA注册
+- 更换上游CA会自动清除过时凭据并强制重新注册
+- 如需手动清除凭据，使用 **重置账户** 按钮
+- **测试连接** 检查上游目录是否可达以及是否需要EAB
 
 ### 使用代理
-将内部 ACME 客户端指向代理目录：
+将内部ACME客户端指向代理目录：
 \`\`\`
 https://your-ucm-server:8443/acme/proxy/directory
 \`\`\`
 
-> 💡 代理 EAB 凭据与客户端 EAB 分开 — 它们用于向上游 CA 验证 UCM，而非向 UCM 验证您的客户端。
+> 💡 代理EAB凭据与客户端EAB不同——它们是UCM向上游CA的身份验证，而非您的客户端向UCM的身份验证。
 
-> ⚠ 代理模式需要在 UCM 中至少配置一个 DNS 提供商用于挑战解析。
+> ⚠ 代理模式需要UCM中至少配置一个DNS提供商用于挑战解析。
 
 ## 本地 ACME 服务器
 

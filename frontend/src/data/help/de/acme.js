@@ -28,10 +28,12 @@ export default {
       {
         title: 'ACME-Proxy',
         items: [
-          { label: 'Proxy-Modus', text: 'ACME-Anfragen an eine vorgelagerte CA (Let\'s Encrypt, ZeroSSL usw.) über UCM für zentrale Verwaltung weiterleiten' },
-          { label: 'Upstream-URL', text: 'Die ACME-Verzeichnis-URL der vorgelagerten CA, an die Anfragen weitergeleitet werden' },
-          { label: 'Proxy-EAB', text: 'EAB-Anmeldedaten für die Verbindung zur vorgelagerten CA (getrennt von Client-EAB)' },
-          { label: 'DNS-Challenges', text: 'UCM übernimmt DNS-01-Challenges im Auftrag der Clients mit konfigurierten DNS-Anbietern' },
+          { label: 'Upstream-CA', text: 'Wählen Sie eine Voreinstellung (Let\'s Encrypt Produktion/Staging) oder geben Sie eine benutzerdefinierte URL für jede RFC 8555 CA ein' },
+          { label: 'Kontostatus', text: 'Zeigt an, ob UCM bei der Upstream-CA registriert ist. Konten werden automatisch bei der ersten Proxy-Anfrage registriert' },
+          { label: 'Verbindungstest', text: 'Überprüfen Sie die Konnektivität zur Upstream-CA und prüfen Sie, ob EAB-Zugangsdaten erforderlich sind' },
+          { label: 'Konto zurücksetzen', text: 'Löschen Sie gespeicherte Upstream-Zugangsdaten, um eine Neuregistrierung zu erzwingen (nach CA-Wechsel verwenden)' },
+          { label: 'EAB-Zugangsdaten', text: 'External Account Binding-Zugangsdaten für CAs, die sie erfordern (z.B. ZeroSSL, Google Trust)' },
+          { label: 'DNS-Herausforderungen', text: 'UCM bearbeitet DNS-01-Herausforderungen im Auftrag der Clients mit konfigurierten DNS-Anbietern' },
         ]
       },
       {
@@ -136,20 +138,28 @@ Ordnen Sie Ihre Domänen DNS-Anbietern zu. Beim Anfordern eines Zertifikats für
 
 ## ACME-Proxy-Modus
 
-Der ACME-Proxy ermöglicht es internen Clients, Zertifikate von einer öffentlichen CA (Let's Encrypt, ZeroSSL usw.) über UCM anzufordern, ohne direkten Internetzugang. UCM fungiert als Vermittler, verwaltet DNS-01-Challenges und leitet Anfragen an die vorgelagerte CA weiter.
+Der ACME-Proxy ermöglicht es internen Clients, Zertifikate von einer öffentlichen CA (Let's Encrypt, ZeroSSL usw.) über UCM anzufordern, ohne direkten Internetzugang. UCM fungiert als Vermittler, verwaltet DNS-01-Herausforderungen und leitet Anfragen an die Upstream-CA weiter.
 
 ### Wann den Proxy-Modus verwenden
-- Interne Clients haben keinen direkten Internetzugang
-- Sie möchten die Verwaltung öffentlicher Zertifikate zentralisieren
-- Sie müssen alle Zertifikatsausstellungen über einen einzigen Punkt auditieren
-- Netzwerkrichtlinien verbieten direkte Verbindungen zu öffentlichen CAs
+- Interne Server ohne direkten Internetzugang
+- Zentralisierte DNS-01-Challenge-Behandlung über in UCM konfigurierte DNS-Anbieter
+- Audit und Nachverfolgung aller öffentlichen Zertifikatsausstellungen
 
 ### Konfiguration
-1. Gehen Sie zu **ACME** → **Einstellungen**
-2. Aktivieren Sie den **Proxy-Modus**
-3. Geben Sie die **Upstream-ACME-URL** ein (z.B. \`https://acme-v02.api.letsencrypt.org/directory\`)
-4. Falls die vorgelagerte CA EAB erfordert, geben Sie die **Proxy-EAB-Key-ID** und den **HMAC-Schlüssel** ein
-5. Klicken Sie auf **Speichern**
+1. Gehen Sie zu **ACME** → Registerkarte **Let's Encrypt**
+2. Scrollen Sie zum Abschnitt **ACME Proxy**
+3. Aktivieren Sie den **ACME Proxy**-Schalter
+4. Wählen Sie eine **Upstream-CA**: Let's Encrypt Produktion, Let's Encrypt Staging oder Benutzerdefiniert
+5. Für benutzerdefinierte CAs geben Sie die ACME-Verzeichnis-URL manuell ein
+6. Wenn die Upstream-CA EAB erfordert, klappen Sie **EAB-Zugangsdaten** auf und geben Sie Key ID und HMAC-Schlüssel ein
+7. Klicken Sie auf **Verbindungstest**, um die Konnektivität zur Upstream-CA zu überprüfen
+8. UCM registriert automatisch ein Konto bei der ersten Proxy-Anfrage
+
+### Kontoverwaltung
+- Das **Kontostatus-Badge** zeigt an, ob UCM bei der Upstream-CA registriert ist
+- Ein Wechsel der Upstream-CA löscht automatisch veraltete Zugangsdaten und erzwingt eine Neuregistrierung
+- Verwenden Sie die Schaltfläche **Konto zurücksetzen**, um Zugangsdaten bei Bedarf manuell zu löschen
+- **Verbindungstest** prüft, ob das Upstream-Verzeichnis erreichbar ist und ob EAB erforderlich ist
 
 ### Proxy verwenden
 Richten Sie Ihre internen ACME-Clients auf das Proxy-Verzeichnis:
@@ -157,9 +167,9 @@ Richten Sie Ihre internen ACME-Clients auf das Proxy-Verzeichnis:
 https://ihr-ucm-server:8443/acme/proxy/directory
 \`\`\`
 
-> 💡 Proxy-EAB-Anmeldedaten sind getrennt von Client-EAB — sie authentifizieren UCM bei der vorgelagerten CA, nicht Ihre Clients bei UCM.
+> 💡 Die Proxy-EAB-Zugangsdaten sind von den Client-EAB getrennt — sie authentifizieren UCM gegenüber der Upstream-CA, nicht Ihre Clients gegenüber UCM.
 
-> ⚠ Der Proxy-Modus erfordert mindestens einen konfigurierten DNS-Anbieter in UCM für die Challenge-Auflösung.
+> ⚠ Der Proxy-Modus erfordert mindestens einen in UCM konfigurierten DNS-Anbieter für die Challenge-Auflösung.
 
 ## Lokaler ACME-Server
 

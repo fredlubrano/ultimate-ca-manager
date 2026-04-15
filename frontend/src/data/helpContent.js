@@ -445,9 +445,11 @@ export const helpContent = {
         title: 'ACME Proxy',
         icon: Globe,
         items: [
-          { label: 'Proxy Mode', text: 'Forward ACME requests to an upstream CA (Let\'s Encrypt, ZeroSSL, etc.) through UCM for centralized management' },
-          { label: 'Upstream URL', text: 'The ACME directory URL of the upstream CA to proxy requests to' },
-          { label: 'Proxy EAB', text: 'EAB credentials for the upstream CA connection (separate from client EAB)' },
+          { label: 'Upstream CA', text: 'Select a preset (Let\'s Encrypt Production/Staging) or enter a custom ACME directory URL for any RFC 8555 CA' },
+          { label: 'Account Status', text: 'Shows whether UCM is registered with the upstream CA. Accounts are auto-registered on first proxy request' },
+          { label: 'Test Connection', text: 'Verify connectivity to the upstream CA and check if EAB credentials are required' },
+          { label: 'Reset Account', text: 'Clear saved upstream account credentials to force re-registration (use after changing upstream CA)' },
+          { label: 'EAB Credentials', text: 'External Account Binding credentials for CAs that require them (e.g., ZeroSSL, Google Trust)' },
           { label: 'DNS Challenges', text: 'UCM handles DNS-01 challenges on behalf of clients using configured DNS providers' },
         ]
       },
@@ -471,6 +473,8 @@ export const helpContent = {
       'Use Local Domains to assign different CAs to different internal domains',
       'Any CA with a private key can be selected as the issuing CA',
       'Wildcard domains (*.example.com) require DNS-01 validation',
+      'Switching upstream CA automatically clears stale account credentials',
+      'Use the proxy URL with certbot: certbot certonly --server https://your-server:port/acme/proxy/directory',
     ],
     warnings: [
       'Domain validation is required — your server must be reachable or DNS configured',

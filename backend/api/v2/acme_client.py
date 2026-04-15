@@ -53,12 +53,20 @@ def get_settings():
     key_type_cfg = SystemConfig.query.filter_by(key='acme.client.key_type').first()
     acct_key_type_cfg = SystemConfig.query.filter_by(key='acme.client.account_key_type').first()
     
-    # Proxy upstream URL
+    # Proxy upstream URL and mode
     proxy_upstream_cfg = SystemConfig.query.filter_by(key='acme.proxy.upstream_url').first()
+    proxy_mode_cfg = SystemConfig.query.filter_by(key='acme.proxy.upstream_mode').first()
+    
+    # Proxy account registration status
+    proxy_account_url_cfg = SystemConfig.query.filter_by(key='acme.proxy.account_url').first()
     
     # Proxy EAB settings (separate from client EAB — these are for the upstream CA)
     proxy_eab_kid_cfg = SystemConfig.query.filter_by(key='acme.proxy.eab_kid').first()
     proxy_eab_hmac_cfg = SystemConfig.query.filter_by(key='acme.proxy.eab_hmac_key').first()
+    
+    # Derive proxy account info
+    proxy_account_url = proxy_account_url_cfg.value if proxy_account_url_cfg else None
+    proxy_upstream_url = proxy_upstream_cfg.value if proxy_upstream_cfg else None
     
     return success_response(data={
         'email': email_cfg.value if email_cfg else None,
@@ -70,7 +78,10 @@ def get_settings():
         'proxy_enabled': proxy_enabled_cfg.value == 'true' if proxy_enabled_cfg else False,
         'proxy_email': proxy_email_cfg.value if proxy_email_cfg else None,
         'proxy_registered': bool(proxy_email_cfg),
-        'proxy_upstream_url': proxy_upstream_cfg.value if proxy_upstream_cfg else None,
+        'proxy_upstream_url': proxy_upstream_url,
+        'proxy_upstream_mode': proxy_mode_cfg.value if proxy_mode_cfg else 'staging',
+        'proxy_account_url': proxy_account_url,
+        'proxy_account_registered': bool(proxy_account_url),
         'proxy_eab_kid': proxy_eab_kid_cfg.value if proxy_eab_kid_cfg else None,
         'proxy_eab_hmac_key_set': bool(proxy_eab_hmac_cfg and proxy_eab_hmac_cfg.value),
         'directory_url': directory_cfg.value if directory_cfg else None,
@@ -124,6 +135,18 @@ def update_settings():
         url_val = (data['directory_url'] or '').strip()
         if url_val and not url_val.startswith('https://'):
             return error_response('Directory URL must use HTTPS', 400)
+        # Clear stale client account credentials when CA changes
+        old_dir = SystemConfig.query.filter_by(key='acme.client.directory_url').first()
+        old_val = old_dir.value if old_dir else ''
+        if url_val != old_val:
+            for stale_key in [
+                'acme.client.staging.account_url', 'acme.client.staging.account_key',
+                'acme.client.production.account_url', 'acme.client.production.account_key',
+            ]:
+                stale = SystemConfig.query.filter_by(key=stale_key).first()
+                if stale:
+                    db.session.delete(stale)
+            logger.info(f"Cleared client account credentials due to directory URL change")
         _set_config('acme.client.directory_url', url_val, 'Custom ACME directory URL')
         updates.append('directory_url')
     
@@ -153,8 +176,48 @@ def update_settings():
         url_val = (data['proxy_upstream_url'] or '').strip()
         if url_val and not url_val.startswith('https://'):
             return error_response('Proxy upstream URL must use HTTPS', 400)
+        # Clear stale proxy account credentials when upstream CA changes
+        old_upstream = SystemConfig.query.filter_by(key='acme.proxy.upstream_url').first()
+        old_val = old_upstream.value if old_upstream else ''
+        if url_val != old_val:
+            for stale_key in ['acme.proxy.account_url', 'acme.proxy.account_key']:
+                stale = SystemConfig.query.filter_by(key=stale_key).first()
+                if stale:
+                    db.session.delete(stale)
+            logger.info(f"Cleared proxy account credentials due to upstream URL change")
         _set_config('acme.proxy.upstream_url', url_val, 'ACME proxy upstream directory URL')
         updates.append('proxy_upstream_url')
+    
+    if 'proxy_upstream_mode' in data:
+        mode = data['proxy_upstream_mode']
+        if mode not in ['production', 'staging', 'custom']:
+            return error_response('Proxy upstream mode must be production, staging, or custom', 400)
+        _set_config('acme.proxy.upstream_mode', mode, 'ACME proxy upstream mode')
+        # Auto-set upstream URL based on mode
+        mode_urls = {
+            'production': 'https://acme-v02.api.letsencrypt.org/directory',
+            'staging': 'https://acme-staging-v02.api.letsencrypt.org/directory',
+        }
+        if mode in mode_urls:
+            new_url = mode_urls[mode]
+            old_upstream = SystemConfig.query.filter_by(key='acme.proxy.upstream_url').first()
+            old_val = old_upstream.value if old_upstream else ''
+            if new_url != old_val:
+                for stale_key in ['acme.proxy.account_url', 'acme.proxy.account_key']:
+                    stale = SystemConfig.query.filter_by(key=stale_key).first()
+                    if stale:
+                        db.session.delete(stale)
+                logger.info(f"Cleared proxy account credentials due to mode change to {mode}")
+            _set_config('acme.proxy.upstream_url', new_url, 'ACME proxy upstream directory URL')
+        updates.append('proxy_upstream_mode')
+    
+    if 'reset_proxy_account' in data and data['reset_proxy_account']:
+        for reset_key in ['acme.proxy.account_url', 'acme.proxy.account_key']:
+            cfg = SystemConfig.query.filter_by(key=reset_key).first()
+            if cfg:
+                db.session.delete(cfg)
+        logger.info("Proxy account credentials reset by user")
+        updates.append('reset_proxy_account')
     
     if 'proxy_eab_kid' in data:
         _set_config('acme.proxy.eab_kid', data['proxy_eab_kid'] or '', 'ACME proxy EAB Key ID')
@@ -189,8 +252,61 @@ def _set_config(key: str, value: str, description: str = ''):
 
 
 # =============================================================================
-# LE Proxy
+# ACME Proxy
 # =============================================================================
+
+@bp.route('/api/v2/acme/client/proxy/test-connection', methods=['POST'])
+@require_auth(['read:acme'])
+def test_proxy_connection():
+    """Test connection to upstream ACME directory"""
+    import urllib.request
+    import ssl
+    
+    data = request.json or {}
+    url = (data.get('url') or '').strip()
+    if not url:
+        # Use configured upstream URL
+        cfg = SystemConfig.query.filter_by(key='acme.proxy.upstream_url').first()
+        url = cfg.value if cfg else 'https://acme-staging-v02.api.letsencrypt.org/directory'
+    
+    if not url.startswith('https://'):
+        return error_response('URL must use HTTPS', 400)
+    
+    try:
+        ctx = ssl.create_default_context()
+        req = urllib.request.Request(url, headers={'User-Agent': 'UCM-ACME-Proxy'})
+        resp = urllib.request.urlopen(req, timeout=10, context=ctx)
+        directory = json.loads(resp.read().decode('utf-8'))
+        
+        # Extract CA info from directory
+        meta = directory.get('meta', {})
+        ca_name = None
+        if 'letsencrypt.org' in url:
+            ca_name = "Let's Encrypt"
+            if 'staging' in url:
+                ca_name += " (Staging)"
+        elif 'zerossl.com' in url:
+            ca_name = 'ZeroSSL'
+        elif 'buypass.com' in url:
+            ca_name = 'Buypass'
+        elif 'pki.goog' in url:
+            ca_name = 'Google Trust Services'
+        elif 'harica.gr' in url:
+            ca_name = 'HARICA'
+        
+        return success_response(data={
+            'connected': True,
+            'ca_name': ca_name,
+            'terms_of_service': meta.get('termsOfService'),
+            'website': meta.get('website'),
+            'eab_required': meta.get('externalAccountRequired', False),
+            'endpoints': list(directory.keys()),
+        })
+    except urllib.error.URLError as e:
+        return error_response(f'Connection failed: {e.reason}', 502)
+    except Exception as e:
+        logger.error(f"Proxy connection test failed: {e}")
+        return error_response('Connection test failed', 502)
 
 @bp.route('/api/v2/acme/client/proxy/register', methods=['POST'])
 @require_auth(['write:acme'])
