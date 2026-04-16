@@ -15,6 +15,19 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.121] - 2026-04-16
+
+### Fixed (ACME code review — 7 bugs)
+- **EAB validation** — fixed `SystemConfig.set()` call on non-existent method (EAB validation was always failing, blocking external account bindings)
+- **Manual renewal endpoint** — `renew_certificate()` now returns `(bool, str)` tuple as caller expects (manual renewal via API no longer crashes)
+- **ACME server base URL** — service instantiated per-request instead of cached globally, fixing stale base URLs behind reverse proxies or multi-hostname setups
+- **key-change endpoint (RFC 8555 §7.3.5)** — properly decode and verify inner JWS signed with the new key (was unconditionally failing)
+- **HTTP-01 / TLS-ALPN-01 SSRF protection** — reject challenge validations against domains resolving to private/loopback/link-local IPs
+- **DNS-01 exact match** — TXT record validation uses exact equality over `rdata.strings` instead of substring match (prevents false positives)
+- **Order/Authorization POST-as-GET** — enforce account ownership per RFC 8555 §7.4/§7.5 (reject cross-account reads with 403)
+
+---
+
 ## [2.120] - 2026-04-16
 
 ### Fixed
