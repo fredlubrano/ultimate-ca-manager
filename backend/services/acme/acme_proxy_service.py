@@ -37,9 +37,9 @@ class AcmeProxyService:
         self.account_url = self._get_upstream_account_url()
 
     def _get_upstream_url(self) -> str:
-        """Get configured upstream URL"""
+        """Get configured upstream URL (falls back to default if empty/missing)"""
         config = SystemConfig.query.filter_by(key='acme.proxy.upstream_url').first()
-        return config.value if config else self.DEFAULT_UPSTREAM
+        return config.value if config and config.value else self.DEFAULT_UPSTREAM
 
     def _load_or_create_account_key(self):
         """Load upstream account private key"""
@@ -82,10 +82,10 @@ class AcmeProxyService:
     def _get_upstream_account_url(self):
         """Get or register account URL"""
         url_config = SystemConfig.query.filter_by(key='acme.proxy.account_url').first()
-        if url_config:
+        if url_config and url_config.value:
             return url_config.value
         
-        # Register if not exists
+        # Register if not exists or empty
         return self._register_upstream_account()
 
     def _register_upstream_account(self):
@@ -201,6 +201,45 @@ class AcmeProxyService:
         headers = {"Content-Type": "application/jose+json"}
         return requests.post(url, json=data, headers=headers)
 
+    def _post_with_account(self, url: str, payload) -> requests.Response:
+        """Post JWS with account KID, auto-re-registering if account is stale.
+        
+        Upstream CAs (especially LE staging) may invalidate accounts.
+        This detects 401/403 "Account is not valid" and re-registers automatically.
+        """
+        resp = self._post_jws(url, payload, kid=self.account_url)
+        
+        if resp.status_code in [401, 403]:
+            try:
+                error_data = resp.json()
+                detail = error_data.get('detail', '')
+                if 'not valid' in detail.lower() or 'deactivated' in detail.lower():
+                    logger.warning(f"Upstream account invalid ({detail}), re-registering...")
+                    
+                    # Clear stale account URL from DB
+                    config = SystemConfig.query.filter_by(key='acme.proxy.account_url').first()
+                    if config:
+                        db.session.delete(config)
+                        try:
+                            db.session.commit()
+                        except Exception as e:
+                            db.session.rollback()
+                            logger.error(f"Failed to clear stale account URL: {e}")
+                            return resp
+                    
+                    # Re-register with upstream
+                    self.account_url = self._register_upstream_account()
+                    logger.info(f"Re-registered upstream account: {self.account_url}")
+                    
+                    # Retry original request with new account
+                    resp = self._post_jws(url, payload, kid=self.account_url)
+            except (json.JSONDecodeError, KeyError):
+                pass
+            except Exception as e:
+                logger.error(f"Account re-registration failed: {e}")
+        
+        return resp
+
     # --- Proxy Methods ---
 
     def get_directory(self):
@@ -263,7 +302,7 @@ class AcmeProxyService:
         # Filter None
         payload = {k: v for k, v in payload.items() if v is not None}
         
-        resp = self._post_jws(self.directory['newOrder'], payload, kid=self.account_url)
+        resp = self._post_with_account(self.directory['newOrder'], payload)
         
         if resp.status_code != 201:
             raise Exception(f"Upstream error: {resp.text}")
@@ -324,7 +363,7 @@ class AcmeProxyService:
         authz_id_b64 += '=' * (4 - len(authz_id_b64) % 4)
         authz_url = base64.urlsafe_b64decode(authz_id_b64).decode()
         
-        resp = self._post_jws(authz_url, "", kid=self.account_url)
+        resp = self._post_with_account(authz_url, "")
         
         if resp.status_code != 200:
             logger.error(f"Upstream authz fetch failed: {resp.status_code} {resp.text}")
@@ -413,7 +452,7 @@ class AcmeProxyService:
         chall_url = base64.urlsafe_b64decode(chall_id_b64_padded).decode()
         
         # Fetch the challenge to get token and status
-        resp = self._post_jws(chall_url, "", kid=self.account_url)
+        resp = self._post_with_account(chall_url, "")
         if resp.status_code != 200:
             raise RuntimeError(f"Failed to fetch challenge: {resp.text}")
         
@@ -538,7 +577,7 @@ class AcmeProxyService:
                 # Trigger upstream validation
                 logger.info(f"[ACME Proxy BG] Triggering upstream validation for {domain}")
                 payload = {}
-                resp = self._post_jws(chall_url, payload, kid=self.account_url)
+                resp = self._post_with_account(chall_url, payload)
                 
                 if resp.status_code != 200:
                     logger.error(f"[ACME Proxy BG] Upstream challenge validation error: {resp.text}")
@@ -637,7 +676,7 @@ class AcmeProxyService:
         order_id_b64_padded = order_id_b64 + '=' * (4 - len(order_id_b64) % 4)
         order_url = base64.urlsafe_b64decode(order_id_b64_padded).decode()
         
-        resp = self._post_jws(order_url, "", kid=self.account_url)
+        resp = self._post_with_account(order_url, "")
         if resp.status_code != 200:
             raise Exception(f"Upstream error: {resp.text}")
             
@@ -689,12 +728,12 @@ class AcmeProxyService:
         # Or we assume standard ACME URL structure?
         # Better: Fetch order, get finalize URL.
         
-        order_resp = self._post_jws(order_url, "", kid=self.account_url)
+        order_resp = self._post_with_account(order_url, "")
         order_data = order_resp.json()
         finalize_url = order_data['finalize']
         
         # Call finalize
-        resp = self._post_jws(finalize_url, payload, kid=self.account_url)
+        resp = self._post_with_account(finalize_url, payload)
         
         if resp.status_code != 200:
              raise Exception(f"Upstream finalize error: {resp.text}")
@@ -727,7 +766,7 @@ class AcmeProxyService:
         cert_id_b64_padded = cert_id_b64 + '=' * (4 - len(cert_id_b64) % 4)
         cert_url = base64.urlsafe_b64decode(cert_id_b64_padded).decode()
         
-        resp = self._post_jws(cert_url, "", kid=self.account_url)
+        resp = self._post_with_account(cert_url, "")
         
         # Extract Link header from upstream (contains issuer cert URL)
         link_header = resp.headers.get('Link')
