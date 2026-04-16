@@ -93,6 +93,9 @@ def directory():
     try:
         svc = get_proxy_service()
         return proxy_response(svc.get_directory())
+    except RuntimeError as e:
+        logger.error(f"ACME proxy directory error: {e}")
+        return proxy_error("serverInternal", str(e), 500)
     except Exception as e:
         logger.error(f"ACME proxy directory error: {e}")
         return proxy_error("serverInternal", "Failed to retrieve directory", 500)

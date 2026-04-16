@@ -34,7 +34,20 @@ class AcmeProxyService:
         
         # Load or create upstream account key
         self.private_key, self.account_key = self._load_or_create_account_key()
-        self.account_url = self._get_upstream_account_url()
+        # Lazy-load account URL — don't register in constructor
+        # This prevents /directory from failing when upstream is unreachable
+        self._account_url = None
+
+    @property
+    def account_url(self):
+        """Lazy-load account URL — only register when actually needed"""
+        if self._account_url is None:
+            self._account_url = self._get_upstream_account_url()
+        return self._account_url
+    
+    @account_url.setter
+    def account_url(self, value):
+        self._account_url = value
 
     def _get_upstream_url(self) -> str:
         """Get configured upstream URL (falls back to default if empty/missing)"""
@@ -149,9 +162,22 @@ class AcmeProxyService:
     def _ensure_directory(self):
         """Fetch upstream directory"""
         if not self.directory:
-            resp = requests.get(self.upstream_directory_url)
-            resp.raise_for_status()
-            self.directory = resp.json()
+            try:
+                resp = requests.get(self.upstream_directory_url, timeout=15)
+                resp.raise_for_status()
+                self.directory = resp.json()
+            except requests.exceptions.ConnectionError as e:
+                raise RuntimeError(
+                    f"Cannot connect to upstream ACME server at {self.upstream_directory_url}: {e}"
+                )
+            except requests.exceptions.Timeout:
+                raise RuntimeError(
+                    f"Timeout connecting to upstream ACME server at {self.upstream_directory_url}"
+                )
+            except requests.exceptions.HTTPError as e:
+                raise RuntimeError(
+                    f"Upstream ACME server returned error: {e.response.status_code} {e.response.reason}"
+                )
 
     def _get_nonce(self):
         """Get nonce from upstream"""
