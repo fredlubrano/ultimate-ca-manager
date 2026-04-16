@@ -15,6 +15,15 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.119] - 2026-04-16
+
+### Fixed
+- **CSR excluded from certificates list** — Signed CSRs no longer appear in the certificates list, stats, or compliance endpoints; only records with an issued certificate are shown
+- **SAN auto-generation from CN** — When signing a CSR that has no SAN extension, UCM now auto-adds the CN as a DNS SAN (and subject emailAddress as RFC822Name SAN), ensuring modern browser/TLS compatibility
+- **MSCA UPN auto-fill improvement** — EOBO enrollee UPN now also tries the CSR subject emailAddress when SAN email is empty; UPN field is required when EOBO is enabled
+
+---
+
 ## [2.118] - 2026-04-16
 
 ### Added
