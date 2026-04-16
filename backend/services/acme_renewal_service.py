@@ -102,49 +102,44 @@ def renew_certificate(order) -> bool:
     # Create new order for same domains
     domains = order.domains_list
     
-    # Register/get account
-    success, account_url, message = acme_client.register_account(order.account_url)
-    if not success:
-        raise Exception(f"Account registration failed: {message}")
+    # Get email from settings (same source as manual order creation)
+    from models import SystemConfig
+    email_cfg = SystemConfig.query.filter_by(key='acme.client.email').first()
+    email = email_cfg.value if email_cfg else None
+    if not email:
+        raise Exception("ACME client email not configured — cannot renew")
     
     # Create new ACME order
-    success, result = acme_client.create_order(domains)
+    success, message, new_order = acme_client.create_order(
+        domains=domains,
+        email=email,
+        challenge_type=order.challenge_type or 'dns-01',
+        dns_provider_id=order.dns_provider_id
+    )
     if not success:
-        raise Exception(f"Order creation failed: {result}")
+        raise Exception(f"Order creation failed: {message}")
     
-    new_order_url = result['order_url']
-    new_finalize_url = result['finalize_url']
-    authorizations = result['authorizations']
+    new_order_url = new_order.order_url
+    new_finalize_url = new_order.finalize_url
+    challenges = new_order.challenges_dict
     
-    # Setup DNS challenges
-    for authz in authorizations:
-        domain = authz['domain']
+    # Setup DNS challenges using data already computed by create_order
+    for domain, challenge_info in challenges.items():
+        dns_value = challenge_info.get('dns_txt_value')
+        record_name = challenge_info.get('dns_txt_name', f"_acme-challenge.{domain.lstrip('*.')}")
         
-        # Get DNS-01 challenge
-        dns_challenge = None
-        for challenge in authz.get('challenges', []):
-            if challenge['type'] == 'dns-01':
-                dns_challenge = challenge
-                break
-        
-        if not dns_challenge:
-            raise Exception(f"No DNS-01 challenge for {domain}")
-        
-        # Calculate challenge response
-        token = dns_challenge['token']
-        key_auth = acme_client._get_key_authorization(token)
-        dns_value = acme_client._get_dns_challenge_value(key_auth)
+        if not dns_value:
+            raise Exception(f"No DNS challenge value for {domain}")
         
         # Create DNS record
-        record_name = f"_acme-challenge.{domain.lstrip('*.')}"
-        success, msg = dns_provider.create_txt_record(
+        success_dns, msg = dns_provider.create_txt_record(
             domain=domain.lstrip('*.'),
             record_name=record_name,
             record_value=dns_value,
             ttl=300
         )
         
-        if not success:
+        if not success_dns:
             raise Exception(f"Failed to create DNS record for {domain}: {msg}")
     
     # Wait for DNS propagation
@@ -152,42 +147,25 @@ def renew_certificate(order) -> bool:
     time.sleep(30)
     
     # Submit challenges for validation
-    for authz in authorizations:
-        for challenge in authz.get('challenges', []):
-            if challenge['type'] == 'dns-01':
-                success, msg = acme_client._submit_challenge(challenge['url'])
-                if not success:
-                    logger.warning(f"Challenge submission warning: {msg}")
+    for domain in challenges.keys():
+        success_ch, msg = acme_client.verify_challenge(new_order, domain)
+        if not success_ch:
+            logger.warning(f"Challenge submission warning for {domain}: {msg}")
     
     # Wait for validation
     logger.info("Waiting for ACME validation...")
     time.sleep(20)
     
-    # Finalize order
-    success, cert_result = acme_client.finalize_order(
-        order_url=new_order_url,
-        finalize_url=new_finalize_url,
-        domains=domains
-    )
+    # Finalize order — finalize_order handles CSR generation, cert download, and import
+    success_fin, message_fin, cert_id = acme_client.finalize_order(new_order)
     
-    if not success:
-        raise Exception(f"Order finalization failed: {cert_result}")
-    
-    cert_pem = cert_result['certificate']
-    key_pem = cert_result['private_key']
-    
-    # Import new certificate
-    cert_id = acme_client._import_certificate(
-        cert_pem=cert_pem,
-        key_pem=key_pem,
-        domains=domains,
-        source='acme_renewal'
-    )
+    if not success_fin:
+        raise Exception(f"Order finalization failed: {message_fin}")
     
     if not cert_id:
-        raise Exception("Certificate import failed")
+        raise Exception("Certificate import failed during finalization")
     
-    # Update order with new certificate
+    # Update original order with new certificate reference
     order.certificate_id = cert_id
     order.order_url = new_order_url
     order.last_renewal_at = utc_now()
@@ -196,17 +174,16 @@ def renew_certificate(order) -> bool:
     order.last_error_at = None
     
     # Update expiry from new certificate
-    from cryptography import x509
-    from cryptography.hazmat.backends import default_backend
-    cert = x509.load_pem_x509_certificate(cert_pem.encode(), default_backend())
-    order.expires_at = cert.not_valid_after_utc
+    from models import Certificate
+    new_cert = Certificate.query.get(cert_id)
+    if new_cert and new_cert.not_after:
+        order.expires_at = new_cert.not_after
     
     db.session.commit()
     
     # Cleanup DNS records
-    for authz in authorizations:
-        domain = authz['domain']
-        record_name = f"_acme-challenge.{domain.lstrip('*.')}"
+    for domain, challenge_info in challenges.items():
+        record_name = challenge_info.get('dns_txt_name', f"_acme-challenge.{domain.lstrip('*.')}")
         dns_provider.delete_txt_record(
             domain=domain.lstrip('*.'),
             record_name=record_name
