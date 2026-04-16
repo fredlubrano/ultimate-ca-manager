@@ -15,6 +15,14 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.120] - 2026-04-16
+
+### Fixed
+- **ACME proxy directory resilience** — Proxy `/directory` endpoint no longer fails with 500 when the upstream ACME server is unreachable; account registration is now lazy (only when placing orders), with proper timeouts and detailed error messages (#66)
+- **ACME auto-renewal crash** — Fixed `create_order() missing 1 required positional argument: 'email'` error in the renewal service; rewrote renewal to use current AcmeClientService API with proper email sourcing, challenge verification, and order finalization (#66)
+
+---
+
 ## [2.119] - 2026-04-16
 
 ### Fixed
