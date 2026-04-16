@@ -15,6 +15,23 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.118] - 2026-04-16
+
+### Added
+- **ACME proxy settings UX overhaul** — Unified mode selector (Let's Encrypt Staging / Production / Custom), inline account status indicator, connection test, and CA/account mismatch detection (#64)
+- **Collapsible ACME sections** — Custom ACME Directory and Proxy EAB Credentials sections with chevron indicators and bordered containers for better discoverability (#64)
+
+### Fixed
+- **ACME proxy stale account recovery** — Auto-re-registers upstream account when CA returns "Account is not valid" (e.g., LE staging cleanup); applied to all 8 proxy operations (#65)
+- **ACME proxy empty URL fallback** — Proxy now falls back to default upstream URL when stored URL is empty, preventing crashes after custom mode reset (#65)
+- **ACME proxy custom mode credential clearing** — Switching to custom mode now properly clears stale upstream URL and credentials (#64)
+- **ACME challenge initiation** — Moved challenge initiation to authorization phase for correct RFC 8555 flow (#63)
+
+### Documentation
+- Added OpenBao HSM and ACME proxy documentation
+
+---
+
 ## [2.117] - 2026-04-15
 
 ### Added
