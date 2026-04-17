@@ -15,6 +15,25 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.124] - 2026-04-17
+
+### Fixed
+- **ACME proxy — Let's Encrypt "contact email has invalid domain" (#68)** — The proxy registered its upstream LE account with a synthesized `admin@<FQDN>` address, ignoring the email configured by the admin via `POST /api/v2/acme/client/proxy/register`. On typical installs the FQDN resolves to a private TLD (`.lan`, `.local`, `.internal`), which LE rejects against its Public Suffix List, breaking every proxied order (win-acme, certbot, etc.). The proxy now reads `acme.proxy_email` as the contact address and no longer synthesizes internal addresses.
+- **`register_proxy_account` was a no-op** — The endpoint only stored the email in config; actual upstream registration happened lazily on the first client order, using the wrong address. It now validates the email format, rejects non-public TLDs (`.local`, `.lan`, `.home`, `.internal`, `.corp`, `.test`, `.invalid`, `.localhost`) server-side, clears any stale `acme.proxy.account_url`, and triggers real registration against the upstream CA so EAB-required / unreachable-CA / forbidden-domain errors surface immediately. The response now includes the upstream account URL.
+- **`unregister_proxy_account` left zombie credentials** — Removed `acme.proxy_email` but not the cached `acme.proxy.account_url`, so the next registration attempt reused a deactivated account. Unregister now cleans all proxy account state.
+- **ACME proxy nonce / JWS hangs** — `_get_nonce()` and `_post_jws()` issued requests with no timeout and could hang indefinitely if the upstream was unresponsive. Explicit timeouts added (15 s / 30 s).
+- **Wildcard domain lookup used `lstrip('*.')`** — `lstrip` strips characters, not a prefix, so `*abc.example.com` would incorrectly become `example.com`. Replaced with a proper `startswith('*.')` + slice.
+- **Upstream response body leaked to clients** — `RuntimeError(f"...: {resp.text}")` in the proxy surfaced raw upstream bodies to end clients. Errors are now logged server-side with a truncated body; clients see only the upstream `detail` field or a generic message.
+
+### Testing
+- 5 new unit tests covering PSL validation (accept public, reject private TLDs), email format validation, and mocked upstream registration flow.
+- Backend: 1476 pass (+5). Frontend: 450 pass.
+- Functional verification on netsuit against LE staging: valid public email registers successfully, private-TLD emails rejected with HTTP 400, unregister fully cleans credentials.
+
+
+
+---
+
 ## [2.123] - 2026-04-18
 
 ### Security (Phase 2 — unified SSRF + error hygiene)
