@@ -9,10 +9,28 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Security
+- **Backup format v2 (encrypted container, magic header, Argon2id KDF)** — The backup system now emits a versioned binary container with `UCMB` magic bytes, explicit format version byte, feature flags (gzip on by default), and KDF identifier. Key derivation uses Argon2id (`time_cost=3`, `memory_cost=64 MiB`, `parallelism=4`, 32‑byte output) instead of PBKDF2‑HMAC‑SHA256 at 100k iterations, providing memory‑hard resistance against GPU/ASIC brute force. Ciphertext is AES‑256‑GCM with a 12‑byte random nonce, and the magic prefix is bound as additional authenticated data so a tampered header fails decryption. If Argon2id is unavailable at runtime, v2 falls back to PBKDF2‑HMAC‑SHA256 at 600 000 iterations (6× previous). v1 backups remain fully restorable for backward compatibility; restore auto‑detects the format.
+- **Backup passwords must be ≥ 12 characters** — Enforced server‑side via `_validate_password`.
+
 ### Fixed
-- **ACME proxy badNonce retry (#70)** — The proxy did not implement RFC 8555 §6.5 nonce retry. Lenient upstream CAs (Let's Encrypt staging/production) accepted stale nonces silently, but strict implementations (Pebble, HARICA, and any CA with strict anti-replay) rejected them with `urn:ietf:params:acme:error:badNonce`, leaving orders stuck pending while authz fetches returned 400. The proxy now detects `badNonce`, extracts the fresh nonce from the error response's `Replay-Nonce` header, and retries the signed request once. Verified end-to-end with Pebble + EAB (custom upstream mode).
+- **Backup silently dropped certificate revocation state (CRITICAL)** — The previous `_export_certificates` did not include `revoked`, `revoked_at`, `revoke_reason`, or `archived`. Restoring from a backup silently resurrected revoked certificates as valid, a significant security issue for any CA that had issued revocations. These fields are now exported and restored.
+- **Backup excluded 15+ model types** — Previously only 20 categories were exported; SSH CAs, SSH certificates, Microsoft ADCS connections and requests, scan profiles / runs / discovered certificates, certificate approval requests, HSM keys, ACME client orders (including proxy state), SCEP requests, and audit logs were all missing. All are now exported in v2 backups. Restore is implemented for SSH CAs (with private‑key re‑encryption), SSH certificates, Microsoft CAs, scan profiles, HSM keys, approval requests, and ACME client orders.
+- **Backup `.ucmbkp` extension rejected by upload validator** — `BACKUP_EXTENSIONS` only allowed `.zip` / `.enc`, breaking restore via the UI for the format the system itself produced. `.ucmbkp` is now accepted.
 
 ### Changed
+- **Every export call is now wrapped in a `_safe()` helper** — Missing tables (e.g. optional feature models on a minimal install) or transient failures log a warning and return `[]` instead of aborting the entire backup.
+- **SSH CA private keys are re‑encrypted with the master key on export and decrypted + re‑encrypted on restore**, matching the pattern used for certificate private keys.
+- **Backups are gzip‑compressed before encryption**, reducing container size ~5× on typical installs.
+
+### Testing
+- Round‑trip restore verified end‑to‑end via `/api/v2/system/backup/restore`: 60 certs, 9 CAs, 5 policies, 3 SSO providers, 7 custom roles, 6 API keys, 52 trusted CAs restored from live v2 backup (329 KB container, magic `UCMB\x02\x01\x02`).
+- Backend: 1483 pass.
+
+### Fixed (ACME)
+- **ACME proxy badNonce retry (#70)** — The proxy did not implement RFC 8555 §6.5 nonce retry. Lenient upstream CAs (Let's Encrypt staging/production) accepted stale nonces silently, but strict implementations (Pebble, HARICA, and any CA with strict anti-replay) rejected them with `urn:ietf:params:acme:error:badNonce`, leaving orders stuck pending while authz fetches returned 400. The proxy now detects `badNonce`, extracts the fresh nonce from the error response's `Replay-Nonce` header, and retries the signed request once. Verified end-to-end with Pebble + EAB (custom upstream mode).
+
+### Changed (ACME)
 - **ACME domain `auto_approve` is now functional (#69)** — Previously the toggle on ACME Domains and Local Domains was stored in the database and exposed in the UI but never consulted by the ACME service, so every order still required full challenge validation. When `auto_approve=True` is now set on a matching domain entry (exact match or any parent domain, wildcard prefixes stripped), UCM skips HTTP-01/DNS-01/TLS-ALPN-01 validation: authorizations are created directly in the `valid` state, orders move straight to `ready`, and an `acme_auto_approve` audit event is logged. This applies to both order-driven authorizations and RFC 8555 pre-authorizations (`newAuthz`). Only affects local UCM issuance, not the ACME proxy.
 
 ### Security / Migration
