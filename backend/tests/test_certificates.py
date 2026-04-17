@@ -339,9 +339,19 @@ class TestExportSingle:
     def test_export_pkcs12_with_password(self, auth_client, create_cert):
         cert = create_cert(cn='export-p12.example.com')
         cert_id = cert.get('id')
-        r = auth_client.get(f'{BASE}/{cert_id}/export?format=pkcs12&password=test123')
+        r = auth_client.post(
+            f'{BASE}/{cert_id}/export',
+            json={'format': 'pkcs12', 'password': 'test123'},
+        )
         assert r.status_code == 200
         assert len(r.data) > 0
+
+    def test_export_pkcs12_password_in_query_rejected(self, auth_client, create_cert):
+        cert = create_cert(cn='export-p12-query.example.com')
+        cert_id = cert.get('id')
+        # Passwords in query strings leak into access logs — must be rejected
+        r = auth_client.get(f'{BASE}/{cert_id}/export?format=pkcs12&password=test123')
+        assert r.status_code == 400
 
     def test_export_pkcs12_no_password(self, auth_client, create_cert):
         cert = create_cert(cn='export-p12-nopw.example.com')

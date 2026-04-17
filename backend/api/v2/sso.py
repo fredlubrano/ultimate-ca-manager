@@ -1419,29 +1419,36 @@ def sso_callback(provider_type):
             attrs = {}
             name_id = ''
             
+            # SECURITY: NEVER fall back to an unsigned XML parser here.
+            # python3-saml handles signature + assertion validation. If it raises,
+            # the response is untrusted — we must reject, not parse manually.
+            # (Previous fallback allowed SAML auth bypass — CVE-level issue.)
             try:
                 saml_auth.process_response()
-                errors = saml_auth.get_errors()
-                if errors:
-                    logger.error(f"SAML errors: {errors}, reason: {saml_auth.get_last_error_reason()}")
-                    return redirect('/login?error=saml_validation_failed')
-                attrs = saml_auth.get_attributes()
-                name_id = saml_auth.get_nameid()
             except Exception as saml_err:
-                # Some IdPs (e.g. Keycloak) send duplicate attribute names
-                # which python3-saml rejects; parse manually as fallback
-                logger.warning(f"SAML standard parsing failed, using fallback: {saml_err}")
-                saml_response_b64 = request.form.get('SAMLResponse', '')
-                saml_xml = base64.b64decode(saml_response_b64)
-                root = safe_fromstring(saml_xml)
-                ns = {'saml': 'urn:oasis:names:tc:SAML:2.0:assertion'}
-                name_id_el = root.find('.//saml:NameID', ns)
-                name_id = name_id_el.text if name_id_el is not None else ''
-                for attr_el in root.findall('.//saml:Attribute', ns):
-                    attr_name = attr_el.get('Name', '')
-                    if attr_name and attr_name not in attrs:
-                        values = [v.text or '' for v in attr_el.findall('saml:AttributeValue', ns)]
-                        attrs[attr_name] = values
+                logger.error(f"SAML response processing failed: {saml_err}")
+                AuditService.log_action(
+                    action='login_failure',
+                    resource_type='sso',
+                    details=f'SAML response rejected (parse error) for provider {provider.name}',
+                    success=False
+                )
+                return redirect('/login?error=saml_validation_failed')
+
+            errors = saml_auth.get_errors()
+            if errors:
+                logger.error(f"SAML errors: {errors}, reason: {saml_auth.get_last_error_reason()}")
+                AuditService.log_action(
+                    action='login_failure',
+                    resource_type='sso',
+                    details=f'SAML validation errors for provider {provider.name}: {errors}',
+                    success=False
+                )
+                return redirect('/login?error=saml_validation_failed')
+
+            # Only reached after signature + assertion verification succeeded
+            attrs = saml_auth.get_attributes()
+            name_id = saml_auth.get_nameid()
             
             # Map attributes
             attr_mapping = _parse_json_field(provider.attribute_mapping)

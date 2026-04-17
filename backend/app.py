@@ -581,6 +581,16 @@ def create_app(config_name=None):
         init_csrf_middleware(app)
     except Exception as e:
         app.logger.warning(f"CSRF middleware not loaded: {e}")
+
+    # Enable rate-limiting middleware (auth brute-force protection, etc.)
+    try:
+        from security.rate_limiter import init_rate_limiter
+        if os.environ.get('RATE_LIMIT_ENABLED', 'true').lower() in ('true', '1', 'yes', 'on'):
+            init_rate_limiter(app)
+        else:
+            app.logger.info("Rate limiter disabled via RATE_LIMIT_ENABLED")
+    except Exception as e:
+        app.logger.warning(f"Rate limiter not loaded: {e}")
     
     # Security headers and cleanup
     @app.after_request

@@ -102,6 +102,7 @@ class RateLimitConfig:
             # Protocol endpoints - higher limits
             '/acme/': {'rpm': protocol_rpm // 2, 'burst': protocol_burst // 2},
             '/scep/': {'rpm': protocol_rpm // 2, 'burst': protocol_burst // 2},
+            '/.well-known/est/': {'rpm': protocol_rpm // 2, 'burst': protocol_burst // 2},
             '/ocsp': {'rpm': protocol_rpm, 'burst': protocol_burst},
             '/cdp/': {'rpm': protocol_rpm, 'burst': protocol_burst},
             

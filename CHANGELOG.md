@@ -15,6 +15,22 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
+## [2.122] - 2026-04-17
+
+
+### Security (Phase 1 — critical hotfixes)
+- **SAML authentication bypass (CRITICAL)** — removed unsigned-XML fallback parser in `/api/v2/sso/saml/callback`. Any `process_response()` exception or validation error now hard-rejects with `saml_validation_failed` instead of trusting attributes from un-verified XML.
+- **Webhook SSRF (CRITICAL)** — `POST /api/v2/settings/webhooks` and `POST /api/v2/settings/webhooks/:id/test` now validate destination URL via `validate_url_not_private()`, rejecting private/loopback/link-local/metadata IPs (the parallel `/api/v2/webhooks` endpoints were already protected; the legacy duplicate is now on par).
+- **P12 password leak via URL (HIGH)** — `GET /api/v2/certificates/:id/export` and `GET /api/v2/user_certificates/:id/export` refuse `password=` query params and PKCS12/PFX/JKS formats. Password-bearing exports must use `POST` with a JSON body (matches what the UI already does) to keep secrets out of reverse-proxy / web-server access logs.
+- **Brute-force protection activated (HIGH)** — `init_rate_limiter(app)` is now wired up in `create_app()`. Auth/login endpoints are rate-limited (default 30 rpm, configurable via `RATE_LIMIT_AUTH_RPM`). Previously the rate-limit module was fully implemented but never registered as middleware.
+- **Rate limiter** — added `/.well-known/est/` to the protocol whitelist bucket (EST endpoints get the same permissive limits as ACME/SCEP instead of falling through to the default).
+
+### Fixed
+- **Auto-renewal crash (CRITICAL)** — `services/auto_renewal_service.py` referenced columns that do not exist on the `Certificate` model (`not_before`, `not_after`, `ca_id`, `status`, `superseded_by`). The 12-hour scheduler pass silently crashed on every run, so nothing was ever auto-renewed. Rewrote the query + renewal logic against the real schema (`caref`, `valid_from`, `valid_to`, `revoked`, `archived`, `source`), and old certificates are now marked `archived = true` when a successful renewal is issued.
+
+---
+
+
 ## [2.121] - 2026-04-16
 
 ### Fixed (ACME code review — 7 bugs)

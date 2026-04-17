@@ -68,46 +68,51 @@ class AutoRenewalService:
         config = AutoRenewalService.get_renewal_config()
         if not config['enabled']:
             return []
-        
+
         threshold = utc_now() + timedelta(days=config['days_before_expiry'])
-        
+
+        # NOTE: Certificate has no `status` column — `revoked` boolean + `archived` instead.
+        # Expiry uses `valid_to`, not `not_after`.
         certs = Certificate.query.filter(
-            Certificate.status.in_(['valid', 'active']),
-            Certificate.not_after != None,
-            Certificate.not_after <= threshold,
+            Certificate.revoked.is_(False),
+            (Certificate.archived.is_(False)) | (Certificate.archived.is_(None)),
+            Certificate.valid_to.isnot(None),
+            Certificate.valid_to <= threshold,
+            Certificate.valid_to >= utc_now(),  # don't try to renew already-expired
+            Certificate.crt.isnot(None),  # only issued certs, not CSRs
             Certificate.source.in_(config['renewal_sources'])
         ).all()
-        
+
         return certs
-    
+
     @staticmethod
     def renew_certificate(cert: Certificate) -> tuple:
         """
         Renew a single certificate.
-        
+
         Returns:
             (success: bool, new_cert_id or error_message: int|str)
         """
         try:
-            # Get the CA that issued this certificate
-            ca = CA.query.filter_by(id=cert.ca_id).first()
+            # Get the CA that issued this certificate (join on refid, not id)
+            ca = CA.query.filter_by(refid=cert.caref).first() if cert.caref else None
             if not ca:
                 return False, "Issuing CA not found"
-            
+
             # Check CA is still valid
-            if ca.not_after and ca.not_after < utc_now():
+            if ca.valid_to and ca.valid_to < utc_now():
                 return False, "Issuing CA has expired"
-            
+
             # Calculate new validity (same as original or default)
-            if cert.not_before and cert.not_after:
-                original_days = (cert.not_after - cert.not_before).days
+            if cert.valid_from and cert.valid_to:
+                original_days = (cert.valid_to - cert.valid_from).days
             else:
                 original_days = 365
-            
+
             # Re-issue with same subject and SANs
             from cryptography import x509
             from cryptography.hazmat.backends import default_backend
-            
+
             if cert.csr:
                 # Re-sign original CSR
                 import base64
@@ -116,7 +121,7 @@ class AutoRenewalService:
             else:
                 # Can't renew without CSR
                 return False, "Original CSR not available for renewal"
-            
+
             # Sign with new validity
             new_cert_pem, serial = CAService.sign_csr_from_crypto(
                 ca=ca,
@@ -124,14 +129,13 @@ class AutoRenewalService:
                 validity_days=original_days,
                 source=f'{cert.source}-renewal'
             )
-            
+
             # Get new certificate ID
             new_cert = Certificate.query.filter_by(serial_number=serial).first()
-            
-            # Mark old certificate as superseded (not revoked)
-            cert.status = 'superseded'
-            cert.superseded_by = new_cert.id if new_cert else None
-            
+
+            # Archive old certificate (no `superseded` status column exists)
+            cert.archived = True
+
             # Audit log
             log = AuditLog(
                 action='certificate.auto_renewed',
@@ -142,13 +146,14 @@ class AutoRenewalService:
             )
             db.session.add(log)
             db.session.commit()
-            
+
             logger.info(f"Auto-renewed certificate {cert.id} -> {new_cert.id if new_cert else 'unknown'}")
             return True, new_cert.id if new_cert else 0
-            
+
         except Exception as e:
+            db.session.rollback()
             logger.error(f"Auto-renewal failed for cert {cert.id}: {e}")
-            return False, str(e)
+            return False, "Renewal failed"
     
     @staticmethod
     def run_auto_renewal():
@@ -164,19 +169,15 @@ class AutoRenewalService:
         certs = AutoRenewalService.get_certificates_for_renewal()
         
         stats = {'renewed': 0, 'failed': 0, 'skipped': 0, 'errors': []}
-        
+
         for cert in certs:
-            # Skip if already being processed
-            if cert.status == 'renewing':
+            # Skip already-archived (already processed / superseded)
+            if cert.archived:
                 stats['skipped'] += 1
                 continue
-            
-            # Mark as renewing to prevent concurrent renewal
-            cert.status = 'renewing'
-            db.session.commit()
-            
+
             success, result = AutoRenewalService.renew_certificate(cert)
-            
+
             if success:
                 stats['renewed'] += 1
             else:
@@ -186,9 +187,6 @@ class AutoRenewalService:
                     'common_name': cert.common_name,
                     'error': result
                 })
-                # Restore status on failure
-                cert.status = 'valid'
-                db.session.commit()
         
         logger.info(f"Auto-renewal complete: {stats['renewed']} renewed, {stats['failed']} failed")
         
