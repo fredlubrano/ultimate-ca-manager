@@ -7,7 +7,7 @@ MAX_UPLOAD_SIZE = 10 * 1024 * 1024
 
 CERT_EXTENSIONS = {'.pem', '.crt', '.cer', '.p12', '.pfx', '.p7b', '.der', '.key'}
 JSON_EXTENSIONS = {'.json'}
-BACKUP_EXTENSIONS = {'.zip', '.enc'}
+BACKUP_EXTENSIONS = {'.zip', '.enc', '.ucmbkp'}
 
 
 def validate_upload(file, allowed_extensions=None, max_size=MAX_UPLOAD_SIZE):

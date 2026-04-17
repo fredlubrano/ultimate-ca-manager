@@ -4,16 +4,27 @@ Handles creation of encrypted, portable backup archives
 """
 import os
 import json
+import gzip
+import struct
+import uuid
 import hashlib
 import secrets
 import base64
+import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+
+# Argon2id support (preferred KDF for v2 backups)
+try:
+    from argon2.low_level import hash_secret_raw, Type as Argon2Type
+    _ARGON2_AVAILABLE = True
+except ImportError:
+    _ARGON2_AVAILABLE = False
 
 from models import db, User, CA, Certificate, SystemConfig
 from models.acme_models import AcmeAccount
@@ -21,15 +32,48 @@ from models.webauthn import WebAuthnCredential
 from config.settings import Config
 from utils.datetime_utils import utc_now
 
+logger = logging.getLogger(__name__)
+
 
 class BackupService:
-    """Service for creating encrypted system backups"""
+    """Service for creating encrypted system backups
     
-    # Constants
+    Format v2 container layout:
+        [0:4]      magic = b'UCMB'
+        [4]        format_version = 0x02
+        [5]        flags (bit 0 = gzip-compressed plaintext)
+        [6]        kdf_id (1=PBKDF2-SHA256, 2=Argon2id)
+        [7]        reserved = 0x00
+        [8:10]     metadata_len (big-endian uint16)
+        [10:10+N]  metadata JSON (unencrypted header: ucm_version, created_at,
+                   kdf params, salt_b64, nonce_b64)
+        [10+N:]    AES-256-GCM ciphertext (plaintext = gzipped JSON if flag set)
+    
+    Format v1 (legacy): raw 32-byte salt + 12-byte nonce + GCM ciphertext.
+    restore_backup() auto-detects format from magic bytes.
+    """
+    
+    # v1/legacy constants (PBKDF2)
     PBKDF2_ITERATIONS = 100000
     KEY_SIZE = 32  # 256 bits for AES-256
     NONCE_SIZE = 12  # 96 bits for GCM
     SALT_SIZE = 32
+    
+    # v2 constants
+    MAGIC = b'UCMB'
+    FORMAT_VERSION_V2 = 2
+    FLAG_GZIP = 0x01
+    KDF_PBKDF2 = 1
+    KDF_ARGON2ID = 2
+    
+    # Argon2id params (OWASP 2024 recommendation for sensitive data)
+    ARGON2_TIME_COST = 3
+    ARGON2_MEMORY_COST = 65536  # 64 MiB
+    ARGON2_PARALLELISM = 4
+    ARGON2_SALT_SIZE = 16
+    
+    # Stronger PBKDF2 when Argon2 unavailable
+    PBKDF2_ITERATIONS_V2 = 600000
     
     def __init__(self):
         self.app_version = Config.APP_VERSION
@@ -77,37 +121,88 @@ class BackupService:
                 'dns_providers': True,
                 'acme_domains': True,
                 'acme_local_domains': True,
+                'ssh_cas': True,
+                'ssh_certificates': True,
+                'microsoft_cas': True,
+                'msca_requests': True,
+                'scan_profiles': True,
+                'scan_runs': False,  # historical, can be large
+                'discovered_certificates': False,  # historical, can be large
+                'approval_requests': True,  # pending approvals matter
+                'scep_requests': False,  # historical
+                'acme_client_orders': False,  # historical
+                'hsm_keys': True,
+                'audit_logs': False,  # opt-in, tamper-evident chain, can be huge
             }
         
         # Build backup data structure
+        def _safe(fn, *args, **kwargs):
+            """Call an export method; return [] on failure (missing table, model import error, etc.)"""
+            try:
+                return fn(*args, **kwargs)
+            except Exception as e:
+                logger.warning(f"Backup export {fn.__name__} failed: {e}")
+                return [] if 'export' in fn.__name__ else {}
+        
         backup_data = {
             'metadata': self._get_metadata(backup_type),
-            'configuration': self._export_configuration(include.get('configuration', True)),
-            'users': self._export_users(include.get('users', True)),
-            'certificate_authorities': self._export_cas(include.get('cas', True)),
-            'certificates': self._export_certificates(include.get('certificates', True)),
-            'acme_accounts': self._export_acme_accounts(include.get('acme_accounts', True)),
-            'groups': self._export_groups(include.get('groups', True)),
-            'custom_roles': self._export_custom_roles(include.get('custom_roles', True)),
-            'certificate_templates': self._export_templates(include.get('certificate_templates', True)),
-            'trusted_certificates': self._export_truststore(include.get('trusted_certificates', True)),
-            'sso_providers': self._export_sso_providers(include.get('sso_providers', True)),
-            'hsm_providers': self._export_hsm_providers(include.get('hsm_providers', True)),
-            'api_keys': self._export_api_keys(include.get('api_keys', True)),
-            'smtp_config': self._export_smtp_config(include.get('smtp_config', True)),
-            'notification_config': self._export_notification_config(include.get('notification_config', True)),
-            'certificate_policies': self._export_policies(include.get('certificate_policies', True)),
-            'auth_certificates': self._export_auth_certificates(include.get('auth_certificates', True)),
-            'dns_providers': self._export_dns_providers(include.get('dns_providers', True)),
-            'acme_domains': self._export_acme_domains(include.get('acme_domains', True)),
-            'acme_local_domains': self._export_acme_local_domains(include.get('acme_local_domains', True)),
-            'https_server': self._export_https_files(),
+            'configuration': _safe(self._export_configuration, include.get('configuration', True)),
+            'users': _safe(self._export_users, include.get('users', True)),
+            'certificate_authorities': _safe(self._export_cas, include.get('cas', True)),
+            'certificates': _safe(self._export_certificates, include.get('certificates', True)),
+            'acme_accounts': _safe(self._export_acme_accounts, include.get('acme_accounts', True)),
+            'groups': _safe(self._export_groups, include.get('groups', True)),
+            'custom_roles': _safe(self._export_custom_roles, include.get('custom_roles', True)),
+            'certificate_templates': _safe(self._export_templates, include.get('certificate_templates', True)),
+            'trusted_certificates': _safe(self._export_truststore, include.get('trusted_certificates', True)),
+            'sso_providers': _safe(self._export_sso_providers, include.get('sso_providers', True)),
+            'hsm_providers': _safe(self._export_hsm_providers, include.get('hsm_providers', True)),
+            'api_keys': _safe(self._export_api_keys, include.get('api_keys', True)),
+            'smtp_config': _safe(self._export_smtp_config, include.get('smtp_config', True)),
+            'notification_config': _safe(self._export_notification_config, include.get('notification_config', True)),
+            'certificate_policies': _safe(self._export_policies, include.get('certificate_policies', True)),
+            'auth_certificates': _safe(self._export_auth_certificates, include.get('auth_certificates', True)),
+            'dns_providers': _safe(self._export_dns_providers, include.get('dns_providers', True)),
+            'acme_domains': _safe(self._export_acme_domains, include.get('acme_domains', True)),
+            'acme_local_domains': _safe(self._export_acme_local_domains, include.get('acme_local_domains', True)),
+            'ssh_cas': _safe(self._export_ssh_cas, include.get('ssh_cas', True)),
+            'ssh_certificates': _safe(self._export_ssh_certificates, include.get('ssh_certificates', True)),
+            'microsoft_cas': _safe(self._export_microsoft_cas, include.get('microsoft_cas', True)),
+            'msca_requests': _safe(self._export_msca_requests, include.get('msca_requests', True)),
+            'scan_profiles': _safe(self._export_scan_profiles, include.get('scan_profiles', True)),
+            'scan_runs': _safe(self._export_scan_runs, include.get('scan_runs', False)),
+            'discovered_certificates': _safe(self._export_discovered_certificates, include.get('discovered_certificates', False)),
+            'approval_requests': _safe(self._export_approval_requests, include.get('approval_requests', True)),
+            'scep_requests': _safe(self._export_scep_requests, include.get('scep_requests', False)),
+            'acme_client_orders': _safe(self._export_acme_client_orders, include.get('acme_client_orders', False)),
+            'hsm_keys': _safe(self._export_hsm_keys, include.get('hsm_keys', True)),
+            'audit_logs': _safe(self._export_audit_logs, include.get('audit_logs', False)),
+            'https_server': _safe(self._export_https_files),
         }
         
-        # Derive master key from password
-        master_key, master_salt = self._derive_master_key(password)
+        # Choose KDF: Argon2id if available, else strong PBKDF2
+        if _ARGON2_AVAILABLE:
+            kdf_id = self.KDF_ARGON2ID
+            salt = secrets.token_bytes(self.ARGON2_SALT_SIZE)
+            master_key = self._derive_argon2id(password, salt)
+            kdf_params = {
+                'type': 'argon2id',
+                'time_cost': self.ARGON2_TIME_COST,
+                'memory_cost': self.ARGON2_MEMORY_COST,
+                'parallelism': self.ARGON2_PARALLELISM,
+                'hash_len': self.KEY_SIZE,
+            }
+        else:
+            kdf_id = self.KDF_PBKDF2
+            salt = secrets.token_bytes(self.SALT_SIZE)
+            master_key = self._derive_pbkdf2(password, salt, self.PBKDF2_ITERATIONS_V2)
+            kdf_params = {
+                'type': 'pbkdf2-sha256',
+                'iterations': self.PBKDF2_ITERATIONS_V2,
+                'hash_len': self.KEY_SIZE,
+            }
         
-        # Encrypt private keys individually
+        # Encrypt private keys individually (uses same master_key + PBKDF2 per-key salt for legacy compat)
         backup_data = self._encrypt_private_keys(backup_data, master_key)
         
         # Calculate checksum of plaintext
@@ -118,14 +213,65 @@ class BackupService:
             'value': checksum
         }
         
-        # Re-serialize with checksum
-        final_json = json.dumps(backup_data, indent=2, sort_keys=True)
+        # Serialize final payload
+        final_json = json.dumps(backup_data, indent=2, sort_keys=True).encode()
         
-        # Encrypt entire backup
-        encrypted = self._encrypt_backup(final_json.encode(), master_key)
+        # Compress (gzip level 6 — good ratio, fast)
+        flags = self.FLAG_GZIP
+        plaintext = gzip.compress(final_json, compresslevel=6)
         
-        # Prepend salt for decryption
-        return master_salt + encrypted
+        # Encrypt with AES-256-GCM
+        nonce = secrets.token_bytes(self.NONCE_SIZE)
+        ciphertext = AESGCM(master_key).encrypt(nonce, plaintext, self.MAGIC)
+        
+        # Build v2 container
+        metadata = {
+            'format_version': self.FORMAT_VERSION_V2,
+            'ucm_version': self.app_version,
+            'created_at': utc_now().isoformat() + 'Z',
+            'backup_type': backup_type,
+            'kdf': kdf_params,
+            'salt_b64': base64.b64encode(salt).decode(),
+            'nonce_b64': base64.b64encode(nonce).decode(),
+        }
+        metadata_bytes = json.dumps(metadata, separators=(',', ':')).encode()
+        if len(metadata_bytes) > 65535:
+            raise ValueError("Backup metadata too large")
+        
+        header = (
+            self.MAGIC
+            + bytes([self.FORMAT_VERSION_V2, flags, kdf_id, 0])
+            + struct.pack('>H', len(metadata_bytes))
+            + metadata_bytes
+        )
+        return header + ciphertext
+    
+    def _derive_argon2id(self, password: str, salt: bytes,
+                          time_cost: int = None, memory_cost: int = None,
+                          parallelism: int = None, hash_len: int = None) -> bytes:
+        """Derive key using Argon2id (memory-hard, side-channel resistant)"""
+        if not _ARGON2_AVAILABLE:
+            raise RuntimeError("argon2-cffi not installed")
+        return hash_secret_raw(
+            secret=password.encode(),
+            salt=salt,
+            time_cost=time_cost or self.ARGON2_TIME_COST,
+            memory_cost=memory_cost or self.ARGON2_MEMORY_COST,
+            parallelism=parallelism or self.ARGON2_PARALLELISM,
+            hash_len=hash_len or self.KEY_SIZE,
+            type=Argon2Type.ID,
+        )
+    
+    def _derive_pbkdf2(self, password: str, salt: bytes, iterations: int) -> bytes:
+        """Derive key using PBKDF2-SHA256"""
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=self.KEY_SIZE,
+            salt=salt,
+            iterations=iterations,
+            backend=default_backend()
+        )
+        return kdf.derive(password.encode())
     
     def _validate_password(self, password: str):
         """Validate backup password strength"""
@@ -138,27 +284,16 @@ class BackupService:
             raise ValueError("Backup password is too simple")
     
     def _derive_master_key(self, password: str) -> tuple:
-        """Derive encryption key from password using PBKDF2"""
+        """Legacy v1 PBKDF2 derivation (kept for backward-compat restore)"""
         salt = secrets.token_bytes(self.SALT_SIZE)
-        
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=self.KEY_SIZE,
-            salt=salt,
-            iterations=self.PBKDF2_ITERATIONS,
-            backend=default_backend()
-        )
-        
-        key = kdf.derive(password.encode())
+        key = self._derive_pbkdf2(password, salt, self.PBKDF2_ITERATIONS)
         return key, salt
     
     def _encrypt_backup(self, data: bytes, key: bytes) -> bytes:
-        """Encrypt backup data with AES-256-GCM"""
+        """Legacy v1 AES-256-GCM encrypt (kept for tests / fallback)"""
         nonce = secrets.token_bytes(self.NONCE_SIZE)
         aesgcm = AESGCM(key)
         ciphertext = aesgcm.encrypt(nonce, data, None)
-        
-        # Return nonce + ciphertext
         return nonce + ciphertext
     
     def _encrypt_private_key(self, key_pem: str, master_key: bytes) -> Dict[str, str]:
@@ -337,12 +472,24 @@ class BackupService:
                 'serial_number': cert.serial_number,
                 'valid_from': cert.valid_from.isoformat() if cert.valid_from else None,
                 'valid_to': cert.valid_to.isoformat() if cert.valid_to else None,
+                'key_algo': cert.key_algo,
                 'san_dns': cert.san_dns,
                 'san_ip': cert.san_ip,
                 'san_email': cert.san_email,
                 'san_uri': cert.san_uri,
                 'ocsp_uri': cert.ocsp_uri,
+                'ocsp_must_staple': getattr(cert, 'ocsp_must_staple', False),
                 'private_key_location': cert.private_key_location,
+                'revoked': bool(cert.revoked),
+                'revoked_at': cert.revoked_at.isoformat() if cert.revoked_at else None,
+                'revoke_reason': cert.revoke_reason,
+                'archived': bool(cert.archived),
+                'imported_from': cert.imported_from,
+                'created_at': cert.created_at.isoformat() if cert.created_at else None,
+                'created_by': cert.created_by,
+                'source': cert.source,
+                'template_id': cert.template_id,
+                'owner_group_id': cert.owner_group_id,
                 'certificate_pem': base64.b64decode(cert.crt).decode() if cert.crt else None,
                 'csr_pem': base64.b64decode(cert.csr).decode() if cert.csr else None,
                 'private_key_pem_encrypted': None  # Will be set in _encrypt_private_keys
@@ -685,6 +832,372 @@ class BackupService:
             })
         return domains
 
+    def _export_ssh_cas(self, include: bool, master_key: bytes = None) -> List[Dict[str, Any]]:
+        """Export SSH Certificate Authorities (with private keys handled separately)"""
+        if not include:
+            return []
+        try:
+            from models.ssh import SSHCertificateAuthority
+        except Exception:
+            return []
+        cas = []
+        for ca in SSHCertificateAuthority.query.all():
+            ca_data = {
+                'refid': getattr(ca, 'refid', None),
+                'descr': getattr(ca, 'descr', None),
+                'ca_type': getattr(ca, 'ca_type', None),
+                'key_type': getattr(ca, 'key_type', None),
+                'public_key': getattr(ca, 'public_key', None),
+                'fingerprint': getattr(ca, 'fingerprint', None),
+                'serial_counter': getattr(ca, 'serial_counter', 0),
+                'default_ttl': getattr(ca, 'default_ttl', 86400),
+                'max_ttl': getattr(ca, 'max_ttl', 0),
+                'default_extensions': getattr(ca, 'default_extensions', None),
+                'allowed_principals': getattr(ca, 'allowed_principals', None),
+                'comment': getattr(ca, 'comment', None),
+                'created_at': ca.created_at.isoformat() if getattr(ca, 'created_at', None) else None,
+                'created_by': getattr(ca, 'created_by', None),
+                'owner_group_id': getattr(ca, 'owner_group_id', None),
+            }
+            # Private key: re-encrypt with master key in _encrypt_private_keys pass
+            prv = getattr(ca, 'private_key', None)
+            if prv:
+                try:
+                    from security.encryption import decrypt_private_key
+                    ca_data['_private_key_plaintext'] = decrypt_private_key(prv) if isinstance(prv, str) else prv.decode() if isinstance(prv, bytes) else str(prv)
+                except Exception:
+                    ca_data['_private_key_plaintext'] = str(prv)
+            cas.append(ca_data)
+        return cas
+    
+    def _export_ssh_certificates(self, include: bool) -> List[Dict[str, Any]]:
+        """Export SSH certificates"""
+        if not include:
+            return []
+        try:
+            from models.ssh import SSHCertificate
+        except Exception:
+            return []
+        certs = []
+        for c in SSHCertificate.query.all():
+            certs.append({
+                'refid': getattr(c, 'refid', None),
+                'descr': getattr(c, 'descr', None),
+                'ssh_ca_id': c.ssh_ca_id,
+                'cert_type': getattr(c, 'cert_type', None),
+                'key_id': getattr(c, 'key_id', None),
+                'public_key': getattr(c, 'public_key', None),
+                'certificate': getattr(c, 'certificate', None),
+                'principals': getattr(c, 'principals', None),
+                'serial': getattr(c, 'serial', None),
+                'valid_from': c.valid_from.isoformat() if getattr(c, 'valid_from', None) else None,
+                'valid_to': c.valid_to.isoformat() if getattr(c, 'valid_to', None) else None,
+                'key_type': getattr(c, 'key_type', None),
+                'fingerprint': getattr(c, 'fingerprint', None),
+                'extensions': getattr(c, 'extensions', None),
+                'critical_options': getattr(c, 'critical_options', None),
+                'revoked': bool(getattr(c, 'revoked', False)),
+                'revoked_at': c.revoked_at.isoformat() if getattr(c, 'revoked_at', None) else None,
+                'revoke_reason': getattr(c, 'revoke_reason', None),
+                'source': getattr(c, 'source', 'web'),
+                'created_at': c.created_at.isoformat() if getattr(c, 'created_at', None) else None,
+                'created_by': getattr(c, 'created_by', None),
+                'owner_group_id': getattr(c, 'owner_group_id', None),
+            })
+        return certs
+    
+    def _export_microsoft_cas(self, include: bool) -> List[Dict[str, Any]]:
+        """Export Microsoft CA (ADCS) connection configurations"""
+        if not include:
+            return []
+        try:
+            from models.msca import MicrosoftCA
+        except Exception:
+            return []
+        items = []
+        for ca in MicrosoftCA.query.all():
+            items.append({
+                'name': ca.name,
+                'server': getattr(ca, 'server', None),
+                'ca_name': getattr(ca, 'ca_name', None),
+                'auth_method': getattr(ca, 'auth_method', None),
+                'username': getattr(ca, 'username', None),
+                'password': getattr(ca, 'password', None),  # already encrypted at rest
+                'client_cert_pem': getattr(ca, 'client_cert_pem', None),
+                'client_key_pem': getattr(ca, 'client_key_pem', None),
+                'kerberos_principal': getattr(ca, 'kerberos_principal', None),
+                'kerberos_keytab_path': getattr(ca, 'kerberos_keytab_path', None),
+                'use_ssl': getattr(ca, 'use_ssl', True),
+                'verify_ssl': getattr(ca, 'verify_ssl', True),
+                'ca_bundle': getattr(ca, 'ca_bundle', None),
+                'default_template': getattr(ca, 'default_template', None),
+                'enabled': getattr(ca, 'enabled', True),
+                'created_at': ca.created_at.isoformat() if getattr(ca, 'created_at', None) else None,
+                'created_by': getattr(ca, 'created_by', None),
+            })
+        return items
+    
+    def _export_msca_requests(self, include: bool) -> List[Dict[str, Any]]:
+        """Export MSCA sign request history"""
+        if not include:
+            return []
+        try:
+            from models.msca import MSCARequest
+        except Exception:
+            return []
+        items = []
+        for r in MSCARequest.query.all():
+            items.append({
+                'msca_id': r.msca_id,
+                'csr_id': getattr(r, 'csr_id', None),
+                'cert_id': getattr(r, 'cert_id', None),
+                'request_id': getattr(r, 'request_id', None),
+                'disposition_message': getattr(r, 'disposition_message', None),
+                'template': getattr(r, 'template', None),
+                'status': getattr(r, 'status', None),
+                'submitted_at': r.submitted_at.isoformat() if getattr(r, 'submitted_at', None) else None,
+                'issued_at': r.issued_at.isoformat() if getattr(r, 'issued_at', None) else None,
+                'error_message': getattr(r, 'error_message', None),
+                'cert_pem': getattr(r, 'cert_pem', None),
+                'submitted_by': getattr(r, 'submitted_by', None),
+                'enrollee_name': getattr(r, 'enrollee_name', None),
+                'enrollee_upn': getattr(r, 'enrollee_upn', None),
+            })
+        return items
+    
+    def _export_scan_profiles(self, include: bool) -> List[Dict[str, Any]]:
+        """Export discovery scan profiles"""
+        if not include:
+            return []
+        try:
+            from models.discovered_certificate import ScanProfile
+        except Exception:
+            return []
+        profiles = []
+        for p in ScanProfile.query.all():
+            profiles.append({
+                'name': p.name,
+                'description': getattr(p, 'description', None),
+                'targets': getattr(p, 'targets', None),
+                'ports': getattr(p, 'ports', None),
+                'schedule_enabled': getattr(p, 'schedule_enabled', False),
+                'schedule_interval_minutes': getattr(p, 'schedule_interval_minutes', None),
+                'notify_on_new': getattr(p, 'notify_on_new', True),
+                'notify_on_change': getattr(p, 'notify_on_change', True),
+                'notify_on_expiry': getattr(p, 'notify_on_expiry', True),
+                'timeout': getattr(p, 'timeout', None),
+                'max_workers': getattr(p, 'max_workers', None),
+                'resolve_dns': getattr(p, 'resolve_dns', True),
+                'last_scan_at': p.last_scan_at.isoformat() if getattr(p, 'last_scan_at', None) else None,
+                'next_scan_at': p.next_scan_at.isoformat() if getattr(p, 'next_scan_at', None) else None,
+                'created_at': p.created_at.isoformat() if getattr(p, 'created_at', None) else None,
+            })
+        return profiles
+    
+    def _export_scan_runs(self, include: bool) -> List[Dict[str, Any]]:
+        """Export discovery scan run history"""
+        if not include:
+            return []
+        try:
+            from models.discovered_certificate import ScanRun
+        except Exception:
+            return []
+        runs = []
+        for r in ScanRun.query.all():
+            runs.append({
+                'scan_profile_id': r.scan_profile_id,
+                'started_at': r.started_at.isoformat() if getattr(r, 'started_at', None) else None,
+                'completed_at': r.completed_at.isoformat() if getattr(r, 'completed_at', None) else None,
+                'status': getattr(r, 'status', None),
+                'total_targets': getattr(r, 'total_targets', None),
+                'targets_scanned': getattr(r, 'targets_scanned', None),
+                'certs_found': getattr(r, 'certs_found', None),
+                'new_certs': getattr(r, 'new_certs', None),
+                'changed_certs': getattr(r, 'changed_certs', None),
+                'errors': getattr(r, 'errors', None),
+                'triggered_by': getattr(r, 'triggered_by', None),
+                'triggered_by_user': getattr(r, 'triggered_by_user', None),
+                'timeout': getattr(r, 'timeout', None),
+                'max_workers': getattr(r, 'max_workers', None),
+                'resolve_dns': getattr(r, 'resolve_dns', True),
+            })
+        return runs
+    
+    def _export_discovered_certificates(self, include: bool) -> List[Dict[str, Any]]:
+        """Export discovered certificates"""
+        if not include:
+            return []
+        try:
+            from models.discovered_certificate import DiscoveredCertificate
+        except Exception:
+            return []
+        items = []
+        for d in DiscoveredCertificate.query.all():
+            items.append({
+                'scan_profile_id': getattr(d, 'scan_profile_id', None),
+                'target': getattr(d, 'target', None),
+                'port': getattr(d, 'port', None),
+                'sni_hostname': getattr(d, 'sni_hostname', None),
+                'subject': getattr(d, 'subject', None),
+                'issuer': getattr(d, 'issuer', None),
+                'serial_number': getattr(d, 'serial_number', None),
+                'not_before': d.not_before.isoformat() if getattr(d, 'not_before', None) else None,
+                'not_after': d.not_after.isoformat() if getattr(d, 'not_after', None) else None,
+                'fingerprint_sha256': getattr(d, 'fingerprint_sha256', None),
+                'pem_certificate': getattr(d, 'pem_certificate', None),
+                'status': getattr(d, 'status', None),
+                'ucm_certificate_id': getattr(d, 'ucm_certificate_id', None),
+                'first_seen': d.first_seen.isoformat() if getattr(d, 'first_seen', None) else None,
+                'last_seen': d.last_seen.isoformat() if getattr(d, 'last_seen', None) else None,
+                'last_changed_at': d.last_changed_at.isoformat() if getattr(d, 'last_changed_at', None) else None,
+                'previous_fingerprint': getattr(d, 'previous_fingerprint', None),
+                'dns_hostname': getattr(d, 'dns_hostname', None),
+                'san_dns_names': getattr(d, 'san_dns_names', None),
+                'san_ip_addresses': getattr(d, 'san_ip_addresses', None),
+                'san_emails': getattr(d, 'san_emails', None),
+                'san_uris': getattr(d, 'san_uris', None),
+                'scan_error': getattr(d, 'scan_error', None),
+            })
+        return items
+    
+    def _export_approval_requests(self, include: bool) -> List[Dict[str, Any]]:
+        """Export approval requests (pending + recent)"""
+        if not include:
+            return []
+        try:
+            from models.policy import ApprovalRequest
+        except Exception:
+            return []
+        items = []
+        for a in ApprovalRequest.query.all():
+            items.append({
+                'request_type': getattr(a, 'request_type', None),
+                'certificate_id': getattr(a, 'certificate_id', None),
+                'request_data': getattr(a, 'request_data', None),
+                'policy_id': getattr(a, 'policy_id', None),
+                'requester_id': getattr(a, 'requester_id', None),
+                'requester_comment': getattr(a, 'requester_comment', None),
+                'status': getattr(a, 'status', None),
+                'approvals': getattr(a, 'approvals', None),
+                'required_approvals': getattr(a, 'required_approvals', 1),
+                'created_at': a.created_at.isoformat() if getattr(a, 'created_at', None) else None,
+                'expires_at': a.expires_at.isoformat() if getattr(a, 'expires_at', None) else None,
+                'resolved_at': a.resolved_at.isoformat() if getattr(a, 'resolved_at', None) else None,
+            })
+        return items
+    
+    def _export_scep_requests(self, include: bool) -> List[Dict[str, Any]]:
+        """Export SCEP enrollment history"""
+        if not include:
+            return []
+        try:
+            from models import SCEPRequest
+        except Exception:
+            return []
+        items = []
+        for r in SCEPRequest.query.all():
+            items.append({
+                'transaction_id': r.transaction_id,
+                'csr': r.csr,
+                'status': r.status,
+                'approved_by': r.approved_by,
+                'approved_at': r.approved_at.isoformat() if getattr(r, 'approved_at', None) else None,
+                'rejection_reason': r.rejection_reason,
+                'cert_refid': r.cert_refid,
+                'subject': r.subject,
+                'client_ip': r.client_ip,
+                'created_at': r.created_at.isoformat() if getattr(r, 'created_at', None) else None,
+            })
+        return items
+    
+    def _export_acme_client_orders(self, include: bool) -> List[Dict[str, Any]]:
+        """Export ACME client (proxy) order history"""
+        if not include:
+            return []
+        try:
+            from models.acme_models import AcmeClientOrder
+        except Exception:
+            return []
+        items = []
+        for o in AcmeClientOrder.query.all():
+            items.append({
+                'domains': getattr(o, 'domains', None),
+                'challenge_type': getattr(o, 'challenge_type', None),
+                'environment': getattr(o, 'environment', None),
+                'key_type': getattr(o, 'key_type', None),
+                'status': getattr(o, 'status', None),
+                'order_url': getattr(o, 'order_url', None),
+                'account_url': getattr(o, 'account_url', None),
+                'finalize_url': getattr(o, 'finalize_url', None),
+                'certificate_url': getattr(o, 'certificate_url', None),
+                'challenges_data': getattr(o, 'challenges_data', None),
+                'dns_provider_id': getattr(o, 'dns_provider_id', None),
+                'certificate_id': getattr(o, 'certificate_id', None),
+                'renewal_enabled': getattr(o, 'renewal_enabled', False),
+                'last_renewal_at': o.last_renewal_at.isoformat() if getattr(o, 'last_renewal_at', None) else None,
+                'renewal_failures': getattr(o, 'renewal_failures', 0),
+                'error_message': getattr(o, 'error_message', None),
+                'last_error_at': o.last_error_at.isoformat() if getattr(o, 'last_error_at', None) else None,
+                'is_proxy_order': getattr(o, 'is_proxy_order', False),
+                'dns_records_created': getattr(o, 'dns_records_created', None),
+                'client_jwk_thumbprint': getattr(o, 'client_jwk_thumbprint', None),
+                'upstream_order_url': getattr(o, 'upstream_order_url', None),
+                'upstream_authz_urls': getattr(o, 'upstream_authz_urls', None),
+                'expires_at': o.expires_at.isoformat() if getattr(o, 'expires_at', None) else None,
+                'created_at': o.created_at.isoformat() if getattr(o, 'created_at', None) else None,
+            })
+        return items
+    
+    def _export_hsm_keys(self, include: bool) -> List[Dict[str, Any]]:
+        """Export HSM key registrations (labels/ids, not the key material)"""
+        if not include:
+            return []
+        try:
+            from models.hsm import HsmKey
+        except Exception:
+            return []
+        items = []
+        for k in HsmKey.query.all():
+            items.append({
+                'provider_id': k.provider_id,
+                'key_identifier': getattr(k, 'key_identifier', None),
+                'label': getattr(k, 'label', None),
+                'algorithm': getattr(k, 'algorithm', None),
+                'key_type': getattr(k, 'key_type', None),
+                'purpose': getattr(k, 'purpose', None),
+                'public_key_pem': getattr(k, 'public_key_pem', None),
+                'is_extractable': getattr(k, 'is_extractable', False),
+                'extra_data': getattr(k, 'extra_data', None),
+                'created_at': k.created_at.isoformat() if getattr(k, 'created_at', None) else None,
+            })
+        return items
+    
+    def _export_audit_logs(self, include: bool) -> List[Dict[str, Any]]:
+        """Export audit log chain (opt-in — can be very large)"""
+        if not include:
+            return []
+        try:
+            from models import AuditLog
+        except Exception:
+            return []
+        items = []
+        for a in AuditLog.query.order_by(AuditLog.id.asc()).all():
+            items.append({
+                'timestamp': a.timestamp.isoformat() if a.timestamp else None,
+                'username': a.username,
+                'action': a.action,
+                'resource_type': a.resource_type,
+                'resource_id': a.resource_id,
+                'resource_name': a.resource_name,
+                'details': a.details,
+                'ip_address': a.ip_address,
+                'user_agent': a.user_agent,
+                'success': bool(a.success),
+                'prev_hash': a.prev_hash,
+                'entry_hash': a.entry_hash,
+            })
+        return items
+    
     def _export_https_files(self) -> Dict[str, Any]:
         """Export HTTPS server certificate and key files"""
         result = {}
@@ -720,11 +1233,115 @@ class BackupService:
                 )
                 del cert['_private_key_plaintext']
         
+        # Encrypt SSH CA private keys
+        for ssh_ca in backup_data.get('ssh_cas', []):
+            if '_private_key_plaintext' in ssh_ca:
+                ssh_ca['private_key_pem_encrypted'] = self._encrypt_private_key(
+                    ssh_ca['_private_key_plaintext'],
+                    master_key
+                )
+                del ssh_ca['_private_key_plaintext']
+        
         return backup_data
+    
+    def _decrypt_v1(self, backup_bytes: bytes, password: str) -> Tuple[bytes, Dict[str, Any]]:
+        """Decrypt legacy v1 format: [salt(32)][nonce(12)][ciphertext+tag]"""
+        if len(backup_bytes) < self.SALT_SIZE + self.NONCE_SIZE:
+            raise ValueError("Invalid backup file: too small")
+        
+        master_salt = backup_bytes[:self.SALT_SIZE]
+        encrypted_data = backup_bytes[self.SALT_SIZE:]
+        master_key = self._derive_pbkdf2(password, master_salt, self.PBKDF2_ITERATIONS)
+        
+        try:
+            nonce = encrypted_data[:self.NONCE_SIZE]
+            ciphertext = encrypted_data[self.NONCE_SIZE:]
+            plaintext = AESGCM(master_key).decrypt(nonce, ciphertext, None)
+        except Exception:
+            raise ValueError("Decryption failed - wrong password or corrupted file")
+        
+        try:
+            backup_data = json.loads(plaintext.decode())
+        except json.JSONDecodeError:
+            raise ValueError("Invalid backup format: not valid JSON")
+        
+        return master_key, backup_data
+    
+    def _decrypt_v2(self, backup_bytes: bytes, password: str) -> Tuple[bytes, Dict[str, Any]]:
+        """Decrypt v2 format: magic+version+flags+kdf+metadata+ciphertext"""
+        if len(backup_bytes) < 10:
+            raise ValueError("Invalid backup file: truncated header")
+        
+        magic = backup_bytes[:4]
+        if magic != self.MAGIC:
+            raise ValueError("Invalid backup file: bad magic bytes")
+        
+        version = backup_bytes[4]
+        flags = backup_bytes[5]
+        kdf_id = backup_bytes[6]
+        # reserved = backup_bytes[7]
+        
+        if version != self.FORMAT_VERSION_V2:
+            raise ValueError(f"Unsupported backup format version: {version}")
+        
+        metadata_len = struct.unpack('>H', backup_bytes[8:10])[0]
+        if len(backup_bytes) < 10 + metadata_len + self.NONCE_SIZE:
+            raise ValueError("Invalid backup file: truncated")
+        
+        metadata_bytes = backup_bytes[10:10 + metadata_len]
+        ciphertext = backup_bytes[10 + metadata_len:]
+        
+        try:
+            metadata = json.loads(metadata_bytes.decode())
+        except json.JSONDecodeError:
+            raise ValueError("Invalid backup metadata")
+        
+        # Derive key
+        salt = base64.b64decode(metadata['salt_b64'])
+        nonce = base64.b64decode(metadata['nonce_b64'])
+        kdf_params = metadata.get('kdf', {})
+        
+        if kdf_id == self.KDF_ARGON2ID:
+            if not _ARGON2_AVAILABLE:
+                raise ValueError("Backup uses Argon2id but argon2-cffi is not installed")
+            master_key = self._derive_argon2id(
+                password, salt,
+                time_cost=kdf_params.get('time_cost', self.ARGON2_TIME_COST),
+                memory_cost=kdf_params.get('memory_cost', self.ARGON2_MEMORY_COST),
+                parallelism=kdf_params.get('parallelism', self.ARGON2_PARALLELISM),
+                hash_len=kdf_params.get('hash_len', self.KEY_SIZE),
+            )
+        elif kdf_id == self.KDF_PBKDF2:
+            master_key = self._derive_pbkdf2(
+                password, salt, kdf_params.get('iterations', self.PBKDF2_ITERATIONS_V2)
+            )
+        else:
+            raise ValueError(f"Unknown KDF id: {kdf_id}")
+        
+        # Decrypt
+        try:
+            # v2 uses magic bytes as AAD to authenticate the container
+            plaintext = AESGCM(master_key).decrypt(nonce, ciphertext, self.MAGIC)
+        except Exception:
+            raise ValueError("Decryption failed - wrong password or corrupted file")
+        
+        # Decompress if gzipped
+        if flags & self.FLAG_GZIP:
+            try:
+                plaintext = gzip.decompress(plaintext)
+            except Exception:
+                raise ValueError("Invalid backup: gzip decompression failed")
+        
+        try:
+            backup_data = json.loads(plaintext.decode())
+        except json.JSONDecodeError:
+            raise ValueError("Invalid backup format: not valid JSON")
+        
+        return master_key, backup_data
     
     def restore_backup(self, backup_bytes: bytes, password: str) -> Dict[str, Any]:
         """
-        Restore from encrypted backup
+        Restore from encrypted backup. Auto-detects format v1 (legacy) or v2.
         
         Args:
             backup_bytes: Encrypted backup file content
@@ -733,38 +1350,11 @@ class BackupService:
         Returns:
             Dict with restore results
         """
-        # Extract salt from beginning
-        if len(backup_bytes) < self.SALT_SIZE + self.NONCE_SIZE:
-            raise ValueError("Invalid backup file: too small")
-        
-        master_salt = backup_bytes[:self.SALT_SIZE]
-        encrypted_data = backup_bytes[self.SALT_SIZE:]
-        
-        # Derive key from password with saved salt
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=self.KEY_SIZE,
-            salt=master_salt,
-            iterations=self.PBKDF2_ITERATIONS,
-            backend=default_backend()
-        )
-        master_key = kdf.derive(password.encode())
-        
-        # Decrypt backup
-        try:
-            nonce = encrypted_data[:self.NONCE_SIZE]
-            ciphertext = encrypted_data[self.NONCE_SIZE:]
-            
-            aesgcm = AESGCM(master_key)
-            plaintext = aesgcm.decrypt(nonce, ciphertext, None)
-        except Exception as e:
-            raise ValueError("Decryption failed - wrong password or corrupted file")
-        
-        # Parse JSON
-        try:
-            backup_data = json.loads(plaintext.decode())
-        except json.JSONDecodeError:
-            raise ValueError("Invalid backup format: not valid JSON")
+        # Detect format from magic bytes
+        if len(backup_bytes) >= 4 and backup_bytes[:4] == self.MAGIC:
+            master_key, backup_data = self._decrypt_v2(backup_bytes, password)
+        else:
+            master_key, backup_data = self._decrypt_v1(backup_bytes, password)
         
         # Verify checksum
         saved_checksum = backup_data.pop('checksum', None)
@@ -859,6 +1449,7 @@ class BackupService:
             results['cas'] += 1
         
         # Restore Certificates
+        from datetime import datetime as _dt
         for cert_data in backup_data.get('certificates', []):
             existing = Certificate.query.filter_by(refid=cert_data['refid']).first()
             
@@ -870,19 +1461,31 @@ class BackupService:
                     master_key
                 )
             
+            prv_b64 = None
+            if prv_pem:
+                prv_b64 = base64.b64encode(prv_pem.encode()).decode()
+                from security.encryption import encrypt_private_key
+                prv_b64 = encrypt_private_key(prv_b64)
+            
+            def _parse_dt(val):
+                if not val:
+                    return None
+                try:
+                    return _dt.fromisoformat(val.replace('Z', '+00:00'))
+                except Exception:
+                    return None
+            
             if existing:
                 existing.descr = cert_data.get('descr')
                 existing.crt = base64.b64encode(cert_data['certificate_pem'].encode()).decode() if cert_data.get('certificate_pem') else None
-                prv_b64 = base64.b64encode(prv_pem.encode()).decode() if prv_pem else None
                 if prv_b64:
-                    from security.encryption import encrypt_private_key
-                    prv_b64 = encrypt_private_key(prv_b64)
-                existing.prv = prv_b64
+                    existing.prv = prv_b64
+                # Restore revocation + archival state (critical — was missing)
+                existing.revoked = bool(cert_data.get('revoked', False))
+                existing.revoked_at = _parse_dt(cert_data.get('revoked_at'))
+                existing.revoke_reason = cert_data.get('revoke_reason')
+                existing.archived = bool(cert_data.get('archived', False))
             else:
-                prv_b64 = base64.b64encode(prv_pem.encode()).decode() if prv_pem else None
-                if prv_b64:
-                    from security.encryption import encrypt_private_key
-                    prv_b64 = encrypt_private_key(prv_b64)
                 new_cert = Certificate(
                     refid=cert_data['refid'],
                     descr=cert_data.get('descr'),
@@ -891,7 +1494,27 @@ class BackupService:
                     subject=cert_data.get('subject'),
                     issuer=cert_data.get('issuer'),
                     serial_number=cert_data.get('serial_number'),
+                    valid_from=_parse_dt(cert_data.get('valid_from')),
+                    valid_to=_parse_dt(cert_data.get('valid_to')),
+                    key_algo=cert_data.get('key_algo'),
+                    san_dns=cert_data.get('san_dns'),
+                    san_ip=cert_data.get('san_ip'),
+                    san_email=cert_data.get('san_email'),
+                    san_uri=cert_data.get('san_uri'),
+                    ocsp_uri=cert_data.get('ocsp_uri'),
+                    ocsp_must_staple=bool(cert_data.get('ocsp_must_staple', False)),
+                    private_key_location=cert_data.get('private_key_location', 'stored'),
+                    revoked=bool(cert_data.get('revoked', False)),
+                    revoked_at=_parse_dt(cert_data.get('revoked_at')),
+                    revoke_reason=cert_data.get('revoke_reason'),
+                    archived=bool(cert_data.get('archived', False)),
+                    imported_from=cert_data.get('imported_from'),
+                    created_by=cert_data.get('created_by'),
+                    source=cert_data.get('source', 'manual'),
+                    template_id=cert_data.get('template_id'),
+                    owner_group_id=cert_data.get('owner_group_id'),
                     crt=base64.b64encode(cert_data['certificate_pem'].encode()).decode() if cert_data.get('certificate_pem') else None,
+                    csr=base64.b64encode(cert_data['csr_pem'].encode()).decode() if cert_data.get('csr_pem') else None,
                     prv=prv_b64
                 )
                 db.session.add(new_cert)
@@ -1337,6 +1960,262 @@ class BackupService:
                 db.session.add(new_ld)
             results['acme_local_domains'] += 1
         
+        # Restore SSH CAs
+        results.setdefault('ssh_cas', 0)
+        for sca_data in backup_data.get('ssh_cas', []):
+            try:
+                from models.ssh import SSHCertificateAuthority
+                from security.encryption import encrypt_private_key
+            except Exception:
+                break
+            refid = sca_data.get('refid')
+            existing = SSHCertificateAuthority.query.filter_by(refid=refid).first() if refid else None
+            if existing:
+                continue
+            sca = SSHCertificateAuthority(
+                refid=refid or str(uuid.uuid4()),
+                descr=sca_data.get('descr', 'Imported SSH CA'),
+                ca_type=sca_data.get('ca_type', 'user'),
+                key_type=sca_data.get('key_type', 'ed25519'),
+                public_key=sca_data.get('public_key', ''),
+                private_key='',
+                fingerprint=sca_data.get('fingerprint', ''),
+                serial_counter=sca_data.get('serial_counter', 0),
+                default_ttl=sca_data.get('default_ttl', 86400),
+                max_ttl=sca_data.get('max_ttl', 0),
+                default_extensions=sca_data.get('default_extensions'),
+                allowed_principals=sca_data.get('allowed_principals'),
+                comment=sca_data.get('comment'),
+                created_by=sca_data.get('created_by'),
+                owner_group_id=sca_data.get('owner_group_id'),
+            )
+            prv = sca_data.get('private_key_pem_encrypted') or sca_data.get('_private_key_plaintext')
+            if prv:
+                try:
+                    if 'private_key_pem_encrypted' in sca_data:
+                        prv = self._decrypt_private_key(sca_data['private_key_pem_encrypted'], master_key)
+                    sca.private_key = encrypt_private_key(prv)
+                except Exception as e:
+                    logger.warning(f"Failed to restore SSH CA private key: {e}")
+            db.session.add(sca)
+            try:
+                db.session.commit()
+                results['ssh_cas'] += 1
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"SSH CA restore failed: {e}")
+        
+        # Restore SSH certificates
+        results.setdefault('ssh_certificates', 0)
+        for sc_data in backup_data.get('ssh_certificates', []):
+            try:
+                from models.ssh import SSHCertificate
+            except Exception:
+                break
+            refid = sc_data.get('refid')
+            if refid and SSHCertificate.query.filter_by(refid=refid).first():
+                continue
+            try:
+                sc = SSHCertificate(
+                    refid=refid or str(uuid.uuid4()),
+                    descr=sc_data.get('descr'),
+                    ssh_ca_id=sc_data['ssh_ca_id'],
+                    cert_type=sc_data.get('cert_type', 'user'),
+                    key_id=sc_data.get('key_id', ''),
+                    public_key=sc_data.get('public_key', ''),
+                    certificate=sc_data.get('certificate', ''),
+                    principals=sc_data.get('principals', ''),
+                    serial=sc_data.get('serial', 0),
+                    valid_from=datetime.fromisoformat(sc_data['valid_from']) if sc_data.get('valid_from') else utc_now(),
+                    valid_to=datetime.fromisoformat(sc_data['valid_to']) if sc_data.get('valid_to') else utc_now(),
+                    key_type=sc_data.get('key_type', 'ed25519'),
+                    fingerprint=sc_data.get('fingerprint', ''),
+                    extensions=sc_data.get('extensions'),
+                    critical_options=sc_data.get('critical_options'),
+                    revoked=bool(sc_data.get('revoked', False)),
+                    revoked_at=datetime.fromisoformat(sc_data['revoked_at']) if sc_data.get('revoked_at') else None,
+                    revoke_reason=sc_data.get('revoke_reason'),
+                    source=sc_data.get('source', 'web'),
+                    created_by=sc_data.get('created_by'),
+                    owner_group_id=sc_data.get('owner_group_id'),
+                )
+                db.session.add(sc)
+                db.session.commit()
+                results['ssh_certificates'] += 1
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"SSH cert restore failed: {e}")
+        
+        # Restore Microsoft CAs
+        results.setdefault('microsoft_cas', 0)
+        for msca_data in backup_data.get('microsoft_cas', []):
+            try:
+                from models.msca import MicrosoftCA
+            except Exception:
+                break
+            if MicrosoftCA.query.filter_by(name=msca_data.get('name')).first():
+                continue
+            try:
+                msca = MicrosoftCA(
+                    name=msca_data['name'],
+                    server=msca_data.get('server'),
+                    ca_name=msca_data.get('ca_name'),
+                    auth_method=msca_data.get('auth_method', 'ntlm'),
+                    username=msca_data.get('username'),
+                    password=msca_data.get('password'),
+                    client_cert_pem=msca_data.get('client_cert_pem'),
+                    client_key_pem=msca_data.get('client_key_pem'),
+                    kerberos_principal=msca_data.get('kerberos_principal'),
+                    kerberos_keytab_path=msca_data.get('kerberos_keytab_path'),
+                    use_ssl=msca_data.get('use_ssl', True),
+                    verify_ssl=msca_data.get('verify_ssl', True),
+                    ca_bundle=msca_data.get('ca_bundle'),
+                    default_template=msca_data.get('default_template'),
+                    enabled=msca_data.get('enabled', True),
+                    created_by=msca_data.get('created_by'),
+                )
+                db.session.add(msca)
+                db.session.commit()
+                results['microsoft_cas'] += 1
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"MSCA restore failed: {e}")
+        
+        # Restore scan profiles
+        results.setdefault('scan_profiles', 0)
+        for sp_data in backup_data.get('scan_profiles', []):
+            try:
+                from models.discovered_certificate import ScanProfile
+            except Exception:
+                break
+            if ScanProfile.query.filter_by(name=sp_data.get('name')).first():
+                continue
+            try:
+                sp = ScanProfile(
+                    name=sp_data['name'],
+                    description=sp_data.get('description'),
+                    targets=sp_data.get('targets', '[]'),
+                    ports=sp_data.get('ports', '[443]'),
+                    schedule_enabled=sp_data.get('schedule_enabled', False),
+                    schedule_interval_minutes=sp_data.get('schedule_interval_minutes'),
+                    notify_on_new=sp_data.get('notify_on_new', True),
+                    notify_on_change=sp_data.get('notify_on_change', True),
+                    notify_on_expiry=sp_data.get('notify_on_expiry', True),
+                    timeout=sp_data.get('timeout', 5),
+                    max_workers=sp_data.get('max_workers', 10),
+                    resolve_dns=sp_data.get('resolve_dns', True),
+                )
+                db.session.add(sp)
+                db.session.commit()
+                results['scan_profiles'] += 1
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"Scan profile restore failed: {e}")
+        
+        # Restore HSM keys
+        results.setdefault('hsm_keys', 0)
+        for k_data in backup_data.get('hsm_keys', []):
+            try:
+                from models.hsm import HsmKey
+            except Exception:
+                break
+            try:
+                existing = HsmKey.query.filter_by(
+                    provider_id=k_data['provider_id'],
+                    key_identifier=k_data.get('key_identifier'),
+                ).first()
+                if existing:
+                    continue
+                hk = HsmKey(
+                    provider_id=k_data['provider_id'],
+                    key_identifier=k_data.get('key_identifier'),
+                    label=k_data.get('label'),
+                    algorithm=k_data.get('algorithm'),
+                    key_type=k_data.get('key_type'),
+                    purpose=k_data.get('purpose'),
+                    public_key_pem=k_data.get('public_key_pem'),
+                    is_extractable=k_data.get('is_extractable', False),
+                    extra_data=k_data.get('extra_data'),
+                )
+                db.session.add(hk)
+                db.session.commit()
+                results['hsm_keys'] += 1
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"HSM key restore failed: {e}")
+        
+        # Restore approval requests
+        results.setdefault('approval_requests', 0)
+        for ar_data in backup_data.get('approval_requests', []):
+            try:
+                from models.policy import ApprovalRequest
+            except Exception:
+                break
+            try:
+                ar = ApprovalRequest(
+                    request_type=ar_data.get('request_type', 'certificate'),
+                    certificate_id=ar_data.get('certificate_id'),
+                    request_data=ar_data.get('request_data'),
+                    policy_id=ar_data.get('policy_id'),
+                    requester_id=ar_data.get('requester_id'),
+                    requester_comment=ar_data.get('requester_comment'),
+                    status=ar_data.get('status', 'pending'),
+                    approvals=ar_data.get('approvals', '[]'),
+                    required_approvals=ar_data.get('required_approvals', 1),
+                )
+                if ar_data.get('expires_at'):
+                    try:
+                        ar.expires_at = datetime.fromisoformat(ar_data['expires_at'])
+                    except Exception:
+                        pass
+                if ar_data.get('resolved_at'):
+                    try:
+                        ar.resolved_at = datetime.fromisoformat(ar_data['resolved_at'])
+                    except Exception:
+                        pass
+                db.session.add(ar)
+                db.session.commit()
+                results['approval_requests'] += 1
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"Approval request restore failed: {e}")
+
+        # Restore ACME client orders (proxy + direct renewals)
+        results.setdefault('acme_client_orders', 0)
+        for o_data in backup_data.get('acme_client_orders', []):
+            try:
+                from models.acme_models import AcmeClientOrder
+            except Exception:
+                break
+            try:
+                order = AcmeClientOrder(
+                    domains=o_data.get('domains', '[]'),
+                    challenge_type=o_data.get('challenge_type', 'dns-01'),
+                    environment=o_data.get('environment', 'staging'),
+                    key_type=o_data.get('key_type', 'RSA-2048'),
+                    status=o_data.get('status', 'pending'),
+                    order_url=o_data.get('order_url'),
+                    account_url=o_data.get('account_url'),
+                    finalize_url=o_data.get('finalize_url'),
+                    certificate_url=o_data.get('certificate_url'),
+                    challenges_data=o_data.get('challenges_data'),
+                    dns_provider_id=o_data.get('dns_provider_id'),
+                    certificate_id=o_data.get('certificate_id'),
+                    renewal_enabled=o_data.get('renewal_enabled', True),
+                    is_proxy_order=o_data.get('is_proxy_order', False),
+                    dns_records_created=o_data.get('dns_records_created'),
+                    client_jwk_thumbprint=o_data.get('client_jwk_thumbprint'),
+                    upstream_order_url=o_data.get('upstream_order_url'),
+                    upstream_authz_urls=o_data.get('upstream_authz_urls'),
+                    error_message=o_data.get('error_message'),
+                )
+                db.session.add(order)
+                db.session.commit()
+                results['acme_client_orders'] += 1
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"ACME client order restore failed: {e}")
+
         # Restore HTTPS server files
         https_data = backup_data.get('https_server', {})
         if https_data.get('cert_pem'):

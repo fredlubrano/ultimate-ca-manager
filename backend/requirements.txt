@@ -13,6 +13,7 @@ Flask-Session==0.8.0
 
 # Cryptography & OpenSSL
 cryptography==46.0.7
+argon2-cffi>=23.1.0
 pyOpenSSL==26.0.0
 asn1crypto==1.5.1
 
