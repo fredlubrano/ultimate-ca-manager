@@ -714,17 +714,13 @@ class TestWebhooks:
         assert_error(r, 404)
 
     def test_test_webhook_unreachable(self, auth_client):
-        """Testing a webhook with unreachable URL should return 500."""
+        """Creating a webhook with a private/reserved IP must be rejected (SSRF)."""
         r = post_json(auth_client, '/api/v2/settings/webhooks', {
             'name': 'Unreachable Hook',
             'url': 'https://192.0.2.1:9999/nope',
             'events': ['test'],
         })
-        wh = assert_success(r, 201)
-        wh_id = wh['id']
-
-        r = post_json(auth_client, f'/api/v2/settings/webhooks/{wh_id}/test', {})
-        # Should return 500 with error message, not crash
-        assert r.status_code == 500
+        # SSRF protection rejects private/reserved IPs at create time
+        assert r.status_code == 400
         body = get_json(r)
         assert 'error' in body or 'message' in body

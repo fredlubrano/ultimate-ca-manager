@@ -6,6 +6,7 @@ Settings Routes v2.0
 from flask import Blueprint, request, g
 from auth.unified import require_auth
 from utils.response import success_response, error_response, created_response
+from utils.ssrf_protection import validate_url_not_private
 from models import db, SystemConfig
 from services.audit_service import AuditService
 from datetime import datetime, timezone
@@ -864,7 +865,13 @@ def create_webhook():
     
     if not data.get('url'):
         return error_response('Webhook URL required', 400)
-    
+
+    # SSRF protection: reject private/loopback/metadata addresses
+    try:
+        validate_url_not_private(data['url'])
+    except ValueError as e:
+        return error_response(f'Invalid webhook URL: {e}', 400)
+
     if not data.get('events'):
         return error_response('At least one event required', 400)
     
@@ -933,7 +940,14 @@ def test_webhook(webhook_id):
     
     if not webhook:
         return error_response('Webhook not found', 404)
-    
+
+    # SSRF protection: re-validate stored URL before sending (defense-in-depth)
+    try:
+        validate_url_not_private(webhook['url'])
+    except ValueError as e:
+        logger.warning(f"Blocked test of webhook {webhook_id} — URL resolves to private address: {e}")
+        return error_response('Webhook URL points to a private or disallowed address', 400)
+
     test_payload = {
         'event': 'test',
         'timestamp': datetime.now(timezone.utc).isoformat(),

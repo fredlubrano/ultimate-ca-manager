@@ -289,6 +289,18 @@ def export_user_certificate(cert_id):
         password = request.args.get('password', '')
         include_key = request.args.get('include_key', 'true').lower() == 'true'
         include_chain = request.args.get('include_chain', 'true').lower() == 'true'
+        # SECURITY: never accept passwords via query string (proxy access logs).
+        if password or export_format in ('pkcs12', 'p12', 'pfx', 'jks'):
+            if password:
+                logger.warning(
+                    "Rejected user-certificate export with password in query string "
+                    "(cert_id=%s) — client must POST with JSON body",
+                    cert_id,
+                )
+            return error_response(
+                'Password must be sent via POST body (JSON), not query string',
+                400,
+            )
 
     try:
         cert_pem = base64.b64decode(cert.crt)
