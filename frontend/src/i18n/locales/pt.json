@@ -1162,7 +1162,7 @@
     "allowWildcard": "Allow Wildcard Certificados",
     "allowWildcardDesc": "Permitir pedir certificados *.dominio.com",
     "autoApproveRequests": "Aprovar Pedidos de Certificado Automaticamente",
-    "autoApproveDesc": "Aprovar pedidos automaticamente sem revisão manual",
+    "autoApproveDesc": "Ignorar a validação de challenge ACME para este domínio. Os certificados são emitidos imediatamente sem verificar o controlo do domínio.",
     "issuingCA": "CA emissora",
     "useDefaultCA": "Usar CA padrão",
     "defaultCA": "CA padrão",
@@ -1237,7 +1237,8 @@
     "customDirectoryOverrideHelper": "Substituir o diretório padrão do Let's Encrypt para usar outra CA ACME (ex: ZeroSSL, Buypass, Google Trust). Deixar vazio para Let's Encrypt.",
     "accountMismatch": "Incompatibilidade conta/CA",
     "accountMismatchHelper": "A conta registrada não corresponde à CA upstream selecionada. Redefina a conta para se registrar novamente na CA correta.",
-    "noUpstreamUrl": "Nenhuma URL upstream configurada"
+    "noUpstreamUrl": "Nenhuma URL upstream configurada",
+    "autoApproveWarning": "Risco de segurança: ative apenas para domínios que controla completamente."
   },
   "scep": {
     "title": "Protocolo SCEP",

@@ -60,7 +60,7 @@ def create_local_domain():
     domain = AcmeLocalDomain(
         domain=domain_name,
         issuing_ca_id=issuing_ca_id,
-        auto_approve=data.get('auto_approve', True),
+        auto_approve=data.get('auto_approve', False),
         created_by=g.user.username if hasattr(g, 'user') and g.user else None
     )
     

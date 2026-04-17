@@ -316,6 +316,53 @@ class AcmeService:
                 # Log but continue with new auth
                 logger.error(f"Error checking auth reuse: {e}")
 
+        # Check if this identifier is auto-approved (issue #69)
+        # Admin-configured domains with auto_approve=True skip challenges:
+        # the authorization is created directly in `valid` state and the
+        # order will move straight to `ready`. Only applies to dns-typed
+        # identifiers and only when UCM issues locally.
+        if identifier.get('type') == 'dns':
+            domain_value = identifier.get('value', '')
+            if self._is_domain_auto_approved(domain_value):
+                logger.warning(
+                    "ACME auto-approve: skipping challenge validation for "
+                    f"{domain_value} (account={account_id}, order={order_id})"
+                )
+                try:
+                    from services.audit_service import AuditService
+                    AuditService.log_action(
+                        action='acme_auto_approve',
+                        resource_type='acme_authorization',
+                        resource_id=domain_value,
+                        details={
+                            'domain': domain_value,
+                            'account_id': account_id,
+                            'order_id': order_id,
+                        },
+                        success=True
+                    )
+                except Exception as audit_err:
+                    logger.error(f"Failed to audit auto-approve: {audit_err}")
+
+                auth = AcmeAuthorization(
+                    order_id=order_id,
+                    account_id=account_id,
+                    status='valid',
+                    identifier=json.dumps(identifier),
+                    wildcard=identifier.get('value', '').startswith('*.'),
+                    expires=utc_now() + timedelta(days=7),
+                )
+                db.session.add(auth)
+                db.session.flush()
+                self._create_challenges(auth, status='valid', validated=utc_now())
+                try:
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    logger.error(f"DB commit failed: {e}")
+                    raise
+                return auth
+
         # No reuse - create new pending authorization
         auth = AcmeAuthorization(
             order_id=order_id,
@@ -372,10 +419,20 @@ class AcmeService:
         
         # Create new pending authorization (no order_id)
         is_wildcard = identifier.get('value', '').startswith('*.')
+
+        # Issue #69: honor auto_approve on admin-configured domains (dns type only)
+        domain_value = identifier.get('value', '')
+        skip_challenges = (
+            identifier.get('type') == 'dns'
+            and domain_value
+            and self._is_domain_auto_approved(domain_value)
+        )
+        initial_status = 'valid' if skip_challenges else 'pending'
+
         auth = AcmeAuthorization(
             order_id=None,
             account_id=account_id,
-            status="pending",
+            status=initial_status,
             identifier=identifier_json,
             wildcard=is_wildcard,
             expires=utc_now() + timedelta(days=7)
@@ -384,7 +441,24 @@ class AcmeService:
         db.session.add(auth)
         db.session.flush()
         
-        self._create_challenges(auth, status="pending")
+        if skip_challenges:
+            self._create_challenges(auth, status='valid', validated=utc_now())
+            try:
+                from services.audit_service import AuditService
+                AuditService.log_action(
+                    action='acme_auto_approve',
+                    resource_type='acme_authorization',
+                    resource_id=str(auth.id),
+                    details={
+                        'domain': domain_value,
+                        'account_id': account_id,
+                        'flow': 'pre_authorization',
+                    },
+                )
+            except Exception as audit_exc:
+                logger.warning(f"Audit log for auto_approve failed: {audit_exc}")
+        else:
+            self._create_challenges(auth, status="pending")
         
         try:
             db.session.commit()
@@ -394,6 +468,48 @@ class AcmeService:
             raise
         
         return auth
+
+    @staticmethod
+    def _is_domain_auto_approved(domain: str) -> bool:
+        """Check whether an identifier should skip ACME challenges (issue #69).
+
+        An identifier is auto-approved when either table matches the domain
+        (exact or parent, case-insensitive, wildcard-stripped) AND the entry
+        has ``auto_approve=True``.
+
+        - ``AcmeLocalDomain`` — internal ACME issuance
+        - ``AcmeDomain`` — DNS-provider-mapped issuance
+
+        Returns False on any error so the default stays "require challenge".
+        """
+        if not domain:
+            return False
+        try:
+            normalized = domain.strip().lower()
+            if normalized.startswith('*.'):
+                normalized = normalized[2:]
+            if not normalized:
+                return False
+
+            from models.acme_models import AcmeDomain, AcmeLocalDomain
+
+            candidates = [normalized]
+            parts = normalized.split('.')
+            for i in range(1, len(parts)):
+                candidates.append('.'.join(parts[i:]))
+
+            for candidate in candidates:
+                local = AcmeLocalDomain.query.filter_by(domain=candidate).first()
+                if local and local.auto_approve:
+                    return True
+                public = AcmeDomain.query.filter_by(domain=candidate).first()
+                if public and public.auto_approve:
+                    return True
+        except Exception as exc:
+            logger.error(f"auto_approve lookup failed for {domain}: {exc}")
+            return False
+
+        return False
 
     def _create_challenges(self, auth: AcmeAuthorization, status: str, validated: datetime = None):
         """Helper to create standard challenges for an authorization"""

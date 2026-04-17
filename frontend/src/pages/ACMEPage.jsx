@@ -3057,7 +3057,7 @@ function DomainForm({ domain, dnsProviders, cas, onSubmit, onCancel }) {
     dns_provider_id: domain?.dns_provider_id || (dnsProviders[0]?.id || ''),
     issuing_ca_id: domain?.issuing_ca_id?.toString() || '',
     is_wildcard_allowed: domain?.is_wildcard_allowed ?? true,
-    auto_approve: domain?.auto_approve ?? true,
+    auto_approve: domain?.auto_approve ?? false,
   })
 
   // Filter CAs that have private keys (can sign)
@@ -3120,6 +3120,11 @@ function DomainForm({ domain, dnsProviders, cas, onSubmit, onCancel }) {
         label={t('acme.autoApproveRequests')}
         description={t('acme.autoApproveDesc')}
       />
+      {formData.auto_approve && (
+        <div className="p-3 rounded-md border border-yellow-500/40 bg-yellow-500/10 text-sm text-yellow-200">
+          ⚠ {t('acme.autoApproveWarning')}
+        </div>
+      )}
       
       <div className="flex justify-end gap-2 pt-4 border-t border-border">
         <Button type="button" variant="secondary" onClick={onCancel}>
@@ -3140,7 +3145,7 @@ function LocalDomainForm({ domain, cas, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     domain: domain?.domain || '',
     issuing_ca_id: domain?.issuing_ca_id?.toString() || '',
-    auto_approve: domain?.auto_approve ?? true,
+    auto_approve: domain?.auto_approve ?? false,
   })
 
   const signingCas = (cas || []).filter(ca => ca.has_private_key)
@@ -3182,6 +3187,11 @@ function LocalDomainForm({ domain, cas, onSubmit, onCancel }) {
         label={t('acme.autoApproveRequests')}
         description={t('acme.autoApproveDesc')}
       />
+      {formData.auto_approve && (
+        <div className="p-3 rounded-md border border-yellow-500/40 bg-yellow-500/10 text-sm text-yellow-200">
+          ⚠ {t('acme.autoApproveWarning')}
+        </div>
+      )}
 
       <div className="flex justify-end gap-2 pt-4 border-t border-border">
         <Button type="button" variant="secondary" onClick={onCancel}>

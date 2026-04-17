@@ -1029,6 +1029,131 @@ class TestAcmeLocalDomainsCRUD:
 
 
 # ============================================================
+# Auto-approve (issue #69) — _is_domain_auto_approved + flow
+# ============================================================
+
+class TestAcmeAutoApprove:
+    """Verify that auto_approve=True skips ACME challenge validation."""
+
+    def test_is_domain_auto_approved_false_by_default(self, app, auth_client, create_ca):
+        ca = create_ca(cn='AutoApprove Default CA')
+        r = post_json(auth_client, '/api/v2/acme/local-domains',
+                      {'domain': 'default.example.com',
+                       'issuing_ca_id': ca['id']})
+        assert_success(r, status=201)
+
+        with app.app_context():
+            from services.acme.acme_service import AcmeService
+            assert AcmeService._is_domain_auto_approved('default.example.com') is False
+
+    def test_is_domain_auto_approved_true_when_flagged(self, app, auth_client, create_ca):
+        ca = create_ca(cn='AutoApprove True CA')
+        r = post_json(auth_client, '/api/v2/acme/local-domains',
+                      {'domain': 'approved.example.com',
+                       'issuing_ca_id': ca['id'],
+                       'auto_approve': True})
+        assert_success(r, status=201)
+
+        with app.app_context():
+            from services.acme.acme_service import AcmeService
+            assert AcmeService._is_domain_auto_approved('approved.example.com') is True
+
+    def test_is_domain_auto_approved_wildcard_stripped(self, app, auth_client, create_ca):
+        ca = create_ca(cn='AutoApprove Wildcard CA')
+        r = post_json(auth_client, '/api/v2/acme/local-domains',
+                      {'domain': 'wild.example.com',
+                       'issuing_ca_id': ca['id'],
+                       'auto_approve': True})
+        assert_success(r, status=201)
+
+        with app.app_context():
+            from services.acme.acme_service import AcmeService
+            assert AcmeService._is_domain_auto_approved('*.wild.example.com') is True
+
+    def test_is_domain_auto_approved_parent_match(self, app, auth_client, create_ca):
+        ca = create_ca(cn='AutoApprove Parent CA')
+        r = post_json(auth_client, '/api/v2/acme/local-domains',
+                      {'domain': 'parent.example.com',
+                       'issuing_ca_id': ca['id'],
+                       'auto_approve': True})
+        assert_success(r, status=201)
+
+        with app.app_context():
+            from services.acme.acme_service import AcmeService
+            assert AcmeService._is_domain_auto_approved('sub.parent.example.com') is True
+
+    def test_is_domain_auto_approved_empty(self, app):
+        with app.app_context():
+            from services.acme.acme_service import AcmeService
+            assert AcmeService._is_domain_auto_approved('') is False
+            assert AcmeService._is_domain_auto_approved(None) is False
+
+    def test_create_authorization_valid_when_auto_approved(self, app, auth_client, create_ca):
+        ca = create_ca(cn='AutoApprove Authz CA')
+        r = post_json(auth_client, '/api/v2/acme/local-domains',
+                      {'domain': 'authz.example.com',
+                       'issuing_ca_id': ca['id'],
+                       'auto_approve': True})
+        assert_success(r, status=201)
+
+        with app.app_context():
+            from services.acme.acme_service import AcmeService
+            from models.acme_models import AcmeAccount
+            from models import db
+            from datetime import datetime, timezone
+
+            acc = AcmeAccount(
+                account_id='test-acc-autoapprove',
+                jwk='{}',
+                jwk_thumbprint='thumb-autoapprove',
+                status='valid',
+                created_at=datetime.now(timezone.utc),
+            )
+            db.session.add(acc)
+            db.session.commit()
+
+            svc = AcmeService()
+            auth = svc._create_authorization(
+                order_id=None,
+                account_id=acc.account_id,
+                identifier={'type': 'dns', 'value': 'authz.example.com'},
+            )
+            assert auth.status == 'valid'
+
+    def test_create_authorization_pending_when_not_auto_approved(self, app, auth_client, create_ca):
+        ca = create_ca(cn='Pending Authz CA')
+        r = post_json(auth_client, '/api/v2/acme/local-domains',
+                      {'domain': 'pending.example.com',
+                       'issuing_ca_id': ca['id'],
+                       'auto_approve': False})
+        assert_success(r, status=201)
+
+        with app.app_context():
+            from services.acme.acme_service import AcmeService
+            from models.acme_models import AcmeAccount
+            from models import db
+            from datetime import datetime, timezone
+
+            acc = AcmeAccount(
+                account_id='test-acc-pending',
+                jwk='{}',
+                jwk_thumbprint='thumb-pending',
+                status='valid',
+                created_at=datetime.now(timezone.utc),
+            )
+            db.session.add(acc)
+            db.session.commit()
+
+            svc = AcmeService()
+            auth = svc._create_authorization(
+                order_id=None,
+                account_id=acc.account_id,
+                identifier={'type': 'dns', 'value': 'pending.example.com'},
+            )
+            assert auth.status == 'pending'
+
+
+# ============================================================
 # ACME Proxy Protocol — RFC 8555 proxy endpoint tests
 # ============================================================
 
