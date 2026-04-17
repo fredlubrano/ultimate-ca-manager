@@ -429,7 +429,10 @@ class AcmeDomain(db.Model):
     dns_provider_id = db.Column(db.Integer, db.ForeignKey('dns_providers.id'), nullable=False)
     issuing_ca_id = db.Column(db.Integer, db.ForeignKey('certificate_authorities.id'), nullable=True)
     is_wildcard_allowed = db.Column(db.Boolean, default=True)
-    auto_approve = db.Column(db.Boolean, default=True)
+    # auto_approve=True makes UCM skip challenge validation for matching
+    # identifiers (authorizations are pre-marked valid). Default is False —
+    # admins must opt in per domain. See issue #69 / migration 019.
+    auto_approve = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     created_by = db.Column(db.String(80))
@@ -466,7 +469,8 @@ class AcmeLocalDomain(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     domain = db.Column(db.String(255), unique=True, nullable=False, index=True)
     issuing_ca_id = db.Column(db.Integer, db.ForeignKey('certificate_authorities.id'), nullable=False)
-    auto_approve = db.Column(db.Boolean, default=True)
+    # See AcmeDomain.auto_approve — same semantics (skip challenges). Opt-in.
+    auto_approve = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
     created_by = db.Column(db.String(80))

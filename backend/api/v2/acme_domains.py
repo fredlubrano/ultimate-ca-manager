@@ -81,7 +81,7 @@ def create_domain():
         dns_provider_id=dns_provider_id,
         issuing_ca_id=issuing_ca_id,
         is_wildcard_allowed=data.get('is_wildcard_allowed', True),
-        auto_approve=data.get('auto_approve', True),
+        auto_approve=data.get('auto_approve', False),
         created_by=g.user.username if hasattr(g, 'user') and g.user else None
     )
     

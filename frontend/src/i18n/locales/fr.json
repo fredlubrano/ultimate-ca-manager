@@ -287,7 +287,7 @@
     "allowWildcard": "Autoriser les certificats wildcard",
     "allowWildcardDesc": "Autoriser les demandes de certificats *.domaine.com",
     "autoApproveRequests": "Approuver automatiquement les demandes",
-    "autoApproveDesc": "Approuver automatiquement les demandes sans révision manuelle",
+    "autoApproveDesc": "Ignorer la validation des challenges ACME pour ce domaine. Les certificats sont émis immédiatement sans vérifier le contrôle du domaine.",
     "issuingCA": "CA émettrice",
     "useDefaultCA": "Utiliser la CA par défaut",
     "defaultCA": "Par défaut",
@@ -362,7 +362,8 @@
     "customDirectoryOverrideHelper": "Remplacer le répertoire Let's Encrypt par défaut pour utiliser une autre CA ACME (ex: ZeroSSL, Buypass, Google Trust). Laisser vide pour Let's Encrypt.",
     "accountMismatch": "Incohérence compte/CA",
     "accountMismatchHelper": "Le compte enregistré ne correspond pas à la CA amont sélectionnée. Réinitialisez le compte pour vous réinscrire auprès de la bonne CA.",
-    "noUpstreamUrl": "Aucune URL amont configurée"
+    "noUpstreamUrl": "Aucune URL amont configurée",
+    "autoApproveWarning": "Risque de sécurité : à n'activer que pour les domaines dont vous avez le contrôle total."
   },
   "audit": {
     "event": "Événement",

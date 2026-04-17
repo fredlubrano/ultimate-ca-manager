@@ -9,6 +9,12 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Changed
+- **ACME domain `auto_approve` is now functional (#69)** — Previously the toggle on ACME Domains and Local Domains was stored in the database and exposed in the UI but never consulted by the ACME service, so every order still required full challenge validation. When `auto_approve=True` is now set on a matching domain entry (exact match or any parent domain, wildcard prefixes stripped), UCM skips HTTP-01/DNS-01/TLS-ALPN-01 validation: authorizations are created directly in the `valid` state, orders move straight to `ready`, and an `acme_auto_approve` audit event is logged. This applies to both order-driven authorizations and RFC 8555 pre-authorizations (`newAuthz`). Only affects local UCM issuance, not the ACME proxy.
+
+### Security / Migration
+- **`auto_approve` defaults flipped to `False`** — Historically the column defaulted to `True`, which had no effect because the flag was unused. Now that the flag is honored, existing rows with `auto_approve=True` would silently start skipping challenge validation on upgrade. Migration `019_acme_auto_approve_safe_default` resets every existing `AcmeDomain` and `AcmeLocalDomain` row to `False`. Model defaults and API create defaults are also `False`. Administrators must explicitly opt in per domain after upgrading. A UI warning banner is shown when the toggle is enabled.
+
 ### Roadmap
 - **Environment Variables** — Sync Docker env vars (SMTP, HSM, etc.) to database at startup; track `managed_by` source; mark UI fields as read-only when sourced from environment
 - **Policy Enforcement on Protocols** — Apply certificate policies to ACME, SCEP, and EST protocol handlers (currently only enforced on REST API); add CA issuance restriction flags to prevent direct issuance from root/intermediate CAs

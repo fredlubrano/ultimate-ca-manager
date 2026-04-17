@@ -1162,7 +1162,7 @@
     "allowWildcard": "ワイルドカード証明書を許可",
     "allowWildcardDesc": "*.domain.com 証明書のリクエストを許可する",
     "autoApproveRequests": "証明書リクエストを自動承認",
-    "autoApproveDesc": "手動レビューなしでリクエストを自動的に承認する",
+    "autoApproveDesc": "このドメインのACMEチャレンジ検証をスキップします。ドメイン制御を確認せずに証明書が即座に発行されます。",
     "issuingCA": "発行CA",
     "useDefaultCA": "デフォルトCAを使用",
     "defaultCA": "デフォルトCA",
@@ -1237,7 +1237,8 @@
     "customDirectoryOverrideHelper": "デフォルトのLet's Encryptディレクトリをオーバーライドして、別のACME CA（ZeroSSL、Buypass、Google Trustなど）を使用します。Let's Encryptを使用する場合は空にしてください。",
     "accountMismatch": "アカウント/CA不一致",
     "accountMismatchHelper": "登録済みアカウントが選択されたアップストリームCAと一致しません。正しいCAに再登録するにはアカウントをリセットしてください。",
-    "noUpstreamUrl": "アップストリームURLが未設定"
+    "noUpstreamUrl": "アップストリームURLが未設定",
+    "autoApproveWarning": "セキュリティリスク：完全に管理しているドメインのみで有効にしてください。"
   },
   "scep": {
     "title": "SCEPプロトコル",
