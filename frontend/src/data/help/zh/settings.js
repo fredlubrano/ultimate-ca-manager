@@ -163,7 +163,7 @@ UCM 支持两种数据库后端：
 - 迁移版本
 
 ### 测试连接
-切换前验证 \`DATABASE_URL\`（例如 \`postgresql+psycopg2://user:pass@host:5432/ucm\`）。测试会打开真实连接并报告任何错误。
+切换前验证 \`DATABASE_URL\`（例如 \`postgresql+psycopg2://user:pass@host:5432/ucm\`）。测试会打开真实连接并报告任何错误。 早于版本 13 的 PostgreSQL 服务器将被拒绝 — UCM 需要 PostgreSQL 13 或更高版本。
 
 ### 切换后端
 将 \`DATABASE_URL\` 持久化到 \`/etc/ucm/ucm.env\`（DEB/RPM）并重启 UCM。**不会复制任何数据** — 如果您希望保留现有数据，请先使用**迁移**。
@@ -177,6 +177,13 @@ UCM 支持两种数据库后端：
 4. 源/目标列取交集（遗留列会被跳过并发出警告）
 5. 加载后重置 PostgreSQL 序列
 6. 服务自动重启（DEB/RPM）— Docker 上请在 compose 文件中设置 \`DATABASE_URL\` 并手动重启容器
+
+
+**安全检查(快速失败,源未受影响):**
+- 目标必须为空。如果 \`users\`、\`cas\` 或 \`certificates\` 中已经存在行,迁移将被拒绝并返回 HTTP 409,同时提供清理提示:
+  - PostgreSQL: \`psql ... -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\`
+  - SQLite: 删除目标 \`.db\` 文件
+- 如果迁移中途失败,源保持不变,错误消息会指向源备份。在重试之前重置目标。
 
 > ⚠ 在不同后端之间迁移之前，请始终执行完整的 UCM 备份（设置 → 备份）。
 

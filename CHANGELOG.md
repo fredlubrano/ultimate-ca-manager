@@ -16,6 +16,7 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
   - **Switch** the backend (persists to `/etc/ucm/ucm.env` on DEB/RPM and triggers restart)
   - **Migrate data** between backends in either direction (SQLite → PostgreSQL or PostgreSQL → SQLite)
 - **Bidirectional database migration** (`/api/v2/database/migrate`) — backs up the source first, creates the schema on the target via SQLAlchemy, disables FK checks during bulk load (PostgreSQL `session_replication_role`, SQLite `PRAGMA foreign_keys`), intersects source/target columns to handle legacy schema drift, normalizes `memoryview`/JSON values across drivers, and resets PostgreSQL sequences after load. Verified end-to-end with 47 tables / 3800+ rows in both directions.
+- **Migration safety checks** — `Test connection` rejects PostgreSQL servers older than 13 (UCM minimum supported version) with a clear message. `Migrate` performs a pre-flight check on the target and refuses (HTTP 409) if `users`, `cas`, or `certificates` already contain rows, with a cleanup hint (`DROP SCHEMA public CASCADE; CREATE SCHEMA public;` for PG, file delete for SQLite). On mid-way failure, the source is left untouched and the error message points the admin to the source backup so recovery is straightforward.
 - **Documentation** — `docs/ADMIN_GUIDE.md` and `docs/installation/docker.md` updated with PostgreSQL setup, `DATABASE_URL` reference, and migration workflow. In-app **Help** (Quick Help + Guide) updated for the Database section in all 9 languages.
 
 ### Notes

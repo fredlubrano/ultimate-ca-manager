@@ -229,6 +229,14 @@ The migration is **bidirectional** (SQLite ↔ PostgreSQL) and:
 - Intersects source/target columns (legacy columns are skipped with a warning)
 - Resets PostgreSQL sequences after load
 
+**Safety checks (fail fast, source untouched):**
+
+- **Test connection** rejects PostgreSQL servers older than 13 (UCM minimum supported version).
+- **Migrate** refuses if the target already contains UCM data (rows in `users`, `cas`, or `certificates`). Reset the target first:
+  - PostgreSQL: `psql ... -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'`
+  - SQLite: delete the target `.db` file
+- If a migration fails mid-way, the source is untouched and a backup is available under `/opt/ucm/data/backups/db_migration/`. Reset the target before retrying.
+
 > ⚠ Docker installs cannot persist `/etc/ucm/ucm.env` from inside the container. After running **Migrate** on Docker, the API returns the target URL — set `DATABASE_URL` in your `docker-compose.yml` or `docker run -e` and restart the container manually.
 
 ### SQLite Database
