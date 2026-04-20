@@ -163,7 +163,7 @@ Le backend actif est sélectionné par la variable d'environnement \`DATABASE_UR
 - Version de migration
 
 ### Tester la connexion
-Validez une \`DATABASE_URL\` (ex. \`postgresql+psycopg2://user:pass@host:5432/ucm\`) avant de basculer. Le test ouvre une vraie connexion et signale toute erreur.
+Validez une \`DATABASE_URL\` (ex. \`postgresql+psycopg2://user:pass@host:5432/ucm\`) avant de basculer. Le test ouvre une vraie connexion et signale toute erreur. Les serveurs PostgreSQL antérieurs à la version 13 sont rejetés — UCM nécessite PostgreSQL 13 ou plus récent.
 
 ### Basculer le backend
 Persiste \`DATABASE_URL\` dans \`/etc/ucm/ucm.env\` (DEB/RPM) et redémarre UCM. **Aucune donnée n'est copiée** — utilisez **Migrer** d'abord si vous voulez conserver vos données existantes.
@@ -177,6 +177,12 @@ Copie toutes les lignes du backend actuel vers le backend cible. Fonctionne dans
 4. Les colonnes source/cible sont intersectées (les colonnes héritées sont ignorées avec un avertissement)
 5. Les séquences PostgreSQL sont réinitialisées après le chargement
 6. Le service redémarre automatiquement (DEB/RPM) — sur Docker, définissez \`DATABASE_URL\` dans votre fichier compose et redémarrez le conteneur manuellement
+
+**Contrôles de sécurité (échec rapide, source intacte) :**
+- La cible doit être vide. Si \`users\`, \`cas\` ou \`certificates\` contiennent déjà des lignes, la migration est refusée avec un HTTP 409 et un indice de nettoyage :
+  - PostgreSQL : \`psql ... -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\`
+  - SQLite : supprimez le fichier cible \`.db\`
+- Si la migration échoue en cours de route, la source est intacte et le message d'erreur indique la sauvegarde source. Réinitialisez la cible avant de réessayer.
 
 > ⚠ Effectuez toujours une sauvegarde complète d'UCM (Paramètres → Sauvegarde) avant de migrer entre backends.
 

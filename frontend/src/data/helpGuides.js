@@ -1518,7 +1518,7 @@ The active backend is selected by the \`DATABASE_URL\` environment variable. Whe
 - Migration version
 
 ### Test connection
-Validate a \`DATABASE_URL\` (e.g. \`postgresql+psycopg2://user:pass@host:5432/ucm\`) before switching. The test opens a real connection and reports any error.
+Validate a \`DATABASE_URL\` (e.g. \`postgresql+psycopg2://user:pass@host:5432/ucm\`) before switching. The test opens a real connection and reports any error. PostgreSQL servers older than 13 are rejected — UCM requires PostgreSQL 13 or newer.
 
 ### Switch backend
 Persists \`DATABASE_URL\` to \`/etc/ucm/ucm.env\` (DEB/RPM) and restarts UCM. **No data is copied** — use **Migrate** first if you want to keep your existing data.
@@ -1532,6 +1532,12 @@ Copies all rows from the current backend to the target. Works in both directions
 4. Source/target columns are intersected (legacy columns are skipped with a warning)
 5. PostgreSQL sequences are reset after load
 6. The service restarts automatically (DEB/RPM) — on Docker, set \`DATABASE_URL\` in your compose file and restart the container manually
+
+**Safety checks (fail fast, source untouched):**
+- The target must be empty. If \`users\`, \`cas\`, or \`certificates\` already contain rows, the migration is refused with HTTP 409 and a cleanup hint:
+  - PostgreSQL: \`psql ... -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\`
+  - SQLite: delete the target \`.db\` file
+- If the migration fails mid-way, the source is left untouched and the error message points to the source backup. Reset the target before retrying.
 
 > ⚠ Always take a full UCM backup (Settings → Backup) before migrating between backends.
 

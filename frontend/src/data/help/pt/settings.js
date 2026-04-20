@@ -163,7 +163,7 @@ O backend ativo é selecionado pela variável de ambiente \`DATABASE_URL\`. Se n
 - Versão de migração
 
 ### Testar conexão
-Valide uma \`DATABASE_URL\` (ex.: \`postgresql+psycopg2://user:pass@host:5432/ucm\`) antes de alternar. O teste abre uma conexão real e relata qualquer erro.
+Valide uma \`DATABASE_URL\` (ex.: \`postgresql+psycopg2://user:pass@host:5432/ucm\`) antes de alternar. O teste abre uma conexão real e relata qualquer erro. Servidores PostgreSQL anteriores à versão 13 são rejeitados — o UCM requer PostgreSQL 13 ou mais recente.
 
 ### Alternar backend
 Persiste \`DATABASE_URL\` em \`/etc/ucm/ucm.env\` (DEB/RPM) e reinicia o UCM. **Nenhum dado é copiado** — use **Migrar** primeiro se quiser manter seus dados existentes.
@@ -177,6 +177,13 @@ Copia todas as linhas do backend atual para o backend de destino. Funciona em am
 4. As colunas origem/destino são interseccionadas (colunas legadas são ignoradas com aviso)
 5. As sequências do PostgreSQL são reiniciadas após a carga
 6. O serviço reinicia automaticamente (DEB/RPM) — no Docker, defina \`DATABASE_URL\` no seu arquivo compose e reinicie o container manualmente
+
+
+**Verificações de segurança (falha rápida, origem intacta):**
+- O destino deve estar vazio. Se \`users\`, \`cas\` ou \`certificates\` já contiverem linhas, a migração é recusada com HTTP 409 e uma dica de limpeza:
+  - PostgreSQL: \`psql ... -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\`
+  - SQLite: exclua o arquivo \`.db\` de destino
+- Se a migração falhar no meio do caminho, a origem permanece intacta e a mensagem de erro aponta para o backup da origem. Reinicialize o destino antes de tentar novamente.
 
 > ⚠ Sempre faça um backup completo do UCM (Configurações → Backup) antes de migrar entre backends.
 

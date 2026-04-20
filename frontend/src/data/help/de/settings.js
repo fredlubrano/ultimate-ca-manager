@@ -163,7 +163,7 @@ Das aktive Backend wird über die Umgebungsvariable \`DATABASE_URL\` ausgewählt
 - Migrationsversion
 
 ### Verbindung testen
-Validieren Sie eine \`DATABASE_URL\` (z. B. \`postgresql+psycopg2://user:pass@host:5432/ucm\`) vor dem Wechsel. Der Test öffnet eine echte Verbindung und meldet jeden Fehler.
+Validieren Sie eine \`DATABASE_URL\` (z. B. \`postgresql+psycopg2://user:pass@host:5432/ucm\`) vor dem Wechsel. Der Test öffnet eine echte Verbindung und meldet jeden Fehler. PostgreSQL-Server älter als Version 13 werden abgelehnt — UCM erfordert PostgreSQL 13 oder neuer.
 
 ### Backend wechseln
 Speichert \`DATABASE_URL\` in \`/etc/ucm/ucm.env\` (DEB/RPM) und startet UCM neu. **Keine Daten werden kopiert** — verwenden Sie zuerst **Migrieren**, wenn Sie Ihre bestehenden Daten behalten möchten.
@@ -177,6 +177,12 @@ Kopiert alle Zeilen vom aktuellen zum Ziel-Backend. Funktioniert in beide Richtu
 4. Quell-/Ziel-Spalten werden geschnitten (Legacy-Spalten werden mit einer Warnung übersprungen)
 5. PostgreSQL-Sequenzen werden nach dem Laden zurückgesetzt
 6. Der Dienst startet automatisch neu (DEB/RPM) — auf Docker setzen Sie \`DATABASE_URL\` in Ihrer Compose-Datei und starten den Container manuell neu
+
+**Sicherheitsprüfungen (schneller Abbruch, Quelle unangetastet):**
+- Das Ziel muss leer sein. Wenn \`users\`, \`cas\` oder \`certificates\` bereits Zeilen enthalten, wird die Migration mit HTTP 409 abgelehnt und ein Bereinigungshinweis ausgegeben:
+  - PostgreSQL: \`psql ... -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'\`
+  - SQLite: löschen Sie die Ziel-\`.db\`-Datei
+- Wenn die Migration auf halbem Weg fehlschlägt, bleibt die Quelle unangetastet und die Fehlermeldung verweist auf die Quellsicherung. Setzen Sie das Ziel zurück, bevor Sie es erneut versuchen.
 
 > ⚠ Erstellen Sie immer eine vollständige UCM-Sicherung (Einstellungen → Sicherung), bevor Sie zwischen Backends migrieren.
 
