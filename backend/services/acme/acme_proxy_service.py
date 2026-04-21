@@ -402,6 +402,26 @@ class AcmeProxyService:
         # Get upstream authz URLs for later matching
         upstream_authz_urls = upstream_order.get('authorizations', [])
         
+        # Resolve linked local AcmeAccount from the client JWK thumbprint.
+        # The proxy's /new-account handler already created (or upserted) an
+        # AcmeAccount with this thumbprint, so the lookup should always hit
+        # for compliant clients. If it misses, we leave account_id NULL —
+        # the order still works, it just won't show in the account detail.
+        linked_account_id = None
+        if client_thumbprint:
+            try:
+                from models import AcmeAccount
+                acct = AcmeAccount.query.filter_by(
+                    jwk_thumbprint=client_thumbprint
+                ).first()
+                if acct is not None:
+                    linked_account_id = acct.account_id
+            except Exception as e:
+                logger.warning(
+                    "ACME proxy: failed to resolve local account for "
+                    "thumbprint=%s: %s", client_thumbprint[:12] if client_thumbprint else None, e
+                )
+
         # Store order in database for tracking
         order = AcmeClientOrder(
             domains=json.dumps(domains),
@@ -413,6 +433,7 @@ class AcmeProxyService:
             upstream_authz_urls=json.dumps(upstream_authz_urls),
             is_proxy_order=True,
             client_jwk_thumbprint=client_thumbprint,
+            account_id=linked_account_id,
             # Use first domain's provider (provider dict contains 'provider' key with model)
             dns_provider_id=list(domain_providers.values())[0]['provider'].id if domain_providers else None
         )

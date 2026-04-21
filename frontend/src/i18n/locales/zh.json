@@ -1238,7 +1238,8 @@
     "accountMismatch": "账户/CA不匹配",
     "accountMismatchHelper": "注册的账户与所选的上游CA不匹配。请重置账户以重新注册到正确的CA。",
     "noUpstreamUrl": "未配置上游URL",
-    "autoApproveWarning": "安全风险：仅对您完全控制的域名启用。"
+    "autoApproveWarning": "安全风险：仅对您完全控制的域名启用。",
+    "proxy": "代理"
   },
   "scep": {
     "title": "SCEP协议",

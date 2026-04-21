@@ -9,6 +9,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Added
+- **ACME proxy orders linked to local accounts** — proxy order rows now record which local `AcmeAccount` initiated them (FK `account_id` resolved from the client JWK thumbprint). The proxy order list now displays the account email/short id beside each order, and the account detail "Orders" tab now merges local + proxy orders with a "Proxy" badge so operators can see all activity per account in one place. Migration `021` backfills `account_id` for existing proxy orders by joining on `acme_accounts.jwk_thumbprint`. Fixes [#71](https://github.com/NeySlim/ultimate-ca-manager/issues/71).
+
 ### Fixed
 - **ACME renewal storm with Let's Encrypt** — `AcmeClientOrder.expires_at` was being set from the ACME order resource's `expires` field (RFC 8555 §7.1.3, ~7 days for LE) instead of the issued certificate's `notAfter` (typically 90 days). The renewal scheduler then re-issued the same certificate every tick, hitting the LE production rate limits. `finalize_order` now stores the leaf certificate's `notAfter`, and migration `020` backfills `expires_at` for all already-issued orders. Fixes [#74](https://github.com/NeySlim/ultimate-ca-manager/issues/74).
 

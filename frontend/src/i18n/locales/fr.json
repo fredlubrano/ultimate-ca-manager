@@ -363,7 +363,8 @@
     "accountMismatch": "Incohérence compte/CA",
     "accountMismatchHelper": "Le compte enregistré ne correspond pas à la CA amont sélectionnée. Réinitialisez le compte pour vous réinscrire auprès de la bonne CA.",
     "noUpstreamUrl": "Aucune URL amont configurée",
-    "autoApproveWarning": "Risque de sécurité : à n'activer que pour les domaines dont vous avez le contrôle total."
+    "autoApproveWarning": "Risque de sécurité : à n'activer que pour les domaines dont vous avez le contrôle total.",
+    "proxy": "Proxy"
   },
   "audit": {
     "event": "Événement",

@@ -1238,7 +1238,8 @@
     "accountMismatch": "Incompatibilidade conta/CA",
     "accountMismatchHelper": "A conta registrada não corresponde à CA upstream selecionada. Redefina a conta para se registrar novamente na CA correta.",
     "noUpstreamUrl": "Nenhuma URL upstream configurada",
-    "autoApproveWarning": "Risco de segurança: ative apenas para domínios que controla completamente."
+    "autoApproveWarning": "Risco de segurança: ative apenas para domínios que controla completamente.",
+    "proxy": "Proxy"
   },
   "scep": {
     "title": "Protocolo SCEP",

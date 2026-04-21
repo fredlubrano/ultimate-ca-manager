@@ -1238,7 +1238,8 @@
     "accountMismatch": "Discrepancia cuenta/CA",
     "accountMismatchHelper": "La cuenta registrada no coincide con la CA ascendente seleccionada. Restablezca la cuenta para registrarse nuevamente con la CA correcta.",
     "noUpstreamUrl": "No se configuró URL ascendente",
-    "autoApproveWarning": "Riesgo de seguridad: habilite solo para dominios que controla completamente."
+    "autoApproveWarning": "Riesgo de seguridad: habilite solo para dominios que controla completamente.",
+    "proxy": "Proxy"
   },
   "scep": {
     "title": "Protocolo SCEP",
