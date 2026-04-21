@@ -6,6 +6,10 @@
 FROM python:3.13-slim-bookworm AS builder
 
 # Install build dependencies (fallback for packages without prebuilt wheels)
+# Note: pyjks is installed separately with --no-deps to skip `twofish`
+# (sdist-only C ext, only used for BKS UBER format which UCM does not export).
+# This means build-essential is no longer strictly required, but kept as a
+# safety net for future deps that may need to compile.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libssl-dev \
@@ -22,7 +26,8 @@ COPY backend/requirements.txt /tmp/requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r /tmp/requirements.txt
+    pip install --no-cache-dir -r /tmp/requirements.txt && \
+    pip install --no-cache-dir --no-deps pyjks==20.0.0
 
 # Stage 2: Runtime - Minimal production image
 FROM python:3.13-slim-bookworm

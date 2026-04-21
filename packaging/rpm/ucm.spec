@@ -11,8 +11,6 @@ BuildArch:      noarch
 # Disable auto-detection of requires (we manage deps via venv)
 AutoReqProv:    no
 Requires:       python3 >= 3.12
-Requires:       python3-devel
-Requires:       gcc
 Requires:       systemd
 Requires:       openssl >= 1.1.1
 Recommends:     softhsm
@@ -184,6 +182,11 @@ rm -rf "$UCM_HOME/venv" 2>/dev/null || true
 python3 -m venv "$UCM_HOME/venv"
 "$UCM_HOME/venv/bin/pip" install --quiet --upgrade pip
 "$UCM_HOME/venv/bin/pip" install --quiet -r "$UCM_HOME/requirements.txt"
+# Install pyjks separately with --no-deps to avoid pulling `twofish`
+# (sdist-only, would require gcc + python3-devel to build its C extension;
+# only used by pyjks for the BKS UBER format which UCM does not export).
+# See backend/requirements.txt for full rationale.
+"$UCM_HOME/venv/bin/pip" install --quiet --no-deps pyjks==20.0.0
 
 # Set permissions
 chown -R %{name}:%{name} $UCM_HOME

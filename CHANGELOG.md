@@ -12,6 +12,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ### Fixed
 - **ACME renewal storm with Let's Encrypt** — `AcmeClientOrder.expires_at` was being set from the ACME order resource's `expires` field (RFC 8555 §7.1.3, ~7 days for LE) instead of the issued certificate's `notAfter` (typically 90 days). The renewal scheduler then re-issued the same certificate every tick, hitting the LE production rate limits. `finalize_order` now stores the leaf certificate's `notAfter`, and migration `020` backfills `expires_at` for all already-issued orders. Fixes [#74](https://github.com/NeySlim/ultimate-ca-manager/issues/74).
 
+### Changed
+- **No more compilation toolchain required at install time** — `gcc` and `python3-dev` (DEB) / `python3-devel` (RPM) have been removed from package dependencies. Previously they were needed to build the `twofish` C extension pulled in transitively by `pyjks` (Java KeyStore export). Investigation confirmed `twofish` is only used by pyjks for the BKS UBER keystore format, which UCM never produces — UCM only exports JKS. `pyjks` is now installed via `pip install --no-deps pyjks==20.0.0` in the postinst scripts (with its actual runtime deps `javaobj-py3` + `pycryptodomex` listed in `requirements.txt`), keeping the install pure-wheel and ~30 MB lighter on RPM systems.
+
 ## [2.127] - 2026-04-21
 
 ### Added

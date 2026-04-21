@@ -208,6 +208,11 @@ ENVEOF
         python3 -m venv "$UCM_HOME/venv"
         "$UCM_HOME/venv/bin/pip" install --quiet --upgrade pip
         "$UCM_HOME/venv/bin/pip" install --quiet -r "$UCM_HOME/requirements.txt"
+        # Install pyjks separately with --no-deps to avoid pulling `twofish`
+        # (sdist-only, would require gcc + python3-dev to build its C extension;
+        # only used by pyjks for the BKS UBER format which UCM does not export).
+        # See backend/requirements.txt for full rationale.
+        "$UCM_HOME/venv/bin/pip" install --quiet --no-deps pyjks==20.0.0
         
         # Set permissions
         chown -R "$UCM_USER":"$UCM_GROUP" "$UCM_HOME"

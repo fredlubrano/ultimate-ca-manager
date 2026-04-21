@@ -91,5 +91,18 @@ matplotlib>=3.8
 certsrv>=2.1.0
 # requests-kerberos is optional: only needed for Kerberos auth to MS CA
 # Install manually if needed: pip install requests-kerberos
-pyjks==20.0.0
+# JKS export support (Java KeyStore).
+# pyjks itself is a pure-python wheel, but it declares `twofish` as a dependency.
+# twofish has NO prebuilt wheel on PyPI (sdist only) and would force gcc +
+# python3-dev to compile its C extension. twofish is only used inside pyjks for
+# the BKS UBER keystore format — UCM exports JKS only (never BKS), so twofish
+# is dead code at runtime.
+#
+# To avoid pulling twofish, pyjks is NOT listed here. It is installed by the
+# DEB/RPM postinst with `pip install --no-deps pyjks==20.0.0`, after the
+# requirements below are satisfied. Its actual runtime deps are listed here
+# (javaobj-py3, pycryptodomex, pyasn1, pyasn1-modules — all pure python or
+# manylinux wheels). If you change pyjks version, update postinst + ucm.spec.
+javaobj-py3>=0.4.3
+pycryptodomex>=3.20
 defusedxml>=0.7.1
