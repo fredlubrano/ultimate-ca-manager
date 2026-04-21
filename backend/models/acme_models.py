@@ -345,6 +345,10 @@ class AcmeClientOrder(db.Model):
     client_jwk_thumbprint = db.Column(db.String(64))
     upstream_order_url = db.Column(db.Text)
     upstream_authz_urls = db.Column(db.Text)  # JSON array of authorization URLs
+    # Link to local AcmeAccount (the proxy client account that initiated this order).
+    # Nullable for direct (non-proxy) client orders or legacy rows pre-migration 021.
+    account_id = db.Column(db.String(64), db.ForeignKey('acme_accounts.account_id'),
+                           nullable=True, index=True)
     
     # Timestamps
     expires_at = db.Column(db.DateTime)  # Order expiration
@@ -354,6 +358,7 @@ class AcmeClientOrder(db.Model):
     # Relationships
     dns_provider = db.relationship('DnsProvider', back_populates='client_orders')
     certificate = db.relationship('Certificate', foreign_keys=[certificate_id])
+    account = db.relationship('AcmeAccount', foreign_keys=[account_id])
     
     @property
     def domains_list(self):
@@ -396,6 +401,18 @@ class AcmeClientOrder(db.Model):
     
     def to_dict(self):
         """Convert to dictionary for API responses"""
+        # Resolve linked local AcmeAccount info (proxy orders only).
+        # Falls back gracefully when no account is linked or relationship not loaded.
+        account_email = None
+        account_short_id = None
+        try:
+            if self.account is not None:
+                account_email = (self.account.contact_list or [None])[0]
+                if account_email and account_email.startswith('mailto:'):
+                    account_email = account_email[len('mailto:'):]
+                account_short_id = (self.account_id or '')[:12]
+        except Exception:
+            pass
         return {
             'id': self.id,
             'domains': self.domains_list,
@@ -411,6 +428,10 @@ class AcmeClientOrder(db.Model):
             'certificate_id': self.certificate_id,
             'renewal_enabled': self.renewal_enabled,
             'error_message': self.error_message,
+            'is_proxy_order': bool(self.is_proxy_order),
+            'account_id': self.account_id,
+            'account_email': account_email,
+            'account_short_id': account_short_id,
             'expires_at': self.expires_at.isoformat() if self.expires_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,

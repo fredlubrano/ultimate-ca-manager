@@ -1238,7 +1238,8 @@
     "accountMismatch": "Account/CA Mismatch",
     "accountMismatchHelper": "The registered account doesn't match the selected upstream CA. Reset the account to re-register with the correct CA.",
     "noUpstreamUrl": "No upstream URL configured",
-    "autoApproveWarning": "Security risk: only enable for domains you fully control and trust."
+    "autoApproveWarning": "Security risk: only enable for domains you fully control and trust.",
+    "proxy": "Proxy"
   },
   "scep": {
     "title": "SCEP Protocol",

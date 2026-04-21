@@ -934,17 +934,24 @@ export default function ACMEPage() {
                     <span className="text-sm font-medium text-text-primary truncate flex-1">
                       {order.domain || order.identifier || t('common.unknown')}
                     </span>
-                    <Badge 
-                      variant={
-                        order.status?.toLowerCase() === 'valid' ? 'success' : 
-                        order.status?.toLowerCase() === 'pending' ? 'warning' :
-                        order.status?.toLowerCase() === 'ready' ? 'info' :
-                        'error'
-                      } 
-                      size="sm"
-                    >
-                      {order.status || t('common.unknown')}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      {order.source === 'proxy' && (
+                        <Badge variant="info" size="sm" title={order.environment || ''}>
+                          {t('acme.proxy')}
+                        </Badge>
+                      )}
+                      <Badge 
+                        variant={
+                          order.status?.toLowerCase() === 'valid' || order.status?.toLowerCase() === 'issued' ? 'success' : 
+                          order.status?.toLowerCase() === 'pending' ? 'warning' :
+                          order.status?.toLowerCase() === 'ready' ? 'info' :
+                          'error'
+                        } 
+                        size="sm"
+                      >
+                        {order.status || t('common.unknown')}
+                      </Badge>
+                    </div>
                   </div>
                   
                   {/* Details Grid */}
@@ -1090,6 +1097,14 @@ export default function ACMEPage() {
                     <div className="flex justify-between col-span-2">
                       <span className="text-text-tertiary">{t('acme.dnsProviders')}</span>
                       <span className="text-text-secondary">{order.dns_provider_name}</span>
+                    </div>
+                  )}
+                  {order.is_proxy_order && (order.account_email || order.account_short_id) && (
+                    <div className="flex justify-between col-span-2">
+                      <span className="text-text-tertiary">{t('acme.account')}</span>
+                      <span className="text-text-secondary truncate max-w-[220px]" title={order.account_id || ''}>
+                        {order.account_email || `${order.account_short_id}…`}
+                      </span>
                     </div>
                   )}
                   {order.domains?.length > 1 && (

@@ -468,23 +468,33 @@ def list_acme_orders():
 @bp.route('/api/v2/acme/accounts/<int:account_id>/orders', methods=['GET'])
 @require_auth(['read:acme'])
 def list_account_orders(account_id):
-    """List orders for a specific ACME account"""
+    """List orders for a specific ACME account.
+
+    Includes both:
+      * direct local-server orders (``AcmeOrder``)
+      * proxy orders made via ``/acme/proxy`` upstream to LE (``AcmeClientOrder``
+        with ``is_proxy_order=True`` linked through ``account_id``)
+
+    Issue #71: previously only local orders were shown, leaving proxy users
+    unable to see their certificate history from the account detail.
+    """
+    from models import AcmeClientOrder
     account = AcmeAccount.query.get_or_404(account_id)
-    
+
     orders = AcmeOrder.query.filter_by(account_id=account.account_id).order_by(
         AcmeOrder.created_at.desc()
     ).limit(50).all()
-    
+
     data = []
     for order in orders:
         identifiers_str = ", ".join([i.get('value', '') for i in order.identifiers_list])
-        
+
         method = "N/A"
         if order.authorizations.count() > 0:
             first_authz = order.authorizations.first()
             if first_authz.challenges.count() > 0:
                 method = first_authz.challenges.first().type.upper()
-        
+
         data.append({
             'id': order.id,
             'order_id': order.order_id,
@@ -492,9 +502,33 @@ def list_account_orders(account_id):
             'status': order.status.capitalize(),
             'expires': order.expires.strftime('%Y-%m-%d') if order.expires else None,
             'method': method,
-            'created_at': order.created_at.isoformat()
+            'created_at': order.created_at.isoformat(),
+            'source': 'local',
         })
-        
+
+    proxy_orders = AcmeClientOrder.query.filter_by(
+        account_id=account.account_id,
+        is_proxy_order=True,
+    ).order_by(AcmeClientOrder.created_at.desc()).limit(50).all()
+
+    for po in proxy_orders:
+        domains = po.domains_list
+        data.append({
+            'id': f'proxy-{po.id}',
+            'order_id': po.order_url or po.upstream_order_url,
+            'domain': ", ".join(domains) if domains else (po.primary_domain or ''),
+            'status': (po.status or '').capitalize(),
+            'expires': po.expires_at.strftime('%Y-%m-%d') if po.expires_at else None,
+            'method': (po.challenge_type or 'N/A').upper(),
+            'created_at': po.created_at.isoformat() if po.created_at else None,
+            'source': 'proxy',
+            'environment': po.environment,
+            'certificate_id': po.certificate_id,
+        })
+
+    # Sort merged list newest-first.
+    data.sort(key=lambda o: o.get('created_at') or '', reverse=True)
+
     return success_response(data=data)
 
 

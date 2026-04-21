@@ -1238,7 +1238,8 @@
     "accountMismatch": "Konto/CA-Nichtübereinstimmung",
     "accountMismatchHelper": "Das registrierte Konto stimmt nicht mit der ausgewählten Upstream-CA überein. Setzen Sie das Konto zurück, um sich bei der richtigen CA neu zu registrieren.",
     "noUpstreamUrl": "Keine Upstream-URL konfiguriert",
-    "autoApproveWarning": "Sicherheitsrisiko: nur für Domains aktivieren, die Sie vollständig kontrollieren."
+    "autoApproveWarning": "Sicherheitsrisiko: nur für Domains aktivieren, die Sie vollständig kontrollieren.",
+    "proxy": "Proxy"
   },
   "scep": {
     "title": "SCEP-Protokoll",

@@ -1238,7 +1238,8 @@
     "accountMismatch": "アカウント/CA不一致",
     "accountMismatchHelper": "登録済みアカウントが選択されたアップストリームCAと一致しません。正しいCAに再登録するにはアカウントをリセットしてください。",
     "noUpstreamUrl": "アップストリームURLが未設定",
-    "autoApproveWarning": "セキュリティリスク：完全に管理しているドメインのみで有効にしてください。"
+    "autoApproveWarning": "セキュリティリスク：完全に管理しているドメインのみで有効にしてください。",
+    "proxy": "プロキシ"
   },
   "scep": {
     "title": "SCEPプロトコル",
