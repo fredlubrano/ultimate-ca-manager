@@ -9,6 +9,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.127] - 2026-04-21
+
 ### Added
 - **PostgreSQL 13+ as a native database backend (alongside SQLite)** — UCM now supports PostgreSQL via the `DATABASE_URL` environment variable (e.g. `postgresql+psycopg2://user:pass@host:5432/ucm`). When unset, UCM falls back to the bundled SQLite at `UCM_DATA_DIR/ucm.db`. The schema is created automatically on first start; no manual SQL required. The `psycopg2-binary` driver is bundled in DEB/RPM/Docker.
 - **Settings → Database** — new UI section showing the active backend (sqlite/postgresql), database size, table count, and migration version. Operators can:
