@@ -9,6 +9,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Fixed
+- **ACME renewal storm with Let's Encrypt** — `AcmeClientOrder.expires_at` was being set from the ACME order resource's `expires` field (RFC 8555 §7.1.3, ~7 days for LE) instead of the issued certificate's `notAfter` (typically 90 days). The renewal scheduler then re-issued the same certificate every tick, hitting the LE production rate limits. `finalize_order` now stores the leaf certificate's `notAfter`, and migration `020` backfills `expires_at` for all already-issued orders. Fixes [#74](https://github.com/NeySlim/ultimate-ca-manager/issues/74).
+
 ## [2.127] - 2026-04-21
 
 ### Added
