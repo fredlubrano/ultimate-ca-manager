@@ -779,9 +779,23 @@ class AcmeClientService:
             if cert_id:
                 order.certificate_id = cert_id
                 order.status = 'issued'
+                # RFC 8555 §7.1.3: order.expires is the *order resource* expiry
+                # (~7 days for Let's Encrypt), NOT the certificate's notAfter.
+                # The renewal scheduler compares expires_at against `now + threshold`,
+                # so we must replace the order expiry with the cert's notAfter,
+                # otherwise the cert will be renewed on every scheduler tick (issue #74).
+                try:
+                    # cert_pem is a chain; the leaf certificate is the first PEM block.
+                    leaf_pem = cert_pem.split('-----END CERTIFICATE-----')[0] + '-----END CERTIFICATE-----\n'
+                    leaf = x509.load_pem_x509_certificate(leaf_pem.encode(), default_backend())
+                    not_after = leaf.not_valid_after_utc if hasattr(leaf, 'not_valid_after_utc') else leaf.not_valid_after
+                    # Strip tzinfo for SQLite-naive datetime column consistency
+                    order.expires_at = not_after.replace(tzinfo=None) if not_after.tzinfo else not_after
+                except Exception as parse_err:
+                    logger.warning(f"Could not parse cert notAfter for order {order.id}: {parse_err}")
                 db.session.commit()
-                
-                logger.info(f"Certificate issued for {domains}, ID: {cert_id}")
+
+                logger.info(f"Certificate issued for {domains}, ID: {cert_id}, expires_at={order.expires_at}")
                 return True, "Certificate issued and imported successfully", cert_id
             else:
                 return False, "Certificate obtained but import failed", None
