@@ -9,6 +9,22 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.129] - 2026-04-21
+
+### Security
+- **ACME client and proxy now offer user-controlled SSL verification** — both the ACME client (upstream CA directory) and the ACME proxy (target ACME server) expose `verify_ssl` / `proxy_verify_ssl` toggles persisted via `/api/v2/acme/client/settings`. Default is **on**; the UI shows a warning banner when disabled. The proxy "Test connection" endpoint now uses the persisted flag (no per-request override) and rejects cloud metadata IPs and loopback targets.
+- **Outbound HTTP sessions now verify TLS by default** — `utils.safe_requests.create_session()` defaults to `verify_ssl=True`. Callers must opt out explicitly when targeting an internal endpoint with a self-signed certificate.
+- **CSRF exemptions narrowed for SSO and mTLS** — previously any `/api/v2/sso/*` or `/api/v2/mtls/*` route was CSRF-exempt. Exemptions are now restricted to the specific public callback/handshake subpaths; admin-write endpoints under those prefixes are now CSRF-protected.
+- **WebSocket admin endpoints require `admin:system` permission** — `/api/v2/websocket/clients` and `/api/v2/websocket/broadcast` now require admin scope instead of any authenticated session.
+- **Forgot-password endpoint is now rate-limited** to mitigate enumeration and brute-force.
+- **API keys linked to deactivated users are now rejected** — `auth/unified.py` checks the `is_active` flag in addition to the key's own validity.
+
+### Fixed
+- **Service no longer starts silently when database migrations fail** — `run_all_migrations()` failures now block startup with a clear error instead of leaving the app half-initialized.
+- **Database migration runner uses `DATABASE_URL` as single source of truth** — eliminates the SQLite path mismatch that could arise when `DATABASE_URL` and `DATABASE_PATH` disagreed.
+- **Database migration target check is now fail-closed** — if the emptiness check on the target database raises, migration aborts instead of continuing. The `_migrations` bookkeeping table DDL is now PostgreSQL-compatible (`SERIAL`/`IDENTITY` instead of SQLite `INTEGER PRIMARY KEY`).
+- **Audit logs for background tasks no longer appear as `anonymous`** — actions performed without a Flask request context (CRL auto-regeneration, ACME auto-approve, scheduler tasks, startup work) are now correctly labelled `system`, `scheduler`, or `acme`. `anonymous` is reserved for genuinely unauthenticated HTTP requests.
+
 ## [2.128.1] - 2026-04-21
 
 ### Fixed
