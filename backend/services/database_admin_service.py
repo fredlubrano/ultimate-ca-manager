@@ -187,6 +187,8 @@ def migrate_data(target_url: str) -> Tuple[bool, str, dict]:
         return False, f"Target unreachable: {msg}", stats
 
     # Refuse if target already contains UCM data (avoid silent data clobbering / partial states)
+    # NOTE: this check is fail-closed. If we cannot inspect the target, we
+    # refuse to migrate rather than risk overwriting an existing database.
     try:
         probe_engine = create_engine(target_url, pool_pre_ping=True)
         probe_insp = inspect(probe_engine)
@@ -204,8 +206,14 @@ def migrate_data(target_url: str) -> Tuple[bool, str, dict]:
                             row = probe.execute(text(f'SELECT COUNT(*) FROM "{tname}"')).fetchone()
                             if row and row[0] and row[0] > 0:
                                 non_empty.append(f"{tname}={row[0]}")
-                        except Exception:
-                            pass
+                        except Exception as inner:
+                            # Fail-closed: treat unreadable canonical tables as
+                            # potentially populated to avoid silent overwrite.
+                            logger.warning(
+                                f"Could not verify emptiness of '{tname}' on target ({inner}); "
+                                "treating as non-empty for safety."
+                            )
+                            non_empty.append(f"{tname}=?")
         probe_engine.dispose()
         if non_empty:
             target_is_pg = target_url.startswith("postgresql")
@@ -218,7 +226,11 @@ def migrate_data(target_url: str) -> Tuple[bool, str, dict]:
                 f"Refusing to overwrite. To reset the target, run: {cleanup_hint}"
             ), stats
     except Exception as e:
-        logger.warning(f"Target emptiness check failed (continuing): {e}")
+        # Inspector itself failed — fail-closed.
+        return False, (
+            f"Could not inspect target database to verify it is empty ({e}). "
+            "Refusing to migrate. Verify connectivity and permissions."
+        ), stats
 
     # 1. Backup source
     try:
@@ -243,19 +255,32 @@ def migrate_data(target_url: str) -> Tuple[bool, str, dict]:
         except Exception:
             pass
 
-        # Create _migrations table on target (not part of SQLAlchemy metadata)
-        with target_engine.begin() as dst:
-            dst.execute(text("""
+        # Create _migrations table on target (not part of SQLAlchemy metadata).
+        # Use a backend-appropriate auto-increment primary key — plain
+        # "INTEGER PRIMARY KEY" auto-increments on SQLite but NOT on
+        # PostgreSQL, where it would force callers to supply an id.
+        target_is_pg = target_url.startswith("postgresql")
+        source_is_pg = str(source_engine.url).startswith("postgresql")
+        if target_is_pg:
+            migrations_ddl = """
                 CREATE TABLE IF NOT EXISTS _migrations (
-                    id INTEGER PRIMARY KEY,
+                    id SERIAL PRIMARY KEY,
                     name VARCHAR(255) NOT NULL UNIQUE,
                     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
-            """))
+            """
+        else:
+            migrations_ddl = """
+                CREATE TABLE IF NOT EXISTS _migrations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name VARCHAR(255) NOT NULL UNIQUE,
+                    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                )
+            """
+        with target_engine.begin() as dst:
+            dst.execute(text(migrations_ddl))
 
         # Copy each table
-        source_is_pg = str(source_engine.url).startswith("postgresql")
-        target_is_pg = target_url.startswith("postgresql")
         # Pre-fetch inspectors before opening transactions (SQLite locking)
         src_insp = inspect(source_engine)
         target_insp = inspect(target_engine)
