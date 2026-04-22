@@ -60,6 +60,7 @@ class HsmProvider(db.Model if db else object):
             'id': self.id,
             'name': self.name,
             'type': self.type,
+            'provider_type': self.type,
             'status': self.status,
             'enabled': self.status == 'connected',
             'last_tested_at': self.last_tested_at.isoformat() if self.last_tested_at else None,
@@ -81,6 +82,60 @@ class HsmProvider(db.Model if db else object):
                     else:
                         masked_config[key] = value
                 result['config'] = masked_config
+
+                # Also expose flattened/prefixed fields for frontend form compatibility.
+                # Map provider config keys -> provider_<type>_<field> aliases used by the UI.
+                type_prefix = {
+                    'pkcs11': 'pkcs11',
+                    'aws-cloudhsm': 'aws',
+                    'azure-keyvault': 'azure',
+                    'google-kms': 'gcp',
+                    'openbao': 'openbao',
+                }.get(self.type)
+                if type_prefix:
+                    # Per-type field aliases (config_key -> form_field)
+                    aliases = {
+                        'pkcs11': {
+                            'module_path': 'pkcs11_library_path',
+                            'token_label': 'pkcs11_token_label',
+                            'user_pin': 'pkcs11_pin',
+                            'slot_index': 'pkcs11_slot_id',
+                        },
+                        'aws-cloudhsm': {
+                            'cluster_id': 'aws_cluster_id',
+                            'region': 'aws_region',
+                            'access_key': 'aws_access_key',
+                            'hsm_user': 'aws_crypto_user',
+                            'hsm_password': 'aws_crypto_password',
+                        },
+                        'azure-keyvault': {
+                            'vault_url': 'azure_vault_url',
+                            'tenant_id': 'azure_tenant_id',
+                            'client_id': 'azure_client_id',
+                            'client_secret': 'azure_client_secret',
+                        },
+                        'google-kms': {
+                            'project_id': 'gcp_project_id',
+                            'location': 'gcp_location',
+                            'key_ring': 'gcp_keyring',
+                            'service_account_json': 'gcp_credentials_json',
+                        },
+                        'openbao': {
+                            'url': 'openbao_url',
+                            'token': 'openbao_token',
+                            'mount_path': 'openbao_mount_path',
+                            'namespace': 'openbao_namespace',
+                            'tls_skip_verify': 'openbao_tls_skip_verify',
+                        },
+                    }.get(self.type, {})
+                    for cfg_key, form_field in aliases.items():
+                        if cfg_key in masked_config:
+                            value = masked_config[cfg_key]
+                            # The frontend treats '***' as the "value already set" sentinel
+                            # for password-like fields. Translate the masked value.
+                            if value == '********':
+                                value = '***'
+                            result[form_field] = value
             except (json.JSONDecodeError, TypeError):
                 result['config'] = {}
         

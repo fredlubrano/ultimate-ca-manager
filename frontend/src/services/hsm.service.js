@@ -8,6 +8,10 @@ export const hsmService = {
     return apiClient.get('/hsm/providers')
   },
 
+  async getProvider(id) {
+    return apiClient.get(`/hsm/providers/${id}`)
+  },
+
   async getStatus() {
     return apiClient.get('/system/hsm-status')
   },
