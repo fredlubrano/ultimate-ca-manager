@@ -105,10 +105,18 @@ export default function HSMPage() {
     setShowModal(true)
   }
 
-  const handleEdit = (provider) => {
-    setSelectedProvider(provider)
-    setModalMode('edit')
-    setShowModal(true)
+  const handleEdit = async (provider) => {
+    try {
+      // Fetch full provider details (config is excluded from list endpoint).
+      // Without this, the edit modal would default to PKCS#11 and show the
+      // wrong form for remote providers like OpenBao.
+      const response = await hsmService.getProvider(provider.id)
+      setSelectedProvider(response.data)
+      setModalMode('edit')
+      setShowModal(true)
+    } catch (error) {
+      showError(error.message || t('messages.errors.loadFailed.hsmProviders'))
+    }
   }
 
   const handleDelete = async (provider) => {
@@ -479,7 +487,14 @@ export default function HSMPage() {
 
   return (
     <>
-      {hsmStatus && !hsmStatus.ready && (
+      {hsmStatus && !hsmStatus.ready && (() => {
+        // The PKCS#11 / SoftHSM warning is only relevant for local PKCS#11
+        // providers. Hide it when every configured provider is remote
+        // (OpenBao, Azure Key Vault, AWS CloudHSM, Google KMS).
+        const usesLocalPkcs11 = providers.some(p => (p.provider_type || p.type) === 'pkcs11')
+        const hasOnlyRemote = providers.length > 0 && !usesLocalPkcs11
+        if (hasOnlyRemote) return null
+        return (
         <div className="mx-4 mt-4 mb-0 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 flex items-start gap-3">
           <Warning size={20} className="text-yellow-500 shrink-0 mt-0.5" weight="bold" />
           <div className="text-sm">
@@ -497,7 +512,8 @@ export default function HSMPage() {
             )}
           </div>
         </div>
-      )}
+        )
+      })()}
       <ResponsiveLayout
         title={t('common.hsm')}
         subtitle={t('hsm.subtitle', { count: providers.length })}
