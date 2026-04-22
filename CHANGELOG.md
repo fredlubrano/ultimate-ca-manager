@@ -9,6 +9,18 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.130] - 2026-04-22
+
+### Added
+- **HSM-backed Certificate Authorities (#77.3)** — the CA's private signing key can now be generated or stored inside an HSM and never leaves it. The Create CA wizard exposes a **Key Storage** toggle (Local / HSM); in HSM mode you can generate a new key in the HSM (RSA-2048/3072/4096, EC-P256/P384/P521) or pick an existing unused signing key. All certificate issuance, CRL generation and OCSP responses for the CA are signed by the HSM. PKCS#12, JKS and raw-key export endpoints return HTTP 409 for HSM-backed CAs. CA list and detail views show an "HSM" badge. In-app help and wiki updated in all 9 UI languages.
+
+### Security
+- **`python-dotenv` upgraded to 1.2.2** to pick up the latest CVE patches.
+
+### Notes
+- HSM-backed CAs are backed by the existing HSM provider plumbing (PKCS#11, AWS CloudHSM, Azure Key Vault, GCP KMS, OpenBao/Vault Transit). Only OpenBao is exercised in CI; the other providers share the same code path but are not yet end-to-end tested.
+- In-place migration of existing local CAs to HSM and HSM key rotation for existing HSM CAs are intentionally out of scope and tracked as separate follow-up items.
+
 ## [2.129] - 2026-04-21
 
 ### Security
