@@ -2235,6 +2235,7 @@
   },
   "hsm": {
     "statusUnavailable": "Funcionalidades HSM não estão disponíveis",
+    "pkcs11Unavailable": "Dependências PKCS#11 indisponíveis neste host",
     "pkcs11Missing": "Biblioteca python-pkcs11 não instalada",
     "softhsmMissing": "SoftHSM não detectado neste sistema",
     "addHSM": "Adicionar HSM",

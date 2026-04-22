@@ -488,18 +488,18 @@ export default function HSMPage() {
   return (
     <>
       {hsmStatus && !hsmStatus.ready && (() => {
-        // The PKCS#11 / SoftHSM warning is only relevant for local PKCS#11
-        // providers. Hide it when every configured provider is remote
-        // (OpenBao, Azure Key Vault, AWS CloudHSM, Google KMS).
+        // The PKCS#11 / SoftHSM warning is only relevant when the user is
+        // actually trying to use a local PKCS#11 provider. Hide it otherwise:
+        // remote providers (OpenBao, Azure Key Vault, AWS CloudHSM, Google KMS)
+        // do not need python-pkcs11 or SoftHSM on the UCM host.
         const usesLocalPkcs11 = providers.some(p => (p.provider_type || p.type) === 'pkcs11')
-        const hasOnlyRemote = providers.length > 0 && !usesLocalPkcs11
-        if (hasOnlyRemote) return null
+        if (!usesLocalPkcs11) return null
         return (
         <div className="mx-4 mt-4 mb-0 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 flex items-start gap-3">
           <Warning size={20} className="text-yellow-500 shrink-0 mt-0.5" weight="bold" />
           <div className="text-sm">
             <p className="font-medium text-yellow-600 dark:text-yellow-400 mb-1">
-              {t('hsm.statusUnavailable')}
+              {t('hsm.pkcs11Unavailable')}
             </p>
             <ul className="text-text-secondary space-y-0.5 text-xs">
               {!hsmStatus.pkcs11_installed && <li>• {t('hsm.pkcs11Missing')}</li>}
@@ -598,6 +598,7 @@ export default function HSMPage() {
       {showModal && (
         <ProviderModal
           provider={modalMode === 'edit' ? selectedProvider : null}
+          hsmStatus={hsmStatus}
           onSave={handleSave}
           onClose={() => setShowModal(false)}
         />
@@ -614,7 +615,7 @@ export default function HSMPage() {
   )
 }
 
-function ProviderModal({ provider, onSave, onClose }) {
+function ProviderModal({ provider, hsmStatus, onSave, onClose }) {
   const { t } = useTranslation()
   const [formData, setFormData] = useState({
     name: provider?.name || '',
@@ -697,6 +698,25 @@ function ProviderModal({ provider, onSave, onClose }) {
 
       {formData.provider_type === 'pkcs11' && (
         <div className="space-y-4">
+          {hsmStatus && !hsmStatus.ready && (
+            <div className="p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 flex items-start gap-3">
+              <Warning size={18} className="text-yellow-500 shrink-0 mt-0.5" weight="bold" />
+              <div className="text-xs">
+                <p className="font-medium text-yellow-600 dark:text-yellow-400 mb-1">
+                  {t('hsm.pkcs11Unavailable')}
+                </p>
+                <ul className="text-text-secondary space-y-0.5">
+                  {!hsmStatus.pkcs11_installed && <li>• {t('hsm.pkcs11Missing')}</li>}
+                  {!hsmStatus.softhsm_found && <li>• {t('hsm.softhsmMissing')}</li>}
+                </ul>
+                {hsmStatus.install_command && (
+                  <code className="block mt-2 px-2 py-1 rounded bg-bg-tertiary font-mono">
+                    {hsmStatus.install_command}
+                  </code>
+                )}
+              </div>
+            </div>
+          )}
           <Input label={t('hsm.pkcs11Config.libraryPath')} value={formData.pkcs11_library_path} onChange={e => handleChange('pkcs11_library_path', e.target.value)} placeholder={t('hsm.pkcs11Config.libraryPathPlaceholder')} />
           <div className="grid grid-cols-2 gap-4">
             <Input label={t('hsm.pkcs11Config.slotId')} type="number" value={formData.pkcs11_slot_id} onChange={e => handleChange('pkcs11_slot_id', e.target.value ? parseInt(e.target.value) : '')} />

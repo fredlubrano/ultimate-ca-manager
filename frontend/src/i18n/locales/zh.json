@@ -2235,6 +2235,7 @@
   },
   "hsm": {
     "statusUnavailable": "HSM功能不可用",
+    "pkcs11Unavailable": "此主机上 PKCS#11 依赖项不可用",
     "pkcs11Missing": "未安装python-pkcs11库",
     "softhsmMissing": "未在此系统检测到SoftHSM",
     "addHSM": "添加HSM",

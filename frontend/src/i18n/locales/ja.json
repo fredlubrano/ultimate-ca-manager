@@ -2235,6 +2235,7 @@
   },
   "hsm": {
     "statusUnavailable": "HSM機能は利用できません",
+    "pkcs11Unavailable": "このホストで PKCS#11 の依存関係が利用できません",
     "pkcs11Missing": "python-pkcs11ライブラリがインストールされていません",
     "softhsmMissing": "このシステムでSoftHSMが検出されませんでした",
     "addHSM": "HSMを追加",
