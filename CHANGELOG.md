@@ -9,6 +9,11 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.131] - 2026-04-22
+
+### Fixed
+- **HSM page warning is now provider-aware** — the "HSM features are not available / install softhsm2" banner used to appear whenever the local PKCS#11/SoftHSM stack was missing, even for users who only configure remote HSM providers (OpenBao, Azure Key Vault, AWS CloudHSM, GCP KMS). The warning now appears only when at least one configured provider is PKCS#11 (page-level banner) or when the user actively selects "PKCS#11 (SoftHSM)" in the create/edit modal (inline contextual warning).
+
 ## [2.130] - 2026-04-22
 
 ### Added
