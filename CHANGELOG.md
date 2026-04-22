@@ -9,6 +9,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.132] - 2026-04-23
+
 ### Fixed
 - **HSM provider dropdown empty in Create CA wizard (#80)** — `CAsPage` filtered HSM providers on `is_active && is_connected`, fields that don't exist on the `/api/v2/hsm/providers` response. The dropdown was therefore always empty, displaying "No connected HSM provider" even when an HSM was correctly configured and successfully tested. Now uses the actual `enabled` field returned by the backend (computed as `status === 'connected'`). Test fixture in `CertificatesForms.test.jsx` updated to match the real API contract.
 
