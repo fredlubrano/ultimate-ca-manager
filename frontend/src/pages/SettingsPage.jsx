@@ -543,6 +543,7 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
     default_role: provider?.default_role || 'viewer',
     auto_create_users: provider?.auto_create_users ?? true,
     auto_update_users: provider?.auto_update_users ?? true,
+    sync_role_on_login: provider?.sync_role_on_login ?? false,
     attribute_mapping: provider?.attribute_mapping || {},
     role_mapping: provider?.role_mapping || {},
     // LDAP
@@ -1037,6 +1038,12 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                 onChange={(val) => handleChange('auto_update_users', val)}
                 label={t('sso.autoUpdateUsers')}
               />
+              <ToggleSwitch
+                checked={formData.sync_role_on_login}
+                onChange={(val) => handleChange('sync_role_on_login', val)}
+                label={t('sso.syncRoleOnLogin')}
+                description={t('sso.syncRoleOnLoginHelp')}
+              />
             </div>
           </CompactSection>
         </div>
@@ -1218,6 +1225,12 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                 checked={formData.auto_update_users}
                 onChange={(val) => handleChange('auto_update_users', val)}
                 label={t('sso.autoUpdateUsers')}
+              />
+              <ToggleSwitch
+                checked={formData.sync_role_on_login}
+                onChange={(val) => handleChange('sync_role_on_login', val)}
+                label={t('sso.syncRoleOnLogin')}
+                description={t('sso.syncRoleOnLoginHelp')}
               />
             </div>
           </CompactSection>
@@ -1420,6 +1433,12 @@ function SsoProviderForm({ provider, forcedType, onSave, onCancel }) {
                 checked={formData.auto_update_users}
                 onChange={(val) => handleChange('auto_update_users', val)}
                 label={t('sso.autoUpdateUsers')}
+              />
+              <ToggleSwitch
+                checked={formData.sync_role_on_login}
+                onChange={(val) => handleChange('sync_role_on_login', val)}
+                label={t('sso.syncRoleOnLogin')}
+                description={t('sso.syncRoleOnLoginHelp')}
               />
             </div>
           </CompactSection>

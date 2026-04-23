@@ -2406,7 +2406,10 @@
       "azure": "🟦 Microsoft Entra",
       "google": "🔵 Google",
       "github": "⚫ GitHub"
-    }
+    },
+    "syncRoleOnLogin": "Synchroniser le rôle depuis le SSO à chaque connexion",
+    "syncRoleOnLoginHelp": "Si activé, le rôle est re-synchronisé depuis votre mappage de rôles à chaque connexion. Les utilisateurs sans correspondance gardent leur rôle UCM. Si désactivé (par défaut), le rôle est défini uniquement à la création de l'utilisateur puis géré dans UCM.",
+    "defaultRoleHelp": "Appliqué uniquement à la création automatique d'un utilisateur lors de sa première connexion."
   },
   "templates": {
     "template": "Modèle",

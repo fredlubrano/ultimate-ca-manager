@@ -2464,7 +2464,10 @@
       "azure": "🟦 Microsoft Entra",
       "google": "🔵 Google",
       "github": "⚫ GitHub"
-    }
+    },
+    "syncRoleOnLogin": "每次登录时从 SSO 同步角色",
+    "syncRoleOnLoginHelp": "启用后，每次登录时都会从您的角色映射重新同步角色。没有匹配映射的用户将保留其 UCM 角色。禁用时（默认），角色仅在创建用户时设置，之后在 UCM 中管理。",
+    "defaultRoleHelp": "仅在首次登录时自动创建用户时应用。"
   },
   "notifications": {
     "certificateIssued": "证书已颁发：{{name}}",

@@ -186,19 +186,40 @@ def _clear_ldap_failed_attempts(username):
         db.session.commit()
 
 
-def _resolve_role(provider, external_data):
-    """Resolve user role from role_mapping or default_role."""
+def _resolve_role_from_mapping(provider, external_data):
+    """Try to resolve a role from the configured role_mapping.
+
+    Returns the mapped UCM role (str) when one of the user's external
+    groups matches an entry in ``provider.role_mapping``. Returns ``None``
+    when no mapping is configured or no group matches — the caller is
+    then responsible for deciding whether to fall back to ``default_role``
+    (creation only) or to keep the stored role (existing user, see #81).
+    """
     role_mapping = _parse_json_field(provider.role_mapping)
-    if role_mapping:
-        external_roles = external_data.get('roles', external_data.get('groups', []))
-        if isinstance(external_roles, str):
-            external_roles = [external_roles]
-        logger.info(f"Role resolution: mapping={role_mapping}, external_groups={external_roles}")
-        for ext_role, ucm_role in role_mapping.items():
-            if ext_role in external_roles:
-                resolved = ucm_role if ucm_role in VALID_ROLES else 'viewer'
-                logger.info(f"Role resolved via mapping: {ext_role} -> {resolved}")
-                return resolved
+    if not role_mapping:
+        return None
+    external_roles = external_data.get('roles', external_data.get('groups', []))
+    if isinstance(external_roles, str):
+        external_roles = [external_roles]
+    logger.info(f"Role resolution: mapping={role_mapping}, external_groups={external_roles}")
+    for ext_role, ucm_role in role_mapping.items():
+        if ext_role in external_roles:
+            resolved = ucm_role if ucm_role in VALID_ROLES else 'viewer'
+            logger.info(f"Role resolved via mapping: {ext_role} -> {resolved}")
+            return resolved
+    return None
+
+
+def _resolve_role(provider, external_data):
+    """Resolve user role for **user creation** — uses role_mapping then
+    falls back to ``default_role``. Do NOT use this on existing users:
+    that behaviour caused #81 (UI role overwritten on every SSO login).
+    For existing users, use :func:`_resolve_role_from_mapping` and check
+    ``provider.sync_role_on_login``.
+    """
+    mapped = _resolve_role_from_mapping(provider, external_data)
+    if mapped is not None:
+        return mapped
     fallback = provider.default_role if provider.default_role in VALID_ROLES else 'viewer'
     logger.info(f"Role resolved via default_role: {fallback}")
     return fallback
@@ -256,6 +277,7 @@ def create_provider():
         default_role=data.get('default_role', 'viewer') if data.get('default_role') in VALID_ROLES else 'viewer',
         auto_create_users=data.get('auto_create_users', True),
         auto_update_users=data.get('auto_update_users', True),
+        sync_role_on_login=data.get('sync_role_on_login', False),
     )
     
     # If setting as default, clear other providers
@@ -372,6 +394,8 @@ def update_provider(provider_id=None, provider_type_name=None):
         provider.auto_create_users = data['auto_create_users']
     if 'auto_update_users' in data:
         provider.auto_update_users = data['auto_update_users']
+    if 'sync_role_on_login' in data:
+        provider.sync_role_on_login = bool(data['sync_role_on_login'])
     
     # Type-specific fields
     if provider.provider_type == 'saml':
@@ -1737,27 +1761,46 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
     user = User.query.filter_by(username=username).first()
     
     if user:
-        # Update existing user if auto_update is enabled
+        # ── Userinfo sync (email, full name) ─────────────────────────────
+        # Controlled by `auto_update_users`. Does NOT touch the role.
         if provider.auto_update_users:
             if email:
                 user.email = email
             if fullname:
                 user.full_name = fullname
-            new_role = _resolve_role(provider, external_data)
-            if user.role != new_role:
-                logger.info(f"SSO auto-update: user {username} role changed {user.role} → {new_role}")
+
+        # ── Role sync ────────────────────────────────────────────────────
+        # See #81. Default behaviour: role is set at creation only and
+        # then managed in the UCM UI. Re-sync on login is opt-in via
+        # `sync_role_on_login` and only acts on an explicit role_mapping
+        # match — never falls back to `default_role` for existing users.
+        if provider.sync_role_on_login:
+            mapped_role = _resolve_role_from_mapping(provider, external_data)
+            if mapped_role is not None and user.role != mapped_role:
+                logger.info(
+                    f"SSO role sync: user {username} role changed "
+                    f"{user.role} → {mapped_role} (mapping match)"
+                )
                 from services.audit_service import AuditService
                 AuditService.log_action(
                     action='role_change',
                     resource_type='user',
                     resource_name=username,
                     username=username,
-                    details=f"SSO auto-update: role changed from {user.role} to {new_role}",
+                    details=(
+                        f"SSO role sync: role changed from {user.role} to "
+                        f"{mapped_role} (role_mapping match)"
+                    ),
                     success=True
                 )
-                user.role = new_role
-            user.last_login = utc_now()
+                user.role = mapped_role
+
+        user.last_login = utc_now()
+        try:
             db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to update SSO user {username}: {e}")
         return user, None
     
     # Create new user if auto_create is enabled
@@ -1765,6 +1808,7 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
         logger.warning(f"SSO user {username} not found and auto_create disabled")
         return None, 'auto_create_disabled'
     
+    # Creation path keeps the historical fallback to default_role.
     role = _resolve_role(provider, external_data)
     
     user = User(

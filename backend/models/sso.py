@@ -71,6 +71,11 @@ class SSOProvider(db.Model):
     # Auto-provisioning
     auto_create_users = db.Column(db.Boolean, default=True)
     auto_update_users = db.Column(db.Boolean, default=True)
+    # Re-sync role from SSO on every login (#81). Default OFF: role changes
+    # made in the UCM UI are preserved across logins. When ON, the role is
+    # only updated if `role_mapping` resolves; `default_role` is never
+    # applied to existing users.
+    sync_role_on_login = db.Column(db.Boolean, default=False, nullable=False)
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=utc_now)
@@ -137,6 +142,7 @@ class SSOProvider(db.Model):
             'default_role': self.default_role,
             'auto_create_users': self.auto_create_users,
             'auto_update_users': self.auto_update_users,
+            'sync_role_on_login': bool(self.sync_role_on_login),
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'last_used_at': self.last_used_at.isoformat() if self.last_used_at else None,

@@ -313,6 +313,174 @@ class TestRoleResolution:
 
 
 # ============================================================
+# Role Resolution — _resolve_role_from_mapping (#81)
+# ============================================================
+class TestResolveRoleFromMapping:
+    """`_resolve_role_from_mapping` returns the mapped role or None,
+    never falls back to default_role. Used at login to avoid #81
+    (UI role overwritten on every SSO login)."""
+
+    def test_mapping_match_returns_mapped(self, app):
+        with app.app_context():
+            from api.v2.sso import _resolve_role_from_mapping
+            from unittest.mock import MagicMock
+
+            provider = MagicMock()
+            provider.role_mapping = json.dumps({'admins': 'admin'})
+            provider.default_role = 'viewer'
+
+            assert _resolve_role_from_mapping(provider, {'groups': ['admins']}) == 'admin'
+
+    def test_no_mapping_returns_none(self, app):
+        with app.app_context():
+            from api.v2.sso import _resolve_role_from_mapping
+            from unittest.mock import MagicMock
+
+            provider = MagicMock()
+            provider.role_mapping = None
+            provider.default_role = 'admin'
+
+            assert _resolve_role_from_mapping(provider, {'groups': ['anyone']}) is None
+
+    def test_mapping_no_match_returns_none(self, app):
+        with app.app_context():
+            from api.v2.sso import _resolve_role_from_mapping
+            from unittest.mock import MagicMock
+
+            provider = MagicMock()
+            provider.role_mapping = json.dumps({'admins': 'admin'})
+            provider.default_role = 'operator'
+
+            assert _resolve_role_from_mapping(provider, {'groups': ['users']}) is None
+
+
+# ============================================================
+# SSO User Provisioning — _get_or_create_sso_user (#81)
+# ============================================================
+class TestSSOUserProvisioning:
+    """Verify role/userinfo decoupling on SSO login (issue #81)."""
+
+    def _make_provider(self, **kwargs):
+        from unittest.mock import MagicMock
+        provider = MagicMock()
+        provider.auto_create_users = kwargs.get('auto_create_users', True)
+        provider.auto_update_users = kwargs.get('auto_update_users', True)
+        provider.sync_role_on_login = kwargs.get('sync_role_on_login', False)
+        provider.default_role = kwargs.get('default_role', 'viewer')
+        provider.role_mapping = kwargs.get('role_mapping', None)
+        return provider
+
+    def _ensure_user(self, app, username='sso.alice', role='admin'):
+        from models import db, User
+        u = User.query.filter_by(username=username).first()
+        if u:
+            u.role = role
+            u.password_hash = '!sso-no-password!'
+            db.session.commit()
+            return u
+        u = User(
+            username=username,
+            email=f'{username}@example.test',
+            full_name='Alice',
+            role=role,
+            active=True,
+            password_hash='!sso-no-password!',
+        )
+        db.session.add(u)
+        db.session.commit()
+        return u
+
+    def test_existing_user_role_preserved_when_sync_disabled(self, app):
+        """Default behaviour (#81 fix): UI-set role survives SSO re-login."""
+        with app.app_context():
+            from api.v2.sso import _get_or_create_sso_user
+            self._ensure_user(app, 'sso.alice', role='admin')
+            provider = self._make_provider(default_role='viewer', sync_role_on_login=False)
+
+            user, err = _get_or_create_sso_user(
+                provider, 'sso.alice', 'alice@example.test', 'Alice',
+                {'groups': ['users']}
+            )
+            assert err is None
+            assert user.role == 'admin', "Existing UI-set role must NOT be overwritten"
+
+    def test_existing_user_role_synced_via_mapping(self, app):
+        """sync_role_on_login=True + matching mapping → role updated."""
+        with app.app_context():
+            from api.v2.sso import _get_or_create_sso_user
+            self._ensure_user(app, 'sso.bob', role='viewer')
+            provider = self._make_provider(
+                default_role='viewer',
+                sync_role_on_login=True,
+                role_mapping=json.dumps({'admins': 'admin'}),
+            )
+
+            user, err = _get_or_create_sso_user(
+                provider, 'sso.bob', 'bob@example.test', 'Bob',
+                {'groups': ['admins']}
+            )
+            assert err is None
+            assert user.role == 'admin'
+
+    def test_existing_user_role_kept_when_no_mapping_match(self, app):
+        """sync_role_on_login=True but no mapping match → role unchanged
+        (NEVER falls back to default_role for existing users — #81)."""
+        with app.app_context():
+            from api.v2.sso import _get_or_create_sso_user
+            self._ensure_user(app, 'sso.carol', role='operator')
+            provider = self._make_provider(
+                default_role='viewer',
+                sync_role_on_login=True,
+                role_mapping=json.dumps({'admins': 'admin'}),
+            )
+
+            user, err = _get_or_create_sso_user(
+                provider, 'sso.carol', 'carol@example.test', 'Carol',
+                {'groups': ['users']}
+            )
+            assert err is None
+            assert user.role == 'operator', "default_role must NOT be applied to existing users"
+
+    def test_existing_user_userinfo_synced_without_role(self, app):
+        """auto_update_users updates email/name without touching role."""
+        with app.app_context():
+            from api.v2.sso import _get_or_create_sso_user
+            self._ensure_user(app, 'sso.dave', role='admin')
+            provider = self._make_provider(
+                default_role='viewer',
+                auto_update_users=True,
+                sync_role_on_login=False,
+            )
+
+            user, err = _get_or_create_sso_user(
+                provider, 'sso.dave', 'dave.new@example.test', 'Dave Updated',
+                {'groups': []}
+            )
+            assert err is None
+            assert user.email == 'dave.new@example.test'
+            assert user.full_name == 'Dave Updated'
+            assert user.role == 'admin'
+
+    def test_new_user_creation_uses_default_role(self, app):
+        """Creation path keeps default_role fallback."""
+        with app.app_context():
+            from api.v2.sso import _get_or_create_sso_user
+            from models import User
+            User.query.filter_by(username='sso.new').delete()
+            from models import db
+            db.session.commit()
+            provider = self._make_provider(default_role='operator')
+
+            user, err = _get_or_create_sso_user(
+                provider, 'sso.new', 'new@example.test', 'New User',
+                {'groups': []}
+            )
+            assert err is None
+            assert user is not None
+            assert user.role == 'operator'
+
+
+# ============================================================
 # LDAP Rate Limiting — Lockout helpers
 # ============================================================
 class TestLDAPRateLimiting:

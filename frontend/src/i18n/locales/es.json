@@ -2464,7 +2464,10 @@
       "azure": "🟦 Microsoft Entra",
       "google": "🔵 Google",
       "github": "⚫ GitHub"
-    }
+    },
+    "syncRoleOnLogin": "Sincronizar el rol desde SSO en cada inicio de sesión",
+    "syncRoleOnLoginHelp": "Si está activado, el rol se vuelve a sincronizar desde su asignación de roles en cada inicio de sesión. Los usuarios sin coincidencia conservan su rol de UCM. Si está desactivado (predeterminado), el rol se establece solo al crear el usuario y luego se gestiona en UCM.",
+    "defaultRoleHelp": "Se aplica solo cuando un usuario se crea automáticamente en su primer inicio de sesión."
   },
   "notifications": {
     "certificateIssued": "Certificado emitido: {{name}}",
