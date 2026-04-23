@@ -39,7 +39,7 @@ def get_public_stats():
         
         # Active users
         try:
-            active_users = db.session.execute(text("SELECT COUNT(*) FROM users WHERE is_active = 1")).scalar() or 0
+            active_users = db.session.execute(text("SELECT COUNT(*) FROM users WHERE is_active = true")).scalar() or 0
         except Exception:
             logger.debug("Users table query failed")
             active_users = 1
@@ -292,7 +292,7 @@ def get_certificate_trend():
                 SELECT DATE(valid_to) as day, COUNT(*) as cnt
                 FROM certificates
                 WHERE valid_to >= :start AND valid_to <= :end
-                  AND (revoked IS NULL OR revoked = 0)
+                  AND revoked IS NOT TRUE
                 GROUP BY DATE(valid_to)
             """),
             {'start': start_dt, 'end': end_dt}
@@ -387,7 +387,7 @@ def get_system_status():
     # OCSP responder status - check if any CA has OCSP enabled
     try:
         ocsp_enabled_count = db.session.execute(
-            text("SELECT COUNT(*) FROM certificate_authorities WHERE ocsp_enabled = 1")
+            text("SELECT COUNT(*) FROM certificate_authorities WHERE ocsp_enabled = true")
         ).scalar() or 0
         if ocsp_enabled_count > 0:
             status['ocsp'] = {'status': 'online', 'message': f'{ocsp_enabled_count} CA(s) with OCSP'}
@@ -400,7 +400,7 @@ def get_system_status():
     # CRL distribution status - check if any CA has CDP enabled
     try:
         cdp_count = db.session.execute(
-            text("SELECT COUNT(*) FROM certificate_authorities WHERE cdp_enabled = 1")
+            text("SELECT COUNT(*) FROM certificate_authorities WHERE cdp_enabled = true")
         ).scalar() or 0
         if cdp_count > 0:
             status['crl'] = {'status': 'online', 'message': f'{cdp_count} CA(s) with CDP'}
@@ -415,10 +415,13 @@ def get_system_status():
             text("SELECT value FROM system_config WHERE key = 'auto_renewal_enabled'")
         ).scalar()
         if renewal_enabled == 'true':
+            now_dt = utc_now()
+            window_end = now_dt + timedelta(days=30)
             pending = db.session.execute(
-                text("""SELECT COUNT(*) FROM certificates 
-                    WHERE revoked = 0 AND valid_to IS NOT NULL 
-                    AND valid_to BETWEEN datetime('now') AND datetime('now', '+30 days')""")
+                text("""SELECT COUNT(*) FROM certificates
+                    WHERE revoked IS NOT TRUE AND valid_to IS NOT NULL
+                    AND valid_to >= :now AND valid_to <= :end"""),
+                {'now': now_dt, 'end': window_end}
             ).scalar() or 0
             msg = f'Scheduled ({pending} pending)' if pending > 0 else 'Scheduled'
             status['auto_renewal'] = {'status': 'online', 'message': msg}
@@ -447,7 +450,7 @@ def get_system_status():
     # Webhooks status
     try:
         webhook_count = db.session.execute(
-            text("SELECT COUNT(*) FROM webhook_endpoints WHERE active = 1")
+            text("SELECT COUNT(*) FROM webhook_endpoints WHERE active = true")
         ).scalar() or 0
         total_webhooks = db.session.execute(
             text("SELECT COUNT(*) FROM webhook_endpoints")
