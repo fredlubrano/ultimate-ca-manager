@@ -2709,6 +2709,7 @@ export default function SettingsPage() {
     try {
       await systemService.optimizeDatabase()
       showSuccess(t('messages.success.database.optimized'))
+      await loadDbStats()
     } catch (error) {
       showError(error.message || t('messages.errors.database.optimizeFailed'))
     }
@@ -2723,6 +2724,7 @@ export default function SettingsPage() {
       } else {
         showError(t('settings.integrityErrors', { count: result.errors }))
       }
+      await loadDbStats()
     } catch (error) {
       showError(error.message || t('messages.errors.database.integrityFailed'))
     }
