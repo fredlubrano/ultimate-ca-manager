@@ -363,6 +363,8 @@ class TestSSOUserProvisioning:
     def _make_provider(self, **kwargs):
         from unittest.mock import MagicMock
         provider = MagicMock()
+        provider.id = kwargs.get('id', 1)
+        provider.provider_type = kwargs.get('provider_type', 'oauth2')
         provider.auto_create_users = kwargs.get('auto_create_users', True)
         provider.auto_update_users = kwargs.get('auto_update_users', True)
         provider.sync_role_on_login = kwargs.get('sync_role_on_login', False)
