@@ -9,6 +9,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.135] - 2026-04-23
+
 ### Fixed
 - **Database Stats panel on PostgreSQL (#83)** — `Settings → Database` previously showed `-` for size and `Never` for `Last Optimized` on PostgreSQL deployments, and the panel never refreshed after `Optimize` / `Integrity Check`.
   - `get_db_stats()` now queries `pg_database_size(current_database())` on PostgreSQL (was using `os.path.getsize` on the SQLite file path → always `0` → frontend rendered `-`).
