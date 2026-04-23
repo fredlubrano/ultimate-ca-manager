@@ -9,6 +9,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.133] - 2026-04-23
+
 ### Fixed
 - **SSO Default Role overrides UCM-managed roles on every login (#81)** — until v2.132, `_resolve_role` was called inside `auto_update_users` for existing users and always fell back to `default_role` when no `role_mapping` matched. The result: any role change made in the UCM UI (e.g. promoting a user to `admin`) was silently reverted to the provider's `default_role` on the next SSO login. Two semantically separate concerns — userinfo sync (email/full name) and role sync — were also conflated under a single toggle.
   - `auto_update_users` now controls **userinfo only** (email, full name) and never touches the role.
@@ -19,6 +21,10 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
   - SSO settings UI gains a "Sync role from SSO on each login" toggle on LDAP, OAuth2 and SAML provider forms, with explanatory help text.
   - Help content updated (in-app help + 9 i18n locales).
   - Backend tests added covering the four behaviours: existing user role preserved, mapped sync, no-match no-op, userinfo without role, creation uses `default_role`.
+
+### Added
+- **User authentication source tracking** — every user record now exposes its origin (`local` / `ldap` / `oauth2` / `saml`) plus the originating SSO provider when applicable. New `auth_source` and `sso_provider_id` columns on the `users` table, populated automatically when SSO provisions an account, and backfilled for existing SSO users by migration `024_user_auth_source` (SQLite + PostgreSQL) and an in-place fallback in `_get_or_create_sso_user`. The Users & Groups page gains a colour-coded **Source** column showing both the auth method and the provider name (e.g. `LDAP · Corporate AD`).
+- **Wiki: dedicated SSO-Authentication page** covering LDAP / OAuth2 / SAML setup, role mapping, `sync_role_on_login`, `auth_source` tracking, and audit events.
 
 ## [2.132] - 2026-04-23
 
