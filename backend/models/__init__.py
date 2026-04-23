@@ -92,9 +92,20 @@ class User(db.Model):
     # User preferences (JSON-encoded; language, theme, density, etc.)
     # Persisted server-side so they follow the user across browsers/devices.
     preferences = db.Column(db.Text, nullable=True)
-    
+
+    # Authentication source — distinguishes locally-managed users from those
+    # provisioned by an SSO provider. Values: 'local', 'ldap', 'oauth2', 'saml'.
+    # `sso_provider_id` links to the originating provider when applicable.
+    auth_source = db.Column(db.String(20), nullable=False, default='local')
+    sso_provider_id = db.Column(
+        db.Integer,
+        db.ForeignKey('pro_sso_providers.id', ondelete='SET NULL'),
+        nullable=True,
+    )
+
     # Relationships
     custom_role = db.relationship('CustomRole', foreign_keys=[custom_role_id], lazy='select')
+    sso_provider = db.relationship('SSOProvider', foreign_keys=[sso_provider_id], lazy='select')
     
     @property
     def groups(self):
@@ -145,10 +156,18 @@ class User(db.Model):
             "last_login": self.last_login.isoformat() if self.last_login else None,
             "login_count": self.login_count or 0,
             "failed_logins": self.failed_logins or 0,
+            "auth_source": self.auth_source or 'local',
+            "sso_provider_id": self.sso_provider_id,
         }
         try:
             if self.custom_role_id and self.custom_role:
                 result["custom_role_name"] = self.custom_role.name
+        except Exception:
+            pass
+        try:
+            if self.sso_provider_id and self.sso_provider:
+                result["sso_provider_name"] = self.sso_provider.name
+                result["sso_provider_type"] = self.sso_provider.provider_type
         except Exception:
             pass
         return result

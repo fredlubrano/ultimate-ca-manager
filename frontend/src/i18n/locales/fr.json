@@ -2678,7 +2678,14 @@
       "assignFailed": "Échec de l'assignation du certificat à l'utilisateur",
       "loadAvailableFailed": "Échec du chargement des certificats disponibles"
     },
-    "activeDescription": "Activer ou désactiver ce compte utilisateur"
+    "activeDescription": "Activer ou désactiver ce compte utilisateur",
+    "source": "Source",
+    "authSource": {
+      "local": "Local",
+      "ldap": "LDAP",
+      "oauth2": "OAuth2",
+      "saml": "SAML"
+    }
   },
   "validation": {
     "required": "Ce champ est requis",

@@ -999,7 +999,14 @@
       "assignFailed": "Falha ao atribuir o certificado ao utilizador",
       "loadAvailableFailed": "Falha ao carregar os certificados disponíveis"
     },
-    "activeDescription": "Ativar ou desativar esta conta de usuário"
+    "activeDescription": "Ativar ou desativar esta conta de usuário",
+    "source": "Origem",
+    "authSource": {
+      "local": "Local",
+      "ldap": "LDAP",
+      "oauth2": "OAuth2",
+      "saml": "SAML"
+    }
   },
   "groups": {
     "group": "Grupo",

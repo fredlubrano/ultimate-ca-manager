@@ -999,7 +999,14 @@
       "assignFailed": "Errore nell'assegnazione del certificato all'utente",
       "loadAvailableFailed": "Errore nel caricamento dei certificati disponibili"
     },
-    "activeDescription": "Attivare o disattivare questo account utente"
+    "activeDescription": "Attivare o disattivare questo account utente",
+    "source": "Origine",
+    "authSource": {
+      "local": "Locale",
+      "ldap": "LDAP",
+      "oauth2": "OAuth2",
+      "saml": "SAML"
+    }
   },
   "groups": {
     "group": "Gruppo",

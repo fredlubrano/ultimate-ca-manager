@@ -999,7 +999,14 @@
       "assignFailed": "Zuweisung des Zertifikats fehlgeschlagen",
       "loadAvailableFailed": "Laden der verfügbaren Zertifikate fehlgeschlagen"
     },
-    "activeDescription": "Benutzerkonto aktivieren oder deaktivieren"
+    "activeDescription": "Benutzerkonto aktivieren oder deaktivieren",
+    "source": "Quelle",
+    "authSource": {
+      "local": "Lokal",
+      "ldap": "LDAP",
+      "oauth2": "OAuth2",
+      "saml": "SAML"
+    }
   },
   "groups": {
     "group": "Gruppe",

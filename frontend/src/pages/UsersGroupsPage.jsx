@@ -577,6 +577,30 @@ export default function UsersGroupsPage() {
       )
     },
     {
+      key: 'auth_source',
+      header: t('users.source'),
+      priority: 4,
+      hideOnMobile: true,
+      sortable: true,
+      render: (val, row) => {
+        const source = val || 'local'
+        const config = {
+          local:  { variant: 'default', label: t('users.authSource.local') },
+          ldap:   { variant: 'primary', label: t('users.authSource.ldap') },
+          oauth2: { variant: 'violet',  label: t('users.authSource.oauth2') },
+          saml:   { variant: 'teal',    label: t('users.authSource.saml') },
+        }[source] || { variant: 'default', label: source }
+        const label = row.sso_provider_name
+          ? `${config.label} · ${row.sso_provider_name}`
+          : config.label
+        return (
+          <Badge variant={config.variant} size="sm" title={label}>
+            {label}
+          </Badge>
+        )
+      }
+    },
+    {
       key: 'last_login',
       header: t('common.lastLogin'),
       hideOnMobile: true,
