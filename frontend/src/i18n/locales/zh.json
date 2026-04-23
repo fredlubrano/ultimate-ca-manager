@@ -999,7 +999,14 @@
       "assignFailed": "将证书分配给用户失败",
       "loadAvailableFailed": "加载可用证书失败"
     },
-    "activeDescription": "启用或禁用此用户帐户"
+    "activeDescription": "启用或禁用此用户帐户",
+    "source": "来源",
+    "authSource": {
+      "local": "本地",
+      "ldap": "LDAP",
+      "oauth2": "OAuth2",
+      "saml": "SAML"
+    }
   },
   "groups": {
     "group": "组",

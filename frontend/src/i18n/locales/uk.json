@@ -999,7 +999,14 @@
       "assignFailed": "Не вдалося призначити сертифікат користувачу",
       "loadAvailableFailed": "Не вдалося завантажити доступні сертифікати"
     },
-    "activeDescription": "Увімкнути або вимкнути цей обліковий запис"
+    "activeDescription": "Увімкнути або вимкнути цей обліковий запис",
+    "source": "Джерело",
+    "authSource": {
+      "local": "Локальний",
+      "ldap": "LDAP",
+      "oauth2": "OAuth2",
+      "saml": "SAML"
+    }
   },
   "groups": {
     "group": "Група",

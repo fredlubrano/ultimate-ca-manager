@@ -1761,6 +1761,17 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
     user = User.query.filter_by(username=username).first()
     
     if user:
+        # Backfill auth_source/sso_provider_id for users created before
+        # migration 024 — useful when several providers share a directory
+        # and the migration could not infer the right one.
+        if (user.auth_source or 'local') == 'local' and user.password_hash == '!SSO_NO_PASSWORD!':
+            user.auth_source = provider.provider_type
+            user.sso_provider_id = provider.id
+        elif user.sso_provider_id != provider.id and user.auth_source != 'local':
+            # User logged in through a different SSO provider — record latest.
+            user.sso_provider_id = provider.id
+            user.auth_source = provider.provider_type
+
         # ── Userinfo sync (email, full name) ─────────────────────────────
         # Controlled by `auto_update_users`. Does NOT touch the role.
         if provider.auto_update_users:
@@ -1817,7 +1828,9 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
         full_name=fullname or username,
         role=role,
         active=True,
-        last_login=utc_now()
+        last_login=utc_now(),
+        auth_source=provider.provider_type,
+        sso_provider_id=provider.id,
     )
     
     # SSO users don't have a password — use sentinel that cannot match any hash

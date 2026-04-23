@@ -999,7 +999,14 @@
       "assignFailed": "Failed to assign certificate to user",
       "loadAvailableFailed": "Failed to load available certificates"
     },
-    "activeDescription": "Enable or disable this user account"
+    "activeDescription": "Enable or disable this user account",
+    "source": "Source",
+    "authSource": {
+      "local": "Local",
+      "ldap": "LDAP",
+      "oauth2": "OAuth2",
+      "saml": "SAML"
+    }
   },
   "groups": {
     "group": "Group",
