@@ -2464,7 +2464,10 @@
       "azure": "🟦 Microsoft Entra",
       "google": "🔵 Google",
       "github": "⚫ GitHub"
-    }
+    },
+    "syncRoleOnLogin": "Sincronizza il ruolo da SSO ad ogni accesso",
+    "syncRoleOnLoginHelp": "Se abilitato, il ruolo viene risincronizzato dalla mappatura dei ruoli ad ogni accesso. Gli utenti senza corrispondenza mantengono il loro ruolo UCM. Se disabilitato (predefinito), il ruolo viene impostato solo alla creazione dell'utente e poi gestito in UCM.",
+    "defaultRoleHelp": "Applicato solo quando un utente viene creato automaticamente al primo accesso."
   },
   "notifications": {
     "certificateIssued": "Certificato emesso: {{name}}",

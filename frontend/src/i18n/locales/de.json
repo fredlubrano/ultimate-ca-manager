@@ -2464,7 +2464,10 @@
       "azure": "🟦 Microsoft Entra",
       "google": "🔵 Google",
       "github": "⚫ GitHub"
-    }
+    },
+    "syncRoleOnLogin": "Rolle bei jeder Anmeldung vom SSO synchronisieren",
+    "syncRoleOnLoginHelp": "Wenn aktiviert, wird die Rolle bei jeder Anmeldung aus dem Rollen-Mapping neu synchronisiert. Benutzer ohne Mapping-Treffer behalten ihre UCM-Rolle. Wenn deaktiviert (Standard), wird die Rolle nur bei der Erstellung des Benutzers gesetzt und danach in UCM verwaltet.",
+    "defaultRoleHelp": "Wird nur angewendet, wenn ein Benutzer bei der ersten Anmeldung automatisch angelegt wird."
   },
   "notifications": {
     "certificateIssued": "Zertifikat ausgestellt: {{name}}",

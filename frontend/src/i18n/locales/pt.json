@@ -2464,7 +2464,10 @@
       "azure": "🟦 Microsoft Entra",
       "google": "🔵 Google",
       "github": "⚫ GitHub"
-    }
+    },
+    "syncRoleOnLogin": "Sincronizar a função do SSO em cada login",
+    "syncRoleOnLoginHelp": "Quando ativado, a função é ressincronizada a partir do mapeamento de funções a cada login. Usuários sem correspondência mantêm sua função UCM. Quando desativado (padrão), a função é definida apenas na criação do usuário e depois gerenciada no UCM.",
+    "defaultRoleHelp": "Aplicado apenas quando um usuário é criado automaticamente no primeiro login."
   },
   "notifications": {
     "certificateIssued": "Certificado emitido: {{name}}",

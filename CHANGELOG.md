@@ -9,6 +9,17 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Fixed
+- **SSO Default Role overrides UCM-managed roles on every login (#81)** — until v2.132, `_resolve_role` was called inside `auto_update_users` for existing users and always fell back to `default_role` when no `role_mapping` matched. The result: any role change made in the UCM UI (e.g. promoting a user to `admin`) was silently reverted to the provider's `default_role` on the next SSO login. Two semantically separate concerns — userinfo sync (email/full name) and role sync — were also conflated under a single toggle.
+  - `auto_update_users` now controls **userinfo only** (email, full name) and never touches the role.
+  - `default_role` is now strictly a **creation-time** value.
+  - Role re-sync at login is opt-in via a new `sync_role_on_login` flag (default `false`). When enabled, the role is updated only if `role_mapping` resolves the user's external groups to a UCM role; if no mapping matches, the stored role is preserved (no `default_role` fallback for existing users).
+  - New backend helper `_resolve_role_from_mapping()` returns `None` when no mapping match is found, making the existing-user code path explicit.
+  - DB migration `023_sso_sync_role_on_login` adds the new column to `pro_sso_providers` (SQLite + PostgreSQL).
+  - SSO settings UI gains a "Sync role from SSO on each login" toggle on LDAP, OAuth2 and SAML provider forms, with explanatory help text.
+  - Help content updated (in-app help + 9 i18n locales).
+  - Backend tests added covering the four behaviours: existing user role preserved, mapped sync, no-match no-op, userinfo without role, creation uses `default_role`.
+
 ## [2.132] - 2026-04-23
 
 ### Fixed
