@@ -995,25 +995,46 @@ if ($DryRun) {{
 Write-Host "========================================" -ForegroundColor White
 Write-Host ""
 
-# --- Pre-flight: OpenSSH Server must be installed (offer auto-install) ---
+# --- Pre-flight: detect existing OpenSSH Server install (FoD or winget) ---
 $sshdSvc = Get-Service -Name sshd -ErrorAction SilentlyContinue
-if (-not $sshdSvc) {{
-    Write-Warn2 "OpenSSH Server (sshd) is not installed."
+$fodInstalled = $false
+$wingetInstalled = $false
+try {{
+    $cap = Get-WindowsCapability -Online -Name 'OpenSSH.Server~~~~0.0.1.0' -ErrorAction SilentlyContinue
+    if ($cap -and $cap.State -eq 'Installed') {{ $fodInstalled = $true }}
+}} catch {{ }}
+$wingetSshdPath = Join-Path $env:ProgramFiles 'OpenSSH\sshd.exe'
+if (Test-Path $wingetSshdPath) {{ $wingetInstalled = $true }}
+
+if ($fodInstalled) {{
+    Write-Info "Detected OpenSSH Server install: Windows Features-on-Demand"
+    Write-Info "  Binary: $env:WINDIR\System32\OpenSSH\sshd.exe"
+}}
+if ($wingetInstalled) {{
+    Write-Info "Detected OpenSSH Server install: winget / standalone"
+    Write-Info "  Binary: $wingetSshdPath"
+}}
+Write-Info "CA public key will be installed to: $CaKeyFile"
+Write-Info "sshd_config will be updated at:    $SshdConfig"
+
+if (-not ($fodInstalled -or $wingetInstalled -or $sshdSvc)) {{
+    Write-Warn2 "OpenSSH Server is not installed (neither FoD nor winget detected)."
     $doInstall = $false
     if ($DryRun) {{
-        Write-Info "Would offer to install OpenSSH.Server (skipped in -DryRun)."
+        Write-Info "Would offer to install OpenSSH.Server via Features-on-Demand (skipped in -DryRun)."
     }} elseif ($NonInteractive) {{
         Write-Err "OpenSSH Server is missing and -NonInteractive was supplied."
-        Write-Info "Install manually with:"
+        Write-Info "Install manually with one of:"
         Write-Info "  Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0"
-        Write-Info "  Set-Service -Name sshd -StartupType 'Automatic'; Start-Service sshd"
+        Write-Info "  winget install Microsoft.OpenSSH.Beta"
+        Write-Info "Then: Set-Service -Name sshd -StartupType 'Automatic'; Start-Service sshd"
         throw "OpenSSH Server missing"
     }} else {{
-        $resp = Read-Host "Install OpenSSH Server now? [Y/n]"
+        $resp = Read-Host "Install OpenSSH Server via Features-on-Demand now? [Y/n]"
         if ($resp -eq '' -or $resp -match '^[Yy]') {{ $doInstall = $true }}
     }}
     if ($doInstall) {{
-        Write-Info "Installing OpenSSH.Server (this may take 1-2 minutes)..."
+        Write-Info "Installing OpenSSH.Server via Add-WindowsCapability (this may take 1-2 minutes)..."
         try {{
             Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 -ErrorAction Stop | Out-Null
         }} catch {{
@@ -1072,8 +1093,11 @@ if (-not $sshdSvc) {{
     }} elseif (-not $DryRun) {{
         throw "OpenSSH Server is required. Install it and re-run this script."
     }}
+}} elseif ($sshdSvc) {{
+    Write-Info "sshd service detected (status: $($sshdSvc.Status))"
 }} else {{
-    Write-Info "OpenSSH Server detected (status: $($sshdSvc.Status))"
+    Write-Warn2 "OpenSSH binaries detected but sshd service is not registered."
+    Write-Info "Run: Set-Service -Name sshd -StartupType 'Automatic'; Start-Service sshd"
 }}
 
 # --- Step 1: Create CA key directory ---
@@ -1327,21 +1351,43 @@ Write-Host "========================================" -ForegroundColor White
 Write-Host ""
 
 $sshdSvc = Get-Service -Name sshd -ErrorAction SilentlyContinue
-if (-not $sshdSvc) {{
-    Write-Warn2 "OpenSSH Server (sshd) is not installed."
+$fodInstalled = $false
+$wingetInstalled = $false
+try {{
+    $cap = Get-WindowsCapability -Online -Name 'OpenSSH.Server~~~~0.0.1.0' -ErrorAction SilentlyContinue
+    if ($cap -and $cap.State -eq 'Installed') {{ $fodInstalled = $true }}
+}} catch {{ }}
+$wingetSshdPath = Join-Path $env:ProgramFiles 'OpenSSH\sshd.exe'
+if (Test-Path $wingetSshdPath) {{ $wingetInstalled = $true }}
+
+if ($fodInstalled) {{
+    Write-Info "Detected OpenSSH Server install: Windows Features-on-Demand"
+    Write-Info "  Binary: $env:WINDIR\System32\OpenSSH\sshd.exe"
+}}
+if ($wingetInstalled) {{
+    Write-Info "Detected OpenSSH Server install: winget / standalone"
+    Write-Info "  Binary: $wingetSshdPath"
+}}
+Write-Info "CA public key will be installed to: $CaKeyFile"
+Write-Info "sshd_config will be updated at:    $SshdConfig"
+
+if (-not ($fodInstalled -or $wingetInstalled -or $sshdSvc)) {{
+    Write-Warn2 "OpenSSH Server is not installed (neither FoD nor winget detected)."
     $doInstall = $false
     if ($DryRun) {{
-        Write-Info "Would offer to install OpenSSH.Server (skipped in -DryRun)."
+        Write-Info "Would offer to install OpenSSH.Server via Features-on-Demand (skipped in -DryRun)."
     }} elseif ($NonInteractive) {{
         Write-Err "OpenSSH Server is missing and -NonInteractive was supplied."
-        Write-Info "Install with: Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0"
+        Write-Info "Install manually with one of:"
+        Write-Info "  Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0"
+        Write-Info "  winget install Microsoft.OpenSSH.Beta"
         throw "OpenSSH Server missing"
     }} else {{
-        $resp = Read-Host "Install OpenSSH Server now? [Y/n]"
+        $resp = Read-Host "Install OpenSSH Server via Features-on-Demand now? [Y/n]"
         if ($resp -eq '' -or $resp -match '^[Yy]') {{ $doInstall = $true }}
     }}
     if ($doInstall) {{
-        Write-Info "Installing OpenSSH.Server (this may take 1-2 minutes)..."
+        Write-Info "Installing OpenSSH.Server via Add-WindowsCapability (this may take 1-2 minutes)..."
         try {{
             Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 -ErrorAction Stop | Out-Null
         }} catch {{
@@ -1400,8 +1446,11 @@ if (-not $sshdSvc) {{
     }} elseif (-not $DryRun) {{
         throw "OpenSSH Server is required. Install it and re-run this script."
     }}
+}} elseif ($sshdSvc) {{
+    Write-Info "sshd service detected (status: $($sshdSvc.Status))"
 }} else {{
-    Write-Info "OpenSSH Server detected (status: $($sshdSvc.Status))"
+    Write-Warn2 "OpenSSH binaries detected but sshd service is not registered."
+    Write-Info "Run: Set-Service -Name sshd -StartupType 'Automatic'; Start-Service sshd"
 }}
 
 # --- Step 1: Create CA key directory ---
