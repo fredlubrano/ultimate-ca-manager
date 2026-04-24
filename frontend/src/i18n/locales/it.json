@@ -1059,7 +1059,7 @@
     "proxyUpstreamUrl": "URL directory upstream",
     "proxyUpstreamUrlHelper": "L'URL della directory del server ACME upstream. Per impostazione predefinita, Let's Encrypt staging se vuoto.",
     "proxyUsage": "Utilizzo con certbot:",
-    "proxyUsageNote": "UCM crea e pulisce automaticamente i record DNS TXT - nessun plugin DNS certbot necessario!",
+    "proxyUsageNote": "UCM crea e rimuove automaticamente i record DNS TXT tramite il provider DNS configurato. Gli hook manuali di certbot sono no-op perché il proxy esegue la convalida.",
     "proxyRegistered": "Proxy Registrato",
     "registerAccount": "Registra Account",
     "aboutAcmeDesc": "ACME consente l'emissione automatizzata di certificati. Configura il server qui sotto, quindi usa l'URL della directory con qualsiasi client ACME (certbot, acme.sh, ecc.).",

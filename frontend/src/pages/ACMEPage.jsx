@@ -1513,7 +1513,11 @@ export default function ACMEPage() {
                 <pre className="text-xs text-text-primary bg-bg-secondary p-2 rounded overflow-x-auto font-mono whitespace-pre-wrap break-all">
 {`certbot certonly \\
   --server ${window.location.origin}/acme/proxy/directory \\
-  --preferred-challenges dns \\
+  --preferred-challenges dns-01 \\
+  --authenticator manual \\
+  --manual-auth-hook /bin/true \\
+  --manual-cleanup-hook /bin/true \\
+  --non-interactive --agree-tos -m you@example.com \\
   -d example.com`}
                 </pre>
                 <p className="text-xs text-text-tertiary">{t('acme.proxyUsageNote')}</p>
