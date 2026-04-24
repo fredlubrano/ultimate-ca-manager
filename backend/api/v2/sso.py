@@ -24,7 +24,7 @@ from lxml import etree
 import logging
 import os
 import tempfile
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 logger = logging.getLogger(__name__)
 
 VALID_ROLES = {'admin', 'operator', 'auditor', 'viewer'}
@@ -757,7 +757,7 @@ def _test_saml_connection(provider):
             'status': 'success',
             'message': 'SAML certificate valid',
             'cert_subject': cert.subject.rfc4514_string(),
-            'cert_expires': cert.not_valid_after_utc.isoformat()
+            'cert_expires': utc_isoformat(cert.not_valid_after_utc)
         })
     except Exception as e:
         logger.error(f"SAML certificate validation failed: {e}")
@@ -987,7 +987,7 @@ def list_saml_certificates():
             'id': 'https',
             'label': f'HTTPS Certificate ({cert.subject.rfc4514_string()})',
             'subject': cert.subject.rfc4514_string(),
-            'not_after': cert.not_valid_after_utc.isoformat() if hasattr(cert, 'not_valid_after_utc') else cert.not_valid_after.isoformat(),
+            'not_after': utc_isoformat(cert.not_valid_after_utc if hasattr(cert, 'not_valid_after_utc') else cert.not_valid_after),
             'is_default': True,
         })
     except Exception as e:
@@ -1014,7 +1014,7 @@ def list_saml_certificates():
                 'label': c.subject_cn or c.descr or f'Certificate #{c.id}',
                 'subject': c.subject,
                 'issuer': c.issuer,
-                'not_after': c.valid_to.isoformat() if c.valid_to else None,
+                'not_after': utc_isoformat(c.valid_to),
                 'key_type': c.key_algo,
                 'is_default': False,
             })
