@@ -9,6 +9,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.138] - 2026-04-25
+
 ### Fixed
 - **API key creation UX & no-expiration support (#90)** — three regressions in `Account → API Keys`:
   - Newly issued keys are now shown in a dedicated modal with the full key in a `<code>` block, an explicit copy button, and a warning that the key won't be shown again. The previous toast disappeared too quickly and its copy button copied the literal string `undefined`.
