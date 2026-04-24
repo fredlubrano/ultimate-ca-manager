@@ -4,7 +4,7 @@ Store FIDO2/U2F authentication credentials
 """
 from datetime import datetime
 from models import db
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class WebAuthnCredential(db.Model):
@@ -60,8 +60,8 @@ class WebAuthnCredential(db.Model):
             'user_verified': self.user_verified,
             'enabled': self.enabled,
             'sign_count': self.sign_count,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_used_at': self.last_used_at.isoformat() if self.last_used_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'last_used_at': utc_isoformat(self.last_used_at),
         }
 
 

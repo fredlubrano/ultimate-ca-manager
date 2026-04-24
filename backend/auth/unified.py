@@ -12,7 +12,7 @@ import json
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import request, jsonify, g, session, current_app
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 # Import models (will be created)
 try:
@@ -243,8 +243,8 @@ class AuthManager:
             'id': api_key.id,
             'name': name,
             'permissions': permissions,
-            'created_at': api_key.created_at.isoformat(),
-            'expires_at': api_key.expires_at.isoformat()
+            'created_at': utc_isoformat(api_key.created_at),
+            'expires_at': utc_isoformat(api_key.expires_at)
         }
     
 

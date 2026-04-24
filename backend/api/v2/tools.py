@@ -20,6 +20,7 @@ import logging
 
 from auth.unified import require_auth
 from utils.response import success_response, error_response
+from utils.datetime_utils import utc_isoformat
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +53,8 @@ def cert_to_dict(cert):
         'issuer': format_name(cert.issuer),
         'serial_number': format(cert.serial_number, 'X'),
         'version': cert.version.name,
-        'not_valid_before': cert.not_valid_before_utc.isoformat(),
-        'not_valid_after': cert.not_valid_after_utc.isoformat(),
+        'not_valid_before': utc_isoformat(cert.not_valid_before_utc),
+        'not_valid_after': utc_isoformat(cert.not_valid_after_utc),
         'signature_algorithm': cert.signature_algorithm_oid._name,
     }
     

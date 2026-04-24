@@ -7,7 +7,7 @@ Secrets are encrypted at rest using Fernet encryption
 from models import db
 from datetime import datetime
 import json
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class SSOProvider(db.Model):
@@ -143,9 +143,9 @@ class SSOProvider(db.Model):
             'auto_create_users': self.auto_create_users,
             'auto_update_users': self.auto_update_users,
             'sync_role_on_login': bool(self.sync_role_on_login),
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'last_used_at': self.last_used_at.isoformat() if self.last_used_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at),
+            'last_used_at': utc_isoformat(self.last_used_at),
         }
         
         # Type-specific fields
@@ -230,6 +230,6 @@ class SSOSession(db.Model):
             'user_id': self.user_id,
             'provider_id': self.provider_id,
             'provider_name': self.provider.name if self.provider else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'expires_at': utc_isoformat(self.expires_at),
         }

@@ -4,7 +4,7 @@ Pre-configured certificate profiles for common use cases
 """
 from datetime import datetime
 from models import db
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class CertificateTemplate(db.Model):
@@ -59,8 +59,8 @@ class CertificateTemplate(db.Model):
             "extensions_template": json.loads(self.extensions_template) if self.extensions_template else {},
             "is_system": self.is_system,
             "is_active": self.is_active,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "created_at": utc_isoformat(self.created_at),
             "created_by": self.created_by,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "updated_at": utc_isoformat(self.updated_at),
             "updated_by": self.updated_by,
         }

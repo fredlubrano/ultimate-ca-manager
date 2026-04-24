@@ -4,7 +4,7 @@ Store of trusted root/intermediate certificates
 """
 from datetime import datetime
 from models import db
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class TrustedCertificate(db.Model):
@@ -47,10 +47,10 @@ class TrustedCertificate(db.Model):
             "subject": self.subject,
             "issuer": self.issuer,
             "serial_number": self.serial_number,
-            "not_before": self.not_before.isoformat() if self.not_before else None,
-            "not_after": self.not_after.isoformat() if self.not_after else None,
+            "not_before": utc_isoformat(self.not_before),
+            "not_after": utc_isoformat(self.not_after),
             "purpose": self.purpose,
             "added_by": self.added_by,
-            "added_at": self.added_at.isoformat() if self.added_at else None,
+            "added_at": utc_isoformat(self.added_at),
             "notes": self.notes,
         }

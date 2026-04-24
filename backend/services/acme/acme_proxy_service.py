@@ -18,6 +18,7 @@ from cryptography.hazmat.backends import default_backend
 import josepy as jose
 
 from models import db, SystemConfig, DnsProvider
+from utils.datetime_utils import utc_isoformat
 
 logger = logging.getLogger(__name__)
 
@@ -422,8 +423,8 @@ class AcmeProxyService:
         # Forward to upstream Let's Encrypt
         payload = {
             "identifiers": identifiers,
-            "notBefore": not_before.isoformat() + 'Z' if not_before else None,
-            "notAfter": not_after.isoformat() + 'Z' if not_after else None
+            "notBefore": utc_isoformat(not_before),
+            "notAfter": utc_isoformat(not_after)
         }
         # Filter None
         payload = {k: v for k, v in payload.items() if v is not None}

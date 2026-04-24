@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from . import db
 import secrets
 import json
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class AcmeAccount(db.Model):
@@ -44,7 +44,7 @@ class AcmeAccount(db.Model):
             'contact': self.contact_list,
             'termsOfServiceAgreed': self.terms_of_service_agreed,
             'orders': f'/acme/acct/{self.account_id}/orders',
-            'createdAt': self.created_at.isoformat() + 'Z' if self.created_at else None
+            'createdAt': utc_isoformat(self.created_at)
         }
     
     def __repr__(self):
@@ -106,7 +106,7 @@ class AcmeOrder(db.Model):
             'identifiers': self.identifiers_list,
             'authorizations': self.authorization_urls,
             'finalize': f'/acme/order/{self.order_id}/finalize',
-            'expires': self.expires.isoformat() + 'Z' if self.expires else None
+            'expires': utc_isoformat(self.expires)
         }
         
         if self.not_before:
@@ -154,7 +154,7 @@ class AcmeAuthorization(db.Model):
         result = {
             'identifier': identifier_obj,
             'status': self.status,
-            'expires': self.expires.isoformat() + 'Z' if self.expires else None,
+            'expires': utc_isoformat(self.expires),
             'challenges': [challenge.to_dict() for challenge in self.challenges]
         }
         
@@ -281,8 +281,8 @@ class DnsProvider(db.Model):
             'zones': self.zones_list,
             'is_default': self.is_default,
             'enabled': self.enabled,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at),
         }
         if include_credentials and self.credentials:
             # Only return credential keys, not values (for UI display)
@@ -432,9 +432,9 @@ class AcmeClientOrder(db.Model):
             'account_id': self.account_id,
             'account_email': account_email,
             'account_short_id': account_short_id,
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'expires_at': utc_isoformat(self.expires_at),
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at),
         }
     
     def __repr__(self):
@@ -474,8 +474,8 @@ class AcmeDomain(db.Model):
             'issuing_ca_name': self.issuing_ca.common_name if self.issuing_ca else None,
             'is_wildcard_allowed': self.is_wildcard_allowed,
             'auto_approve': self.auto_approve,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at),
             'created_by': self.created_by,
         }
     
@@ -505,8 +505,8 @@ class AcmeLocalDomain(db.Model):
             'issuing_ca_id': self.issuing_ca_id,
             'issuing_ca_name': self.issuing_ca.common_name if self.issuing_ca else None,
             'auto_approve': self.auto_approve,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at),
             'created_by': self.created_by,
         }
     

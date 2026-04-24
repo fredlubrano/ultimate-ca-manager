@@ -11,7 +11,7 @@ import base64
 from models import db, Certificate, CA, User, AuditLog, SystemConfig
 from services.email_service import EmailService
 import logging
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ class ReportService:
         return {
             'report_type': report_type,
             'report_name': cls.REPORT_TYPES[report_type]['name'],
-            'generated_at': utc_now().isoformat(),
+            'generated_at': utc_isoformat(utc_now()),
             'parameters': params,
             'format': format_type,
             'content': content,

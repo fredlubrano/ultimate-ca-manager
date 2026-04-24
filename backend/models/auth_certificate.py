@@ -4,7 +4,7 @@ Store client certificates for mTLS authentication
 """
 from datetime import datetime
 from models import db
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class AuthCertificate(db.Model):
@@ -49,8 +49,8 @@ class AuthCertificate(db.Model):
             'cert_fingerprint': self.cert_fingerprint,
             'name': self.name,
             'enabled': self.enabled,
-            'valid_from': self.valid_from.isoformat() if self.valid_from else None,
-            'valid_until': self.valid_until.isoformat() if self.valid_until else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'last_used_at': self.last_used_at.isoformat() if self.last_used_at else None,
+            'valid_from': utc_isoformat(self.valid_from),
+            'valid_until': utc_isoformat(self.valid_until),
+            'created_at': utc_isoformat(self.created_at),
+            'last_used_at': utc_isoformat(self.last_used_at),
         }

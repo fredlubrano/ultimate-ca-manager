@@ -4,6 +4,7 @@ Discovery Models — ScanProfile, ScanRun, DiscoveredCertificate
 import json
 from datetime import datetime, timezone
 from models import db
+from utils.datetime_utils import utc_isoformat
 
 
 class ScanProfile(db.Model):
@@ -68,10 +69,10 @@ class ScanProfile(db.Model):
             'timeout': self.timeout,
             'max_workers': self.max_workers,
             'resolve_dns': self.resolve_dns,
-            'last_scan_at': self.last_scan_at.isoformat() if self.last_scan_at else None,
-            'next_scan_at': self.next_scan_at.isoformat() if self.next_scan_at else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'last_scan_at': utc_isoformat(self.last_scan_at),
+            'next_scan_at': utc_isoformat(self.next_scan_at),
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at),
         }
 
 
@@ -107,8 +108,8 @@ class ScanRun(db.Model):
             'id': self.id,
             'scan_profile_id': self.scan_profile_id,
             'profile_name': self.profile.name if self.profile else None,
-            'started_at': self.started_at.isoformat() if self.started_at else None,
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'started_at': utc_isoformat(self.started_at),
+            'completed_at': utc_isoformat(self.completed_at),
             'status': self.status,
             'total_targets': self.total_targets,
             'targets_scanned': self.targets_scanned,
@@ -188,14 +189,14 @@ class DiscoveredCertificate(db.Model):
             'subject': self.subject,
             'issuer': self.issuer,
             'serial_number': self.serial_number,
-            'not_before': self.not_before.isoformat() if self.not_before else None,
-            'not_after': self.not_after.isoformat() if self.not_after else None,
+            'not_before': utc_isoformat(self.not_before),
+            'not_after': utc_isoformat(self.not_after),
             'fingerprint_sha256': self.fingerprint_sha256,
             'status': self.status,
             'ucm_certificate_id': self.ucm_certificate_id,
-            'first_seen': self.first_seen.isoformat() if self.first_seen else None,
-            'last_seen': self.last_seen.isoformat() if self.last_seen else None,
-            'last_changed_at': self.last_changed_at.isoformat() if self.last_changed_at else None,
+            'first_seen': utc_isoformat(self.first_seen),
+            'last_seen': utc_isoformat(self.last_seen),
+            'last_changed_at': utc_isoformat(self.last_changed_at),
             'previous_fingerprint': self.previous_fingerprint,
             'dns_hostname': self.dns_hostname,
             'san_dns_names': json.loads(self.san_dns_names) if self.san_dns_names else [],

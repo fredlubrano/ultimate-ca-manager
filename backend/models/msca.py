@@ -6,7 +6,7 @@ Secrets are encrypted at rest using Fernet encryption.
 
 from models import db
 from datetime import datetime
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class MicrosoftCA(db.Model):
@@ -110,10 +110,10 @@ class MicrosoftCA(db.Model):
             'ca_bundle': self.ca_bundle or '',
             'default_template': self.default_template,
             'enabled': self.enabled,
-            'last_test_at': self.last_test_at.isoformat() if self.last_test_at else None,
+            'last_test_at': utc_isoformat(self.last_test_at),
             'last_test_result': self.last_test_result,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at),
             'created_by': self.created_by,
         }
 
@@ -165,8 +165,8 @@ class MSCARequest(db.Model):
             'disposition_message': self.disposition_message,
             'template': self.template,
             'status': self.status,
-            'submitted_at': self.submitted_at.isoformat() if self.submitted_at else None,
-            'issued_at': self.issued_at.isoformat() if self.issued_at else None,
+            'submitted_at': utc_isoformat(self.submitted_at),
+            'issued_at': utc_isoformat(self.issued_at),
             'error_message': self.error_message,
             'submitted_by': self.submitted_by,
             'enrollee_name': self.enrollee_name,

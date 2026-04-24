@@ -4,7 +4,7 @@ Custom Role Model - UCM Pro
 
 from models import db
 from datetime import datetime
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 class CustomRole(db.Model):
     """Custom role for fine-grained RBAC"""
@@ -47,8 +47,8 @@ class CustomRole(db.Model):
             'parent_name': self.parent.name if self.parent else None,
             'is_system': self.is_system,
             'user_count': user_count,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at)
         }
 
 

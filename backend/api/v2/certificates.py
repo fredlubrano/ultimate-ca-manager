@@ -43,7 +43,7 @@ from services.import_service import (
 )
 from security.encryption import encrypt_private_key, decrypt_private_key
 from websocket.emitters import on_certificate_issued, on_certificate_revoked, on_certificate_deleted, on_certificate_renewed
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 bp = Blueprint('certificates_v2', __name__)
 
@@ -720,7 +720,7 @@ def create_certificate():
                 cn=data['cn'],
                 ca_id=ca.id,
                 issuer=ca.name,
-                valid_to=not_after.isoformat() if not_after else None
+                valid_to=utc_isoformat(not_after)
             )
         except Exception:
             pass  # Non-blocking

@@ -5,7 +5,7 @@ Includes SMTP configuration, notification rules, and logs
 import json
 from datetime import datetime
 from models import db
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class SMTPConfig(db.Model):
@@ -138,7 +138,7 @@ class SMTPConfig(db.Model):
             "smtp_oauth_token_url": self.smtp_oauth_token_url,
             "smtp_oauth_scope": self.smtp_oauth_scope,
             "smtp_oauth_redirect_uri": self.smtp_oauth_redirect_uri,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "updated_at": utc_isoformat(self.updated_at),
             "updated_by": self.updated_by,
         }
         if include_password:
@@ -174,8 +174,8 @@ class NotificationConfig(db.Model):
             "subject_template": self.subject_template,
             "description": self.description,
             "cooldown_hours": self.cooldown_hours,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": utc_isoformat(self.created_at),
+            "updated_at": utc_isoformat(self.updated_at),
         }
 
 
@@ -213,7 +213,7 @@ class NotificationLog(db.Model):
             "resource_type": self.resource_type,
             "resource_id": self.resource_id,
             "retry_count": self.retry_count,
-            "sent_at": self.sent_at.isoformat() if self.sent_at else None,
+            "sent_at": utc_isoformat(self.sent_at),
         }
     
     @classmethod

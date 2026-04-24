@@ -12,7 +12,7 @@ Uses `cryptography` library's native SSHCertificateBuilder (v46+).
 
 import json
 import uuid
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 try:
     from models import db
@@ -129,7 +129,7 @@ class SSHCertificateAuthority(db.Model if db else object):
             'default_extensions': self.get_default_extensions(),
             'allowed_principals': self.get_allowed_principals(),
             'comment': self.comment,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': utc_isoformat(self.created_at),
             'created_by': self.created_by,
             'owner_group_id': self.owner_group_id,
             'owner_group_name': self.owner_group.name if self.owner_group else None,
@@ -271,18 +271,18 @@ class SSHCertificate(db.Model if db else object):
             'certificate': self.certificate,
             'principals': self.get_principals(),
             'serial': self.serial,
-            'valid_from': self.valid_from.isoformat() if self.valid_from else None,
-            'valid_to': self.valid_to.isoformat() if self.valid_to else None,
+            'valid_from': utc_isoformat(self.valid_from),
+            'valid_to': utc_isoformat(self.valid_to),
             'key_type': self.key_type,
             'fingerprint': self.fingerprint,
             'extensions': self.get_extensions(),
             'critical_options': self.get_critical_options(),
             'revoked': self.revoked,
-            'revoked_at': self.revoked_at.isoformat() if self.revoked_at else None,
+            'revoked_at': utc_isoformat(self.revoked_at),
             'revoke_reason': self.revoke_reason,
             'source': self.source,
             'status': self.status,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': utc_isoformat(self.created_at),
             'created_by': self.created_by,
             'owner_group_id': self.owner_group_id,
             'owner_group_name': self.owner_group.name if self.owner_group else None,

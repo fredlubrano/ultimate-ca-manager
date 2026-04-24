@@ -4,7 +4,7 @@ Group Model - User groups for permission management
 
 from models import db
 from datetime import datetime
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class Group(db.Model):
@@ -28,8 +28,8 @@ class Group(db.Model):
             'description': self.description,
             'permissions': self.permissions or [],
             'member_count': self.members.count(),
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at)
         }
         if include_members:
             result['members'] = [m.to_dict() for m in self.members]
@@ -60,5 +60,5 @@ class GroupMember(db.Model):
             'email': user.email if user else None,
             'full_name': user.full_name if user else None,
             'role': self.role,
-            'joined_at': self.joined_at.isoformat() if self.joined_at else None
+            'joined_at': utc_isoformat(self.joined_at)
         }

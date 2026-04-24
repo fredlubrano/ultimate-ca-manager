@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import pkcs12
 import ipaddress
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 def _name_value(name):
@@ -1297,8 +1297,8 @@ class TrustStoreService:
             'subject': {},
             'issuer': {},
             'validity': {
-                'not_before': cert.not_valid_before_utc.isoformat(),
-                'not_after': cert.not_valid_after_utc.isoformat()
+                'not_before': utc_isoformat(cert.not_valid_before_utc),
+                'not_after': utc_isoformat(cert.not_valid_after_utc)
             },
             'extensions': {},
             'public_key': {}
