@@ -9,6 +9,12 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Fixed
+- **API key creation UX & no-expiration support (#90)** — three regressions in `Account → API Keys`:
+  - Newly issued keys are now shown in a dedicated modal with the full key in a `<code>` block, an explicit copy button, and a warning that the key won't be shown again. The previous toast disappeared too quickly and its copy button copied the literal string `undefined`.
+  - The list view's per-key "copy" affordance now renders the real key prefix (e.g. `ucm_ak_AbC1`) instead of `undefined…`. Backed by a new `key_prefix` column persisted at creation time. Migration `026_add_api_key_prefix` adds the column on SQLite and PostgreSQL; legacy keys without a stored prefix render an "unavailable (legacy key)" placeholder.
+  - Leaving the expiration field empty now creates a key that **never expires**, matching the field's helper text. The backend distinguishes "field absent" (keeps the historical 365-day default for API/CLI compatibility) from explicit `null` / `0` / `""` (no expiration). Validation rejects negative or non-integer values with HTTP 400.
+
 ## [2.137] - 2026-04-24
 
 ### Fixed
