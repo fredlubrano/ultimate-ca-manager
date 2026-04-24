@@ -4,7 +4,7 @@ Stores pre-signed OCSP responses for performance
 """
 from . import db
 from datetime import datetime
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 class OCSPResponse(db.Model):
     __tablename__ = 'ocsp_responses'
@@ -48,10 +48,10 @@ class OCSPResponse(db.Model):
             'ca_id': self.ca_id,
             'cert_serial': self.cert_serial,
             'status': self.status,
-            'this_update': self.this_update.isoformat() if self.this_update else None,
-            'next_update': self.next_update.isoformat() if self.next_update else None,
-            'revocation_time': self.revocation_time.isoformat() if self.revocation_time else None,
+            'this_update': utc_isoformat(self.this_update),
+            'next_update': utc_isoformat(self.next_update),
+            'revocation_time': utc_isoformat(self.revocation_time),
             'revocation_reason': self.revocation_reason,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at),
         }

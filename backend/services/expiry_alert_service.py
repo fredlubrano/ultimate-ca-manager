@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 from models import db, Certificate
 from services.email_service import EmailService
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ def get_expiring_certificates(days: int = 30, include_revoked: bool = False) -> 
             'serial_number': cert.serial_number,
             'common_name': cert.descr,  # descr is used as common name
             'subject': cert.subject,
-            'valid_to': cert.valid_to.isoformat() if cert.valid_to else None,
+            'valid_to': utc_isoformat(cert.valid_to),
             'days_until_expiry': days_until,
             'issuer_ca_id': cert.caref,
             'revoked': cert.revoked or False

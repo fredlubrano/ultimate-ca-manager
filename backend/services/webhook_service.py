@@ -9,7 +9,7 @@ import json
 import hmac
 import hashlib
 import logging
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +60,10 @@ class WebhookEndpoint(db.Model):
             'events': self.get_events(),
             'ca_filter': self.ca_filter,
             'enabled': self.enabled,
-            'last_success': self.last_success.isoformat() if self.last_success else None,
-            'last_failure': self.last_failure.isoformat() if self.last_failure else None,
+            'last_success': utc_isoformat(self.last_success),
+            'last_failure': utc_isoformat(self.last_failure),
             'failure_count': self.failure_count,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': utc_isoformat(self.created_at),
         }
 
 

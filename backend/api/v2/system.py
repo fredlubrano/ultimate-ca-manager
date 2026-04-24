@@ -15,7 +15,7 @@ import shutil
 import werkzeug.utils
 from datetime import datetime, timezone
 import logging
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 logger = logging.getLogger(__name__)
 
@@ -265,8 +265,8 @@ def get_https_cert_info():
         return success_response(data={
             'common_name': cn or 'Unknown',
             'issuer': issuer_cn or 'Unknown',
-            'valid_from': cert.not_valid_before_utc.isoformat(),
-            'valid_to': cert.not_valid_after_utc.isoformat(),
+            'valid_from': utc_isoformat(cert.not_valid_before_utc),
+            'valid_to': utc_isoformat(cert.not_valid_after_utc),
             'fingerprint': fingerprint_formatted[:47] + '...',  # Truncate for display
             'type': 'Self-Signed' if is_self_signed else 'CA-Signed',
             'serial': format(cert.serial_number, 'x').upper()

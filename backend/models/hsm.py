@@ -5,7 +5,7 @@ Supports PKCS#11, Azure Key Vault, Google Cloud KMS, AWS CloudHSM
 
 from datetime import datetime
 import json
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 try:
     from models import db
@@ -63,10 +63,10 @@ class HsmProvider(db.Model if db else object):
             'provider_type': self.type,
             'status': self.status,
             'enabled': self.status == 'connected',
-            'last_tested_at': self.last_tested_at.isoformat() if self.last_tested_at else None,
+            'last_tested_at': utc_isoformat(self.last_tested_at),
             'error_message': self.error_message,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'updated_at': utc_isoformat(self.updated_at),
             'key_count': self.keys.count() if self.keys else 0
         }
         
@@ -224,7 +224,7 @@ class HsmKey(db.Model if db else object):
             'purpose': self.purpose,
             'has_public_key': bool(self.public_key_pem),
             'is_extractable': self.is_extractable,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': utc_isoformat(self.created_at),
             'metadata': json.loads(self.extra_data) if self.extra_data else None
         }
     

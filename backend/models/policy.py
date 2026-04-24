@@ -5,7 +5,7 @@ Defines certificate policies and approval workflows for compliance.
 from datetime import datetime
 from models import db
 import json
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class CertificatePolicy(db.Model):
@@ -91,7 +91,7 @@ class CertificatePolicy(db.Model):
             'notification_emails': json.loads(self.notification_emails) if self.notification_emails else [],
             'is_active': self.is_active,
             'priority': self.priority,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'created_at': utc_isoformat(self.created_at),
             'created_by': self.created_by,
         }
 
@@ -177,9 +177,9 @@ class ApprovalRequest(db.Model):
             'status': self.status,
             'approvals': self.get_approvals(),
             'required_approvals': self.required_approvals,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
-            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'expires_at': utc_isoformat(self.expires_at),
+            'resolved_at': utc_isoformat(self.resolved_at),
         }
         # Include certificate request summary if available
         if self.request_data:

@@ -9,7 +9,7 @@ from collections import defaultdict
 import json
 import hashlib
 from typing import Optional, Dict, List
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 try:
     from models import db, User, AuditLog
@@ -168,7 +168,7 @@ class AnomalyDetector:
         
         return [
             {
-                'timestamp': log.timestamp.isoformat(),
+                'timestamp': utc_isoformat(log.timestamp),
                 'details': json.loads(log.details) if log.details else {}
             }
             for log in logs

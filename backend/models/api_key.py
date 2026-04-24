@@ -5,7 +5,7 @@ Simple and secure API key storage
 
 from datetime import datetime
 import json
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 try:
     from models import db
@@ -52,9 +52,9 @@ class APIKey(db.Model if db else object):
             'id': self.id,
             'name': self.name,
             'permissions': json.loads(self.permissions),
-            'created_at': self.created_at.isoformat(),
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
-            'last_used_at': self.last_used_at.isoformat() if self.last_used_at else None,
+            'created_at': utc_isoformat(self.created_at),
+            'expires_at': utc_isoformat(self.expires_at),
+            'last_used_at': utc_isoformat(self.last_used_at),
             'is_active': self.is_active
         }
     

@@ -4,7 +4,7 @@ RFC 5280 compliant CRL metadata storage
 """
 from datetime import datetime
 from . import db
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class CRLMetadata(db.Model):
@@ -64,13 +64,13 @@ class CRLMetadata(db.Model):
             "id": self.id,
             "ca_id": self.ca_id,
             "crl_number": self.crl_number,
-            "this_update": self.this_update.isoformat() if self.this_update else None,
-            "next_update": self.next_update.isoformat() if self.next_update else None,
+            "this_update": utc_isoformat(self.this_update),
+            "next_update": utc_isoformat(self.next_update),
             "revoked_count": self.revoked_count,
             "is_stale": self.is_stale,
             "days_until_expiry": self.days_until_expiry,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "created_at": utc_isoformat(self.created_at),
+            "updated_at": utc_isoformat(self.updated_at),
             "generated_by": self.generated_by,
             "is_delta": self.is_delta or False,
             "base_crl_number": self.base_crl_number,
