@@ -111,19 +111,34 @@ class OvhDnsProvider(BaseDnsProvider):
             return False, str(e)
     
     def _get_zone(self, domain: str) -> Optional[str]:
-        """Find the zone that manages this domain"""
-        # Try to find matching zone
-        success, zones = self._request('GET', '/domain/zone')
-        if not success:
-            return None
-        
-        # Find the best matching zone
+        """Find the zone that manages this domain.
+
+        Tries two strategies so it works with both broadly-scoped consumer
+        keys (granted GET /domain/zone listing) and zone-scoped keys
+        (granted only /domain/zone/{zone}/*):
+
+        1. Walk parent domains and probe GET /domain/zone/{candidate}.
+           Zone-scoped keys CAN call this for zones in their scope.
+        2. Fall back to listing all zones via GET /domain/zone if (1)
+           returned no match (e.g. permissions are odd, or the candidate
+           probe was rate-limited).
+        """
         domain_parts = domain.split('.')
-        for i in range(len(domain_parts)):
-            potential_zone = '.'.join(domain_parts[i:])
-            if potential_zone in zones:
-                return potential_zone
-        
+        candidates = ['.'.join(domain_parts[i:]) for i in range(len(domain_parts) - 1)]
+
+        # Strategy 1 — direct probe (works with zone-scoped keys)
+        for candidate in candidates:
+            ok, _ = self._request('GET', f'/domain/zone/{candidate}')
+            if ok:
+                return candidate
+
+        # Strategy 2 — list all zones (requires broader scope)
+        ok, zones = self._request('GET', '/domain/zone')
+        if not ok or not isinstance(zones, list):
+            return None
+        for candidate in candidates:
+            if candidate in zones:
+                return candidate
         return None
     
     def create_txt_record(
@@ -192,12 +207,27 @@ class OvhDnsProvider(BaseDnsProvider):
         return True, f"Deleted {deleted} record(s)"
     
     def test_connection(self) -> Tuple[bool, str]:
-        """Test OVH API connection"""
-        success, zones = self._request('GET', '/domain/zone')
-        if success:
-            zone_count = len(zones) if zones else 0
-            return True, f"Connected successfully. Found {zone_count} zone(s)."
-        return False, f"Connection failed: {zones}"
+        """Test OVH API connection.
+
+        Uses /auth/currentCredential which validates the consumer key
+        without requiring any /domain scope. This lets users grant a
+        zone-scoped key (e.g. GET/POST/DELETE /domain/zone/example.com/*)
+        without also having to grant the broader GET /domain/zone listing.
+        """
+        success, info = self._request('GET', '/auth/currentCredential')
+        if not success:
+            return False, f"Connection failed: {info}"
+
+        status = info.get('status') if isinstance(info, dict) else None
+        if status and status != 'validated':
+            return False, f"Consumer key status is '{status}' (expected 'validated')"
+
+        # Best-effort zone count, but do NOT fail the test if the key wasn't
+        # granted /domain/zone listing — zone-scoped keys are perfectly valid.
+        zones_ok, zones = self._request('GET', '/domain/zone')
+        if zones_ok and isinstance(zones, list):
+            return True, f"Connected successfully. Found {len(zones)} zone(s)."
+        return True, "Connected successfully. (Consumer key is zone-scoped — zone list not enumerable, this is fine.)"
     
     @classmethod
     def get_credential_schema(cls):

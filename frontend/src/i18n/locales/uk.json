@@ -1059,7 +1059,7 @@
     "proxyUpstreamUrl": "Upstream URL каталогу",
     "proxyUpstreamUrlHelper": "URL каталогу upstream ACME-сервера. За замовчуванням Let's Encrypt staging, якщо порожньо.",
     "proxyUsage": "Використання з certbot:",
-    "proxyUsageNote": "UCM автоmatically creates and cleans up DNS TXT records - no certbot DNS plugin needed!",
+    "proxyUsageNote": "UCM автоматично створює та видаляє DNS TXT-записи через налаштованого DNS-провайдера. Ручні хуки certbot є no-op, оскільки проксі виконує валідацію.",
     "proxyRegistered": "Proxy зареєстровано",
     "registerAccount": "Зареєструвати обліковий запис",
     "aboutAcmeDesc": "ACME забезпечує автоматизовану видачу сертифікатів. Налаштуйте сервер нижче, а потім використовуйте URL каталогу з будь-яким ACME клієнтом (certbot, acme.sh тощо).",

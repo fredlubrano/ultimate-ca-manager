@@ -1059,7 +1059,7 @@
     "proxyUpstreamUrl": "Upstream-Verzeichnis-URL",
     "proxyUpstreamUrlHelper": "Die Verzeichnis-URL des Upstream-ACME-Servers. Standardmäßig Let's Encrypt Staging, wenn leer.",
     "proxyUsage": "Verwendung mit certbot:",
-    "proxyUsageNote": "UCM erstellt und bereinigt DNS-TXT-Records automatisch - kein certbot DNS-Plugin erforderlich!",
+    "proxyUsageNote": "UCM erstellt und entfernt DNS-TXT-Einträge automatisch über den konfigurierten DNS-Provider. Die manuellen Hooks von certbot sind No-Ops, weil der Proxy die Validierung übernimmt.",
     "proxyRegistered": "Proxy registriert",
     "registerAccount": "Konto registrieren",
     "aboutAcmeDesc": "ACME ermöglicht automatische Zertifikatsausstellung.",

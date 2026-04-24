@@ -1059,7 +1059,7 @@
     "proxyUpstreamUrl": "上游目录 URL",
     "proxyUpstreamUrlHelper": "上游 ACME 服务器的目录 URL。如果为空，默认使用 Let's Encrypt staging。",
     "proxyUsage": "certbot 使用方法：",
-    "proxyUsageNote": "UCM 自动创建和清理 DNS TXT 记录 - 无需 certbot DNS 插件！",
+    "proxyUsageNote": "UCM 通过已配置的 DNS 提供商自动创建和清理 DNS TXT 记录。certbot 的 manual 钩子留空即可，因为校验由代理完成。",
     "proxyRegistered": "代理已注册",
     "registerAccount": "注册账户",
     "aboutAcmeDesc": "ACME 实现自动化证书颁发。配置下方服务器，然后使用任何 ACME 客户端（certbot, acme.sh 等）连接目录 URL。",
