@@ -400,13 +400,25 @@ def new_account():
             eab_valid, eab_error = service.validate_eab(eab_data, jwk)
             if not eab_valid:
                 return acme_error('malformed', f'Invalid external account binding: {eab_error}')
-        
+
         # Create or retrieve account
         account, is_new = service.create_account(
             jwk=jwk,
             contact=contact,
             terms_of_service_agreed=terms_agreed
         )
+
+        # Bind the EAB credential (if any) to the freshly-created account
+        # so the admin UI can show "this k8s cluster registered acct/abc".
+        if eab_data and is_new:
+            try:
+                import base64 as _b64
+                eab_protected = json.loads(_b64.urlsafe_b64decode(eab_data['protected'] + '=='))
+                eab_kid = eab_protected.get('kid', '')
+                if eab_kid:
+                    service.mark_eab_used(eab_kid, account.account_id)
+            except Exception as bind_err:
+                logger.warning(f"Failed to bind EAB credential to account: {bind_err}")
         
         # Build response
         account_url = f"{service.base_url}/acme/acct/{account.account_id}"
