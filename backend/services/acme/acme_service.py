@@ -693,7 +693,19 @@ class AcmeService:
         txt_record = f"_acme-challenge.{domain}"
         
         try:
-            answers = dns.resolver.resolve(txt_record, 'TXT')
+            # Optional override: allow operators to point DNS-01 validation at
+            # a specific authoritative resolver (e.g. an internal BIND9 fed by
+            # cert-manager rfc2136) regardless of the system /etc/resolv.conf.
+            # Comma-separated list in SystemConfig key ``acme.dns01_nameservers``.
+            custom_ns = self._acme_dns01_nameservers()
+            if custom_ns:
+                resolver = dns.resolver.Resolver(configure=False)
+                resolver.nameservers = custom_ns
+                resolver.timeout = 5
+                resolver.lifetime = 10
+                answers = resolver.resolve(txt_record, 'TXT')
+            else:
+                answers = dns.resolver.resolve(txt_record, 'TXT')
             
             for rdata in answers:
                 # RFC 8555 §8.4: TXT record content must EQUAL the key authorization hash.
@@ -1273,6 +1285,26 @@ class AcmeService:
         except Exception:
             return True
     
+    def _acme_dns01_nameservers(self) -> list:
+        """Optional list of DNS servers to use for DNS-01 challenge validation.
+
+        When set (SystemConfig key ``acme.dns01_nameservers``, comma-separated
+        IPs), DNS-01 validation queries those resolvers instead of the system
+        resolver. Useful when the authoritative DNS for the validation zone
+        (e.g. a local BIND9 driven by cert-manager rfc2136) is not reachable
+        via the OS /etc/resolv.conf chain.
+
+        Returns an empty list when unset.
+        """
+        try:
+            from models import SystemConfig
+            setting = SystemConfig.query.filter_by(key='acme.dns01_nameservers').first()
+            if not setting or not setting.value:
+                return []
+            return [ip.strip() for ip in str(setting.value).split(',') if ip.strip()]
+        except Exception:
+            return []
+
     def validate_eab(self, eab_data: Dict[str, Any], account_jwk: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
         """Validate External Account Binding (RFC 8555 §7.3.4)
         
