@@ -26,6 +26,7 @@ export default {
       'CSRは要求者の秘密鍵を保持します — 鍵がシステムを離れることはありません',
       '署名後、必要に応じてPKCS#12エクスポートのためにCSRに秘密鍵を追加できます',
       'Windows PKIに接続している場合、Microsoft CAモードを使用してAD CS経由でCSRに署名できます',
+      '署名時には「追加 EKU」を使って Microsoft RDP、スマートカードログオン、IPsec、または任意の OID を追加できます — CSR の既存 EKU はマージされたセットで再構築されます',
     ],
   },
   helpGuides: {
