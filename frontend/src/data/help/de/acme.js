@@ -46,6 +46,34 @@ export default {
           '4. Erste verfügbare CA mit einem privaten Schlüssel',
         ]
       },
+      {
+        title: 'EAB-Credentials (serverseitig)',
+        content: 'Wenn UCM als ACME-Server fungiert, erlaubt External Account Binding (RFC 8555 §7.3.4) das Erfordern vorab ausgegebener Credentials, bevor Clients Konten registrieren können:',
+        items: [
+          { label: 'Ausstellen', text: 'Neues kid + HMAC-Schlüsselpaar unter ACME → EAB Credentials erzeugen' },
+          { label: 'Verteilen', text: 'kid + HMAC an den Client weitergeben (cert-manager, certbot, acme.sh)' },
+          { label: 'Binden', text: 'Der Client signiert ein JWS über den MAC-Schlüssel bei newAccount, um sein ACME-Konto zu binden' },
+          { label: 'Rotieren / Widerrufen', text: 'kid jederzeit widerrufen — bestehende Konten funktionieren weiter, neue Bindungen werden abgelehnt' },
+          { label: 'Audit', text: 'Ausstellung, Rotation und Widerruf werden unter dem ausführenden Operator auditiert' },
+        ]
+      },
+      {
+        title: 'Benutzerdefinierte DNS-Resolver (DNS-01)',
+        items: [
+          { label: 'Pro Konto override', text: 'System-Resolver bei der Validierung von _acme-challenge TXT-Records überschreiben' },
+          { label: 'Split-Horizon', text: 'Nützlich, wenn Ihr autoritativer Server intern ist, die öffentliche Sicht aber anderswo gecacht wird' },
+          { label: 'Veraltete Records', text: 'Vermeidet Public-Resolver-Caching während schneller Auto-Renewals' },
+        ]
+      },
+      {
+        title: 'ACME über interne / private IPs',
+        content: 'HTTP-01 und TLS-ALPN-01-Validierung funktioniert standardmäßig für RFC1918, Loopback, .lan / .local / .corp-Ziele — UCMs primäres Deployment-Modell.',
+        items: [
+          { label: 'Toggle', text: 'Settings → SystemConfig → acme.allow_private_ips (Standard: true)' },
+          { label: 'Immer blockiert', text: 'Cloud-Metadata-IPs (169.254.169.254, fd00:ec2::254 usw.) werden bedingungslos blockiert' },
+        ]
+      },
+
     ],
     tips: [
       'ACME-Directory-URL: https://ihr-server:port/acme/directory',
@@ -55,6 +83,8 @@ export default {
       'Verwenden Sie lokale Domänen, um verschiedenen internen Domänen unterschiedliche CAs zuzuweisen',
       'Jede CA mit einem privaten Schlüssel kann als ausstellende CA ausgewählt werden',
       'Wildcard-Domänen (*.example.com) erfordern DNS-01-Validierung',
+      'Wenn UCM der ACME-Server ist, eigene EAB-Credentials unter ACME → EAB Credentials ausstellen',
+      'Für Kubernetes/cert-manager: Referenzmanifeste unter examples/kubernetes/cert-manager/',
     ],
     warnings: [
       'Domänenvalidierung ist erforderlich — Ihr Server muss erreichbar sein oder DNS konfiguriert sein',

@@ -46,6 +46,34 @@ export default {
           '4. 秘密鍵を持つ最初の利用可能なCA',
         ]
       },
+      {
+        title: 'EAB クレデンシャル(サーバー側)',
+        content: 'UCM が ACME サーバーとして動作する場合、External Account Binding(RFC 8555 §7.3.4)により、クライアントがアカウントを登録する前に事前発行クレデンシャルを要求できます:',
+        items: [
+          { label: '発行', text: 'ACME → EAB Credentials から新しい kid + HMAC キーペアを生成' },
+          { label: '配布', text: 'kid + HMAC をクライアント(cert-manager、certbot、acme.sh)に渡す' },
+          { label: 'バインド', text: 'クライアントは newAccount で MAC キー上に JWS を署名して ACME アカウントをバインドする' },
+          { label: 'ローテーション / 取消', text: 'kid をいつでも取消可能 — 既存アカウントは継続動作、新規バインドは拒否' },
+          { label: '監査', text: '発行・ローテーション・取消は実行したオペレーターの下で監査される' },
+        ]
+      },
+      {
+        title: 'カスタム DNS リゾルバ(DNS-01)',
+        items: [
+          { label: 'アカウント単位オーバーライド', text: '_acme-challenge TXT レコードを検証する際にシステムリゾルバを上書き' },
+          { label: 'スプリットホライズン', text: '権威サーバーが内部にあり、パブリックビューが他所にキャッシュされている場合に有用' },
+          { label: '古いレコード', text: '高速な自動更新中にパブリックリゾルバのキャッシュを回避' },
+        ]
+      },
+      {
+        title: '内部 / プライベート IP 上の ACME',
+        content: 'HTTP-01 および TLS-ALPN-01 検証は、RFC1918、loopback、.lan / .local / .corp ターゲットでデフォルトで動作します — UCM の主要なデプロイメントモデル。',
+        items: [
+          { label: 'トグル', text: 'Settings → SystemConfig → acme.allow_private_ips(デフォルト: true)' },
+          { label: '常時ブロック', text: 'クラウドメタデータ IP(169.254.169.254、fd00:ec2::254 など)は無条件にブロック' },
+        ]
+      },
+
     ],
     tips: [
       'ACMEディレクトリURL: https://your-server:port/acme/directory',
@@ -55,6 +83,8 @@ export default {
       'ローカルドメインを使用して、異なる内部ドメインに異なるCAを割り当てることができます',
       '秘密鍵を持つ任意のCAを発行CAとして選択できます',
       'ワイルドカードドメイン（*.example.com）にはDNS-01検証が必要です',
+      'UCM が ACME サーバーの場合、ACME → EAB Credentials で独自の EAB クレデンシャルを発行してください',
+      'Kubernetes/cert-manager 用: examples/kubernetes/cert-manager/ にある参照マニフェストを参照',
     ],
     warnings: [
       'ドメイン検証が必要です — サーバーが到達可能であるか、DNSが設定されている必要があります',

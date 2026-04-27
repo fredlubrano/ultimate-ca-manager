@@ -29,11 +29,23 @@ export default {
           { label: '吊销', text: '立即使 API 密钥失效' },
         ]
       },
+      {
+        title: '偏好设置(服务器端同步)',
+        content: '您的语言、主题家族和主题模式持久化在数据库中,并跨浏览器和设备跟随您:',
+        items: [
+          { label: '存储', text: '在 users.preferences(JSON)中。新端点 GET/PUT /api/v2/account/preferences' },
+          { label: '自动应用', text: '/api/v2/auth/verify 返回您的偏好,并在每次页面加载时应用' },
+          { label: '新浏览器', text: '从新设备登录或清除站点数据后 → 您选择的语言和主题被恢复' },
+        ]
+      },
+
     ],
     tips: [
       '管理员账户至少启用一种第二因素认证（TOTP 或安全密钥）',
       'API 密钥可设置过期日期，适用于短期集成',
       '使用任意 TOTP 应用扫描二维码：Google Authenticator、Authy、1Password 等',
+      'API 密钥也可以创建为永不过期,以用于长期运行的自动化',
+      '每个列表页(证书、CA、审计等)上的过滤器选择会在重新加载之间自动持久化',
     ],
   },
   helpGuides: {

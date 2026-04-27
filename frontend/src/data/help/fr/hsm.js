@@ -22,11 +22,24 @@ export default {
           { label: 'Tester la connexion', text: 'Vérifier la communication et l\'authentification avec le HSM' },
         ]
       },
+      {
+        title: 'CA adossées à HSM (v2.130+)',
+        content: 'Une fois un fournisseur HSM configuré, vous pouvez épingler la clé privée d\'une CA à ce HSM dès sa création :',
+        items: [
+          { label: 'Bascule Stockage de clé', text: 'Sur le formulaire de création de CA, choisir Local (chiffré en DB) ou HSM. Sélectionner le fournisseur + label de clé' },
+          { label: 'Chemin de signature', text: 'Chaque émission, signature de CRL et signature OCSP de cette CA passe par le HSM — la clé ne sort jamais' },
+          { label: 'Restrictions d\'export', text: 'L\'export PKCS#12, JKS et clé seule est désactivé pour les CA HSM (seul le certificat public / la chaîne peut être exporté)' },
+          { label: 'CRL & OCSP', text: 'Les deux fonctionnent de manière transparente avec les CA HSM (signés via HSM)' },
+          { label: 'Migration', text: 'Les CA locales existantes ne peuvent pas être déplacées vers un HSM après création — choisir à la création' },
+        ]
+      },
+
     ],
     tips: [
       'SoftHSM est pré-installé dans l\'image Docker — un jeton par défaut est auto-initialisé au premier démarrage',
       'Utilisez SoftHSM pour le développement et les tests avant le déploiement avec des HSM physiques',
       'Les clés générées sur un HSM ne peuvent pas être exportées — planifiez soigneusement votre stratégie de sauvegarde',
+      'Pour les CA racines à long terme en production, préférez le stockage de clé adossé à HSM',
     ],
     warnings: [
       'Les clés HSM ne peuvent pas être exportées — la perte d\'accès au HSM signifie la perte des clés',

@@ -23,11 +23,24 @@ export default {
           { label: 'Estado', text: 'Monitorear el estado de conexión del proveedor' },
         ]
       },
+      {
+        title: 'CA respaldadas por HSM (v2.130+)',
+        content: 'Una vez configurado un proveedor, puede fijar la clave privada de una CA a ese HSM en el momento de creación:',
+        items: [
+          { label: 'Conmutador Key Storage', text: 'En el formulario de creación de CA, elegir Local (cifrado en DB) o HSM. Seleccionar proveedor + etiqueta de clave' },
+          { label: 'Ruta de firma', text: 'Cada emisión, firma de CRL y firma OCSP de esa CA pasa por el HSM — la clave nunca sale' },
+          { label: 'Restricciones de exportación', text: 'PKCS#12, JKS y exportaciones de solo clave están deshabilitadas para CA HSM (solo el certificado público / cadena pueden exportarse)' },
+          { label: 'CRL y OCSP', text: 'Ambos funcionan de forma transparente con CA HSM (firmados vía HSM)' },
+          { label: 'Migración', text: 'Las CA locales existentes no pueden moverse a un HSM tras la creación — elegir en la creación' },
+        ]
+      },
+
     ],
     tips: [
       'Use SoftHSM para pruebas antes de implementar con un HSM físico',
       'Las claves generadas en un HSM nunca salen del hardware — no se pueden exportar',
       'Pruebe la conexión antes de usar un proveedor HSM para la firma de CA',
+      'Para CA raíz de larga duración en producción, prefiera el almacenamiento de clave respaldado por HSM',
     ],
     warnings: [
       'Una configuración incorrecta del proveedor HSM puede impedir la firma de certificados',
