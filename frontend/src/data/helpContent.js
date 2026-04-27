@@ -124,15 +124,38 @@ export const helpContent = {
           { label: 'Revoke', text: 'Mark as revoked with a reason — will appear in CRL' },
           { label: 'Remove Hold', text: 'Unhold a certificate revoked with "Certificate Hold" reason — restores it to valid status' },
           { label: 'Revoke & Replace', text: 'Revoke and immediately issue a replacement' },
-          { label: 'Export', text: 'Download in PEM, DER, or PKCS#12 format' },
+          { label: 'Export', text: 'Download in PEM, DER, PKCS#12, or JKS format' },
           { label: 'Compare', text: 'Side-by-side comparison of two certificates' },
+        ]
+      },
+      {
+        title: 'Custom Extra EKUs (RFC 5280 §4.2.1.12)',
+        icon: ShieldCheck,
+        content: 'The Issue Certificate form and the Sign CSR modal expose an "Extra EKUs" multi-select that lets you add Extended Key Usage OIDs on top of the cert type defaults:',
+        items: [
+          { label: 'Catalog', text: '18 well-known EKUs in a dropdown: Microsoft RDP (1.3.6.1.4.1.311.54.1.2), smartcard logon, document signing, IPsec, Kerberos PKINIT, etc.' },
+          { label: 'Free-text OIDs', text: 'Any well-formed dotted OID matching ^[0-2](?:\\.(?:0|[1-9]\\d*)){1,15}$' },
+          { label: 'Limit', text: 'Up to 16 OIDs total per certificate' },
+          { label: 'Merged, never replaced', text: 'The cert type\'s default EKUs (e.g. serverAuth) stay locked-in as chips — extras are added on top' },
+          { label: 'Rejected', text: 'anyExtendedKeyUsage (2.5.29.37.0) is explicitly disallowed' },
+        ]
+      },
+      {
+        title: 'On-disk certificate files (v2.140)',
+        icon: HardDrive,
+        items: [
+          { label: 'Auto-materialized', text: '.crt / .key files are written under data/certs/ on every creation path (UI, CSR signing, ACME, SCEP, import)' },
+          { label: 'CAs too', text: 'CA .crt / .key files are written under data/cas/ via the same mechanism' },
+          { label: 'Safety net', text: 'A startup file-regeneration scan rebuilds any missing file from the database' },
+          { label: 'Non-blocking', text: 'File-write errors are logged but never abort the database transaction' },
         ]
       },
     ],
     tips: [
       'Star ⭐ important certificates to add them to your favorites list',
-      'Use filters to quickly find certificates by status, CA, or search text',
+      'Use filters to quickly find certificates by status, CA, or search text — your selection is persisted across reloads',
       'Renewing preserves the same subject but generates a new key pair',
+      'Need a non-standard EKU (Microsoft RDP, smartcard logon, document signing)? Add it via "Extra EKUs" instead of editing templates',
     ],
     warnings: [
       'Revocation is generally permanent — except for "Certificate Hold" which can be removed (unhold)',
@@ -220,6 +243,7 @@ export const helpContent = {
       'CSRs preserve the requester\'s private key — it never leaves their system',
       'You can add a private key to a CSR after signing if needed for PKCS#12 export',
       'Use Microsoft CA mode to sign CSRs via AD CS when connected to a Windows PKI',
+      'When signing, use "Extra EKUs" to add Microsoft RDP, smartcard logon, IPsec or any other dotted OID — the CSR\'s existing EKU is rebuilt with the merged set',
     ],
     related: ['Certificates', 'CAs', 'Templates', 'Microsoft CA']
   },
@@ -465,6 +489,36 @@ export const helpContent = {
         ]
       },
       {
+        title: 'EAB Credentials (Server-side)',
+        icon: Key,
+        content: 'When UCM acts as an ACME server, External Account Binding (RFC 8555 §7.3.4) lets you require pre-issued credentials before clients can register accounts:',
+        items: [
+          { label: 'Issue', text: 'Generate a new kid + HMAC key pair from ACME → EAB Credentials' },
+          { label: 'Distribute', text: 'Hand the kid + HMAC to the client (cert-manager, certbot, acme.sh)' },
+          { label: 'Bind', text: 'The client signs a JWS over the MAC key on newAccount to bind its ACME account' },
+          { label: 'Rotate / Revoke', text: 'Revoke a kid at any time — existing accounts continue to work, new bindings are refused' },
+          { label: 'Audit', text: 'Issuance, rotation and revocation are audited under the operator who performed them' },
+        ]
+      },
+      {
+        title: 'Custom DNS Resolvers (DNS-01)',
+        icon: Globe,
+        items: [
+          { label: 'Per-account override', text: 'Override system resolvers when validating _acme-challenge TXT records' },
+          { label: 'Split-horizon', text: 'Useful when your authoritative server is internal but the public view is cached elsewhere' },
+          { label: 'Stale records', text: 'Avoids public-resolver caching during fast automated renewals' },
+        ]
+      },
+      {
+        title: 'ACME on Internal / Private IPs',
+        icon: ShieldCheck,
+        content: 'HTTP-01 and TLS-ALPN-01 validation works out of the box for RFC1918, loopback, .lan / .local / .corp targets — UCM\'s primary deployment model.',
+        items: [
+          { label: 'Toggle', text: 'Settings → SystemConfig → acme.allow_private_ips (default: true)' },
+          { label: 'Always blocked', text: 'Cloud metadata IPs (169.254.169.254, fd00:ec2::254, etc.) are blocked unconditionally' },
+        ]
+      },
+      {
         title: 'Multi-CA Resolution',
         icon: TreeStructure,
         content: 'When an ACME client requests a certificate, UCM resolves the signing CA in this order:',
@@ -480,6 +534,8 @@ export const helpContent = {
       'ACME directory URL: https://your-server:port/acme/directory',
       'Use a custom directory URL to connect to ZeroSSL, Buypass, HARICA, or any RFC 8555 CA',
       'EAB credentials (Key ID + HMAC Key) are provided by your CA upon registration',
+      'When UCM is the ACME server, issue your own EAB credentials in ACME → EAB Credentials',
+      'For Kubernetes/cert-manager: see the reference manifests under examples/kubernetes/cert-manager/',
       'ECDSA P-256 keys offer equivalent security to RSA-2048 with much smaller size',
       'Use Local Domains to assign different CAs to different internal domains',
       'Any CA with a private key can be selected as the issuing CA',
@@ -653,15 +709,26 @@ export const helpContent = {
         items: [
           { label: 'General', text: 'Instance name, hostname, and system-wide defaults' },
           { label: 'Appearance', text: 'Theme selection (light/dark/system), accent color, desktop mode' },
-          { label: 'Email (SMTP)', text: 'SMTP server, credentials, email template editor, and expiry alert notifications' },
+          { label: 'Email (SMTP)', text: 'SMTP server, credentials, email template editor, and expiry alert notifications. Supports OAuth2 (XOAUTH2) for Gmail, Outlook.com & Microsoft 365 in addition to legacy password auth' },
           { label: 'Security', text: 'Password policies, session timeout, rate limiting, IP restrictions' },
           { label: 'SSO', text: 'SAML 2.0, OAuth2/OIDC, and LDAP single sign-on integration' },
           { label: 'Backup', text: 'Manual and scheduled database backups' },
           { label: 'Audit', text: 'Log retention, syslog forwarding, integrity verification' },
-          { label: 'Database', text: 'Active backend (SQLite or PostgreSQL), size, table count, test/switch/migrate between backends' },
+          { label: 'Database', text: 'Active backend (SQLite or native PostgreSQL), size, table count, bidirectional migration UI with safety checks' },
           { label: 'HTTPS', text: 'TLS certificate for the UCM web interface' },
           { label: 'Updates', text: 'Check for new versions, view changelog, auto-update (DEB/RPM)' },
-          { label: 'Webhooks', text: 'HTTP webhooks for certificate events (issue, revoke, expire)' },
+          { label: 'Webhooks', text: 'HTTP webhooks for certificate events (issue, revoke, expire) — internal LAN URLs allowed; cloud-metadata IPs blocked' },
+        ]
+      },
+      {
+        title: 'SMTP OAuth2 (XOAUTH2)',
+        icon: Lock,
+        content: 'Modern OAuth2 authentication for outbound mail, replacing legacy app-password flows that Microsoft and Google are deprecating:',
+        items: [
+          { label: 'Gmail', text: 'Configure a Google Cloud OAuth2 client with the https://mail.google.com/ scope' },
+          { label: 'Microsoft 365 / Outlook.com', text: 'Register an Azure AD app with SMTP.Send delegated permission' },
+          { label: 'Refresh tokens', text: 'UCM stores the refresh token and renews access tokens automatically before each send' },
+          { label: 'Fallback', text: 'Password auth is still supported when OAuth2 is not configured' },
         ]
       },
     ],
@@ -670,6 +737,7 @@ export const helpContent = {
       'Test SMTP settings before relying on email notifications',
       'Customize the email template with your branding using the built-in HTML/Text editor',
       'Schedule automatic backups for production environments',
+      'Switching SQLite ↔ PostgreSQL is bidirectional — the UI runs safety checks (driver loaded, target reachable, target empty) before migrating',
     ],
     warnings: [
       'Changing the HTTPS certificate requires a service restart',
@@ -710,13 +778,26 @@ export const helpContent = {
           { label: 'Create Key', text: 'Generate a new API key with optional expiration' },
           { label: 'Permissions', text: 'API keys inherit your role permissions' },
           { label: 'Revoke', text: 'Immediately invalidate an API key' },
+          { label: 'Deactivated users', text: 'API keys belonging to a deactivated user are rejected even if the key itself is still valid' },
+        ]
+      },
+      {
+        title: 'Preferences (synced server-side)',
+        icon: Gear,
+        content: 'Your language, theme family and theme mode are persisted in the database and follow you across browsers and devices:',
+        items: [
+          { label: 'Stored', text: 'In users.preferences (JSON). New endpoints GET/PUT /api/v2/account/preferences manage them' },
+          { label: 'Auto-applied', text: '/api/v2/auth/verify returns your preferences and they\'re applied on every page load' },
+          { label: 'Fresh browser', text: 'Logging in from a new device, or after clearing site data, restores your chosen language and theme — no fallback to browser locale' },
         ]
       },
     ],
     tips: [
       'Enable at least one second factor (TOTP or Security Key) for admin accounts',
       'API keys can be scoped with an expiration date for short-lived integrations',
+      'API keys can also be created with no expiration for long-running automation',
       'Scan the QR code with any TOTP app: Google Authenticator, Authy, 1Password, etc.',
+      'Filter selections on every list page (Certificates, CAs, Audit, etc.) are persisted across reloads automatically',
     ],
     related: ['Settings', 'Users & Groups']
   },
@@ -864,11 +945,24 @@ export const helpContent = {
           { label: 'Status', text: 'Monitor provider connection health' },
         ]
       },
+      {
+        title: 'HSM-backed CAs (v2.130+)',
+        icon: ShieldCheck,
+        content: 'Once a provider is configured, you can pin a CA\'s private key to that HSM at creation time:',
+        items: [
+          { label: 'Key Storage toggle', text: 'On the CA creation form, choose Local (encrypted in DB) or HSM. Pick the provider + key label' },
+          { label: 'Signing path', text: 'Every issuance, CRL signing and OCSP signing for that CA uses the HSM — the key never leaves' },
+          { label: 'Export restrictions', text: 'PKCS#12, JKS and key-only exports are disabled for HSM-backed CAs (only the public certificate / chain can be exported)' },
+          { label: 'CRL & OCSP', text: 'Both work transparently with HSM-backed CAs (signed via HSM)' },
+          { label: 'Migration', text: 'Existing local CAs cannot be moved to an HSM after creation — choose at creation time' },
+        ]
+      },
     ],
     tips: [
       'Use SoftHSM for testing before deploying with a physical HSM',
       'Keys generated on an HSM never leave the hardware — they cannot be exported',
       'Test connection before using an HSM provider for CA signing',
+      'For long-lived root CAs in production, prefer HSM-backed key storage',
     ],
     warnings: [
       'HSM provider misconfiguration can prevent certificate signing',
@@ -1163,8 +1257,11 @@ export const helpContent = {
         title: 'Server Configuration',
         icon: HardDrive,
         items: [
-          { label: 'Setup Script', text: 'Download a POSIX shell script that auto-configures sshd to trust this CA. Supports all major Linux distributions.' },
-          { label: 'Manual Setup', text: 'Copy the CA public key and add TrustedUserCAKeys (user CA) or HostCertificate (host CA) to sshd_config.' },
+          { label: 'Linux/macOS Setup Script', text: 'Download a POSIX shell script (.sh) that auto-configures sshd to trust this CA. Quick install: curl -fsSL <url> | bash' },
+          { label: 'Windows Setup Script', text: 'Download a PowerShell script (.ps1) that configures Windows OpenSSH Server (writes the CA pubkey to %ProgramData%\\ssh, locks down ACLs, adds TrustedUserCAKeys / HostCertificate to sshd_config, validates with sshd -T, restarts sshd). Quick install: iwr <url> | iex' },
+          { label: 'Diagnostic block', text: 'On Add-WindowsCapability failure (WSUS / domain-joined), the script prints a labelled block explaining the policy state and three remediation paths — it never modifies WSUS / WU policy itself' },
+          { label: 'Dry-run', text: 'Both scripts support a -DryRun / --dry-run flag to preview changes without applying them' },
+          { label: 'Manual Setup', text: 'Copy the CA public key and add TrustedUserCAKeys (user CA) or HostCertificate (host CA) to sshd_config' },
         ]
       },
       {
