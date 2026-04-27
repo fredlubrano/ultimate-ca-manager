@@ -9,6 +9,21 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.139] - 2026-04-27
+
+### Added
+- **ACME External Account Binding (EAB) — RFC 8555 §7.3.4.** Full EAB credentials manager (backend models, API, UI under ACME → EAB Credentials). Operators can issue, list, rotate and revoke `kid` / `hmac` pairs; clients (cert-manager, certbot, acme.sh) bind their account on `newAccount` via JWS over the MAC key. Brings UCM in line with public ACME CAs (Let's Encrypt EAB, ZeroSSL, Google Trust Services).
+- **ACME custom DNS resolvers for DNS-01 validation.** Per-account override of system resolvers when validating `_acme-challenge` TXT records. Useful for split-horizon DNS, internal authoritatives, or when public resolvers cache stale records during automated renewals.
+- **ACME on internal / private IPs — gated by `acme.allow_private_ips` SystemConfig (default `true`).** HTTP-01 and TLS-ALPN-01 validation now works out of the box for RFC1918, loopback, `.lan` / `.local` / `.corp` targets — UCM's primary deployment model. Cloud metadata IPs (`169.254.169.254`) remain blocked unconditionally.
+- **Kubernetes & cert-manager integration.** Reference manifests under `examples/kubernetes/cert-manager/` (HTTP-01 ClusterIssuer, DNS-01 ClusterIssuer with EAB, sample Certificate, EAB Secret template, README). Full integration guide on the wiki and on https://ucm.tools/docs.
+
+### Changed
+- **ACME audit & RBAC hardening.** Challenge state transitions now produce audit records on terminal states (`valid` / `invalid`) instead of every poll, eliminating audit log noise. `account.key_change` (RFC 8555 §7.3.5) is audited. `delete:acme` permission added to the `operator` role to match `write:acme`.
+- **ACME backup/restore parity.** `acme_eab_credentials` is now exported and restored alongside `acme_accounts`; full account fields (contact, status, terms-of-service, external-account-binding metadata) are now round-tripped end-to-end.
+
+### Fixed
+- `backend/services/ssh_cas.py` — converted f-strings containing escape sequences to raw f-strings to silence Python `SyntaxWarning: invalid escape sequence` on 3.12+.
+
 ## [2.138] - 2026-04-25
 
 ### Fixed
