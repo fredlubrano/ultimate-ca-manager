@@ -386,6 +386,10 @@ def _human_size(n: int) -> str:
 
 def _backup_current_db() -> Optional[Path]:
     """Backup current DB before migration. Returns backup path or None."""
+    import subprocess
+    import os
+    from urllib.parse import urlparse
+    
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
     db_uri = Config.SQLALCHEMY_DATABASE_URI
@@ -398,11 +402,54 @@ def _backup_current_db() -> Optional[Path]:
         shutil.copy2(src, dst)
         return dst
     else:
-        # PG: skip pg_dump for now (requires binary). Document caveat in docs.
-        # Best-effort: create a marker file
-        marker = BACKUP_DIR / f"pg-migration-{timestamp}.marker"
-        marker.write_text(f"PG migration started at {timestamp}\nSource: {_redact_uri(db_uri)}\n")
-        return marker
+        # PostgreSQL: use pg_dump
+        try:
+            parsed = urlparse(db_uri)
+            db_config = {
+                'host': parsed.hostname or 'localhost',
+                'port': str(parsed.port or 5432),
+                'user': parsed.username or '',
+                'password': parsed.password or '',
+                'dbname': parsed.path[1:] if parsed.path else parsed.netloc.split('/')[-1]
+            }
+            
+            output = BACKUP_DIR / f"ucm-pg-{timestamp}.dump"
+            
+            cmd = [
+                'pg_dump',
+                '-h', db_config['host'],
+                '-p', db_config['port'],
+                '-U', db_config['user'],
+                '-d', db_config['dbname'],
+                '-F', 'c',  # custom format (compressed)
+                '-f', str(output),
+                '--no-password'
+            ]
+            
+            env = os.environ.copy()
+            env['PGPASSWORD'] = db_config['password']
+            
+            result = subprocess.run(
+                cmd,
+                env=env,
+                capture_output=True,
+                timeout=300,
+                check=False
+            )
+            
+            if result.returncode != 0:
+                logger.error(f"pg_dump failed: {result.stderr.decode() if result.stderr else 'Unknown error'}")
+                return None
+            
+            logger.info(f"PostgreSQL backup created: {output}")
+            return output
+            
+        except FileNotFoundError:
+            logger.error("pg_dump not found. Install postgresql-client.")
+            return None
+        except Exception as e:
+            logger.error(f"PostgreSQL backup failed: {e}")
+            return None
 
 
 def _reset_pg_sequences(engine):
