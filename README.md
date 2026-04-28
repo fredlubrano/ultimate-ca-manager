@@ -153,10 +153,24 @@ Docker: data at `/opt/ucm/data/` (mount as volume), config via environment varia
 
 - [ ] **Code Signing** — Issue and manage code signing certificates (Authenticode, JAR, macOS)
 - [ ] **High Availability / Clustering** — Active-passive or active-active HA deployment
-- [ ] **Kubernetes / Helm** — Helm chart and cert-manager integration
+- [ ] **Helm chart** — Package UCM itself as a Helm chart for in-cluster deployment (k8s clusters can already *consume* UCM today via the cert-manager integration shipped in v2.139)
 - [ ] **Post-Quantum Cryptography** — ML-DSA, ML-KEM, SLH-DSA key types (NIST FIPS 203/204/205)
 - [ ] **CMP Protocol (RFC 4210)** — Certificate Management Protocol support
 - [ ] **Key Archival & Recovery** — Secure key escrow with recovery workflows
+- [x] **SAN database columns derived from final SAN list** — `san_email` / `san_dns` / `san_ip` / `san_uri` always match the X.509 extension, with backfill migration *(v2.140)*
+- [x] **On-disk certificate & CA files** — `.crt` / `.key` materialized to disk on every creation path *(v2.140)*
+- [x] **ACME External Account Binding (EAB, RFC 8555 §7.3.4)** — Issue/rotate/revoke `kid`+`hmac` pairs for cert-manager / certbot / acme.sh *(v2.139)*
+- [x] **ACME custom DNS resolvers + private-IP validation** — Split-horizon DNS, RFC1918/`.lan`/`.local` HTTP-01 & TLS-ALPN-01 *(v2.139)*
+- [x] **Kubernetes / cert-manager integration** — Reference manifests for ClusterIssuer (HTTP-01 + DNS-01 with EAB) *(v2.139)*
+- [x] **SMTP OAuth2 (XOAUTH2)** — Gmail, Outlook.com, Microsoft 365 modern auth *(v2.134)*
+- [x] **SSO `auth_source` tracking + role preservation** — Per-user origin, optional sync-on-login, UI never overwritten *(v2.133)*
+- [x] **HSM-backed Certificate Authorities** — Signing key generated/stored in HSM, never exportable *(v2.130)*
+- [x] **Native PostgreSQL backend** — Bidirectional migration UI with safety checks *(v2.127)*
+- [x] **PostgreSQL feature parity** — Database stats, optimize, integrity check, certificate activity chart all work natively on PostgreSQL *(v2.135)*
+- [x] **Custom Extra EKU OIDs** — Microsoft RDP, smartcard logon, document signing, IPsec, Kerberos PKINIT… (RFC 5280 §4.2.1.12) *(v2.128)*
+- [x] **Persisted UI filters** — Filter selections survive reloads on every list page *(v2.128)*
+- [x] **User preferences server-side** — Language/theme follow the user across browsers *(v2.128)*
+- [x] **Windows SSH CA setup script (`.ps1`)** — One-command trust setup for Windows OpenSSH Server *(v2.128/v2.134)*
 - [x] **SSH Certificates** — SSH CA management, host/user certificate signing, import, setup scripts *(v2.112)*
 - [x] **Security Audit** — Comprehensive security hardening: session fixation, export passwords, LDAP injection, LIKE escaping *(v2.112)*
 - [x] **Certificate Transparency (RFC 6962)** — CT log submission, SCT parsing, auto-submit on issuance *(v2.109)*
