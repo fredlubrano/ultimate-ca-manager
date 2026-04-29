@@ -107,6 +107,14 @@ jobs:
           pip install pytest pytest-cov pytest-mock
       
       - name: Run tests
+        env:
+          SECRET_KEY: test-secret-key-for-ci
+          JWT_SECRET_KEY: test-jwt-secret-key-for-ci
+          UCM_ENV: test
+          HTTP_REDIRECT: 'false'
+          INITIAL_ADMIN_PASSWORD: changeme123
+          CSRF_DISABLED: 'true'
+          UCM_DEV_MODE: 'true'
         run: |
           cd backend
           pytest -v --tb=short
