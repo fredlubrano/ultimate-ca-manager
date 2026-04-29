@@ -399,7 +399,7 @@ jobs:
           
           ## Default Credentials
           - **Username:** `admin`
-          - **Password:** Check `/etc/ucm/ucm.env` after install, or shown during install
+          - **Password:** `changeme123`
           
           **Change the password immediately after first login!**
           
