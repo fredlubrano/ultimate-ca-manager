@@ -29,11 +29,23 @@ export default {
           { label: 'Revocar', text: 'Invalida inmediatamente una clave API' },
         ]
       },
+      {
+        title: 'Preferencias (sincronizadas en servidor)',
+        content: 'Su idioma, familia de tema y modo se persisten en la base de datos y le siguen entre navegadores y dispositivos:',
+        items: [
+          { label: 'Almacenado', text: 'En users.preferences (JSON). Nuevos endpoints GET/PUT /api/v2/account/preferences' },
+          { label: 'Auto-aplicado', text: '/api/v2/auth/verify devuelve sus preferencias y se aplican en cada carga de página' },
+          { label: 'Navegador nuevo', text: 'Login desde un nuevo dispositivo o tras limpiar datos del sitio → sus idioma y tema elegidos se restauran' },
+        ]
+      },
+
     ],
     tips: [
       'Activa al menos un segundo factor (TOTP o clave de seguridad) para las cuentas de administrador',
       'Las claves API pueden tener una fecha de expiración para integraciones de corta duración',
       'Escanea el código QR con cualquier app TOTP: Google Authenticator, Authy, 1Password, etc.',
+      'Las claves API también pueden crearse sin expiración para automatización a largo plazo',
+      'Las selecciones de filtros en cada página de lista (Certificados, CA, Auditoría, etc.) se persisten automáticamente entre recargas',
     ],
   },
   helpGuides: {

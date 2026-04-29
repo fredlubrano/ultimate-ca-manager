@@ -26,6 +26,7 @@ export default {
       'CSR 保留了请求者的私钥——私钥不会离开其系统',
       '签署后可按需向 CSR 添加私钥以进行 PKCS#12 导出',
       '使用 Microsoft CA 模式可在连接到 Windows PKI 时通过 AD CS 签署 CSR',
+      '签署时使用"额外 EKU"添加 Microsoft RDP、智能卡登录、IPsec 或任何 OID — CSR 现有的 EKU 将以合并集重建',
     ],
   },
   helpGuides: {

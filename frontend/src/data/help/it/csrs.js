@@ -26,6 +26,7 @@ export default {
       'I CSR preservano la chiave privata del richiedente — non lascia mai il suo sistema',
       'Puoi aggiungere una chiave privata a un CSR dopo la firma se necessario per l\'esportazione PKCS#12',
       'Usa la modalità Microsoft CA per firmare i CSR tramite AD CS quando sei connesso a una PKI Windows',
+      'In firma, usa "EKU extra" per aggiungere Microsoft RDP, smartcard logon, IPsec o qualsiasi OID — l\'EKU esistente del CSR viene ricostruito con l\'insieme unito',
     ],
   },
   helpGuides: {

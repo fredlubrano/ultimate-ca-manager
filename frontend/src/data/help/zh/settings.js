@@ -20,12 +20,24 @@ export default {
           { label: 'Webhook', text: '证书事件（签发、吊销、过期）的 HTTP Webhook' },
         ]
       },
+      {
+        title: 'SMTP OAuth2(XOAUTH2)',
+        content: '用于发送邮件的现代 OAuth2 认证,替代 Microsoft 和 Google 正在弃用的旧式应用密码流程:',
+        items: [
+          { label: 'Gmail', text: '配置具有 https://mail.google.com/ 范围的 Google Cloud OAuth2 客户端' },
+          { label: 'Microsoft 365 / Outlook.com', text: '注册具有 SMTP.Send 委派权限的 Azure AD 应用' },
+          { label: '刷新令牌', text: 'UCM 存储刷新令牌并在每次发送前自动续订访问令牌' },
+          { label: '回退', text: '未配置 OAuth2 时,密码认证仍受支持' },
+        ]
+      },
+
     ],
     tips: [
       '使用顶部的系统状态组件快速检查服务健康状况',
       '在依赖邮件通知前先测试 SMTP 设置',
       '使用内置的 HTML/文本编辑器自定义包含品牌标识的邮件模板',
       '为生产环境安排自动备份',
+      'SQLite ↔ PostgreSQL 切换是双向的 — UI 在迁移前执行安全检查(驱动已加载、目标可达、目标为空)',
     ],
     warnings: [
       '更改 HTTPS 证书需要重启服务',

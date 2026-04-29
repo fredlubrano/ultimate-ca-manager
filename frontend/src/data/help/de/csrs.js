@@ -26,6 +26,7 @@ export default {
       'CSRs bewahren den privaten Schlüssel des Antragstellers — er verlässt nie dessen System',
       'Sie können nach dem Signieren einen privaten Schlüssel zu einem CSR hinzufügen, wenn er für den PKCS#12-Export benötigt wird',
       'Verwenden Sie den Microsoft CA-Modus, um CSRs über AD CS zu signieren, wenn eine Verbindung zu einer Windows-PKI besteht',
+      'Beim Signieren über "Extra EKUs" Microsoft RDP, Smartcard-Logon, IPsec oder beliebige OIDs hinzufügen — die vorhandene EKU des CSR wird mit der zusammengeführten Menge neu aufgebaut',
     ],
   },
   helpGuides: {

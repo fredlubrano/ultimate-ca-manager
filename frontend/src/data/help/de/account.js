@@ -29,11 +29,23 @@ export default {
           { label: 'Widerrufen', text: 'Einen API-Schlüssel sofort ungültig machen' },
         ]
       },
+      {
+        title: 'Einstellungen (serverseitig synchronisiert)',
+        content: 'Sprache, Theme-Familie und Theme-Modus werden in der Datenbank gespeichert und folgen Ihnen über Browser und Geräte hinweg:',
+        items: [
+          { label: 'Gespeichert', text: 'In users.preferences (JSON). Neue Endpunkte GET/PUT /api/v2/account/preferences' },
+          { label: 'Automatisch angewendet', text: '/api/v2/auth/verify gibt Ihre Einstellungen zurück, sie werden bei jedem Page-Load angewendet' },
+          { label: 'Frischer Browser', text: 'Login von einem neuen Gerät oder nach dem Löschen der Site-Daten → gewählte Sprache und Theme werden wiederhergestellt' },
+        ]
+      },
+
     ],
     tips: [
       'Aktivieren Sie mindestens einen zweiten Faktor (TOTP oder Sicherheitsschlüssel) für Admin-Konten',
       'API-Schlüssel können mit einem Ablaufdatum für kurzlebige Integrationen versehen werden',
       'Scannen Sie den QR-Code mit einer beliebigen TOTP-App: Google Authenticator, Authy, 1Password, usw.',
+      'API-Keys können auch ohne Ablaufdatum für langlaufende Automatisierung erstellt werden',
+      'Filterauswahl auf jeder Listenseite (Zertifikate, CAs, Audit usw.) wird automatisch über Reloads hinweg gespeichert',
     ],
   },
   helpGuides: {

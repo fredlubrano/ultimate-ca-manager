@@ -1,7 +1,7 @@
 """
 UCM Security Module
 Phase 4: Security Hardening
-- Private key encryption (Fernet/AES-256)
+- Private key encryption (Fernet/AES-128-CBC + HMAC-SHA256)
 - CSRF protection
 - Rate limiting (enhanced)
 - Password policy enforcement

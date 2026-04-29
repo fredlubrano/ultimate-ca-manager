@@ -23,11 +23,24 @@ export default {
           { label: 'Status', text: 'Verbindungszustand des Anbieters überwachen' },
         ]
       },
+      {
+        title: 'HSM-gestützte CAs (v2.130+)',
+        content: 'Sobald ein Provider konfiguriert ist, können Sie den privaten Schlüssel einer CA bei der Erstellung an diesen HSM binden:',
+        items: [
+          { label: 'Key-Storage-Toggle', text: 'Im CA-Erstellungsformular Local (in DB verschlüsselt) oder HSM wählen. Provider + Key-Label auswählen' },
+          { label: 'Signaturpfad', text: 'Jede Ausstellung, CRL- und OCSP-Signatur dieser CA läuft über den HSM — der Schlüssel verlässt ihn nie' },
+          { label: 'Export-Einschränkungen', text: 'PKCS#12-, JKS- und Key-only-Exporte sind für HSM-CAs deaktiviert (nur das öffentliche Zertifikat / die Chain können exportiert werden)' },
+          { label: 'CRL & OCSP', text: 'Beide funktionieren transparent mit HSM-CAs (signiert via HSM)' },
+          { label: 'Migration', text: 'Bestehende lokale CAs können nach der Erstellung nicht in einen HSM verschoben werden — bei der Erstellung wählen' },
+        ]
+      },
+
     ],
     tips: [
       'Verwenden Sie SoftHSM zum Testen, bevor Sie mit einem physischen HSM bereitstellen',
       'Auf einem HSM generierte Schlüssel verlassen niemals die Hardware — sie können nicht exportiert werden',
       'Testen Sie die Verbindung, bevor Sie einen HSM-Anbieter für die CA-Signierung verwenden',
+      'Für langlebige Root-CAs in Produktion HSM-gestützte Schlüsselablage bevorzugen',
     ],
     warnings: [
       'Falsche HSM-Anbieter-Konfiguration kann die Zertifikatssignierung verhindern',

@@ -27,11 +27,34 @@ export default {
           { label: 'Vergleichen', text: 'Zwei Zertifikate nebeneinander vergleichen' },
         ]
       },
+      {
+        title: 'Benutzerdefinierte Extra-EKUs (RFC 5280 §4.2.1.12)',
+        content: 'Das Zertifikatsausstellungsformular und der Sign-CSR-Dialog bieten eine "Extra EKUs"-Mehrfachauswahl, mit der Sie Extended-Key-Usage-OIDs zusätzlich zu den Standardwerten des Zertifikatstyps hinzufügen können:',
+        items: [
+          { label: 'Katalog', text: '18 bekannte EKUs (Microsoft RDP 1.3.6.1.4.1.311.54.1.2, Smartcard-Anmeldung, Dokumentsignierung, IPsec, Kerberos PKINIT usw.)' },
+          { label: 'Freitext-OID', text: 'Jede wohlgeformte gepunktete OID, die ^[0-2](?:\\.(?:0|[1-9]\\d*)){1,15}$ entspricht' },
+          { label: 'Limit', text: 'Bis zu 16 OIDs insgesamt pro Zertifikat' },
+          { label: 'Zusammengeführt, nie ersetzt', text: 'Die Standard-EKUs des Zertifikatstyps (z. B. serverAuth) bleiben fest verankert — Extras kommen oben drauf' },
+          { label: 'Abgelehnt', text: 'anyExtendedKeyUsage (2.5.29.37.0) ist explizit verboten' },
+        ]
+      },
+      {
+        title: 'Zertifikatsdateien auf Disk (v2.140)',
+        items: [
+          { label: 'Automatisch materialisiert', text: '.crt-/.key-Dateien werden bei jedem Erstellungspfad unter data/certs/ geschrieben (UI, CSR-Signierung, ACME, SCEP, Import)' },
+          { label: 'CAs ebenfalls', text: 'CA-.crt-/.key-Dateien werden über denselben Mechanismus unter data/cas/ geschrieben' },
+          { label: 'Sicherheitsnetz', text: 'Ein Datei-Regenerierungs-Scan beim Start baut fehlende Dateien aus der Datenbank wieder auf' },
+          { label: 'Nicht blockierend', text: 'Schreibfehler werden geloggt, brechen aber nie die DB-Transaktion ab' },
+        ]
+      },
+
     ],
     tips: [
       'Markieren Sie ⭐ wichtige Zertifikate, um sie zu Ihrer Favoritenliste hinzuzufügen',
       'Verwenden Sie Filter, um Zertifikate schnell nach Status, CA oder Suchtext zu finden',
       'Beim Erneuern wird derselbe Betreff beibehalten, aber ein neues Schlüsselpaar generiert',
+      'Brauchen Sie eine nicht-standardisierte EKU (Microsoft RDP, Smartcard-Anmeldung, Dokumentsignierung)? Fügen Sie sie über "Extra EKUs" hinzu, statt Templates zu bearbeiten',
+      'Aktive Filter (Status, CA, Suche) werden über Reloads hinweg gespeichert',
     ],
     warnings: [
       'Widerruf ist grundsätzlich dauerhaft — außer bei „Zertifikat gesperrt", das aufgehoben werden kann (Sperre aufheben)',

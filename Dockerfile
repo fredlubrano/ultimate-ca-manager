@@ -43,6 +43,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     softhsm2 \
     libkrb5-3 \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
