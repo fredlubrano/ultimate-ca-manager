@@ -16,6 +16,18 @@ import sys
 import json
 import tempfile
 
+# Set required env vars at MODULE LOAD time, before any test file is collected.
+# settings.py reads SECRET_KEY / JWT_SECRET_KEY at class-body load time, so they
+# must be present before the first `from app import create_app` (which can be
+# triggered by any test module's import or fixture).
+os.environ.setdefault('SECRET_KEY', 'test-secret-key-for-testing')
+os.environ.setdefault('JWT_SECRET_KEY', 'test-jwt-secret-key-for-testing')
+os.environ.setdefault('UCM_ENV', 'test')
+os.environ.setdefault('HTTP_REDIRECT', 'false')
+os.environ.setdefault('INITIAL_ADMIN_PASSWORD', 'changeme123')
+os.environ.setdefault('CSRF_DISABLED', 'true')
+os.environ.setdefault('UCM_DEV_MODE', 'true')
+
 # Add backend to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

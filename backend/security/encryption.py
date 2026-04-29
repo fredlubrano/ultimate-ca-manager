@@ -1,6 +1,6 @@
 """
 Private Key Encryption Module
-Encrypts private keys at rest using Fernet (AES-256-CBC with HMAC)
+Encrypts private keys at rest using Fernet (AES-128-CBC with HMAC-SHA256)
 
 Key sources (in order of priority):
 1. /etc/ucm/master.key file (recommended)
@@ -27,7 +27,7 @@ MASTER_KEY_PATH = Path('/etc/ucm/master.key')
 class KeyEncryption:
     """
     Handles encryption/decryption of private keys stored in database.
-    Uses Fernet symmetric encryption (AES-256-CBC + HMAC-SHA256).
+    Uses Fernet symmetric encryption (AES-128-CBC + HMAC-SHA256).
     """
     
     _instance = None

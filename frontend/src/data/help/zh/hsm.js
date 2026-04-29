@@ -23,11 +23,24 @@ export default {
           { label: '状态', text: '监控提供商连接健康状况' },
         ]
       },
+      {
+        title: 'HSM 支持的 CA(v2.130+)',
+        content: '配置好提供商后,您可以在创建时将 CA 的私钥固定到该 HSM:',
+        items: [
+          { label: 'Key Storage 开关', text: '在 CA 创建表单中,选择 Local(在 DB 中加密)或 HSM。选择提供商 + 密钥标签' },
+          { label: '签名路径', text: '该 CA 的每次签发、CRL 签名和 OCSP 签名都通过 HSM — 密钥永不离开' },
+          { label: '导出限制', text: 'HSM-CA 禁用 PKCS#12、JKS 和仅密钥导出(只能导出公共证书 / 链)' },
+          { label: 'CRL 和 OCSP', text: '两者都与 HSM-CA 透明工作(通过 HSM 签名)' },
+          { label: '迁移', text: '现有本地 CA 在创建后无法移至 HSM — 在创建时选择' },
+        ]
+      },
+
     ],
     tips: [
       '在部署物理 HSM 前，使用 SoftHSM 进行测试',
       '在 HSM 上生成的密钥永远不会离开硬件——无法导出',
       '在使用 HSM 提供商进行 CA 签名前先测试连接',
+      '对于生产中长寿命的根 CA,首选 HSM 支持的密钥存储',
     ],
     warnings: [
       'HSM 提供商配置错误可能会阻止证书签名',

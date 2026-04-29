@@ -20,12 +20,24 @@ export default {
           { label: 'Webhook', text: '証明書イベント（発行、失効、期限切れ）のHTTP Webhook' },
         ]
       },
+      {
+        title: 'SMTP OAuth2(XOAUTH2)',
+        content: 'Microsoft と Google が廃止しつつあるレガシーなアプリパスワードフローに代わる、送信メール向けのモダンな OAuth2 認証:',
+        items: [
+          { label: 'Gmail', text: 'スコープ https://mail.google.com/ で Google Cloud OAuth2 クライアントを構成' },
+          { label: 'Microsoft 365 / Outlook.com', text: '委任権限 SMTP.Send を持つ Azure AD アプリを登録' },
+          { label: 'リフレッシュトークン', text: 'UCM はリフレッシュトークンを保存し、各送信前にアクセストークンを自動更新します' },
+          { label: 'フォールバック', text: 'OAuth2 が未構成の場合、パスワード認証も引き続きサポート' },
+        ]
+      },
+
     ],
     tips: [
       '上部のシステムステータスウィジェットでサービスヘルスをすばやく確認できます',
       'メール通知に依存する前にSMTP設定をテストしてください',
       '内蔵のHTML/テキストエディターを使用してメールテンプレートをブランドに合わせてカスタマイズしてください',
       'プロダクション環境では自動バックアップをスケジュールしてください',
+      'SQLite ↔ PostgreSQL の切り替えは双方向 — UI はマイグレーション前に安全性チェック(ドライバ読み込み、ターゲット到達可能、ターゲット空)を実行します',
     ],
     warnings: [
       'HTTPS証明書の変更にはサービスの再起動が必要です',

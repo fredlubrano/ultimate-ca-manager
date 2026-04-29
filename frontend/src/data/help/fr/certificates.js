@@ -27,11 +27,34 @@ export default {
           { label: 'Comparer', text: 'Comparaison côte à côte de deux certificats' },
         ]
       },
+      {
+        title: 'EKU supplémentaires personnalisés (RFC 5280 §4.2.1.12)',
+        content: 'Le formulaire d\'émission et la modale de signature de CSR exposent un sélecteur multi-valeurs « EKU supplémentaires » qui ajoute des OID Extended Key Usage en plus des EKU par défaut du type de certificat :',
+        items: [
+          { label: 'Catalogue', text: '18 EKU connus (Microsoft RDP 1.3.6.1.4.1.311.54.1.2, smartcard logon, document signing, IPsec, Kerberos PKINIT, etc.)' },
+          { label: 'OID libre', text: 'Tout OID pointé bien formé respectant ^[0-2](?:\\.(?:0|[1-9]\\d*)){1,15}$' },
+          { label: 'Limite', text: 'Jusqu\'à 16 OID au total par certificat' },
+          { label: 'Fusion (jamais remplacement)', text: 'Les EKU par défaut du type (par ex. serverAuth) restent verrouillés — les extras s\'ajoutent par-dessus' },
+          { label: 'Refusé', text: 'anyExtendedKeyUsage (2.5.29.37.0) est explicitement interdit' },
+        ]
+      },
+      {
+        title: 'Fichiers certificats sur disque (v2.140)',
+        items: [
+          { label: 'Auto-matérialisés', text: 'Les fichiers .crt / .key sont écrits sous data/certs/ pour chaque chemin de création (UI, signature CSR, ACME, SCEP, import)' },
+          { label: 'CA aussi', text: 'Les fichiers .crt / .key des CA sont écrits sous data/cas/ via le même mécanisme' },
+          { label: 'Filet de sécurité', text: 'Un scan de régénération au démarrage reconstruit tout fichier manquant depuis la base' },
+          { label: 'Non bloquant', text: 'Les erreurs d\'écriture sont loguées mais n\'interrompent jamais la transaction DB' },
+        ]
+      },
+
     ],
     tips: [
       'Ajoutez une étoile ⭐ aux certificats importants pour les ajouter à vos favoris',
       'Utilisez les filtres pour trouver rapidement les certificats par statut, CA ou texte de recherche',
       'Le renouvellement conserve le même sujet mais génère une nouvelle paire de clés',
+      'Besoin d\'un EKU non-standard (Microsoft RDP, smartcard logon, document signing) ? Ajoutez-le via « EKU supplémentaires » plutôt que d\'éditer les modèles',
+      'Les filtres actifs (statut, CA, recherche) sont conservés au rechargement de la page',
     ],
     warnings: [
       'La révocation est généralement permanente — sauf pour « Suspension de certificat » qui peut être levée',

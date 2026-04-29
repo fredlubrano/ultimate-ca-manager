@@ -27,11 +27,34 @@ export default {
           { label: '对比', text: '两张证书的并排对比' },
         ]
       },
+      {
+        title: '自定义额外 EKU(RFC 5280 §4.2.1.12)',
+        content: '颁发证书表单和签署 CSR 模态框提供"额外 EKU"多选项,用于在证书类型默认 EKU 之上添加 Extended Key Usage OID:',
+        items: [
+          { label: '目录', text: '18 个常用 EKU(Microsoft RDP 1.3.6.1.4.1.311.54.1.2、智能卡登录、文档签名、IPsec、Kerberos PKINIT 等)' },
+          { label: '自由 OID', text: '任何符合 ^[0-2](?:\\.(?:0|[1-9]\\d*)){1,15}$ 的格式正确的点分 OID' },
+          { label: '上限', text: '每个证书最多 16 个 OID' },
+          { label: '合并(从不替换)', text: '证书类型的默认 EKU(如 serverAuth)固定保留 — 额外项叠加在上面' },
+          { label: '拒绝', text: 'anyExtendedKeyUsage (2.5.29.37.0) 被明确禁止' },
+        ]
+      },
+      {
+        title: '磁盘上的证书文件(v2.140)',
+        items: [
+          { label: '自动物化', text: '.crt / .key 文件在每个创建路径(UI、CSR 签署、ACME、SCEP、导入)写入 data/certs/ 下' },
+          { label: 'CA 同样', text: 'CA 的 .crt / .key 文件通过相同机制写入 data/cas/ 下' },
+          { label: '安全网', text: '启动时的文件再生扫描会从数据库重建任何缺失文件' },
+          { label: '非阻塞', text: '写入错误会被记录,但绝不会中止 DB 事务' },
+        ]
+      },
+
     ],
     tips: [
       '为重要证书添加星标 ⭐ 将其加入收藏列表',
       '使用筛选器按状态、CA 或搜索文本快速查找证书',
       '续期会保留相同的主题但生成新的密钥对',
+      '需要非标准 EKU(Microsoft RDP、智能卡登录、文档签名)?通过"额外 EKU"添加,而不是编辑模板',
+      '活动过滤器(状态、CA、搜索)在页面重新加载后保留',
     ],
     warnings: [
       '吊销通常是永久性的——除了"证书挂起"可以解除（取消挂起）',

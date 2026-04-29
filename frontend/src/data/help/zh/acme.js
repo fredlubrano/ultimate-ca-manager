@@ -46,6 +46,34 @@ export default {
           '4. 第一个拥有私钥的可用 CA',
         ]
       },
+      {
+        title: 'EAB 凭据(服务器端)',
+        content: '当 UCM 作为 ACME 服务器时,External Account Binding(RFC 8555 §7.3.4)允许在客户端注册账户之前要求预先发行的凭据:',
+        items: [
+          { label: '签发', text: '从 ACME → EAB Credentials 生成新的 kid + HMAC 密钥对' },
+          { label: '分发', text: '将 kid + HMAC 交给客户端(cert-manager、certbot、acme.sh)' },
+          { label: '绑定', text: '客户端在 newAccount 上对 MAC 密钥签名 JWS 以绑定其 ACME 账户' },
+          { label: '轮换 / 撤销', text: '随时撤销 kid — 现有账户继续工作,新绑定被拒绝' },
+          { label: '审计', text: '签发、轮换和撤销在执行操作员名下进行审计' },
+        ]
+      },
+      {
+        title: '自定义 DNS 解析器(DNS-01)',
+        items: [
+          { label: '账户级覆盖', text: '在验证 _acme-challenge TXT 记录时覆盖系统解析器' },
+          { label: '分裂视图', text: '当权威服务器在内部但公网视图被其他地方缓存时有用' },
+          { label: '过时记录', text: '在快速自动续期期间避免公共解析器缓存' },
+        ]
+      },
+      {
+        title: '在内部 / 私有 IP 上的 ACME',
+        content: 'HTTP-01 和 TLS-ALPN-01 验证对 RFC1918、loopback、.lan / .local / .corp 目标开箱即用 — UCM 的主要部署模式。',
+        items: [
+          { label: '开关', text: 'Settings → SystemConfig → acme.allow_private_ips(默认:true)' },
+          { label: '始终阻止', text: '云元数据 IP(169.254.169.254、fd00:ec2::254 等)无条件阻止' },
+        ]
+      },
+
     ],
     tips: [
       'ACME 目录 URL：https://your-server:port/acme/directory',
@@ -55,6 +83,8 @@ export default {
       '使用本地域名为不同的内部域名分配不同的 CA',
       '任何拥有私钥的 CA 都可以被选为签发 CA',
       '通配符域名 (*.example.com) 需要 DNS-01 验证',
+      '当 UCM 是 ACME 服务器时,在 ACME → EAB Credentials 中签发您自己的 EAB 凭据',
+      '对于 Kubernetes/cert-manager:参见 examples/kubernetes/cert-manager/ 中的参考清单',
     ],
     warnings: [
       '域名验证是必需的——您的服务器必须可达或已配置 DNS',

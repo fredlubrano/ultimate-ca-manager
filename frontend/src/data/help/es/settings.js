@@ -20,12 +20,24 @@ export default {
           { label: 'Webhooks', text: 'Webhooks HTTP para eventos de certificados (emisión, revocación, expiración)' },
         ]
       },
+      {
+        title: 'SMTP OAuth2 (XOAUTH2)',
+        content: 'Autenticación OAuth2 moderna para correo saliente, reemplazando los flujos de app-password heredados que Microsoft y Google están deprecando:',
+        items: [
+          { label: 'Gmail', text: 'Configurar un cliente OAuth2 de Google Cloud con el scope https://mail.google.com/' },
+          { label: 'Microsoft 365 / Outlook.com', text: 'Registrar una app Azure AD con permiso delegado SMTP.Send' },
+          { label: 'Refresh tokens', text: 'UCM almacena el refresh token y renueva los access tokens automáticamente antes de cada envío' },
+          { label: 'Respaldo', text: 'La autenticación por contraseña sigue soportada cuando OAuth2 no está configurado' },
+        ]
+      },
+
     ],
     tips: [
       'Use el widget de Estado del Sistema en la parte superior para verificar rápidamente la salud de los servicios',
       'Pruebe la configuración SMTP antes de depender de las notificaciones por correo electrónico',
       'Personalice la plantilla de correo electrónico con su marca usando el editor HTML/texto integrado',
       'Programe copias de seguridad automáticas para entornos de producción',
+      'El cambio SQLite ↔ PostgreSQL es bidireccional — la UI ejecuta verificaciones de seguridad (driver cargado, destino accesible, destino vacío) antes de migrar',
     ],
     warnings: [
       'Cambiar el certificado HTTPS requiere un reinicio del servicio',
