@@ -9,6 +9,19 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.141] - 2026-04-29
+
+### Fixed
+- **Admin lockout prevented on database backend switch** (#96). Switching the database backend (SQLite ↔ PostgreSQL) no longer locks the admin out. Boolean and JSON columns are now coerced correctly when migrating rows from SQLite to PostgreSQL, the migration runs per-table in its own transaction so a single bad row no longer aborts the whole switch, and the active admin session survives the cutover.
+- **PostgreSQL backups via `pg_dump`.** The Docker image now ships `postgresql-client`, so PostgreSQL-backed instances can produce native `pg_dump` backups during backend migrations and scheduled backups.
+
+### Changed
+- **In-app help covers v2.128–v2.140 features** in English plus all 8 translated languages (fr, de, es, it, ja, pt, uk, zh).
+- **README features and roadmap refreshed** for v2.128 → v2.140.
+
+### Internal
+- CI: backend test collection no longer fails on missing `SECRET_KEY` / `JWT_SECRET_KEY` — workflow now exports test-mode env vars before pytest runs.
+
 ## [2.140] - 2026-04-27
 
 ### Fixed
