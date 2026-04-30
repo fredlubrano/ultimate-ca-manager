@@ -384,6 +384,85 @@ class TestExportSingle:
 
 
 # ============================================================================
+# include_chain flag — must be honored across PKCS12/PFX/PEM/PKCS7 (PR #100)
+# ============================================================================
+
+class TestExportIncludeChainFlag:
+    """
+    Regression tests for PR #100: PKCS12/PFX exports must honor the
+    include_chain flag. Before the fix, the chain was unconditionally
+    embedded for PKCS12 and never embedded for PFX.
+
+    These tests build a 2-level chain (Root -> Leaf) and verify:
+    - Without include_chain: PKCS12/PFX contain ZERO additional CA certs
+    - With include_chain:    PKCS12/PFX contain >=1 additional CA cert
+    """
+
+    @staticmethod
+    def _count_p12_chain(data, password='testpass123'):
+        """Return the number of additional CA certificates inside a PKCS12 blob."""
+        from cryptography.hazmat.primitives.serialization import pkcs12
+        _key, _cert, additional = pkcs12.load_key_and_certificates(
+            data, password.encode()
+        )
+        return len(additional or [])
+
+    def test_pkcs12_without_include_chain_excludes_chain(self, auth_client, create_cert):
+        cert = create_cert(cn='p12-nochain.example.com')
+        cert_id = cert.get('id')
+        r = auth_client.post(
+            f'{BASE}/{cert_id}/export',
+            json={'format': 'pkcs12', 'password': 'testpass123', 'include_chain': False},
+        )
+        assert r.status_code == 200
+        assert self._count_p12_chain(r.data) == 0
+
+    def test_pkcs12_with_include_chain_embeds_chain(self, auth_client, create_cert):
+        cert = create_cert(cn='p12-chain.example.com')
+        cert_id = cert.get('id')
+        r = auth_client.post(
+            f'{BASE}/{cert_id}/export',
+            json={'format': 'pkcs12', 'password': 'testpass123', 'include_chain': True},
+        )
+        assert r.status_code == 200
+        assert self._count_p12_chain(r.data) >= 1
+
+    def test_pfx_without_include_chain_excludes_chain(self, auth_client, create_cert):
+        cert = create_cert(cn='pfx-nochain.example.com')
+        cert_id = cert.get('id')
+        r = auth_client.post(
+            f'{BASE}/{cert_id}/export',
+            json={'format': 'pfx', 'password': 'testpass123', 'include_chain': False},
+        )
+        assert r.status_code == 200
+        assert self._count_p12_chain(r.data) == 0
+
+    def test_pfx_with_include_chain_embeds_chain(self, auth_client, create_cert):
+        cert = create_cert(cn='pfx-chain.example.com')
+        cert_id = cert.get('id')
+        r = auth_client.post(
+            f'{BASE}/{cert_id}/export',
+            json={'format': 'pfx', 'password': 'testpass123', 'include_chain': True},
+        )
+        assert r.status_code == 200
+        assert self._count_p12_chain(r.data) >= 1
+
+    def test_pem_without_include_chain_returns_single_cert(self, auth_client, create_cert):
+        cert = create_cert(cn='pem-nochain.example.com')
+        cert_id = cert.get('id')
+        r = auth_client.get(f'{BASE}/{cert_id}/export?format=pem&include_chain=false')
+        assert r.status_code == 200
+        assert r.data.count(b'BEGIN CERTIFICATE') == 1
+
+    def test_pem_with_include_chain_returns_chain(self, auth_client, create_cert):
+        cert = create_cert(cn='pem-chain.example.com')
+        cert_id = cert.get('id')
+        r = auth_client.get(f'{BASE}/{cert_id}/export?format=pem&include_chain=true')
+        assert r.status_code == 200
+        assert r.data.count(b'BEGIN CERTIFICATE') >= 2
+
+
+# ============================================================================
 # Revoke certificate
 # ============================================================================
 
