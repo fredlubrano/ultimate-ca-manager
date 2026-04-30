@@ -13,7 +13,15 @@ from api.v2.auth import bp as auth_bp
 from api.v2.auth_methods import bp as auth_methods_bp  # Multi-method auth
 from api.v2.account import bp as account_bp
 from api.v2.cas import bp as cas_bp
+# Certificates: import package (creates bp) then all route modules
 from api.v2.certificates import bp as certificates_bp
+from api.v2.certificates import crud  # noqa: F401
+from api.v2.certificates import eku  # noqa: F401
+from api.v2.certificates import ct  # noqa: F401
+from api.v2.certificates import stats  # noqa: F401
+from api.v2.certificates import export  # noqa: F401
+from api.v2.certificates import bulk  # noqa: F401
+
 from api.v2.acme import bp as acme_bp
 from api.v2.scep import bp as scep_bp
 from api.v2.est import bp as est_bp
