@@ -395,6 +395,87 @@ class TestExportSingleCA:
 
 
 # ============================================================
+# include_chain flag — must be honored across formats (PR #100)
+# ============================================================
+
+class TestCAExportIncludeChainFlag:
+    """
+    Regression tests for PR #100: CA exports in PKCS12/PFX format must
+    honor the include_chain flag. Before the fix:
+      - PKCS12: chain was unconditionally embedded (caref check only)
+      - PFX:    chain was hardcoded to None (never embedded, even if requested)
+
+    These tests build a Root -> Intermediate chain and verify the
+    intermediate's PKCS12/PFX export reflects the include_chain flag.
+    """
+
+    @staticmethod
+    def _count_p12_chain(data, password='testpass123'):
+        from cryptography.hazmat.primitives.serialization import pkcs12
+        _key, _cert, additional = pkcs12.load_key_and_certificates(
+            data, password.encode()
+        )
+        return len(additional or [])
+
+    @staticmethod
+    def _make_intermediate(auth_client, create_ca, cn):
+        root = create_ca(cn=f'{cn} Root')
+        inter_payload = {
+            **VALID_ROOT_CA,
+            'type': 'intermediate',
+            'commonName': f'{cn} Intermediate',
+            'parentCAId': root['id'],
+        }
+        r = post_json(auth_client, '/api/v2/cas', inter_payload)
+        return assert_success(r, status=201)
+
+    def test_pkcs12_without_include_chain_excludes_chain(self, auth_client, create_ca):
+        inter = self._make_intermediate(auth_client, create_ca, 'CA-P12-NoChain')
+        r = auth_client.post(
+            f'/api/v2/cas/{inter["id"]}/export',
+            json={'format': 'pkcs12', 'password': 'testpass123', 'include_chain': False},
+        )
+        assert r.status_code == 200
+        assert self._count_p12_chain(r.data) == 0
+
+    def test_pkcs12_with_include_chain_embeds_chain(self, auth_client, create_ca):
+        inter = self._make_intermediate(auth_client, create_ca, 'CA-P12-Chain')
+        r = auth_client.post(
+            f'/api/v2/cas/{inter["id"]}/export',
+            json={'format': 'pkcs12', 'password': 'testpass123', 'include_chain': True},
+        )
+        assert r.status_code == 200
+        assert self._count_p12_chain(r.data) >= 1
+
+    def test_pfx_without_include_chain_excludes_chain(self, auth_client, create_ca):
+        inter = self._make_intermediate(auth_client, create_ca, 'CA-PFX-NoChain')
+        r = auth_client.post(
+            f'/api/v2/cas/{inter["id"]}/export',
+            json={'format': 'pfx', 'password': 'testpass123', 'include_chain': False},
+        )
+        assert r.status_code == 200
+        assert self._count_p12_chain(r.data) == 0
+
+    def test_pfx_with_include_chain_embeds_chain(self, auth_client, create_ca):
+        # Pre-PR #100, PFX hardcoded cas=None — this assertion was impossible.
+        inter = self._make_intermediate(auth_client, create_ca, 'CA-PFX-Chain')
+        r = auth_client.post(
+            f'/api/v2/cas/{inter["id"]}/export',
+            json={'format': 'pfx', 'password': 'testpass123', 'include_chain': True},
+        )
+        assert r.status_code == 200
+        assert self._count_p12_chain(r.data) >= 1
+
+    def test_pem_without_include_chain_returns_single_cert(self, auth_client, create_ca):
+        inter = self._make_intermediate(auth_client, create_ca, 'CA-PEM-NoChain')
+        r = auth_client.get(
+            f'/api/v2/cas/{inter["id"]}/export?format=pem&include_chain=false'
+        )
+        assert r.status_code == 200
+        assert r.data.count(b'BEGIN CERTIFICATE') == 1
+
+
+# ============================================================
 # CA Certificates
 # ============================================================
 
