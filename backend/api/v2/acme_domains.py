@@ -7,6 +7,7 @@ import logging
 from flask import Blueprint, request, g
 from auth.unified import require_auth
 from utils.response import success_response, error_response
+from utils.db_transaction import safe_commit
 from models import db, AcmeDomain, DnsProvider, CA
 from services.audit_service import AuditService
 
@@ -165,8 +166,10 @@ def delete_domain(domain_id):
     
     try:
         db.session.delete(domain)
-        db.session.commit()
-        
+        ok, err = safe_commit(logger, 'Failed to delete domain')
+        if not ok:
+            return err
+
         AuditService.log_action(
             action='acme_domain_delete',
             resource_type='acme_domain',
@@ -175,7 +178,7 @@ def delete_domain(domain_id):
             details=f'Removed ACME domain: {domain_name}',
             success=True
         )
-        
+
         return success_response(message=f'Domain {domain_name} removed')
     except Exception as e:
         db.session.rollback()
