@@ -41,3 +41,15 @@ def paginate(query, page=1, per_page=20):
             'has_prev': page > 1
         }
     }
+
+
+def parse_request_pagination(request, default_per_page=20):
+    """
+    Parse pagination parameters from Flask request args.
+
+    Returns:
+        tuple: (page, per_page) with defaults and bounds applied
+    """
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = min(max(1, request.args.get('per_page', default_per_page, type=int)), 100)
+    return page, per_page
