@@ -240,21 +240,21 @@ class ExportService:
 ## ✅ Progrès
 
 ### Backend API
-- [x] certificates.py (2220l) → 6 modules (crud, export, bulk, ct, stats, eku) ✅
-- [ ] cas.py (1245l) → 4 modules
-- [ ] backup_service.py (2351l) → 1 module (déjà service, à découper)
+- [x] certificates.py (2220l) → 6 modules (crud:1470l, export:385l, bulk:250l, ct:85l, stats:92l, eku:26l) ✅
+- [ ] cas.py (1245l) → 4 modules (crud, import, export, ocsp)
+- [ ] backup_service.py (2351l) → 6 modules (create, restore, export, cleanup, migration, service)
 - [ ] system.py (1556l) → à analyser
 - [ ] sso.py (1843l) → à analyser
 - [ ] settings.py (1314l) → à analyser
 
 ### Backend Services
-- [ ] backup_service.py (2351l) → 6 modules
+- [ ] backup_service.py (2351l) → 6 modules (create, restore, export, cleanup, migration, service)
 - [ ] trust_store.py (1487l) → à analyser
 - [ ] acme_service.py (1456l) → à analyser
 - [ ] acme_proxy_service.py (998l) → à analyser
 - [ ] pdf_report_service.py (1298l) → à analyser
-- [ ] Corriger dépendances circulaires
-- [ ] Extraire export_service.py
+- [ ] Corriger dépendances circulaires (services → api)
+- [ ] Extraire export_service.py (centraliser PKCS12/PFX/P7B/JKS)
 
 ### Frontend
 - [ ] SettingsPage.jsx (4833l)
@@ -271,6 +271,7 @@ class ExportService:
 |------|--------|-------------|--------|
 | 2026-05-01 | aaae72f1 | docs(refactor): add comprehensive refactoring plan | ✅ |
 | 2026-05-01 | 317253e9 | refactor(backend): split certificates.py (2220l) into modular structure | ✅ |
+| 2026-05-01 | f21e9ff8 | docs(refactor): update REFACTORING_PLAN.md with certificates.py progress | ✅ |
 
 *(À mettre à jour après chaque commit)*
 
@@ -290,6 +291,27 @@ class ExportService:
 ## ⚠️ Problèmes rencontrés
 
 *(À remplir au fur et à mesure)*
+
+---
+
+## 🎯 Prochaines étapes
+
+**Priorité 1 (Backend API) :**
+- `cas.py` (1245l) → Découper en : crud, import, export, ocsp
+- `system.py` (1556l) → À analyser
+- `sso.py` (1843l) → À analyser  
+- `settings.py` (1314l) → À analyser
+
+**Priorité 2 (Backend Services) :**
+- `backup_service.py` (2351l) → Découper en : create, restore, export, cleanup, migration
+- `trust_store.py` (1487l) → À analyser
+- `acme_service.py` (1456l) → À analyser
+- Extraire `export_service.py` pour centraliser la logique d'export
+- Corriger les dépendances circulaires (services → api)
+
+**Priorité 3 (Frontend) :**
+- `SettingsPage.jsx` (4833l) → Découper en sous-composants
+- `ACMEPage.jsx` (3527l) → Découper en sous-composants
 
 ---
 
