@@ -3,6 +3,7 @@ Database Admin — data migration and auth bootstrap functions.
 """
 
 import logging
+import re
 from typing import Tuple
 
 from sqlalchemy import create_engine, inspect, text
@@ -22,6 +23,22 @@ from .helpers import (
 from .status import test_connection
 
 logger = logging.getLogger(__name__)
+
+
+# Strict SQL identifier shape — letters, digits, underscore; not starting with a
+# digit. Anything else is rejected before being interpolated into a query.
+# Names returned by SQLAlchemy's inspect() normally satisfy this, but the
+# *source* DB during a migration is operator-controlled (could be a malicious
+# SQLite file or a hostile PG with crafted catalog entries) and we MUST NOT
+# trust it for raw string interpolation into SQL.
+_SAFE_IDENT_RE = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*$')
+
+
+def _safe_ident(name: str) -> str:
+    """Return *name* if it is a safe SQL identifier, else raise ValueError."""
+    if not isinstance(name, str) or not _SAFE_IDENT_RE.match(name):
+        raise ValueError(f"Unsafe SQL identifier: {name!r}")
+    return name
 
 # Tables that must be present on a target backend even when an admin switches
 # WITHOUT migrating data, so we don't lock everyone out of the new empty DB.
@@ -91,20 +108,21 @@ def bootstrap_auth_to_target(target_url: str) -> Tuple[bool, str, dict]:
                     stats["skipped"].append(f"{table_name} (missing on target)")
                     continue
                 try:
+                    table_q = _safe_ident(table_name)
                     target_cols = target_cols_by_table[table_name]
-                    rows = list(src.execute(text(f'SELECT * FROM "{table_name}"')).mappings())
+                    rows = list(src.execute(text(f'SELECT * FROM "{table_q}"')).mappings())
                     if not rows:
                         stats["tables_bootstrapped"] += 1
                         continue
                     src_cols = list(rows[0].keys())
-                    cols = [c for c in src_cols if c in target_cols]
+                    cols = [c for c in src_cols if c in target_cols and _SAFE_IDENT_RE.match(c)]
                     if not cols:
                         stats["skipped"].append(f"{table_name} (no overlapping columns)")
                         continue
                     placeholders = ", ".join(f":{c}" for c in cols)
                     col_list = ", ".join(f'"{c}"' for c in cols)
                     insert_sql = text(
-                        f'INSERT INTO "{table_name}" ({col_list}) VALUES ({placeholders})'
+                        f'INSERT INTO "{table_q}" ({col_list}) VALUES ({placeholders})'
                     )
                     json_cols_here = target_json_cols.get(table_name, set())
                     bool_cols_here = target_bool_cols.get(table_name, set())
@@ -294,13 +312,14 @@ def migrate_data(target_url: str) -> Tuple[bool, str, dict]:
                     logger.warning(f"Skipping table {table_name}: not in target schema")
                     continue
                 try:
+                    table_q = _safe_ident(table_name)
                     target_cols = target_cols_by_table[table_name]
-                    rows = list(src.execute(text(f'SELECT * FROM "{table_name}"')).mappings())
+                    rows = list(src.execute(text(f'SELECT * FROM "{table_q}"')).mappings())
                     if not rows:
                         stats["tables_migrated"] += 1
                         continue
                     src_cols = list(rows[0].keys())
-                    cols = [c for c in src_cols if c in target_cols]
+                    cols = [c for c in src_cols if c in target_cols and _SAFE_IDENT_RE.match(c)]
                     dropped = [c for c in src_cols if c not in target_cols]
                     if dropped:
                         logger.warning(f"{table_name}: dropping columns absent in target: {dropped}")
@@ -311,7 +330,7 @@ def migrate_data(target_url: str) -> Tuple[bool, str, dict]:
                     placeholders = ", ".join(f":{c}" for c in cols)
                     col_list = ", ".join(f'"{c}"' for c in cols)
                     insert_sql = text(
-                        f'INSERT INTO "{table_name}" ({col_list}) VALUES ({placeholders})'
+                        f'INSERT INTO "{table_q}" ({col_list}) VALUES ({placeholders})'
                     )
                     json_cols_here = target_json_cols.get(table_name, set())
                     bool_cols_here = target_bool_cols.get(table_name, set())

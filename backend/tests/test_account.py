@@ -100,6 +100,21 @@ class TestUpdateProfile:
 class TestChangePassword:
     """Tests for POST /api/v2/account/password"""
 
+    @pytest.fixture(autouse=True)
+    def _clear_force_password_change(self, app):
+        """The bootstrap admin has force_password_change=True, which would let
+        these tests bypass current-password verification (skip is now decided
+        purely server-side from User.force_password_change). Clear the flag for
+        this class so we exercise the standard "must supply current password"
+        path the tests are written against."""
+        from models import db, User
+        with app.app_context():
+            u = User.query.filter_by(username='admin').first()
+            if u and u.force_password_change:
+                u.force_password_change = False
+                db.session.commit()
+        yield
+
     def test_requires_auth(self, client):
         r = post_json(client, '/api/v2/account/password', {
             'current_password': 'changeme123',
