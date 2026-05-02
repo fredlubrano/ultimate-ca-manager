@@ -186,8 +186,33 @@ def import_users():
         return error_response('File must be CSV format', 400)
 
     try:
-        # Read CSV
-        stream = io.StringIO(file.stream.read().decode('utf-8'))
+        # Read CSV — bound the upload size and the number of rows so an
+        # admin (or anyone with admin creds) can't DoS the worker by
+        # uploading a multi-GB CSV or a 10M-row file. 5 MB / 10 000 rows
+        # is enough for any realistic on-prem user-bulk-import while
+        # keeping memory + per-row password hashing time bounded.
+        MAX_CSV_BYTES = 5 * 1024 * 1024
+        MAX_CSV_ROWS = 10_000
+
+        # Honor Content-Length cheaply if present
+        cl = request.content_length
+        if cl is not None and cl > MAX_CSV_BYTES:
+            return error_response(
+                f'CSV too large (max {MAX_CSV_BYTES // 1024} KB)', 413
+            )
+
+        raw = file.stream.read(MAX_CSV_BYTES + 1)
+        if len(raw) > MAX_CSV_BYTES:
+            return error_response(
+                f'CSV too large (max {MAX_CSV_BYTES // 1024} KB)', 413
+            )
+
+        try:
+            decoded = raw.decode('utf-8')
+        except UnicodeDecodeError:
+            return error_response('CSV must be UTF-8 encoded', 400)
+
+        stream = io.StringIO(decoded)
         csv_reader = csv.DictReader(stream)
 
         imported = 0
@@ -196,6 +221,12 @@ def import_users():
 
         for row in csv_reader:
             row_num = imported + skipped + 1
+            if row_num > MAX_CSV_ROWS:
+                errors.append(
+                    f"Stopped at row {MAX_CSV_ROWS}: per-import row "
+                    "limit reached"
+                )
+                break
 
             # Required fields
             if not row.get('username') or not row.get('email') or not row.get('password'):
