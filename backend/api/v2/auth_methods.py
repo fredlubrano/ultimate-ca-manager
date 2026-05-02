@@ -473,13 +473,30 @@ def login_mtls():
     # Extract certificate info
     cert_info = None
     try:
-        headers = dict(request.headers)
-        if 'X-SSL-Client-Verify' in headers:
-            cert_info = CertificateParser.extract_from_nginx_headers(headers)
-        elif 'X-SSL-Client-S-DN' in headers:
-            cert_info = CertificateParser.extract_from_apache_headers(headers)
-        elif request.environ.get('peercert'):
+        # Native gunicorn TLS — already validated against the configured CA.
+        if request.environ.get('peercert'):
             cert_info = CertificateParser.extract_from_flask_native(request.environ['peercert'])
+        else:
+            # Reverse-proxy headers — only honor when the immediate peer is
+            # in UCM_TRUSTED_PROXIES (default: loopback). Without this gate
+            # any caller who can reach gunicorn directly can spoof
+            # X-SSL-Client-* headers and forge mTLS authentication.
+            from utils.trusted_proxy import is_request_from_trusted_proxy
+            headers = dict(request.headers)
+            spoof_attempt = (
+                'X-SSL-Client-Verify' in headers
+                or 'X-SSL-Client-S-DN' in headers
+                or 'X-SSL-Client-Cert' in headers
+            )
+            if spoof_attempt and not is_request_from_trusted_proxy():
+                logger.warning(
+                    "mTLS login: ignoring proxy cert headers from untrusted peer %s",
+                    request.remote_addr,
+                )
+            elif 'X-SSL-Client-Verify' in headers:
+                cert_info = CertificateParser.extract_from_nginx_headers(headers)
+            elif 'X-SSL-Client-S-DN' in headers:
+                cert_info = CertificateParser.extract_from_apache_headers(headers)
     except Exception as e:
         logger.error(f"Error extracting certificate: {e}")
         return error_response('Failed to extract client certificate', 500)
