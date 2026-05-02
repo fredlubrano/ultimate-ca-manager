@@ -6,31 +6,49 @@ from utils.datetime_utils import utc_now, utc_isoformat
 
 
 class SCEPRequest(db.Model):
-    """SCEP enrollment request tracking"""
+    """SCEP enrollment request tracking.
+
+    The ``transaction_id`` alone is not unique: per RFC 8894 §3.2.1.1 it is
+    derived from the requester's public key, so the same client enrolling
+    against two different CAs hosted on the same UCM instance would collide.
+    The natural key is therefore ``(transaction_id, ca_refid)``.
+    """
+
     __tablename__ = "scep_requests"
-    
+    __table_args__ = (
+        db.UniqueConstraint("transaction_id", "ca_refid",
+                            name="uq_scep_request_txn_ca"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
-    transaction_id = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    transaction_id = db.Column(db.String(100), nullable=False, index=True)
+    ca_refid = db.Column(
+        db.String(36),
+        db.ForeignKey("certificate_authorities.refid"),
+        nullable=True,   # nullable for backfill compatibility; new rows always set
+        index=True,
+    )
     csr = db.Column(db.Text, nullable=False)  # Base64 encoded
     status = db.Column(db.String(20), default="pending")  # pending, approved, rejected
     approved_by = db.Column(db.String(80))
     approved_at = db.Column(db.DateTime)
     rejection_reason = db.Column(db.String(255))
-    
+
     # Generated certificate
     cert_refid = db.Column(db.String(36))
-    
+
     # Request details
     subject = db.Column(db.Text)
     client_ip = db.Column(db.String(45))
-    
+
     created_at = db.Column(db.DateTime, default=utc_now)
-    
+
     def to_dict(self):
         """Convert to dictionary"""
         return {
             "id": self.id,
             "transaction_id": self.transaction_id,
+            "ca_refid": self.ca_refid,
             "status": self.status,
             "subject": self.subject,
             "client_ip": self.client_ip,

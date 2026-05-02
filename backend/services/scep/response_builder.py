@@ -113,8 +113,13 @@ def build_cert_rep(
     ])
 
     signed_attrs_der = signed_attrs.dump()
-    # Replace outer tag: SET (0x31) → [0] IMPLICIT (context-specific constructed)
-    signed_attrs_for_signing = b'\x31' + signed_attrs_der[1:]
+    # signed_attrs.dump() emits the IMPLICIT [0] tag (0xA0) used inside
+    # SignerInfo. RFC 5652 §5.4 says the bytes covered by the signature must
+    # use the explicit SET-OF tag (0x31). Re-tag here.
+    if signed_attrs_der and signed_attrs_der[0] == 0xA0:
+        signed_attrs_for_signing = b'\x31' + signed_attrs_der[1:]
+    else:
+        signed_attrs_for_signing = signed_attrs_der
 
     signature = ca_key.sign(signed_attrs_for_signing, asym_padding.PKCS1v15(), hashes.SHA256())
 
@@ -155,13 +160,19 @@ def build_cert_rep_success(
     cert: x509.Certificate,
     transaction_id: str,
     sender_nonce: Optional[bytes],
-    client_csr: x509.CertificateSigningRequest,
+    recipient_cert: x509.Certificate,
     ca_cert: x509.Certificate,
     ca_key,
 ) -> bytes:
-    """Create a successful CertRep with the issued certificate encrypted for the client."""
+    """Create a successful CertRep with the issued certificate encrypted for the client.
+
+    *recipient_cert* is the client's signer cert from the original request
+    (self-signed bootstrap cert for PKCSReq, previously-issued cert for
+    RenewalReq); it provides both the encryption public key and the
+    issuer/serial used in RecipientInfo.rid (RFC 5652 §6.2.1).
+    """
     pkcs7_data = create_degenerate_pkcs7([cert, ca_cert])
-    encrypted_data = encrypt_for_client(pkcs7_data, client_csr, ca_cert)
+    encrypted_data = encrypt_for_client(pkcs7_data, recipient_cert)
     return build_cert_rep(
         STATUS_SUCCESS, encrypted_data, transaction_id, sender_nonce, ca_key, ca_cert
     )
@@ -182,9 +193,18 @@ def build_error_response(
     message: str,
     ca_key,
     ca_cert: x509.Certificate,
+    transaction_id: str = '',
+    recipient_nonce: Optional[bytes] = None,
 ) -> bytes:
-    """Create a FAILURE CertRep response with the given failInfo code."""
+    """Create a FAILURE CertRep response with the given failInfo code.
+
+    Per RFC 8894 §3.3.2, error responses must echo the original transactionID
+    and recipientNonce when available so the client can correlate them with
+    its in-flight request. Callers that omit these (e.g. fast-path before
+    parsing) fall back to empty values.
+    """
     logger.warning(f"SCEP error response: failInfo={fail_info}, message={message}")
     return build_cert_rep(
-        STATUS_FAILURE, b'', '', None, ca_key, ca_cert, fail_info=fail_info
+        STATUS_FAILURE, b'', transaction_id, recipient_nonce, ca_key, ca_cert,
+        fail_info=fail_info,
     )
