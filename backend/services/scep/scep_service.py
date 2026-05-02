@@ -12,6 +12,7 @@ from typing import Optional, Tuple
 
 import asn1crypto.cms
 from cryptography import x509
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.x509.oid import ExtensionOID
@@ -22,7 +23,12 @@ from security.encryption import decrypt_private_key
 from utils.datetime_utils import utc_now
 from utils.file_naming import cert_cert_path
 
-from services.scep.message_parser import decrypt_scep_envelope, extract_scep_attributes
+from services.scep.message_parser import (
+    decrypt_scep_envelope,
+    extract_scep_attributes,
+    extract_signer_certificate,
+    verify_cms_signature,
+)
 from services.scep.response_builder import (
     FAIL_BAD_ALG,       # noqa: F401  re-exported for callers
     FAIL_BAD_CERT_ID,   # noqa: F401
@@ -43,8 +49,9 @@ logger = logging.getLogger(__name__)
 class SCEPService:
     """SCEP Protocol Implementation (RFC 8894)."""
 
-    # SCEP message types
+    # SCEP message types (RFC 8894 §3.2.1.2)
     MSG_TYPE_CERT_REP = 3
+    MSG_TYPE_RENEWAL_REQ = 17
     MSG_TYPE_PKI_REQ = 19
     MSG_TYPE_GET_CERT_INITIAL = 20
 
@@ -96,16 +103,21 @@ class SCEPService:
     # ------------------------------------------------------------------
 
     def get_ca_caps(self) -> str:
-        """Return CA capabilities for SCEP GetCACaps."""
+        """Return CA capabilities for SCEP GetCACaps.
+
+        We deliberately do *not* advertise SHA-1 (deprecated, MUST NOT be used
+        for new signatures per RFC 8894 §3.5.2) nor SCEPStandard (would
+        require failInfoText support, currently absent). DES is rejected on
+        input, so we don't advertise it either.
+        """
         capabilities = [
             "POSTPKIOperation",
-            "SHA-1",
             "SHA-256",
+            "SHA-384",
             "SHA-512",
-            "DES3",
             "AES",
-            "SCEPStandard",
             "Renewal",
+            "GetNextCACert",
         ]
         return "\n".join(capabilities)
 
@@ -115,7 +127,7 @@ class SCEPService:
 
     def process_pkcs_req(self, pkcs7_data: bytes, client_ip: str) -> Tuple[bytes, int]:
         """
-        Process a SCEP PKCSReq / RenewalReq enrollment request.
+        Process a SCEP PKCSReq / RenewalReq / GetCertInitial request.
 
         Args:
             pkcs7_data: PKCS#7 signed data from client
@@ -124,84 +136,167 @@ class SCEPService:
         Returns:
             Tuple of (PKCS#7 response bytes, HTTP status code)
         """
+        # All SCEP error responses are returned with HTTP 200 — failures are
+        # signalled inside the signed PKIMessage (RFC 8894 §3.3.2). HTTP-level
+        # errors (4xx/5xx) are reserved for transport problems.
         try:
             content_info = asn1crypto.cms.ContentInfo.load(pkcs7_data)
-            if content_info['content_type'].native != 'signed_data':
+            if content_info["content_type"].native != "signed_data":
                 return self._create_error_response(
                     self.FAIL_BAD_REQUEST, "Expected SignedData"
                 ), 200
 
-            signed_data = content_info['content']
+            signed_data = content_info["content"]
 
-            # Decrypt the inner EnvelopedData to recover the CSR
-            encap_content = signed_data['encap_content_info']
-            encrypted_content = encap_content['content']
-            encrypted_bytes = (
-                encrypted_content.native
-                if hasattr(encrypted_content, 'native')
-                else bytes(encrypted_content)
+            # ---- 1. Outer CMS signature MUST verify (RFC 8894 §3.1) ----
+            signer_cert = extract_signer_certificate(signed_data)
+            if signer_cert is None:
+                return self._create_error_response(
+                    self.FAIL_BAD_MESSAGE_CHECK,
+                    "Missing signer certificate in SignedData",
+                ), 200
+            try:
+                verify_cms_signature(signed_data, signer_cert)
+            except InvalidSignature:
+                logger.warning(
+                    f"SCEP: CMS signature verification failed (client_ip={client_ip})"
+                )
+                return self._create_error_response(
+                    self.FAIL_BAD_MESSAGE_CHECK, "CMS signature verification failed"
+                ), 200
+            except ValueError as e:
+                logger.warning(f"SCEP: CMS signature malformed: {e}")
+                return self._create_error_response(
+                    self.FAIL_BAD_ALG, "Unsupported or malformed CMS signature"
+                ), 200
+
+            # ---- 2. Extract SCEP attributes ----
+            attrs = extract_scep_attributes(signed_data)
+            transaction_id = attrs.get("transactionID")
+            message_type = attrs.get("messageType")  # always int (or None)
+            sender_nonce = attrs.get("senderNonce")
+            challenge_pwd = attrs.get("challengePassword")
+
+            if not transaction_id:
+                return self._create_error_response(
+                    self.FAIL_BAD_REQUEST, "Missing transactionID",
+                    transaction_id="", recipient_nonce=sender_nonce,
+                ), 200
+
+            logger.debug(
+                f"SCEP: txn_id={transaction_id} msg_type={message_type} "
+                f"client_ip={client_ip} ca={self.ca_refid}"
             )
 
+            # ---- 3. Dispatch on messageType ----
+            if message_type == self.MSG_TYPE_GET_CERT_INITIAL:
+                return self._handle_get_cert_initial(
+                    transaction_id, sender_nonce
+                ), 200
+
+            if message_type not in (
+                self.MSG_TYPE_PKI_REQ, self.MSG_TYPE_RENEWAL_REQ
+            ):
+                return self._create_error_response(
+                    self.FAIL_BAD_REQUEST,
+                    f"Unsupported messageType: {message_type}",
+                    transaction_id=transaction_id, recipient_nonce=sender_nonce,
+                ), 200
+
+            # ---- 4. Decrypt the inner EnvelopedData → CSR ----
+            encap_content = signed_data["encap_content_info"]
+            encrypted_content = encap_content["content"]
+            encrypted_bytes = (
+                encrypted_content.native
+                if hasattr(encrypted_content, "native")
+                else bytes(encrypted_content)
+            )
             try:
                 csr_data = decrypt_scep_envelope(encrypted_bytes, self.ca_key)
             except Exception as e:
                 logger.error(f"SCEP: Failed to decrypt envelopedData: {e}")
-                raise ValueError("Failed to decrypt SCEP message envelope")
+                return self._create_error_response(
+                    self.FAIL_BAD_MESSAGE_CHECK,
+                    "Failed to decrypt SCEP envelope",
+                    transaction_id=transaction_id, recipient_nonce=sender_nonce,
+                ), 200
 
-            csr = x509.load_der_x509_csr(csr_data, default_backend())
+            try:
+                csr = x509.load_der_x509_csr(csr_data, default_backend())
+            except Exception as e:
+                logger.warning(f"SCEP: Malformed CSR: {e}")
+                return self._create_error_response(
+                    self.FAIL_BAD_REQUEST, "Malformed CSR",
+                    transaction_id=transaction_id, recipient_nonce=sender_nonce,
+                ), 200
+
+            # ---- 5. Verify CSR self-signature (proof of possession) ----
+            if not csr.is_signature_valid:
+                logger.warning(
+                    f"SCEP: CSR self-signature invalid "
+                    f"(subject={csr.subject.rfc4514_string()})"
+                )
+                return self._create_error_response(
+                    self.FAIL_BAD_MESSAGE_CHECK,
+                    "CSR signature invalid (proof of possession failed)",
+                    transaction_id=transaction_id, recipient_nonce=sender_nonce,
+                ), 200
+
             logger.debug(f"SCEP: CSR parsed, subject={csr.subject.rfc4514_string()}")
 
-            attrs = extract_scep_attributes(signed_data)
-            transaction_id = attrs.get('transactionID')
-            message_type = attrs.get('messageType')
-            sender_nonce = attrs.get('senderNonce')
-            challenge_pwd = attrs.get('challengePassword')
-
-            # Also check challengePassword in CSR attributes (used by scepclient)
+            # ---- 6. Also check challengePassword in CSR attributes (scepclient) ----
             if not challenge_pwd:
                 try:
                     from cryptography.x509.oid import AttributeOID
                     for attr in csr.attributes:
                         if attr.oid == AttributeOID.CHALLENGE_PASSWORD:
                             challenge_pwd = attr.value
+                            if isinstance(challenge_pwd, bytes):
+                                try:
+                                    challenge_pwd = challenge_pwd.decode("utf-8")
+                                except UnicodeDecodeError:
+                                    pass
                             break
                 except Exception as e:
                     logger.debug(f"SCEP: Could not extract challenge from CSR: {e}")
 
-            logger.debug(f"SCEP: txn_id={transaction_id}, msg_type={message_type}")
-
-            if not transaction_id:
-                return self._create_error_response(
-                    self.FAIL_BAD_REQUEST, "Missing transactionID"
-                ), 200
-
-            # Validate challenge password (constant-time comparison)
+            # ---- 7. Validate challenge password (constant-time) ----
             if self.challenge_password:
                 if not challenge_pwd or not hmac.compare_digest(
-                    challenge_pwd.encode() if isinstance(challenge_pwd, str) else challenge_pwd,
+                    challenge_pwd.encode() if isinstance(challenge_pwd, str)
+                    else challenge_pwd,
                     self.challenge_password.encode()
                     if isinstance(self.challenge_password, str)
                     else self.challenge_password,
                 ):
                     return self._create_error_response(
-                        self.FAIL_BAD_MESSAGE_CHECK, "Invalid challenge password"
+                        self.FAIL_BAD_MESSAGE_CHECK, "Invalid challenge password",
+                        transaction_id=transaction_id, recipient_nonce=sender_nonce,
                     ), 200
 
-            # Renewal linkage validation (RFC 8894 §2.3)
-            if message_type in (19, '19'):
-                result = self._validate_renewal(signed_data, csr)
-                if result is not None:
-                    return result, 200
+            # ---- 8. Renewal linkage validation (RFC 8894 §2.3) ----
+            if message_type == self.MSG_TYPE_RENEWAL_REQ:
+                err = self._validate_renewal(signer_cert, csr)
+                if err is not None:
+                    return self._create_error_response(
+                        err[0], err[1],
+                        transaction_id=transaction_id, recipient_nonce=sender_nonce,
+                    ), 200
 
-            # Check for existing request with same transaction ID
-            existing = SCEPRequest.query.filter_by(transaction_id=transaction_id).first()
+            # ---- 9. Idempotency (scoped to this CA) ----
+            existing = SCEPRequest.query.filter_by(
+                transaction_id=transaction_id, ca_refid=self.ca_refid
+            ).first()
             if existing:
-                return self._status_for_existing(existing, sender_nonce), 200
+                return self._status_for_existing(
+                    existing, sender_nonce, signer_cert
+                ), 200
 
-            # Create new SCEP request
+            # ---- 10. Persist new request ----
             scep_req = SCEPRequest(
                 transaction_id=transaction_id,
-                csr=base64.b64encode(csr_data).decode('utf-8'),
+                ca_refid=self.ca_refid,
+                csr=base64.b64encode(csr_data).decode("utf-8"),
                 status="pending",
                 subject=csr.subject.rfc4514_string(),
                 client_ip=client_ip,
@@ -214,7 +309,15 @@ class SCEPService:
                 scep_req.cert_refid = cert_refid
                 scep_req.approved_by = "auto"
                 scep_req.approved_at = utc_now()
-                db.session.commit()
+                try:
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    logger.error(f"SCEP: DB commit failed during auto-approve: {e}")
+                    return self._create_error_response(
+                        self.FAIL_BAD_REQUEST, "Server error persisting request",
+                        transaction_id=transaction_id, recipient_nonce=sender_nonce,
+                    ), 200
 
                 cert = Certificate.query.filter_by(refid=cert_refid).first()
                 cert_obj = x509.load_pem_x509_certificate(
@@ -222,16 +325,70 @@ class SCEPService:
                 )
                 logger.debug("SCEP: Returning SUCCESS response")
                 return self._create_cert_rep_success(
-                    cert_obj, transaction_id, sender_nonce, csr
+                    cert_obj, transaction_id, sender_nonce, signer_cert
                 ), 200
             else:
                 logger.debug("SCEP: auto_approve=False, returning PENDING")
-                db.session.commit()
+                try:
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    logger.error(f"SCEP: DB commit failed: {e}")
+                    return self._create_error_response(
+                        self.FAIL_BAD_REQUEST, "Server error persisting request",
+                        transaction_id=transaction_id, recipient_nonce=sender_nonce,
+                    ), 200
                 return self._create_cert_rep_pending(transaction_id, sender_nonce), 200
 
         except Exception as e:
+            # Last-resort sanitized error — never leak str(e) to the wire.
             logger.error(f"SCEP PKCSReq error: {e}", exc_info=True)
-            return self._create_error_response(self.FAIL_BAD_REQUEST, str(e)), 200
+            return self._create_error_response(
+                self.FAIL_BAD_REQUEST, "Internal SCEP processing error"
+            ), 200
+
+    def _handle_get_cert_initial(
+        self, transaction_id: str, sender_nonce
+    ) -> bytes:
+        """Polling request (RFC 8894 §3.3.2.2).
+
+        The client re-sends the *same* transactionID it used for the original
+        PKCSReq; we look it up scoped to this CA and return the current
+        status. We don't bother decrypting the IssuerAndSubject payload
+        because transactionID is unique per (client, CA) and the lookup is
+        cheaper.
+        """
+        existing = SCEPRequest.query.filter_by(
+            transaction_id=transaction_id, ca_refid=self.ca_refid
+        ).first()
+        if not existing:
+            return self._create_error_response(
+                self.FAIL_BAD_CERT_ID, "Unknown transactionID",
+                transaction_id=transaction_id, recipient_nonce=sender_nonce,
+            )
+        # For GetCertInitial the recipient cert is not in our message — best
+        # effort: load the CSR and synthesize a self-signed-like recipient by
+        # reusing the cert we already issued (success path), or just return
+        # PENDING/FAILURE which carry no encrypted payload.
+        if existing.status == "approved" and existing.cert_refid:
+            cert = Certificate.query.filter_by(refid=existing.cert_refid).first()
+            if cert:
+                cert_obj = x509.load_pem_x509_certificate(
+                    base64.b64decode(cert.crt), default_backend()
+                )
+                # In the absence of a client signer cert (it's not transmitted
+                # in GetCertInitial), encrypt to the issued cert's public key:
+                # the requester proved possession of that key during PKCSReq.
+                return self._create_cert_rep_success(
+                    cert_obj, transaction_id, sender_nonce, cert_obj
+                )
+        if existing.status == "rejected":
+            return self._create_error_response(
+                self.FAIL_BAD_REQUEST,
+                existing.rejection_reason or "Request rejected",
+                transaction_id=transaction_id, recipient_nonce=sender_nonce,
+            )
+        return self._create_cert_rep_pending(transaction_id, sender_nonce)
 
     def approve_request(
         self,
@@ -245,7 +402,9 @@ class SCEPService:
         Returns:
             Certificate refid if successful, None otherwise
         """
-        scep_req = SCEPRequest.query.filter_by(transaction_id=transaction_id).first()
+        scep_req = SCEPRequest.query.filter_by(
+            transaction_id=transaction_id, ca_refid=self.ca_refid
+        ).first()
         if not scep_req or scep_req.status != "pending":
             return None
 
@@ -256,7 +415,12 @@ class SCEPService:
         scep_req.cert_refid = cert_refid
         scep_req.approved_by = approved_by
         scep_req.approved_at = utc_now()
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"SCEP approve_request: DB commit failed: {e}")
+            return None
 
         return cert_refid
 
@@ -267,63 +431,94 @@ class SCEPService:
         Returns:
             True if successful
         """
-        scep_req = SCEPRequest.query.filter_by(transaction_id=transaction_id).first()
+        scep_req = SCEPRequest.query.filter_by(
+            transaction_id=transaction_id, ca_refid=self.ca_refid
+        ).first()
         if not scep_req or scep_req.status != "pending":
             return False
 
         scep_req.status = "rejected"
         scep_req.rejection_reason = reason
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"SCEP reject_request: DB commit failed: {e}")
+            return False
         return True
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _validate_renewal(self, signed_data, csr) -> Optional[bytes]:
-        """
-        Validate signer certificate for RenewalReq (messageType 19).
-        Returns error bytes if validation fails, None if OK.
+    def _validate_renewal(self, signer_cert: x509.Certificate, csr) \
+            -> Optional[Tuple[int, str]]:
+        """Validate signer certificate for RenewalReq (messageType 17).
+
+        Returns ``(failInfo, message)`` if validation fails, ``None`` if OK.
+
+        This is fail-CLOSED: any unexpected exception is treated as a
+        validation failure rather than swallowed (the previous behaviour
+        allowed renewal forgery if the verify code itself raised).
         """
         try:
-            signer_certs = signed_data['certificates']
-            if not signer_certs or len(signer_certs) == 0:
-                logger.warning("SCEP renewal: no signer certificate found")
-                return self._create_error_response(
-                    self.FAIL_BAD_MESSAGE_CHECK, "Renewal: signer certificate required"
-                )
-
-            signer_cert = x509.load_der_x509_certificate(
-                signer_certs[0].dump(), default_backend()
-            )
+            # The signer cert MUST have been issued by this CA.
             try:
                 signer_cert.verify_directly_issued_by(self.ca_cert)
             except Exception:
                 logger.warning(
                     f"SCEP renewal: signer cert not issued by this CA "
-                    f"(subject={signer_cert.subject.rfc4514_string()})"
+                    f"(subject={signer_cert.subject.rfc4514_string()}, "
+                    f"ca={self.ca_refid})"
                 )
-                return self._create_error_response(
+                return (
                     self.FAIL_BAD_MESSAGE_CHECK,
                     "Renewal: signer certificate not issued by this CA",
                 )
 
+            # Subject must match the CSR (renewal of the same identity).
             if signer_cert.subject != csr.subject:
                 logger.warning(
                     f"SCEP renewal: subject mismatch "
                     f"(signer={signer_cert.subject.rfc4514_string()}, "
                     f"csr={csr.subject.rfc4514_string()})"
                 )
-                return self._create_error_response(
+                return (
                     self.FAIL_BAD_MESSAGE_CHECK,
                     "Renewal: CSR subject must match existing certificate",
                 )
+
+            # The signer cert must not be revoked.
+            existing = Certificate.query.filter_by(
+                caref=self.ca_refid,
+                serial_number=str(signer_cert.serial_number),
+            ).first()
+            if existing is not None and getattr(existing, "revoked", False):
+                logger.warning(
+                    f"SCEP renewal: signer cert is revoked "
+                    f"(serial={signer_cert.serial_number}, ca={self.ca_refid})"
+                )
+                return (
+                    self.FAIL_BAD_MESSAGE_CHECK,
+                    "Renewal: signer certificate has been revoked",
+                )
+
         except Exception as e:
-            logger.error(f"SCEP renewal validation error: {e}")
+            # Fail closed: never accept a renewal we couldn't fully validate.
+            logger.error(f"SCEP renewal validation error: {e}", exc_info=True)
+            return (
+                self.FAIL_BAD_MESSAGE_CHECK,
+                "Renewal validation failed",
+            )
 
         return None
 
-    def _status_for_existing(self, existing: SCEPRequest, sender_nonce) -> bytes:
+    def _status_for_existing(
+        self,
+        existing: SCEPRequest,
+        sender_nonce,
+        signer_cert: x509.Certificate,
+    ) -> bytes:
         """Return an appropriate CertRep for an already-seen transaction ID."""
         if existing.status == "approved" and existing.cert_refid:
             cert = Certificate.query.filter_by(refid=existing.cert_refid).first()
@@ -331,17 +526,16 @@ class SCEPService:
                 cert_obj = x509.load_pem_x509_certificate(
                     base64.b64decode(cert.crt), default_backend()
                 )
-                existing_csr = x509.load_der_x509_csr(
-                    base64.b64decode(existing.csr), default_backend()
-                )
                 return self._create_cert_rep_success(
-                    cert_obj, existing.transaction_id, sender_nonce, existing_csr
+                    cert_obj, existing.transaction_id, sender_nonce, signer_cert
                 )
 
         if existing.status == "rejected":
             return self._create_error_response(
                 self.FAIL_BAD_REQUEST,
                 existing.rejection_reason or "Request rejected",
+                transaction_id=existing.transaction_id,
+                recipient_nonce=sender_nonce,
             )
 
         return self._create_cert_rep_pending(existing.transaction_id, sender_nonce)
@@ -356,14 +550,28 @@ class SCEPService:
         cert_refid = str(uuid.uuid4())
         public_key = csr.public_key()
 
+        # Clamp validity to the CA's own expiry — issuing a leaf that outlives
+        # its issuer is invalid per RFC 5280 §6.1 and breaks every chain
+        # validator the moment the CA expires.
+        not_before = utc_now()
+        requested_not_after = not_before + timedelta(days=validity_days)
+        ca_not_after = self.ca_cert.not_valid_after_utc
+        # Leave a small safety margin so we don't issue a cert valid up to the
+        # exact second of CA expiry.
+        max_not_after = ca_not_after - timedelta(minutes=1)
+        if max_not_after <= not_before:
+            # CA already expired (or about to) — refuse to issue.
+            raise ValueError("CA certificate has expired or is about to expire")
+        not_after = min(requested_not_after, max_not_after)
+
         builder = (
             x509.CertificateBuilder()
             .subject_name(csr.subject)
             .issuer_name(self.ca_cert.subject)
             .public_key(public_key)
             .serial_number(x509.random_serial_number())
-            .not_valid_before(utc_now())
-            .not_valid_after(utc_now() + timedelta(days=validity_days))
+            .not_valid_before(not_before)
+            .not_valid_after(not_after)
         )
 
         # Copy SAN / Key Usage / Extended Key Usage from CSR
@@ -511,10 +719,11 @@ class SCEPService:
         cert: x509.Certificate,
         transaction_id: str,
         sender_nonce,
-        client_csr: x509.CertificateSigningRequest,
+        recipient_cert: x509.Certificate,
     ) -> bytes:
         return build_cert_rep_success(
-            cert, transaction_id, sender_nonce, client_csr, self.ca_cert, self.ca_key
+            cert, transaction_id, sender_nonce, recipient_cert,
+            self.ca_cert, self.ca_key,
         )
 
     def _create_cert_rep_pending(
@@ -524,5 +733,15 @@ class SCEPService:
             transaction_id, sender_nonce, self.ca_key, self.ca_cert
         )
 
-    def _create_error_response(self, fail_info: int, message: str) -> bytes:
-        return build_error_response(fail_info, message, self.ca_key, self.ca_cert)
+    def _create_error_response(
+        self,
+        fail_info: int,
+        message: str,
+        transaction_id: str = '',
+        recipient_nonce=None,
+    ) -> bytes:
+        return build_error_response(
+            fail_info, message, self.ca_key, self.ca_cert,
+            transaction_id=transaction_id,
+            recipient_nonce=recipient_nonce,
+        )
