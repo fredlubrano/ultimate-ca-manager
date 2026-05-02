@@ -8,6 +8,32 @@ from models.sso import SSOProvider, SSOSession
 from services.audit_service import AuditService
 import json
 from .helpers import _encrypt_ldap_password, _parse_json_field
+from utils.ssrf_protection import validate_url_not_cloud_metadata
+
+
+# SSO provider URL fields that the backend will dereference (metadata fetch,
+# token exchange, userinfo). Cloud metadata endpoints and loopback are blocked
+# to prevent credential exfiltration / probing UCM's own internals; LAN/RFC1918
+# remains allowed since on-prem IdP deployments are the norm.
+_SSO_OUTBOUND_URL_FIELDS = (
+    'saml_metadata_url',
+    'oauth2_auth_url',
+    'oauth2_token_url',
+    'oauth2_userinfo_url',
+)
+
+
+def _validate_sso_outbound_urls(data):
+    """Return an error_response if any outbound URL field is forbidden, else None."""
+    for field in _SSO_OUTBOUND_URL_FIELDS:
+        value = data.get(field)
+        if not value:
+            continue
+        try:
+            validate_url_not_cloud_metadata(value)
+        except ValueError as e:
+            return error_response(f"{field}: {e}", 400)
+    return None
 
 # ============ Provider Management ============
 
@@ -50,6 +76,11 @@ def create_provider():
     existing = SSOProvider.query.filter_by(provider_type=data['provider_type']).first()
     if existing:
         return error_response(f"A {data['provider_type'].upper()} provider already exists. Only one provider per type is allowed.", 400)
+
+    # SSRF guard on URLs the backend will dereference
+    err = _validate_sso_outbound_urls(data)
+    if err:
+        return err
 
     provider = SSOProvider(
         name=data['name'],
@@ -155,6 +186,11 @@ def update_provider(provider_id=None, provider_type_name=None):
         return error_response("Provider ID or type required", 400)
 
     data = request.get_json()
+
+    # SSRF guard on URLs the backend will dereference
+    err = _validate_sso_outbound_urls(data)
+    if err:
+        return err
 
     # Update common fields
     if 'name' in data:
