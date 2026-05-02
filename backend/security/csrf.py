@@ -89,7 +89,7 @@ class CSRFProtection:
             secret.encode('utf-8'),
             message.encode('utf-8'),
             hashlib.sha256
-        ).hexdigest()[:32]  # Truncate for shorter token
+        ).hexdigest()  # Full 256-bit signature (no truncation)
         
         return f"{timestamp}:{nonce}:{signature}"
     
@@ -126,7 +126,7 @@ class CSRFProtection:
                 secret.encode('utf-8'),
                 message.encode('utf-8'),
                 hashlib.sha256
-            ).hexdigest()[:32]
+            ).hexdigest()
             
             if not hmac.compare_digest(provided_sig, expected_sig):
                 return False, "Invalid CSRF token"

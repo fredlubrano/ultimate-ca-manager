@@ -89,8 +89,13 @@ class User(db.Model):
         return [Group.query.get(m.group_id) for m in memberships if Group.query.get(m.group_id)]
     
     def set_password(self, password: str):
-        """Hash and set password"""
-        self.password_hash = generate_password_hash(password)
+        """Hash and set password.
+
+        Algorithm is pinned explicitly so a future Werkzeug upgrade cannot
+        silently downgrade us (e.g. back to pbkdf2:sha256 with low iterations).
+        scrypt is the current Werkzeug default and our chosen baseline.
+        """
+        self.password_hash = generate_password_hash(password, method='scrypt')
     
     def check_password(self, password: str) -> bool:
         """Verify password"""
