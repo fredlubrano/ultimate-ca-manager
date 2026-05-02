@@ -144,8 +144,14 @@ class WebhookService:
                 ).hexdigest()
                 headers['X-UCM-Signature'] = f'sha256={signature}'
             
-            # Send request with timeout
-            response = requests.post(
+            # Send request with timeout. UCM is on-prem: LAN/RFC1918/.lan
+            # targets MUST keep working. We resolve the hostname once,
+            # block only cloud-metadata + loopback, and pin the TCP
+            # connection to that IP so a hostile DNS server cannot
+            # rebind us to 169.254.169.254 between validation and
+            # connect.
+            from utils.ssrf_protection import safe_request_post
+            response = safe_request_post(
                 endpoint.url,
                 data=body_json,
                 headers=headers,
@@ -168,6 +174,13 @@ class WebhookService:
             endpoint.failure_count += 1
             db.session.commit()
             logger.error(f"Webhook error for {endpoint.name}: {e}")
+        except ValueError as e:
+            # Raised by safe_request_post when the URL targets cloud
+            # metadata or loopback, or fails DNS resolution.
+            endpoint.last_failure = utc_now()
+            endpoint.failure_count += 1
+            db.session.commit()
+            logger.warning(f"Webhook URL rejected for {endpoint.name}: {e}")
         except Exception as e:
             logger.error(f"Unexpected webhook error: {e}")
     
@@ -211,7 +224,8 @@ class WebhookService:
                 ).hexdigest()
                 headers['X-UCM-Signature'] = f'sha256={signature}'
             
-            response = requests.post(
+            from utils.ssrf_protection import safe_request_post
+            response = safe_request_post(
                 endpoint.url,
                 data=body_json,
                 headers=headers,
@@ -225,6 +239,8 @@ class WebhookService:
                 
         except requests.RequestException as e:
             return False, f"Request error: {str(e)}"
+        except ValueError as e:
+            return False, f"URL rejected: {str(e)}"
         except Exception as e:
             return False, f"Error: {str(e)}"
 
