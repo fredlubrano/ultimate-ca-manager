@@ -213,10 +213,31 @@ def create_app(config_name=None):
     
     Session(app)
     
-    # Ensure session directory exists with correct permissions (filesystem mode)
+    # Ensure session directory exists with correct permissions (filesystem mode).
+    # Session files contain CSRF tokens and authenticated user IDs — anyone with
+    # read access to /opt/ucm/data/sessions can hijack live sessions. Pin the
+    # directory mode to 0o700 (and chmod each pre-existing one), and refuse to
+    # start if the perms are wider than that on a non-empty session store.
     session_dir = app.config.get('SESSION_FILE_DIR')
     if session_dir:
-        session_dir.mkdir(parents=True, exist_ok=True)
+        from pathlib import Path as _Path
+        sd = _Path(session_dir)
+        sd.mkdir(parents=True, exist_ok=True)
+        try:
+            os.chmod(sd, 0o700)
+        except OSError as e:
+            app.logger.warning("Could not tighten session dir perms on %s: %s", sd, e)
+        try:
+            mode = sd.stat().st_mode & 0o777
+            if mode & 0o077:
+                app.logger.error(
+                    "Session directory %s has world/group-readable perms (%o). "
+                    "Session files contain CSRF tokens; refusing to start.",
+                    sd, mode,
+                )
+                raise SystemExit(1)
+        except FileNotFoundError:
+            pass
     
     # Initialize cache
     cache.init_app(app, config={
