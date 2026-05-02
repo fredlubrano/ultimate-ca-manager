@@ -2,6 +2,7 @@
 SCEP Crypto Helpers - degenerate PKCS#7 construction and client encryption.
 """
 import secrets
+from typing import Optional
 
 import asn1crypto.cms
 import asn1crypto.core
@@ -47,21 +48,26 @@ def create_degenerate_pkcs7(certs: list) -> bytes:
 
 def encrypt_for_client(
     data: bytes,
-    client_csr: x509.CertificateSigningRequest,
-    ca_cert: x509.Certificate,
+    recipient_cert: x509.Certificate,
 ) -> bytes:
     """
     Encrypt *data* for the SCEP client using AES-256-CBC EnvelopedData (RFC 8894).
 
+    The recipient is identified by *recipient_cert*'s issuer + serial, NOT by
+    the CA's serial: per RFC 5652 §6.2.1 the RecipientInfo.rid identifies the
+    *recipient's* certificate (the one whose public key wraps the CEK), so
+    the issuer/serial pair must come from the client's signer cert (the
+    self-signed bootstrap cert in PKCSReq, or the previously-issued cert in
+    RenewalReq), not from the CA cert.
+
     Args:
         data: Plaintext to encrypt (typically the degenerate PKCS#7 with certs)
-        client_csr: Client's CSR — provides the public key for CEK encryption
-        ca_cert: CA certificate — serial number is embedded in RecipientInfo
+        recipient_cert: Client's cert from the SCEP message SignedData
 
     Returns:
         DER-encoded ContentInfo wrapping EnvelopedData
     """
-    client_public_key = client_csr.public_key()
+    client_public_key = recipient_cert.public_key()
 
     content_key = secrets.token_bytes(32)   # AES-256
     iv = secrets.token_bytes(16)            # AES block size
@@ -74,16 +80,18 @@ def encrypt_for_client(
 
     encrypted_key = client_public_key.encrypt(content_key, asym_padding.PKCS1v15())
 
-    csr_subject_der = client_csr.subject.public_bytes(serialization.Encoding.DER)
-    recipient_name = asn1crypto.x509.Name.load(csr_subject_der)
+    recipient_issuer = asn1crypto.x509.Name.load(
+        recipient_cert.issuer.public_bytes(serialization.Encoding.DER)
+    )
+    recipient_serial = recipient_cert.serial_number
 
     recipient_info = asn1crypto.cms.RecipientInfo({
         'ktri': {
             'version': 'v0',
             'rid': {
                 'issuer_and_serial_number': {
-                    'issuer': recipient_name,
-                    'serial_number': ca_cert.serial_number,
+                    'issuer': recipient_issuer,
+                    'serial_number': recipient_serial,
                 }
             },
             'key_encryption_algorithm': {'algorithm': 'rsaes_pkcs1v15'},
