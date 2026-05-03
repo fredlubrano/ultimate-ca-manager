@@ -74,6 +74,7 @@ def reset_user_password(user_id):
         )
     except Exception as e:
         db.session.rollback()
+        logger.error(f"Failed to reset password: {e}", exc_info=True)
         return error_response('Failed to reset password', 500)
 
 
@@ -118,6 +119,7 @@ def toggle_user_status(user_id):
         )
     except Exception as e:
         db.session.rollback()
+        logger.error(f"Failed to toggle user status: {e}", exc_info=True)
         return error_response('Failed to toggle user status', 500)
 
 
@@ -292,4 +294,5 @@ def import_users():
 
     except Exception as e:
         db.session.rollback()
+        logger.error(f"Failed to import users: {e}", exc_info=True)
         return error_response('Failed to import users', 500)
