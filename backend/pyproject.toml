@@ -4,6 +4,9 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --ignore=tests/e2e_test_suite.py"
+markers = [
+    "postgres: marks tests requiring a real PostgreSQL instance (set UCM_TEST_POSTGRES_URL)",
+]
 
 [tool.coverage.run]
 source = ["api", "services", "security"]

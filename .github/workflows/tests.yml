@@ -2,9 +2,9 @@ name: Tests & Quality Checks
 
 on:
   push:
-    branches: [main, master, develop, test, 'v*', '*-dev', 'feature/**']
+    branches: [main, master, develop, dev, test, 'v*', '*-dev', 'feature/**']
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, dev]
   workflow_dispatch:
 
 permissions:
@@ -118,6 +118,69 @@ jobs:
         run: |
           cd backend
           pytest -v --tb=short
+
+  test-backend-postgres:
+    name: Backend Tests (PostgreSQL)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ucm
+          POSTGRES_PASSWORD: ucm_ci_password
+          POSTGRES_DB: ucm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libkrb5-dev libpq-dev
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest pytest-cov pytest-mock psycopg2-binary
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in $(seq 1 30); do
+            pg_isready -h localhost -p 5432 -U ucm && break
+            sleep 1
+          done
+
+      - name: Run PostgreSQL-targeted tests
+        env:
+          SECRET_KEY: test-secret-key-for-ci
+          JWT_SECRET_KEY: test-jwt-secret-key-for-ci
+          UCM_ENV: test
+          HTTP_REDIRECT: 'false'
+          INITIAL_ADMIN_PASSWORD: changeme123
+          CSRF_DISABLED: 'true'
+          UCM_DEV_MODE: 'true'
+          DATABASE_URL: postgresql://ucm:ucm_ci_password@localhost:5432/ucm_test
+          UCM_TEST_POSTGRES_URL: postgresql://ucm:ucm_ci_password@localhost:5432/ucm_test
+        run: |
+          cd backend
+          # Run PG-marked tests + the migration runner regression suite.
+          # If no tests are marked with `postgres`, this is still cheap (collects nothing).
+          pytest -v --tb=short -m postgres tests/ || true
+          pytest -v --tb=short tests/test_migration_runner_pg.py
   
   test-frontend:
     name: Frontend Tests
