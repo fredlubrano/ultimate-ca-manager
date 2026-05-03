@@ -161,6 +161,7 @@ def create_user():
         )
     except Exception as e:
         db.session.rollback()
+        logger.error(f"Failed to create user: {e}", exc_info=True)
         return error_response('Failed to create user', 500)
 
 
@@ -267,6 +268,7 @@ def update_user(user_id):
         )
     except Exception as e:
         db.session.rollback()
+        logger.error(f"Failed to update user: {e}", exc_info=True)
         return error_response('Failed to update user', 500)
 
 
