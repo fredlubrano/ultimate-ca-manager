@@ -9,6 +9,33 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.144-rc1] - 2026-05-03
+
+### Added
+- **`utils/key_codec.py`** — `load_pem_bytes(prv, *, context)` / `store_pem_bytes(pem)` helpers that consolidate the previously duplicated `base64.b64decode(decrypt_private_key(model.prv))` pattern across 26 sites in `api/v2/*` and `services/*`. Errors now surface a caller-supplied context (`"CA 42"`, `"certificate 17"`) instead of an opaque `binascii.Error` when a stored `.prv` is malformed or was encrypted with a different `KEY_ENCRYPTION_KEY`.
+- **`utils/db_transaction.commit_or_rollback()`** — boolean-returning service-layer counterpart to `safe_commit()` (which is Flask-response-returning). Replaces 10 bare `db.session.commit()` calls in `auth/unified.py`, `services/mtls_auth_service.py`, `services/webauthn_service.py` that previously could leak partial transactions on integrity errors.
+- **`security/encryption.encrypt_text()` / `decrypt_text()`** — text-oriented helpers (PEM, JSON blobs, plain strings) that share the same wire format as `encrypt_string()` but never confuse the caller about the input contract. The mixed `encrypt()` (expects base64) vs `encrypt_string()` (expects text) split caused #105.
+- **Generic release tooling** — `scripts/smoke_release.py` (auth/CDP/OCSP/EST/health probe), `scripts/release_publish.sh` (tag + GitHub release publish), `scripts/wiki_release_notes.py` (changelog → wiki page generator). Lab-specific hostnames removed; everything is parameterised via `UCM_BASE` env var.
+- **CI workflows** — `.github/workflows/tests.yml` runs the backend suite against both SQLite and PostgreSQL on every push (closes the gap that let #103 ship). `.github/workflows/release-smoke.yml` runs `smoke_release.py` against the published artefacts after every `v*` tag.
+- **Pytest `postgres` marker** — opt-in marker for tests that require a live PostgreSQL backend; skipped by default locally, always run in CI.
+
+### Fixed
+- **Silent `except Exception: pass` blocks in critical auth/security paths now log with `exc_info=True`.** Specifically: `auth/unified.py` (4 sites: lockout config read, account-locked notification, login/logout WebSocket broadcasts, SMTP probe), `api/v2/auth.py` (7 sites: password policy import, password reset audit, etc.), `security/csrf.py` (CSRF token extraction failures), `security/encryption.py`, `config/https_manager.py`, `services/audit/core.py`, `services/email_service.py`, `services/syslog_service.py`, `utils/backup_codes.py`. These were not bugs in themselves but made post-mortem debugging of auth failures effectively impossible.
+- **Latent #105-class regressions** — 4 additional sites that round-tripped PEM through `encrypt()`/`decrypt()` were migrated to `encrypt_text()`/`decrypt_text()`.
+- **10 bare `db.session.commit()` sites** in auth/mTLS/WebAuthn paths now wrap in `commit_or_rollback()` and rollback cleanly on `IntegrityError`.
+
+### Changed
+- **26-site refactor** to `utils/key_codec.load_pem_bytes()`. Behaviour-preserving (asserted by `TestEquivalenceWithLegacyPattern` test class); reduces import footprint (single `utils.key_codec` import vs `base64` + `security.encryption`).
+
+### Tests
+- `tests/test_key_codec.py` (8 tests) — round-trip with/without `KEY_ENCRYPTION_KEY`, error messages with caller context, byte-for-byte equivalence with the legacy inline pattern.
+- `tests/test_db_transaction.py` (5 tests) — `commit_or_rollback()` returns False + rolls back on `IntegrityError`, returns True on success, no double-rollback when called twice.
+- `tests/test_pem_encryption_helpers.py`, `tests/test_acme_proxy_key_encrypted.py`, `tests/test_key_encryption_pem_passthrough.py`, `tests/test_migration_runner_pg.py` — regression coverage for #103/#104/#105 to prevent re-introduction.
+
+### Internal
+- Backend suite: 1645 passed / 1 skipped (was 1632 / 1 in v2.143).
+- Frontend suite: 461 passed.
+
 ## [2.143] - 2026-05-03
 
 ### Fixed
