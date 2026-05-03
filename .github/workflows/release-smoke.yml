@@ -1,0 +1,174 @@
+name: Release Smoke Tests
+
+# Runs after Build & Release completes for a tag push.
+# Boots a fresh container from the just-built Docker image and runs the
+# generic smoke_release.py script against it. Catches regressions where the
+# tag was built but the artefact is broken (the v2.143/#103 class).
+
+on:
+  workflow_run:
+    workflows: ["Build & Release"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to smoke (e.g., 2.143)'
+        required: true
+        type: string
+      image:
+        description: 'Docker image (default: neyslim/ultimate-ca-manager)'
+        required: false
+        default: 'neyslim/ultimate-ca-manager'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-sqlite:
+    name: Smoke (SQLite)
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "image=${{ inputs.image }}" >> "$GITHUB_OUTPUT"
+          else
+            # Pulled from the triggering workflow run's head_branch (the tag ref).
+            REF="${{ github.event.workflow_run.head_branch }}"
+            VER="${REF#v}"
+            echo "version=$VER" >> "$GITHUB_OUTPUT"
+            echo "image=neyslim/ultimate-ca-manager" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Determine RC flag
+        id: rc
+        run: |
+          if [[ "${{ steps.ver.outputs.version }}" == *-rc* ]]; then
+            echo "flag=--allow-rc" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pull Docker image
+        run: |
+          docker pull "${{ steps.ver.outputs.image }}:${{ steps.ver.outputs.version }}"
+
+      - name: Boot UCM container (SQLite)
+        run: |
+          docker run -d --name ucm-smoke -p 8443:8443 \
+            -e SECRET_KEY=ci_smoke_secret_key \
+            -e JWT_SECRET_KEY=ci_smoke_jwt_key \
+            -e INITIAL_ADMIN_PASSWORD=changeme123 \
+            "${{ steps.ver.outputs.image }}:${{ steps.ver.outputs.version }}"
+          # Wait for /api/v2/health
+          for i in $(seq 1 60); do
+            if curl -sk https://localhost:8443/api/v2/health | grep -q '"status":"ok"'; then
+              echo "ucm is up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "ucm did not become ready"; docker logs ucm-smoke; exit 1
+
+      - name: Run release smoke
+        run: |
+          python3 scripts/smoke_release.py \
+            --version "${{ steps.ver.outputs.version }}" \
+            ${{ steps.rc.outputs.flag }} \
+            --target "Docker SQLite=https://localhost:8443"
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs ucm-smoke || true
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f ucm-smoke || true
+
+  smoke-postgres:
+    name: Smoke (PostgreSQL)
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ucm
+          POSTGRES_PASSWORD: ucm_ci_password
+          POSTGRES_DB: ucm
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            echo "image=${{ inputs.image }}" >> "$GITHUB_OUTPUT"
+          else
+            REF="${{ github.event.workflow_run.head_branch }}"
+            VER="${REF#v}"
+            echo "version=$VER" >> "$GITHUB_OUTPUT"
+            echo "image=neyslim/ultimate-ca-manager" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Determine RC flag
+        id: rc
+        run: |
+          if [[ "${{ steps.ver.outputs.version }}" == *-rc* ]]; then
+            echo "flag=--allow-rc" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pull Docker image
+        run: docker pull "${{ steps.ver.outputs.image }}:${{ steps.ver.outputs.version }}"
+
+      - name: Boot UCM container (PostgreSQL)
+        # Service container is reachable via host networking from job runner;
+        # the UCM container needs --network host to reach localhost:5432.
+        # Regression guard for #103 / #104: this MUST start cleanly on PG.
+        run: |
+          docker run -d --name ucm-smoke --network host \
+            -e SECRET_KEY=ci_smoke_secret_key \
+            -e JWT_SECRET_KEY=ci_smoke_jwt_key \
+            -e INITIAL_ADMIN_PASSWORD=changeme123 \
+            -e DATABASE_URL=postgresql://ucm:ucm_ci_password@localhost:5432/ucm \
+            "${{ steps.ver.outputs.image }}:${{ steps.ver.outputs.version }}"
+          for i in $(seq 1 90); do
+            if curl -sk https://localhost:8443/api/v2/health | grep -q '"status":"ok"'; then
+              echo "ucm is up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "ucm did not become ready"; docker logs ucm-smoke; exit 1
+
+      - name: Run release smoke
+        run: |
+          python3 scripts/smoke_release.py \
+            --version "${{ steps.ver.outputs.version }}" \
+            ${{ steps.rc.outputs.flag }} \
+            --target "Docker PostgreSQL=https://localhost:8443"
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs ucm-smoke || true
+
+      - name: Cleanup
+        if: always()
+        run: docker rm -f ucm-smoke || true
