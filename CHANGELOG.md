@@ -9,7 +9,7 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
-## [2.144-rc1] - 2026-05-03
+## [2.144] - 2026-05-03
 
 ### Added
 - **`utils/key_codec.py`** — `load_pem_bytes(prv, *, context)` / `store_pem_bytes(pem)` helpers that consolidate the previously duplicated `base64.b64decode(decrypt_private_key(model.prv))` pattern across 26 sites in `api/v2/*` and `services/*`. Errors now surface a caller-supplied context (`"CA 42"`, `"certificate 17"`) instead of an opaque `binascii.Error` when a stored `.prv` is malformed or was encrypted with a different `KEY_ENCRYPTION_KEY`.
