@@ -7,6 +7,9 @@ import ldap3
 from ldap3 import Server, Connection, ALL, Tls
 from ldap3.utils.conv import escape_filter_chars
 import ssl
+import logging
+
+logger = logging.getLogger(__name__)
 
 def _test_ldap_connection(provider):
     """Test LDAP connection"""

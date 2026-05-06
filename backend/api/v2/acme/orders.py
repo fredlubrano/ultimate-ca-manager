@@ -52,7 +52,7 @@ def list_acme_orders():
     return success_response(data=data)
 
 
-@bp.route('/api/v2/acme/accounts/<int:account_id>/orders', methods=['GET'])
+@bp.route('/api/v2/acme/accounts/<string:account_id>/orders', methods=['GET'])
 @require_auth(['read:acme'])
 def list_account_orders(account_id):
     """List orders for a specific ACME account.
@@ -65,7 +65,7 @@ def list_account_orders(account_id):
     Issue #71: previously only local orders were shown, leaving proxy users
     unable to see their certificate history from the account detail.
     """
-    account = AcmeAccount.query.get_or_404(account_id)
+    account = AcmeAccount.query.filter_by(account_id=account_id).first_or_404()
 
     orders = AcmeOrder.query.filter_by(account_id=account.account_id).order_by(
         AcmeOrder.created_at.desc()
@@ -118,11 +118,11 @@ def list_account_orders(account_id):
     return success_response(data=data)
 
 
-@bp.route('/api/v2/acme/accounts/<int:account_id>/challenges', methods=['GET'])
+@bp.route('/api/v2/acme/accounts/<string:account_id>/challenges', methods=['GET'])
 @require_auth(['read:acme'])
 def list_account_challenges(account_id):
     """List challenges for a specific ACME account"""
-    account = AcmeAccount.query.get_or_404(account_id)
+    account = AcmeAccount.query.filter_by(account_id=account_id).first_or_404()
 
     # Get all orders for this account
     orders = AcmeOrder.query.filter_by(account_id=account.account_id).all()
@@ -198,11 +198,22 @@ def get_acme_history():
         orders = AcmeOrder.query.filter(AcmeOrder.certificate_id.in_(cert_ids)).all()
         for order in orders:
             account = order.account
+            
+            # Determine the actual challenge type from validated challenges
+            challenge_type = 'N/A'
+            for authz in order.authorizations:
+                for challenge in authz.challenges:
+                    if challenge.validated is not None:
+                        challenge_type = challenge.type
+                        break
+                if challenge_type != 'N/A':
+                    break
+            
             orders_map[order.certificate_id] = {
                 'order_id': order.order_id,
                 'account': account.account_id if account else 'Unknown',
                 'status': order.status,
-                'challenge_type': 'http-01',  # Local ACME typically uses http-01
+                'challenge_type': challenge_type,
                 'environment': 'local'
             }
 
