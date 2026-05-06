@@ -9,6 +9,13 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Added
+- **Microsoft UPN SAN support (1.3.6.1.4.1.311.20.2.3)** — CSRs and certificates can now carry User Principal Names in the Subject Alternative Name extension, the format Microsoft Active Directory expects for smart-card / certificate-based logon. UPN values are validated (`user@domain` form, no whitespace), DER-encoded as `OtherName(UPN_OID, UTF8String)` via `asn1crypto`, persisted in a new `certificates.san_upn` column (JSON array, migration `030_add_certificate_san_upn.py`, multi-backend SQLite + PostgreSQL), and surfaced in the UI through a new `UPN` option in the SAN editor on both the CSR creation page and the issue-certificate form. Internal CA issuance, ACME, EST, SCEP, and the `POST /api/v2/csrs` and `POST /api/v2/certificates` endpoints all accept UPN entries via the `UPN:` prefix in the unified `san` array. The detail panel renders them in `san_combined` as `UPN:user@corp.local`. Read-side parser already supports them via `utils/cert_extensions.py`.
+- **EOBO auto-fill prefers UPN SAN** — when enabling Enroll-On-Behalf-Of in the Microsoft CA submission flow, the enrollee UPN field now auto-populates from the CSR's UPN SAN first, then falls back to SAN email, then to the subject `emailAddress`. Operators no longer have to retype the UPN that was already encoded in the CSR.
+
+### Fixed
+- **Microsoft CA issuance created a duplicate Certificate row** — `_import_signed_cert` in `api/v2/msca.py` issued an `INSERT` for a brand-new `Certificate` (with `source='msca'`) AND an in-place `UPDATE` of the originating CSR row, leaving two records for the same certificate (the CSR-derived one without `source`, so it was missing the `ADCS` tag in the UI). Now the CSR row is upgraded in-place into a full certificate (subject, issuer, serial, AKI/SKI, validity, SANs refreshed from the issued cert, `source='msca'`) and `MSCARequest.cert_id` points to it. The fallback `INSERT` path is kept for the (currently unused) case where there is no originating CSR.
+
 ## [2.148] - 2026-05-06
 
 ### Fixed

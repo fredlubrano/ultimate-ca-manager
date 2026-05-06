@@ -61,6 +61,7 @@ def create_certificate():
         san_ip = []
         san_email = []
         san_uri = []
+        san_upn = []
         san_raw = data['san']
         # Accept both string and array
         if isinstance(san_raw, list):
@@ -69,6 +70,9 @@ def create_certificate():
         for entry in raw_sans:
             entry_lower = entry.lower()
             # Check explicit type prefixes
+            if entry_lower.startswith('upn:'):
+                san_upn.append(re.sub(r'^UPN:\s*', '', entry, flags=re.IGNORECASE))
+                continue
             if entry_lower.startswith('uri:'):
                 san_uri.append(re.sub(r'^URI:\s*', '', entry, flags=re.IGNORECASE))
                 continue
@@ -97,6 +101,8 @@ def create_certificate():
             data['san_email'] = san_email
         if san_uri:
             data['san_uri'] = san_uri
+        if san_upn:
+            data['san_upn'] = san_upn
 
     # Get the CA
     ca = CA.query.get(data['ca_id'])
@@ -281,6 +287,12 @@ def create_certificate():
         if data.get('san_uri'):
             for uri in data['san_uri']:
                 san_list.append(x509.UniformResourceIdentifier(uri))
+        if data.get('san_upn'):
+            from utils.upn_san import build_upn_other_name, is_valid_upn
+            for upn in data['san_upn']:
+                if not is_valid_upn(upn):
+                    return error_response(f'Invalid UPN format: {upn}', 400)
+                san_list.append(build_upn_other_name(upn))
 
         # Auto-add CN as SAN based on cert type
         cn = data['cn']
@@ -309,6 +321,8 @@ def create_certificate():
         final_san_ip = [str(s.value) for s in san_list if isinstance(s, x509.IPAddress)]
         final_san_email = [s.value for s in san_list if isinstance(s, x509.RFC822Name)]
         final_san_uri = [s.value for s in san_list if isinstance(s, x509.UniformResourceIdentifier)]
+        from utils.upn_san import extract_upns_from_san_list
+        final_san_upn = extract_upns_from_san_list(san_list)
 
         if san_list:
             builder = builder.add_extension(
@@ -435,6 +449,7 @@ def create_certificate():
             san_ip=json.dumps(final_san_ip),
             san_email=json.dumps(final_san_email),
             san_uri=json.dumps(final_san_uri),
+            san_upn=json.dumps(final_san_upn) if final_san_upn else None,
             ocsp_must_staple=bool(data.get('ocsp_must_staple')),
             created_by=g.current_user.username if hasattr(g, 'current_user') else None
         )

@@ -168,14 +168,15 @@ def create_csr():
         else:
             key_type = '2048'
 
-        # Parse SANs - frontend sends ["DNS:example.com", "IP:1.2.3.4", "Email:user@example.com"]
+        # Parse SANs - frontend sends ["DNS:example.com", "IP:1.2.3.4", "Email:user@example.com", "UPN:user@domain"]
+        from utils.upn_san import is_valid_upn
         san_dns = []
         san_ip = []
         san_email = []
         san_uri = []
+        san_upn = []
         for entry in data.get('sans', []):
             entry = entry.strip()
-            # Detect type from prefix
             entry_lower = entry.lower()
             if entry_lower.startswith('email:'):
                 val = entry[6:].strip()
@@ -186,6 +187,13 @@ def create_csr():
                 val = entry[4:].strip()
                 if val:
                     san_uri.append(val)
+                continue
+            if entry_lower.startswith('upn:'):
+                val = entry[4:].strip()
+                if val:
+                    if not is_valid_upn(val):
+                        return error_response(f'Invalid UPN format: {val}', 400)
+                    san_upn.append(val)
                 continue
             # Strip DNS:/IP: prefix for remaining
             entry_clean = re.sub(r'^(DNS|IP):\s*', '', entry, flags=re.IGNORECASE)
@@ -206,6 +214,7 @@ def create_csr():
             san_ip=san_ip or None,
             san_email=san_email or None,
             san_uri=san_uri or None,
+            san_upn=san_upn or None,
             username=getattr(g, 'current_user', None) and g.current_user.username or 'system'
         )
         

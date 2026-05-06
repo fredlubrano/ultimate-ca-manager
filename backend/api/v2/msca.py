@@ -433,46 +433,61 @@ def _import_signed_cert(csr, cert_pem, msca, template, msca_request_id):
         cert_pem_bytes = cert_obj.public_bytes(encoding=Encoding.PEM)
         cert_pem_b64 = base64.b64encode(cert_pem_bytes).decode('utf-8')
 
-        cert = Certificate(
-            refid=str(uuid.uuid4())[:8],
-            descr=f"MSCA: {cn} ({template})",
-            crt=cert_pem_b64,
-            cert_type='server',
-            subject=cert_obj.subject.rfc4514_string(),
-            subject_cn=cn,
-            issuer=cert_obj.issuer.rfc4514_string(),
-            serial_number=format(cert_obj.serial_number, 'x'),
-            aki=cert_aki,
-            ski=cert_ski,
-            valid_from=cert_obj.not_valid_before_utc,
-            valid_to=cert_obj.not_valid_after_utc,
-            san_dns=json.dumps(san_dns) if san_dns else None,
-            san_ip=json.dumps(san_ip) if san_ip else None,
-            san_email=json.dumps(san_email) if san_email else None,
-            san_uri=json.dumps(san_uri) if san_uri else None,
-            source='msca',
-            imported_from=f"msca:{msca.name}",
-            created_by='system',
-        )
-        db.session.add(cert)
+        # If a CSR record exists, UPDATE it in-place into a full certificate.
+        # This avoids creating a duplicate Certificate row (one CSR + one cert).
+        # The CSR's id is reused so existing references (links, audit) stay valid.
+        if csr is not None:
+            csr.crt = cert_pem_b64
+            csr.descr = csr.descr or f"MSCA: {cn} ({template})"
+            csr.cert_type = csr.cert_type or 'server'
+            csr.subject = cert_obj.subject.rfc4514_string()
+            csr.subject_cn = cn
+            csr.issuer = cert_obj.issuer.rfc4514_string()
+            csr.serial_number = format(cert_obj.serial_number, 'x')
+            csr.aki = cert_aki
+            csr.ski = cert_ski
+            csr.valid_from = cert_obj.not_valid_before_utc
+            csr.valid_to = cert_obj.not_valid_after_utc
+            # Refresh SANs from issued cert (MS CA may have added/changed entries)
+            csr.san_dns = json.dumps(san_dns) if san_dns else None
+            csr.san_ip = json.dumps(san_ip) if san_ip else None
+            csr.san_email = json.dumps(san_email) if san_email else None
+            csr.san_uri = json.dumps(san_uri) if san_uri else None
+            csr.source = 'msca'
+            csr.imported_from = f"msca:{msca.name}"
+            cert = csr  # for downstream MSCARequest link
+        else:
+            # Fallback: no CSR record — create a new Certificate row
+            cert = Certificate(
+                refid=str(uuid.uuid4())[:8],
+                descr=f"MSCA: {cn} ({template})",
+                crt=cert_pem_b64,
+                cert_type='server',
+                subject=cert_obj.subject.rfc4514_string(),
+                subject_cn=cn,
+                issuer=cert_obj.issuer.rfc4514_string(),
+                serial_number=format(cert_obj.serial_number, 'x'),
+                aki=cert_aki,
+                ski=cert_ski,
+                valid_from=cert_obj.not_valid_before_utc,
+                valid_to=cert_obj.not_valid_after_utc,
+                san_dns=json.dumps(san_dns) if san_dns else None,
+                san_ip=json.dumps(san_ip) if san_ip else None,
+                san_email=json.dumps(san_email) if san_email else None,
+                san_uri=json.dumps(san_uri) if san_uri else None,
+                source='msca',
+                imported_from=f"msca:{msca.name}",
+                created_by='system',
+            )
+            db.session.add(cert)
         db.session.flush()
 
-        # Link the MSCA request to the new cert
+        # Link the MSCA request to the cert (same id as CSR when csr is not None)
         msca_req = MSCARequest.query.get(msca_request_id)
         if msca_req:
             msca_req.cert_id = cert.id
             msca_req.status = 'issued'
             msca_req.issued_at = utc_now()
-
-        # Update the original CSR record: populate crt field (CSR → full Certificate)
-        if csr and not csr.crt:
-            csr.crt = cert_pem_b64
-            csr.subject = cert_obj.subject.rfc4514_string()
-            csr.subject_cn = cn
-            csr.issuer = cert_obj.issuer.rfc4514_string()
-            csr.serial_number = format(cert_obj.serial_number, 'x')
-            csr.valid_from = cert_obj.not_valid_before_utc
-            csr.valid_to = cert_obj.not_valid_after_utc
 
         db.session.commit()
         logger.info(f"Imported MS CA signed certificate: {cn} (id={cert.id})")
