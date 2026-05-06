@@ -9,6 +9,11 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Fixed
+- **ACME account detail tabs** — Orders and Challenges counts always rendered as 0 and the Orders/Challenges tabs were empty. Frontend was reading `res.data.orders` / `res.data.challenges` but the API returns the array directly under `res.data`; backend endpoints `GET /api/v2/acme/accounts/<account_id>/{orders,challenges,deactivate}` and `GET|DELETE /api/v2/acme/accounts/<account_id>` were also using `Query.get(account_id)` against an integer primary key when `account_id` is the public string identifier, so every lookup returned 404 (#109).
+- **Local ACME history challenge type** — entries from the local ACME server always reported `challenge_type=http-01`. Now resolved from the first validated `AcmeChallenge` of the order so DNS-01 / TLS-ALPN-01 issuances are reported correctly (#109).
+- **SSO SAML login crash** — `/api/v2/sso/login/saml` and `/api/v2/sso/callback/saml` raised `NameError: name 'logger' is not defined` (and `_get_saml_auth` / `traceback`) on the first error path, masking the real failure. Added the missing `logging`, `traceback`, and `_get_saml_auth` imports in `api/v2/sso/login_routes.py`, plus `logger` in `api/v2/sso/mapping_tests.py` and `api/v2/sso/connection_tests.py` (audit confirmed no other runtime modules were affected).
+
 ## [2.146] - 2026-05-05
 
 ### Fixed

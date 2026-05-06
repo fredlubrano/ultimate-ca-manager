@@ -155,11 +155,11 @@ def create_acme_account():
         return error_response('Failed to create account', 500)
 
 
-@bp.route('/api/v2/acme/accounts/<int:account_id>/deactivate', methods=['POST'])
+@bp.route('/api/v2/acme/accounts/<string:account_id>/deactivate', methods=['POST'])
 @require_auth(['write:acme'])
 def deactivate_acme_account(account_id):
     """Deactivate an ACME account"""
-    acc = AcmeAccount.query.get(account_id)
+    acc = AcmeAccount.query.filter_by(account_id=account_id).first()
     if not acc:
         return error_response('Account not found', 404)
 
@@ -181,11 +181,11 @@ def deactivate_acme_account(account_id):
         return error_response('Failed to deactivate account', 500)
 
 
-@bp.route('/api/v2/acme/accounts/<int:account_id>', methods=['GET'])
+@bp.route('/api/v2/acme/accounts/<string:account_id>', methods=['GET'])
 @require_auth(['read:acme'])
 def get_acme_account(account_id):
     """Get single ACME account details"""
-    acc = AcmeAccount.query.get(account_id)
+    acc = AcmeAccount.query.filter_by(account_id=account_id).first()
     if not acc:
         return error_response('Account not found', 404)
 
@@ -200,11 +200,11 @@ def get_acme_account(account_id):
     })
 
 
-@bp.route('/api/v2/acme/accounts/<int:account_id>', methods=['DELETE'])
+@bp.route('/api/v2/acme/accounts/<string:account_id>', methods=['DELETE'])
 @require_auth(['delete:acme'])
 def delete_acme_account(account_id):
     """Delete an ACME account and its related orders/authorizations/challenges"""
-    acc = AcmeAccount.query.get(account_id)
+    acc = AcmeAccount.query.filter_by(account_id=account_id).first()
     if not acc:
         return error_response('Account not found', 404)
 

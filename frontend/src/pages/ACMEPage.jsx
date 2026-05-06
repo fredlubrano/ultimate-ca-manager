@@ -155,8 +155,8 @@ export default function ACMEPage() {
         acmeService.getChallenges(account.id),
       ])
       setSelectedAccount(accountRes.data || accountRes)
-      setOrders(ordersRes.data?.orders || ordersRes.orders || [])
-      setChallenges(challengesRes.data?.challenges || challengesRes.challenges || [])
+      setOrders(ordersRes.data || [])
+      setChallenges(challengesRes.data || [])
       setActiveDetailTab('account')
     } catch (error) {
       showError(error.message || t('messages.errors.loadFailed.generic'))

@@ -11,7 +11,12 @@ import secrets as py_secrets
 import base64
 import urllib.parse
 import hmac
+import logging
+import traceback
 from .helpers import _check_ldap_lockout, _clear_ldap_failed_attempts, _record_ldap_failed_attempt, _resolve_role_from_mapping, _resolve_role, _parse_json_field
+from .ldap_routes import _get_saml_auth
+
+logger = logging.getLogger(__name__)
 
 # ============ Public SSO Endpoints (no auth) ============
 
