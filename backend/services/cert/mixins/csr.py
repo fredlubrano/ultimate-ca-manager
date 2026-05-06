@@ -43,6 +43,7 @@ class CSRMixin:
         san_ip: Optional[List[str]] = None,
         san_email: Optional[List[str]] = None,
         san_uri: Optional[List[str]] = None,
+        san_upn: Optional[List[str]] = None,
         username: str = 'system'
     ) -> Certificate:
         """
@@ -57,6 +58,7 @@ class CSRMixin:
             san_ip: IP SANs
             san_email: Email SANs
             san_uri: URI SANs
+            san_upn: UPN SANs (Microsoft User Principal Name, OID 1.3.6.1.4.1.311.20.2.3)
             username: User generating CSR
 
         Returns:
@@ -73,7 +75,8 @@ class CSRMixin:
             san_dns=san_dns,
             san_ip=san_ip,
             san_email=san_email,
-            san_uri=san_uri
+            san_uri=san_uri,
+            san_upn=san_upn
         )
 
         # Parse CSR
@@ -91,6 +94,7 @@ class CSRMixin:
             san_ip=json.dumps(san_ip) if san_ip else None,
             san_email=json.dumps(san_email) if san_email else None,
             san_uri=json.dumps(san_uri) if san_uri else None,
+            san_upn=json.dumps(san_upn) if san_upn else None,
             imported_from='csr_generated',
             created_by=username
         )
