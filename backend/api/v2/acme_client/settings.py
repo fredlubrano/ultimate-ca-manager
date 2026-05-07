@@ -138,7 +138,10 @@ def update_settings():
         updates.append('renewal_enabled')
 
     if 'renewal_days' in data:
-        days = int(data['renewal_days'])
+        try:
+            days = int(data['renewal_days'])
+        except (TypeError, ValueError):
+            return error_response('Renewal days must be an integer', 400)
         if days < 1 or days > 60:
             return error_response('Renewal days must be between 1 and 60', 400)
         _set_config('acme.client.renewal_days', str(days), 'ACME renewal days before expiry')

@@ -76,11 +76,26 @@ def request_certificate():
     domains = data.get('domains', [])
     if not domains:
         return error_response('At least one domain is required', 400)
+    if not isinstance(domains, list):
+        return error_response('domains must be a list', 400)
+    # RFC 1035 caps a single FQDN at 253 chars; ACME servers further cap the
+    # number of identifiers per order (LE = 100). Enforce locally to avoid
+    # passing junk upstream and to bound CSR size.
+    if len(domains) > 100:
+        return error_response('Too many domains (max 100 per order)', 400)
 
-    # Validate domains
+    import re as _re
+    # FQDN: labels of 1-63 chars (alnum + hyphen, no leading/trailing hyphen),
+    # 1+ labels separated by dots; allow leading "*." for wildcards.
+    _label = r'(?!-)[A-Za-z0-9-]{1,63}(?<!-)'
+    _fqdn_re = _re.compile(rf'^(\*\.)?({_label}\.)+{_label}$')
     for domain in domains:
-        if not domain or len(domain) < 3:
-            return error_response(f'Invalid domain: {domain}', 400)
+        if not isinstance(domain, str) or not domain:
+            return error_response('Invalid domain (empty or not a string)', 400)
+        if len(domain) > 253:
+            return error_response(f'Invalid domain (>253 chars): {domain[:60]}...', 400)
+        if not _fqdn_re.match(domain):
+            return error_response(f'Invalid domain syntax: {domain}', 400)
 
     # Get email (from request or settings)
     email = data.get('email')
@@ -141,7 +156,9 @@ def request_certificate():
         # Store key_type on order if specified
         if key_type:
             order.key_type = key_type
-            db.session.commit()
+            ok, _err = safe_commit(logger, "Failed to persist order key_type")
+            if not ok:
+                return _err
 
         AuditService.log_action(
             action='acme_request',
@@ -235,7 +252,9 @@ def verify_challenges(order_id):
                 f"{d}: {r['message']}" for d, r in results.items() if not r['success']
             )
 
-        db.session.commit()
+        ok, _err = safe_commit(logger, "Failed to persist verification results")
+        if not ok:
+            return _err
 
         return success_response(
             data={
