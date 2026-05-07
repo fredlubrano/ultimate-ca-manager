@@ -174,12 +174,24 @@ def verify_jws(jws_data: Dict[str, Any], expected_url: str, account_key: Optiona
         # Get JWK or KID
         jwk = protected.get('jwk')
         kid = protected.get('kid')
-        
+
         if not jwk and not kid:
             return False, None, None, "Must provide either 'jwk' or 'kid' in protected header"
         # RFC 8555 §6.2: 'jwk' and 'kid' are mutually exclusive
         if jwk and kid:
             return False, None, None, "'jwk' and 'kid' are mutually exclusive"
+
+        # RFC 8555 §6.2 explicit allowlist: forbid 'none' (RFC 7518 §3.6 attack)
+        # and any MAC-based algorithm on the outer JWS. Asymmetric only.
+        alg_early = protected.get('alg', '')
+        ALLOWED_JWS_ALGS = {
+            'RS256', 'RS384', 'RS512',
+            'ES256', 'ES384', 'ES512',
+            # PS256/PS384/PS512 (RSA-PSS) intentionally excluded — UCM only
+            # validates RSASSA-PKCS1-v1_5 below; add here when PSS is wired.
+        }
+        if alg_early not in ALLOWED_JWS_ALGS:
+            return False, None, None, f"Algorithm '{alg_early}' is not permitted (RFC 8555 §6.2)"
         
         # Decode payload
         if 'payload' not in jws_data:
