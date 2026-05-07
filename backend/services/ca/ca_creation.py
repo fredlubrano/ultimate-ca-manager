@@ -296,7 +296,7 @@ class CACreationMixin:
             default_backend()
         )
 
-        # Validate it's a CA certificate
+        # Validate it's a CA certificate (RFC 5280 §4.2.1.9 + §4.2.1.3)
         try:
             bc = cert.extensions.get_extension_for_oid(
                 x509.oid.ExtensionOID.BASIC_CONSTRAINTS
@@ -306,15 +306,56 @@ class CACreationMixin:
         except x509.ExtensionNotFound:
             raise ValueError("Certificate has no BasicConstraints extension")
 
+        # RFC 5280 §4.2.1.3 — CA certs MUST assert keyCertSign in KeyUsage when
+        # KeyUsage extension is present. Reject obviously misissued CAs.
+        try:
+            ku = cert.extensions.get_extension_for_oid(
+                x509.oid.ExtensionOID.KEY_USAGE
+            )
+            if not ku.value.key_cert_sign:
+                raise ValueError(
+                    "Certificate KeyUsage does not assert keyCertSign — not a valid CA cert"
+                )
+        except x509.ExtensionNotFound:
+            # KeyUsage absent: tolerated for legacy roots, but log
+            logger.warning(
+                f"Imported CA {descr} has no KeyUsage extension (RFC 5280 §4.2.1.3 recommends keyCertSign)"
+            )
+
+        # Extract SKI for AKI fallback in CRL/cert signing
+        ca_ski = None
+        try:
+            ski_ext = cert.extensions.get_extension_for_oid(
+                x509.oid.ExtensionOID.SUBJECT_KEY_IDENTIFIER
+            )
+            ca_ski = ski_ext.value.key_identifier.hex(':').upper()
+        except x509.ExtensionNotFound:
+            pass
+
+        # Encrypt imported private key at rest, mirroring create_internal_ca
+        # (otherwise imported CA keys sit base64-only in the DB).
+        prv_encoded = None
+        if key_pem:
+            prv_encoded = base64.b64encode(
+                key_pem.encode() if isinstance(key_pem, str) else key_pem
+            ).decode('utf-8')
+            try:
+                from security.encryption import key_encryption
+                if key_encryption.is_enabled:
+                    prv_encoded = key_encryption.encrypt(prv_encoded)
+            except ImportError:
+                pass
+
         # Create CA record
         ca = CA(
             refid=str(uuid.uuid4()),
             descr=descr,
             crt=base64.b64encode(cert_pem.encode() if isinstance(cert_pem, str) else cert_pem).decode('utf-8'),
-            prv=base64.b64encode(key_pem.encode()).decode('utf-8') if key_pem else None,
+            prv=prv_encoded,
             serial=0,
             subject=cert.subject.rfc4514_string(),
             issuer=cert.issuer.rfc4514_string(),
+            ski=ca_ski,
             valid_from=cert.not_valid_before_utc,
             valid_to=cert.not_valid_after_utc,
             imported_from='manual',
