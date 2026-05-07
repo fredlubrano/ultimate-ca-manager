@@ -117,9 +117,9 @@ class CASigningMixin:
         san_dns, san_ip, san_email = [], [], []
         try:
             san_ext = cert_obj.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
-            san_dns = [n.value for n in san_ext.value.get_values_for_type(x509.DNSName)]
+            san_dns = list(san_ext.value.get_values_for_type(x509.DNSName))
             san_ip = [str(n) for n in san_ext.value.get_values_for_type(x509.IPAddress)]
-            san_email = [n.value for n in san_ext.value.get_values_for_type(x509.RFC822Name)]
+            san_email = list(san_ext.value.get_values_for_type(x509.RFC822Name))
         except x509.ExtensionNotFound:
             pass
 
