@@ -225,7 +225,7 @@ class OCSPService:
             
             # Find certificate in database
             cert_serial_hex = format(cert_serial, 'x')
-            certificate = Certificate.query.filter_by(serial=cert_serial_hex).first()
+            certificate = Certificate.query.filter_by(serial_number=cert_serial_hex).first()
             
             # Determine certificate status
             if not certificate:
