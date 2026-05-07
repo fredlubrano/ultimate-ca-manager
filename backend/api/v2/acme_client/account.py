@@ -52,6 +52,11 @@ def register_account():
             _set_config('acme.client.email', email, 'ACME client contact email')
             db.session.commit()
 
+            logger.info(
+                f"ACME account registered: {email} → {client.account.label} "
+                f"({client.account.directory_url})"
+            )
+
             AuditService.log_action(
                 action='acme_account_register',
                 resource_type='acme_account',
