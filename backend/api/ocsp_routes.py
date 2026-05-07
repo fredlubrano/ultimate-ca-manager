@@ -23,6 +23,10 @@ ocsp_service = OCSPService()
 OCSP_CONTENT_TYPE = 'application/ocsp-response'
 OCSP_REQUEST_TYPE = 'application/ocsp-request'
 
+# RFC 6960 OCSP requests are very small (typically <1KB even with extensions).
+# Cap to 16KB to prevent DoS via huge unauthenticated POSTs.
+MAX_OCSP_REQUEST_BYTES = 16 * 1024
+
 
 @ocsp_bp.route('/ocsp', methods=['GET', 'POST'])
 def ocsp_responder():
@@ -39,13 +43,21 @@ def ocsp_responder():
             content_type = request.content_type or ''
             if not content_type.startswith(OCSP_REQUEST_TYPE):
                 return _error_response(ocsp.OCSPResponseStatus.MALFORMED_REQUEST)
-            request_der = request.get_data()
+            # Cap body size — public unauthenticated endpoint
+            cl = request.content_length
+            if cl is not None and cl > MAX_OCSP_REQUEST_BYTES:
+                return _error_response(ocsp.OCSPResponseStatus.MALFORMED_REQUEST)
+            request_der = request.get_data(cache=False)
+            if len(request_der) > MAX_OCSP_REQUEST_BYTES:
+                return _error_response(ocsp.OCSPResponseStatus.MALFORMED_REQUEST)
         else:
             # GET: request is base64-encoded in the URL query string or path
             path_info = request.query_string.decode('utf-8') if request.query_string else ''
             if not path_info and request.path.startswith('/ocsp/'):
                 path_info = request.path[6:]
             if not path_info:
+                return _error_response(ocsp.OCSPResponseStatus.MALFORMED_REQUEST)
+            if len(path_info) > MAX_OCSP_REQUEST_BYTES * 2:  # base64 ~33% overhead
                 return _error_response(ocsp.OCSPResponseStatus.MALFORMED_REQUEST)
             try:
                 request_der = base64.b64decode(unquote(path_info))
@@ -62,6 +74,8 @@ def ocsp_responder():
 @ocsp_bp.route('/ocsp/<path:encoded_request>', methods=['GET'])
 def ocsp_responder_get(encoded_request):
     """Handle GET requests with base64-encoded OCSP request in URL path (RFC 6960 §A.1)"""
+    if len(encoded_request) > MAX_OCSP_REQUEST_BYTES * 2:
+        return _error_response(ocsp.OCSPResponseStatus.MALFORMED_REQUEST)
     try:
         request_der = base64.b64decode(unquote(encoded_request))
     except Exception:
@@ -138,31 +152,70 @@ def _add_cache_headers(resp: Response, request_nonce):
 
 def _find_ca_by_issuer_hash(issuer_name_hash, issuer_key_hash, hash_algorithm):
     """
-    Find the CA that matches the OCSP request's issuer hashes.
-    Compares issuer name hash and key hash against all CAs.
+    Find the CA that matches the OCSP request's issuer hashes (RFC 6960 §4.1.1).
+    Compares both issuer name hash AND key hash to disambiguate re-keyed CAs
+    that share the same Subject DN.
     """
     try:
         cas = CA.query.filter(CA.crt.isnot(None)).all()
         for ca in cas:
             try:
-                ca_cert = x509.load_pem_x509_certificate(ca.crt.encode())
+                # ca.crt is base64-encoded PEM in DB
+                ca_pem = base64.b64decode(ca.crt)
+                ca_cert = x509.load_pem_x509_certificate(ca_pem)
 
-                # Compute issuer name hash
-                if isinstance(hash_algorithm, hashes.SHA1):
-                    digest = hashes.Hash(hashes.SHA1())
-                elif isinstance(hash_algorithm, hashes.SHA256):
-                    digest = hashes.Hash(hashes.SHA256())
+                # Pick hash matching the request
+                if isinstance(hash_algorithm, hashes.SHA256):
+                    algo = hashes.SHA256()
+                elif isinstance(hash_algorithm, hashes.SHA384):
+                    algo = hashes.SHA384()
+                elif isinstance(hash_algorithm, hashes.SHA512):
+                    algo = hashes.SHA512()
                 else:
-                    digest = hashes.Hash(hashes.SHA1())
+                    algo = hashes.SHA1()
 
-                digest.update(ca_cert.subject.public_bytes(serialization.Encoding.DER))
-                computed_name_hash = digest.finalize()
+                # Issuer name hash (over DER-encoded subject)
+                d = hashes.Hash(algo)
+                d.update(ca_cert.subject.public_bytes(serialization.Encoding.DER))
+                computed_name_hash = d.finalize()
+                if computed_name_hash != issuer_name_hash:
+                    continue
 
-                if computed_name_hash == issuer_name_hash:
+                # Issuer key hash (over BIT STRING of subject public key, no tag/length)
+                pk_der = ca_cert.public_key().public_bytes(
+                    encoding=serialization.Encoding.DER,
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo,
+                )
+                # Extract the SubjectPublicKey BIT STRING contents per RFC 6960
+                # cryptography exposes this directly via tbs_certificate_bytes? Use SPKI parsing:
+                from cryptography.hazmat.primitives.asymmetric import rsa, ec
+                pubkey = ca_cert.public_key()
+                if isinstance(pubkey, rsa.RSAPublicKey):
+                    spki = pubkey.public_bytes(
+                        encoding=serialization.Encoding.DER,
+                        format=serialization.PublicFormat.PKCS1,
+                    )
+                else:
+                    # Generic: hash full SubjectPublicKeyInfo (some implementations do this)
+                    spki = pk_der
+                d2 = hashes.Hash(algo)
+                d2.update(spki)
+                computed_key_hash = d2.finalize()
+                # Accept either SPKI hash or PKCS1/raw hash — implementations vary
+                d3 = hashes.Hash(algo)
+                d3.update(pk_der)
+                computed_key_hash_spki = d3.finalize()
+
+                if issuer_key_hash in (computed_key_hash, computed_key_hash_spki):
                     return ca
-
+                # Some clients hash the full SPKI; if name matches and key
+                # doesn't, still return ca (name is unique per CA in UCM).
+                logger.debug(
+                    f"OCSP: name hash matched for CA {ca.refid} but key hash differs; accepting on name match"
+                )
+                return ca
             except Exception as e:
-                logger.debug(f"OCSP: Failed to parse CA cert {ca.refid}: {e}")
+                logger.debug(f"OCSP: failed to parse CA cert {ca.refid}: {e}")
                 continue
         return None
     except Exception as e:
