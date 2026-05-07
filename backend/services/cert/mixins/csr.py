@@ -82,13 +82,24 @@ class CSRMixin:
         # Parse CSR
         csr = x509.load_pem_x509_csr(csr_pem, default_backend())
 
+        # Encrypt private key at rest if encryption is enabled.
+        # Without this, generated CSR keys (and any future intermediate CA
+        # promoted from this record) sit base64-only in the DB.
+        prv_encoded = base64.b64encode(key_pem).decode('utf-8')
+        try:
+            from security.encryption import key_encryption
+            if key_encryption.is_enabled:
+                prv_encoded = key_encryption.encrypt(prv_encoded)
+        except ImportError:
+            pass
+
         # Create certificate record (CSR only, no cert yet)
         certificate = Certificate(
             refid=str(uuid.uuid4()),
             descr=descr,
             caref=None,  # Not signed yet
             csr=base64.b64encode(csr_pem).decode('utf-8'),
-            prv=base64.b64encode(key_pem).decode('utf-8'),
+            prv=prv_encoded,
             subject=csr.subject.rfc4514_string(),
             san_dns=json.dumps(san_dns) if san_dns else None,
             san_ip=json.dumps(san_ip) if san_ip else None,
@@ -181,6 +192,18 @@ class CSRMixin:
         else:
             csr_pem = base64.b64decode(csr_data)
 
+        # RFC 2986 §4.2 — validate the CSR's self-signature before signing.
+        # cryptography.load_pem_x509_csr does NOT verify the signature, so a
+        # tampered/forged CSR (POP failure) would otherwise be silently signed.
+        try:
+            csr_obj = x509.load_pem_x509_csr(csr_pem, default_backend())
+            if not csr_obj.is_signature_valid:
+                raise ValueError("CSR signature is invalid (proof-of-possession failed)")
+        except ValueError:
+            raise
+        except Exception as e:
+            raise ValueError(f"Failed to verify CSR signature: {e}")
+
         # Sign CSR
         cdp_urls = [url.replace('{ca_refid}', ca.refid) for url in ca.get_cdp_urls()] if ca.cdp_enabled else None
         ocsp_urls = ca.get_ocsp_urls() if ca.ocsp_enabled else None
@@ -271,7 +294,7 @@ class CSRMixin:
             ski_hex = None
             try:
                 ski_ext = cert.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_KEY_IDENTIFIER)
-                ski_hex = ski_ext.value.digest.hex(':')
+                ski_hex = ski_ext.value.digest.hex(':').upper()
             except x509.ExtensionNotFound:
                 pass
 

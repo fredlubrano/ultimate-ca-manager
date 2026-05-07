@@ -83,7 +83,8 @@ class CASigningMixin:
             cert_pem_bytes if isinstance(cert_pem_bytes, bytes) else cert_pem_bytes.encode(),
             default_backend()
         )
-        serial = format(cert_obj.serial_number, 'X')
+        serial = format(cert_obj.serial_number, 'X')  # legacy hex form, kept for return tuple
+        serial_decimal = str(cert_obj.serial_number)  # canonical DB form
 
         # Store certificate in database
         cert_pem_str = cert_pem_bytes.decode('utf-8') if isinstance(cert_pem_bytes, bytes) else cert_pem_bytes
@@ -136,7 +137,7 @@ class CASigningMixin:
             subject=cert_obj.subject.rfc4514_string(),
             subject_cn=cn,
             issuer=cert_obj.issuer.rfc4514_string(),
-            serial_number=serial,
+            serial_number=serial_decimal,
             aki=cert_aki,
             ski=cert_ski,
             valid_from=not_before,
