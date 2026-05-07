@@ -12,6 +12,8 @@ import base64
 import hmac
 import logging
 
+from cryptography.hazmat.primitives import serialization as _crypto_serialization
+
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('est', __name__, url_prefix='/.well-known/est')
@@ -128,8 +130,11 @@ def _authenticate_est_client():
         est_username = SystemConfig.query.filter_by(key='est_username').first()
         est_password = SystemConfig.query.filter_by(key='est_password').first()
         
-        if est_username and est_password:
+        if est_username and est_password and est_username.value and est_password.value:
             from werkzeug.security import check_password_hash
+            # auth.username/password may be None for malformed headers
+            if auth.username is None or auth.password is None:
+                return False, None
             username_match = hmac.compare_digest(auth.username, est_username.value)
             # Support both hashed and legacy plaintext passwords
             if est_password.value.startswith(('scrypt:', 'pbkdf2:')):
@@ -140,6 +145,40 @@ def _authenticate_est_client():
                 return True, auth.username
     
     return False, None
+
+
+def _validate_est_csr(csr):
+    """Common EST CSR validation.
+
+    Returns ``(ok, response_or_None)``. Enforces:
+      * Proof of Possession — the CSR's self-signature MUST verify.
+        Without this an attacker who stole a Basic-Auth credential could
+        submit a CSR built around a public key they don't control and
+        get a certificate that someone else owns.
+      * Non-empty CommonName — refuse blank subjects so a compromised
+        credential can't mint a wildcard / catch-all certificate by
+        submitting an empty CSR.
+    """
+    try:
+        if not csr.is_signature_valid:
+            logger.warning(
+                "EST: CSR self-signature invalid (subject=%s)",
+                csr.subject.rfc4514_string(),
+            )
+            return False, Response(
+                'CSR signature invalid (proof of possession failed)',
+                status=400,
+            )
+    except Exception as e:
+        logger.warning("EST: CSR self-signature check raised: %s", e)
+        return False, Response('CSR signature invalid', status=400)
+
+    from cryptography.x509.oid import NameOID
+    cn_attrs = csr.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
+    if not cn_attrs or not str(cn_attrs[0].value).strip():
+        return False, Response('CSR subject must include a non-empty CN', status=400)
+
+    return True, None
 
 
 @bp.route('/cacerts', methods=['GET'])
@@ -167,7 +206,7 @@ def get_ca_certs():
             certs.append(cert)
         
         # Serialize as PKCS#7 degenerate (certs-only)
-        p7_der = pkcs7.serialize_certificates(certs, encoding=pkcs7.PKCS7Options.Binary)
+        p7_der = pkcs7.serialize_certificates(certs, encoding=_crypto_serialization.Encoding.DER)
         p7_b64 = base64.b64encode(p7_der).decode()
         
         return Response(
@@ -222,7 +261,11 @@ def simple_enroll():
             from cryptography import x509
             from cryptography.hazmat.backends import default_backend
             csr = x509.load_pem_x509_csr(csr_data.encode(), default_backend())
-        
+
+        ok, deny = _validate_est_csr(csr)
+        if not ok:
+            return deny
+
         # Get validity from config
         from models import SystemConfig
         validity_days = SystemConfig.query.filter_by(key='est_validity_days').first()
@@ -259,7 +302,7 @@ def simple_enroll():
             chain_cert = x509.load_pem_x509_certificate(chain_pem.encode(), default_backend())
             certs_for_p7.append(chain_cert)
         
-        p7_der = pkcs7.serialize_certificates(certs_for_p7, encoding=pkcs7.PKCS7Options.Binary)
+        p7_der = pkcs7.serialize_certificates(certs_for_p7, encoding=_crypto_serialization.Encoding.DER)
         p7_b64 = base64.b64encode(p7_der).decode()
         
         return Response(
@@ -313,7 +356,11 @@ def simple_reenroll():
             csr = x509.load_der_x509_csr(csr_der, default_backend())
         else:
             csr = x509.load_pem_x509_csr(csr_data.encode(), default_backend())
-        
+
+        ok, deny = _validate_est_csr(csr)
+        if not ok:
+            return deny
+
         # Verify client cert subject matches CSR subject (RFC 7030 §3.3.2)
         try:
             client_cert_obj = x509.load_pem_x509_certificate(
@@ -356,7 +403,7 @@ def simple_reenroll():
             chain_cert = x509.load_pem_x509_certificate(chain_pem.encode(), default_backend())
             certs_for_p7.append(chain_cert)
         
-        p7_der = pkcs7.serialize_certificates(certs_for_p7, encoding=pkcs7.PKCS7Options.Binary)
+        p7_der = pkcs7.serialize_certificates(certs_for_p7, encoding=_crypto_serialization.Encoding.DER)
         p7_b64 = base64.b64encode(p7_der).decode()
         
         return Response(
@@ -481,6 +528,27 @@ def server_keygen():
         csr_der = base64.b64decode(csr_data)
         csr = x509.load_der_x509_csr(csr_der, default_backend())
 
+        # Proof of Possession on the supplied CSR. Even though we generate
+        # a fresh keypair below and use it for signing, an unverifiable
+        # CSR signature means we cannot trust the subject either — refuse.
+        try:
+            if not csr.is_signature_valid:
+                AuditService.log_action(
+                    action='est_serverkeygen_denied',
+                    resource_type='est',
+                    details=(
+                        f'EST /serverkeygen rejected invalid CSR signature '
+                        f'(auth={auth_method}, user={username}, ip={remote_ip})'
+                    ),
+                    success=False,
+                )
+                return Response(
+                    'CSR signature invalid (proof of possession failed)',
+                    status=400,
+                )
+        except Exception:
+            return Response('CSR signature invalid', status=400)
+
         # RFC 7030 implies the subject in the CSR identifies the
         # enrollee. We refuse empty / whitespace-only CNs so a
         # compromised credential can't mint a wildcard or CA-shaped
@@ -542,7 +610,7 @@ def server_keygen():
             chain_cert = x509.load_pem_x509_certificate(chain_pem.encode(), default_backend())
             certs_for_p7.append(chain_cert)
         
-        p7_der = pkcs7.serialize_certificates(certs_for_p7, encoding=pkcs7.PKCS7Options.Binary)
+        p7_der = pkcs7.serialize_certificates(certs_for_p7, encoding=_crypto_serialization.Encoding.DER)
         p7_b64 = base64.b64encode(p7_der).decode()
         
         # Private key — encrypt with password if Basic Auth was used (RFC 7030 §4.4.2)
