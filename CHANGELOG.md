@@ -9,6 +9,54 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.152] - 2026-05-08
+
+Security and RFC-compliance hardening pass across all PKI protocols and resource APIs.
+Smoke-tested across SQLite and PostgreSQL on Debian, RHEL/Fedora, and Docker (33 migrations from-scratch on PG verified).
+
+### Security
+- **Certificate authorities** — whitelist key params, cap validity at 3650 days, lock HSM-bound key, validate URLs (CRL DP / AIA / OCSP / IDP), cap bulk and list operations, harden create/update/export. CSR signing now verifies `is_signature_valid` (proof of possession). EC curve restricted to a whitelist.
+- **Certificates** — whitelist key params, cap validity, fix unhold bugs.
+- **CSRs** — cap validity, validate keys, verify CSR pubkey ↔ submitted match, cap PEM size 64 KB.
+- **Templates** — cap validity_days, whitelist key_type/digest, fix import NULL.
+- **Policies / approvals** — enforce group gate, expiry and validity reclamp.
+- **Users** — require current password for self-change, protect last admin (≥1 active admin invariant).
+- **RBAC** — validate role payload, reject reserved names (`admin`/`operator`/`viewer`), permission whitelist with wildcard.
+- **SSO** — add PKCE (S256) and nonce to OIDC auth flow.
+- **HSM** — encrypt provider secrets at rest, cap sign payload at 1 MiB, FK-guard deletes; runtime `pip install` disabled by default (opt-in via `UCM_ALLOW_RUNTIME_PIP=1`).
+- **Microsoft CA** — fail-closed encryption, EOBO admin gate, audit, size caps.
+- **Webhooks** — encrypt secret at rest, validate event names against allowlist, lock reserved headers, cap events per webhook.
+- **Discovery** — validate ports, IPv6 subnet cap (≤1024), gate `update_profile`.
+- **Audit** — trusted-proxy XFF (only honour `X-Forwarded-For` from configured proxies), fix invalid kwargs in ACME audit, post-cleanup integrity check.
+- **Reports** — cap generate params dict size (DoS guard).
+- **SSH** — validate sign/generate payload (caps on principals ≤64, extensions/options ≤32, validity 60 s – 10 y).
+- **Trust store** — whitelist purpose, cap PEM size 256 KB, sync limit 1–1000.
+- **ACME (server)** — close 6 RFC 8555 auth bypasses (account binding, order ownership, authz state machine, finalize URL, key change, deactivation).
+- **ACME (proxy)** — block SSRF via forged proxy IDs; finalize ownership check.
+- **ACME (client)** — validate domain syntax, cap inputs, harden commits.
+- **EAB** — encrypt HMAC keys at rest.
+- **EST** — proof of possession, serialize bug fixes, config bound validation.
+- **SCEP** — tighten challenge auth, audit reads, validate config bounds.
+
+### Fixed (RFC compliance)
+- **OCSP (RFC 6960)** — handle mixed-format serials in DB lookup (decimal / lower hex / upper hex), invalidate cache on revoke, correct `keyHash` calculation, honour `nonce` extension (skip cache when present), refuse delegated responder cert without `id-pkix-ocsp-nocheck`.
+- **CRL (RFC 5280)** — handle mixed-format serials, drop silent truncation of serials >159 bits, auto-regen expired CRL on CDP fetch.
+- **Certificate profile (RFC 5280)** — 5 issues fixed in CA/CSR signing paths (SKI/AKI format, BasicConstraints encoding, EKU consistency, KU bit ordering, validity bounds).
+- **ACME (RFC 8555 / 8737)** — EAB JWK match via thumbprint, JWS algorithm allowlist (asymmetric only), wildcard domain restricted to DNS-01, ALPN extension marked critical, case-insensitive domain handling. Pre-authorisation flow (§7.4.1) — `acme_authorizations.order_id` now nullable (migration 033).
+- **TSA (RFC 3161 / 5035)** — `signing-certificate-v2` ESS attribute now mandatory, request body capped at 64 KiB, correct `PKIStatus` separation from `PKIFailureInfo`.
+- **EST (RFC 7030)** — `serverkeygen` encrypts the server-generated key under the **client mTLS pubkey**, not under the newly issued cert.
+- **SCEP (RFC 8894)** — reject renewal when signer cert is expired or not yet valid.
+
+### Fixed (other)
+- **Imports** — CA and certificate import endpoints now encrypt private keys via `encrypt_private_key` instead of storing base64-plain (silent regression introduced when import paths bypassed the lifecycle mixin).
+
+### Added
+- **`tools/decode-csr` and `tools/decode-cert`** — input capped at 256 KiB → `413` (DoS guard).
+
+### Tests
+- 1676 backend tests + 461 frontend tests pass.
+- 2 encryption-related tests made hermetic to host `master.key` (monkeypatch `MASTER_KEY_PATH` and use `is_string_encrypted()`).
+
 ## [2.151] - 2026-05-07
 
 ### Fixed
