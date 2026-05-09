@@ -13,6 +13,8 @@
 
 > ✨ **Latest release — v2.152** (2026-05-08): security and RFC-compliance hardening pass across all PKI protocols (OCSP, CRL, ACME, EST, SCEP, TSA) and resource APIs (CAs, certs, CSRs, templates, RBAC, HSM, MSCA, SSO, webhooks, discovery, audit, reports, SSH, trust store). Smoke-tested on SQLite and PostgreSQL across Debian, RHEL/Fedora, and Docker. See the [v2.152 release notes](https://github.com/NeySlim/ultimate-ca-manager/releases/latest) and the full [CHANGELOG](CHANGELOG.md).
 
+**Upcoming:** CA offline mode — take CAs offline to prevent signing new certificates, with password-protected or file-exported modes.
+
 ![Dashboard](docs/screenshots/dashboard-dark.png)
 
 ---
