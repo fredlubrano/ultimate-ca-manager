@@ -2,7 +2,7 @@
  * CAs Page — detail panel for selected CA (mobile slide-over)
  */
 import { useState } from 'react'
-import { Download, Trash, Certificate, Clock } from '@phosphor-icons/react'
+import { Download, Trash, Certificate, Clock, ShieldWarning, ShieldCheck } from '@phosphor-icons/react'
 import {
   Badge, Button,
   CompactSection, CompactGrid, CompactField, CompactStats,
@@ -43,6 +43,34 @@ export function CADetailsPanel({ ca, canWrite, canDelete, onExport, onDelete, t 
         </div>
       </div>
 
+      {/* Offline banner */}
+      {ca.offline && (
+        <div className="rounded-lg px-3 py-2 bg-amber/20 border border-amber/40">
+          <div className="flex items-center gap-2 text-amber">
+            <ShieldWarning size={16} />
+            <span className="text-xs font-medium">{t('cas.offline.offline')}</span>
+          </div>
+          {ca.offline_reason && (
+            <p className="text-xs text-amber/70 mt-1">{ca.offline_reason}</p>
+          )}
+          {canWrite('cas') && (
+            <Button
+              type="button"
+              size="xs"
+              variant="secondary"
+              className="mt-1.5 text-amber border-amber/30"
+              onClick={() => {
+                const pw = prompt(t('cas.offline.enterPassword'))
+                if (!pw) return
+                onExport('restore', pw)
+              }}
+            >
+              {t('cas.offline.restore')}
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Stats */}
       <CompactStats stats={[
         { icon: Certificate, value: t('cas.certificateCount', { count: ca.certs || 0 }) },
@@ -55,6 +83,19 @@ export function CADetailsPanel({ ca, canWrite, canDelete, onExport, onDelete, t 
         <Button type="button" size="xs" variant="secondary" onClick={() => setShowExportModal(true)}>
           <Download size={14} /> {t('export.title')}
         </Button>
+        {canWrite('cas') && !ca.offline && (
+          <Button
+            type="button"
+            size="xs"
+            variant="danger"
+            onClick={() => {
+              const reason = prompt(t('cas.offline.reason')) || ''
+              onExport('offline', reason)
+            }}
+          >
+            <ShieldWarning size={12} className="sm:w-3.5 sm:h-3.5" /> {t('cas.offline.takeOffline')}
+          </Button>
+        )}
         {canDelete('cas') && (
           <Button type="button" size="xs" variant="danger" onClick={onDelete} className="sm:!h-8 sm:!px-3">
             <Trash size={12} className="sm:w-3.5 sm:h-3.5" />

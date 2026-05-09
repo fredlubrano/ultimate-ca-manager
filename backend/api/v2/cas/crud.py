@@ -573,6 +573,26 @@ def update_ca(ca_id):
         if new_val != bool(getattr(ca, 'is_active', None)):
             changed.append('is_active')
         ca.is_active = new_val
+    if 'offline' in data:
+        new_val = bool(data['offline'])
+        if new_val != bool(ca.offline):
+            changed.append('offline')
+        ca.offline = new_val
+    if 'offline_reason' in data:
+        reason = data['offline_reason']
+        if reason is not None and isinstance(reason, str) and len(reason) > _MAX_DESCRIPTION_LEN:
+            return error_response(f'offline_reason too long (max {_MAX_DESCRIPTION_LEN} chars)', 400)
+        ca.offline_reason = reason
+        if 'offline' in data and data['offline'] and not reason:
+            changed.append('offline_reason')
+    if 'offline_mode' in data:
+        new_val = data['offline_mode']
+        allowed_modes = (None, 'password_protected', 'file_exported')
+        if new_val not in allowed_modes:
+            return error_response(f'Invalid offline_mode: must be one of {allowed_modes}', 400)
+        if new_val != ca.offline_mode:
+            changed.append('offline_mode')
+        ca.offline_mode = new_val
 
     try:
         db.session.commit()
@@ -655,6 +675,95 @@ def delete_ca(ca_id):
             on_ca_deleted(ca_id, ca_name, username)
         except Exception:
             pass
+
+        return no_content_response()
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to delete CA: {e}")
+        return error_response('Failed to delete CA', 500)
+
+
+@bp.route('/api/v2/cas/<int:ca_id>/offline', methods=['POST'])
+@require_auth(['write:cas'])
+def take_ca_offline(ca_id):
+    """Take a CA offline."""
+    ca = CA.query.get(ca_id)
+    if not ca:
+        return error_response('CA not found', 404)
+
+    data = request.get_json() or {}
+    reason = data.get('reason', '')
+    if reason and isinstance(reason, str) and len(reason) > _MAX_DESCRIPTION_LEN:
+        return error_response(f'reason too long (max {_MAX_DESCRIPTION_LEN} chars)', 400)
+    mode = data.get('mode', 'password_protected')
+    if mode not in ('password_protected', 'file_exported'):
+        mode = 'password_protected'
+    old_mode = ca.offline_mode
+    old_reason = ca.offline_reason
+    old_offline = ca.offline
+
+    try:
+        ca.offline = True
+        ca.offline_reason = reason
+        ca.offline_mode = mode
+        db.session.commit()
+
+        AuditService.log_action(
+            action='ca_offline',
+            resource_type='ca',
+            resource_id=ca_id,
+            resource_name=ca.descr,
+            details=f"CA taken offline: mode={mode}, reason={reason or 'none'}",
+            success=True
+        )
+        return success_response(data=ca.to_dict(), message='CA taken offline')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to take CA offline: {e}")
+        return error_response('Failed to take CA offline', 500)
+
+
+@bp.route('/api/v2/cas/<int:ca_id>/restore', methods=['POST'])
+@require_auth(['write:cas'])
+def restore_ca(ca_id):
+    """Restore a CA to online state."""
+    ca = CA.query.get(ca_id)
+    if not ca:
+        return error_response('CA not found', 404)
+
+    data = request.get_json() or {}
+    mode = data.get('mode', ca.offline_mode or 'password_protected')
+
+    if mode == 'password_protected':
+        password = data.get('password')
+        if not password:
+            return error_response('Password required for password-protected CA', 400)
+        try:
+            from security.encryption import decrypt_private_key
+            decrypt_private_key(ca.prv)
+        except Exception as e:
+            logger.warning(f"CA offline restore: password verification failed for CA {ca_id}: {e}")
+            return error_response('Invalid password', 401)
+
+    try:
+        ca.offline = False
+        ca.offline_reason = None
+        ca.offline_mode = None
+        db.session.commit()
+
+        AuditService.log_action(
+            action='ca_restored',
+            resource_type='ca',
+            resource_id=ca_id,
+            resource_name=ca.descr,
+            details=f"CA restored to online state (was mode={mode})",
+            success=True
+        )
+        return success_response(data=ca.to_dict(), message='CA restored to online state')
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Failed to restore CA: {e}")
+        return error_response('Failed to restore CA', 500)
 
         return no_content_response()
     except Exception as e:

@@ -804,6 +804,19 @@
     "certificateCount": "{{count}}个证书",
     "daysLeft": "剩余{{count}}天",
     "daysLeft_one": "{{count}} day left",
+    "offline": "离线",
+    "offlineReason": "原因",
+    "offlinePassword": "密码",
+    "offlineMode": "离线模式",
+    "offlinePasswordProtected": "密码保护",
+    "offlineFileExported": "密钥文件已导出",
+    "takeOffline": "设为离线",
+    "takeOfflineConfirm": "确定要将此CA设为离线吗？CA离线期间将不会签发任何证书。",
+    "reason": "设为离线的原因",
+    "enterPassword": "输入密码以恢复CA",
+    "restore": "恢复CA",
+    "offlineFailed": "将CA设为离线失败",
+    "restoreFailed": "恢复CA失败",
     "descriptionPlaceholder": "此CA的可选描述",
     "advancedConstraints": "高级约束 (RFC 5280)",
     "pathLength": "路径长度约束",
@@ -3070,7 +3083,9 @@
         "template": "模板创建成功",
         "user": "用户创建成功",
         "sshCa": "SSH CA created successfully",
-        "sshCertificate": "SSH certificate issued successfully"
+        "sshCertificate": "SSH certificate issued successfully",
+        "caOffline": "CA已离线",
+        "caRestored": "CA已恢复为在线状态"
       },
       "crl": {
         "generated": "CRL 重新生成成功"

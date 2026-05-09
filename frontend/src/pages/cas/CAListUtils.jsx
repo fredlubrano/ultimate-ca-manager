@@ -101,3 +101,24 @@ export function HsmBadge({ ca, t }) {
     </span>
   )
 }
+
+/** Offline badge — shown when CA is taken offline */
+export function OfflineBadge({ ca, t }) {
+  if (!ca?.offline) return null
+  const mode = ca.offline_mode || 'password_protected'
+  const reason = ca.offline_reason || ''
+  const modeLabel = mode === 'file_exported'
+    ? t('cas.offline.fileExported')
+    : t('cas.offline.passwordProtected')
+  return (
+    <span
+      className={cn(
+        'shrink-0 px-1.5 py-0.5 rounded-md text-2xs font-semibold',
+        'badge-bg-gray'
+      )}
+      title={reason || modeLabel}
+    >
+      ⚠ {t('cas.offline.offline')}
+    </span>
+  )
+}

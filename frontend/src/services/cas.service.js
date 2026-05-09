@@ -46,6 +46,14 @@ export const casService = {
     }, { responseType: 'blob' })
   },
 
+  async takeOffline(id, data = {}) {
+    return apiClient.post(`/cas/${id}/offline`, data)
+  },
+
+  async restore(id, data = {}) {
+    return apiClient.post(`/cas/${id}/restore`, data)
+  },
+
   async getCertificates(id, filters = {}) {
     return apiClient.get(`/cas/${id}/certificates${buildQueryString(filters)}`)
   },

@@ -804,6 +804,19 @@
     "certificateCount": "{{count}}個の証明書",
     "daysLeft": "残り{{count}}日",
     "daysLeft_one": "{{count}} day left",
+    "offline": "オフライン",
+    "offlineReason": "理由",
+    "offlinePassword": "パスワード",
+    "offlineMode": "オフラインモード",
+    "offlinePasswordProtected": "パスワード保護",
+    "offlineFileExported": "キーファイルのエクスポート",
+    "takeOffline": "オフラインにする",
+    "takeOfflineConfirm": "このCAをオフラインにしてもよろしいですか？CAがオフラインの間、証明書は発行されません。",
+    "reason": "オフラインにする理由",
+    "enterPassword": "CAを復元するためのパスワードを入力してください",
+    "restore": "CAを復元",
+    "offlineFailed": "CAのオフライン化に失敗しました",
+    "restoreFailed": "CAの復元に失敗しました",
     "descriptionPlaceholder": "このCAの任意の説明",
     "advancedConstraints": "高度な制約 (RFC 5280)",
     "pathLength": "パス長制約",
@@ -3070,7 +3083,9 @@
         "template": "テンプレートが作成されました",
         "user": "ユーザーが作成されました",
         "sshCa": "SSH CA created successfully",
-        "sshCertificate": "SSH certificate issued successfully"
+        "sshCertificate": "SSH certificate issued successfully",
+        "caOffline": "CAがオフラインになりました",
+        "caRestored": "CAがオンラインに復旧しました"
       },
       "crl": {
         "generated": "CRLが再生成されました"

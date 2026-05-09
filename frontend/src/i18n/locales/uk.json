@@ -804,6 +804,19 @@
     "certificateCount": "{{count}} сертифікатів",
     "daysLeft": "{{count}} днів залишилось",
     "daysLeft_one": "{{count}} день залишився",
+    "offline": "Вимкнено",
+    "offlineReason": "Причина",
+    "offlinePassword": "Пароль",
+    "offlineMode": "Режим вимкнено",
+    "offlinePasswordProtected": "Захищено паролем",
+    "offlineFileExported": "Файл ключа експортовано",
+    "takeOffline": "Вимкнути",
+    "takeOfflineConfirm": "Ви впевнені, що хочете вимкнути цей ЦС? Жоден сертифікат не буде підписано, доки ЦС вимкнено.",
+    "reason": "Причина вимкнення",
+    "enterPassword": "Введіть пароль для відновлення ЦС",
+    "restore": "Відновити ЦС",
+    "offlineFailed": "Не вдалося вимкнути ЦС",
+    "restoreFailed": "Не вдалося відновити ЦС",
     "descriptionPlaceholder": "Необов'язковий опис для цього ЦС",
     "advancedConstraints": "Розширені обмеження (RFC 5280)",
     "pathLength": "Обмеження довжини шляху",
@@ -3070,7 +3083,9 @@
         "template": "Шаблон створено успішно",
         "user": "Користувача створено успішно",
         "sshCa": "SSH CA created successfully",
-        "sshCertificate": "SSH certificate issued successfully"
+        "sshCertificate": "SSH certificate issued successfully",
+        "caOffline": "CA вимкнено",
+        "caRestored": "CA відновлено в онлайн-режим"
       },
       "crl": {
         "generated": "CRL перегенеровано успішно"

@@ -221,6 +221,28 @@ export default function CAsPage() {
     }
   }
 
+  const handleOffline = async (ca, reason) => {
+    try {
+      await casService.takeOffline(ca.id, { reason })
+      showSuccess(t('messages.success.offline.ca'))
+      loadCAs()
+      if (selectedCA?.id === ca.id) setSelectedCA(null)
+    } catch (error) {
+      showError(error.message || t('cas.offlineFailed'))
+    }
+  }
+
+  const handleRestore = async (ca, password) => {
+    try {
+      await casService.restore(ca.id, { password })
+      showSuccess(t('messages.success.restore.ca'))
+      loadCAs()
+      if (selectedCA?.id === ca.id) setSelectedCA(null)
+    } catch (error) {
+      showError(error.message || t('cas.restoreFailed'))
+    }
+  }
+
   // Check if intermediate CA is orphan
   const isOrphanIntermediate = useCallback((ca) => {
     if (ca.type !== 'intermediate') return false
@@ -385,7 +407,11 @@ export default function CAsPage() {
             ca={selectedCA}
             canWrite={canWrite}
             canDelete={canDelete}
-            onExport={(format, options) => handleExport(selectedCA, format, options)}
+            onExport={(format, options) => {
+              if (format === 'offline') return handleOffline(selectedCA, options)
+              if (format === 'restore') return handleRestore(selectedCA, options)
+              return handleExport(selectedCA, format, options)
+            }}
             onDelete={() => handleDelete(selectedCA.id)}
             t={t}
           />
