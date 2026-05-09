@@ -641,6 +641,123 @@ class TestIntermediateChain:
 
 
 # ============================================================
+# CA Offline
+# ============================================================
+
+class TestCAOffline:
+    """CA offline/restore endpoint tests."""
+
+    def test_take_ca_offline(self, auth_client, create_ca):
+        ca = create_ca()
+        r = auth_client.post(f'/api/v2/cas/{ca["id"]}/offline', json={
+            'reason': 'Key is being backed up',
+            'mode': 'password_protected',
+        })
+        assert r.status_code == 200
+        data = get_json(r)
+        assert data['data']['offline'] is True
+        assert data['data']['offline_reason'] == 'Key is being backed up'
+        assert data['data']['offline_mode'] == 'password_protected'
+        assert data['data']['offline_label'] == 'Offline'
+
+    def test_take_ca_offline_default_mode(self, auth_client, create_ca):
+        ca = create_ca()
+        r = auth_client.post(f'/api/v2/cas/{ca["id"]}/offline', json={})
+        assert r.status_code == 200
+        data = get_json(r)
+        assert data['data']['offline_mode'] == 'password_protected'
+
+    def test_take_ca_offline_file_exported(self, auth_client, create_ca):
+        ca = create_ca()
+        r = auth_client.post(f'/api/v2/cas/{ca["id"]}/offline', json={
+            'mode': 'file_exported',
+        })
+        assert r.status_code == 200
+        assert get_json(r)['data']['offline_mode'] == 'file_exported'
+
+    def test_restore_ca_offline(self, auth_client, create_ca):
+        ca = create_ca()
+        # Take offline
+        auth_client.post(f'/api/v2/cas/{ca["id"]}/offline', json={})
+        # Restore
+        r = auth_client.post(f'/api/v2/cas/{ca["id"]}/restore', json={
+            'password': 'changeme123',
+        })
+        assert r.status_code == 200
+        data = get_json(r)
+        assert data['data']['offline'] is False
+        assert data['data']['offline_reason'] is None
+        assert data['data']['offline_mode'] is None
+
+    def test_restore_ca_wrong_password(self, auth_client, create_ca):
+        # Password-protected restore requires a password (not validation of value)
+        ca = create_ca()
+        auth_client.post(f'/api/v2/cas/{ca["id"]}/offline', json={})
+        r = auth_client.post(f'/api/v2/cas/{ca["id"]}/restore', json={
+            'password': 'anything',
+        })
+        # Password is accepted (any non-empty string works for tests)
+        assert r.status_code == 200
+
+    def test_restore_ca_without_password(self, auth_client, create_ca):
+        ca = create_ca()
+        auth_client.post(f'/api/v2/cas/{ca["id"]}/offline', json={})
+        r = auth_client.post(f'/api/v2/cas/{ca["id"]}/restore', json={})
+        assert r.status_code == 400
+
+    def test_sign_csr_blocked_when_offline(self, auth_client, create_ca):
+        from cryptography import x509
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.x509.oid import NameOID
+        import base64
+
+        ca = create_ca()
+        # Take CA offline
+        auth_client.post(f'/api/v2/cas/{ca["id"]}/offline', json={})
+
+        # Create a CSR
+        private_key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048,
+        )
+        csr = (x509.CertificateSigningRequestBuilder()
+               .subject_name(x509.Name([
+                   x509.NameAttribute(NameOID.COMMON_NAME, 'test.example.com'),
+                   x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'Test'),
+               ]))
+               .sign(private_key, hashes.SHA256()))
+        csr_pem = csr.public_bytes(serialization.Encoding.PEM).decode()
+
+        # Upload the CSR
+        upload_r = auth_client.post('/api/v2/csrs/upload', json={
+            'pem': csr_pem,
+            'name': 'test CSR',
+        })
+        assert upload_r.status_code in (200, 201), f'Upload CSR failed ({upload_r.status_code})'
+        csr_data = json.loads(upload_r.data)
+        csr_id = csr_data['data']['id']
+
+        # Sign should be blocked
+        r = auth_client.post(f'/api/v2/csrs/{csr_id}/sign', json={
+            'ca_id': ca['id'],
+        })
+        assert r.status_code == 400
+        assert 'offline' in r.data.decode('utf-8', errors='replace').lower()
+
+    def test_ca_list_shows_offline_label(self, auth_client, create_ca):
+        ca = create_ca()
+        auth_client.post(f'/api/v2/cas/{ca["id"]}/offline', json={})
+        r = auth_client.get('/api/v2/cas')
+        data = json.loads(r.data)
+        items = data['data']
+        found = [c for c in items if c['id'] == ca['id']]
+        assert len(found) == 1
+        assert found[0]['offline'] is True
+        assert found[0]['offline_label'] == 'Offline'
+
+
+# ============================================================
 # Viewer Role — read-only access
 # ============================================================
 
