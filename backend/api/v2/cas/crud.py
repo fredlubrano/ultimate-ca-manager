@@ -740,7 +740,11 @@ def restore_ca(ca_id):
             return error_response('Password required for password-protected CA', 400)
         try:
             from security.encryption import decrypt_private_key
-            decrypt_private_key(ca.prv)
+            from utils.key_codec import load_pem_bytes
+            decrypted = decrypt_private_key(ca.prv)
+            pem_bytes = load_pem_bytes(decrypted.encode(), context=f"CA {ca_id}")
+            if len(pem_bytes) < 64:
+                raise ValueError("Key too short, password likely incorrect")
         except Exception as e:
             logger.warning(f"CA offline restore: password verification failed for CA {ca_id}: {e}")
             return error_response('Invalid password', 401)

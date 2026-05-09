@@ -9,6 +9,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+- **CA offline mode** — take a CA offline to prevent signing new certificates, with two modes: password-protected (private key encrypted, restore requires the password) or file-exported (key removed from DB, restore from file). Public endpoints (CDP, OCSP) continue serving cached data. All signing paths gated: CSR sign, EST, mTLS, HSM. Sub-CAs independent of parent CA offline state.
+
 ## [2.152] - 2026-05-08
 
 Security and RFC-compliance hardening pass across all PKI protocols and resource APIs.
