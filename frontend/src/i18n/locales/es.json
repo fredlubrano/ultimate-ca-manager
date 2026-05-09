@@ -804,6 +804,19 @@
     "certificateCount": "{{count}} certificados",
     "daysLeft": "{{count}} días restantes",
     "daysLeft_one": "{{count}} día restante",
+    "offline": "Desconectado",
+    "offlineReason": "Motivo",
+    "offlinePassword": "Contraseña",
+    "offlineMode": "Modo desconectado",
+    "offlinePasswordProtected": "Protegido por contraseña",
+    "offlineFileExported": "Archivo de clave exportado",
+    "takeOffline": "Desconectar",
+    "takeOfflineConfirm": "¿Está seguro de que desea desconectar esta CA? No se firmarán certificados mientras la CA esté desconectada.",
+    "reason": "Motivo de la desconexión",
+    "enterPassword": "Ingrese la contraseña para restaurar la CA",
+    "restore": "Restaurar CA",
+    "offlineFailed": "Error al desconectar la CA",
+    "restoreFailed": "Error al restaurar la CA",
     "descriptionPlaceholder": "Descripción opcional para esta CA",
     "advancedConstraints": "Restricciones avanzadas (RFC 5280)",
     "pathLength": "Restricción de longitud de ruta",
@@ -3070,7 +3083,9 @@
         "template": "Plantilla creada exitosamente",
         "user": "Usuario creado exitosamente",
         "sshCa": "SSH CA created successfully",
-        "sshCertificate": "SSH certificate issued successfully"
+        "sshCertificate": "SSH certificate issued successfully",
+        "caOffline": "CA fuera de línea",
+        "caRestored": "CA restaurada a estado en línea"
       },
       "crl": {
         "generated": "CRL regenerada exitosamente"

@@ -19,8 +19,21 @@ from .helpers import get_ca_cert_pem, get_ca_private_key_pem
 logger = logging.getLogger(__name__)
 
 
+class CAOfflineError(Exception):
+    """Raised when an operation is attempted on an offline CA."""
+    pass
+
+
 class CASigningMixin:
     """CA CSR signing operations"""
+
+    @staticmethod
+    def _check_ca_offline(ca: CA) -> None:
+        """Raise CAOfflineError if the CA is offline."""
+        if ca.offline:
+            raise CAOfflineError(
+                f"CA '{ca.descr}' is offline: {ca.offline_reason or 'no reason provided'}"
+            )
 
     @staticmethod
     def sign_csr_from_crypto(
@@ -42,6 +55,7 @@ class CASigningMixin:
         Returns:
             Tuple of (cert_pem_string, serial_number_string)
         """
+        self._check_ca_offline(ca)
         from security.encryption import decrypt_private_key
 
         # Convert CSR object to PEM bytes

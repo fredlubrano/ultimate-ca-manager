@@ -804,6 +804,19 @@
     "certificateCount": "{{count}} certificados",
     "daysLeft": "{{count}} dias restantes",
     "daysLeft_one": "{{count}} dia restante",
+    "offline": "Offline",
+    "offlineReason": "Motivo",
+    "offlinePassword": "Senha",
+    "offlineMode": "Modo offline",
+    "offlinePasswordProtected": "Protegido por senha",
+    "offlineFileExported": "Arquivo de chave exportado",
+    "takeOffline": "Colocar offline",
+    "takeOfflineConfirm": "Tem certeza que deseja colocar esta CA offline? Nenhum certificado será assinado enquanto a CA estiver offline.",
+    "reason": "Motivo para colocar offline",
+    "enterPassword": "Digite a senha para restaurar a CA",
+    "restore": "Restaurar CA",
+    "offlineFailed": "Falha ao colocar CA offline",
+    "restoreFailed": "Falha ao restaurar CA",
     "descriptionPlaceholder": "Descrição opcional para esta CA",
     "advancedConstraints": "Restrições avançadas (RFC 5280)",
     "pathLength": "Restrição de comprimento do caminho",
@@ -3070,7 +3083,9 @@
         "template": "Template criado com sucesso",
         "user": "Usuário criado com sucesso",
         "sshCa": "SSH CA created successfully",
-        "sshCertificate": "SSH certificate issued successfully"
+        "sshCertificate": "SSH certificate issued successfully",
+        "caOffline": "CA offline",
+        "caRestored": "CA restaurada para o estado online"
       },
       "crl": {
         "generated": "CRL regenerada com sucesso"
