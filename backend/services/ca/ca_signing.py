@@ -55,7 +55,7 @@ class CASigningMixin:
         Returns:
             Tuple of (cert_pem_string, serial_number_string)
         """
-        self._check_ca_offline(ca)
+        CASigningMixin._check_ca_offline(ca)
         from security.encryption import decrypt_private_key
 
         # Convert CSR object to PEM bytes
@@ -169,7 +169,7 @@ class CASigningMixin:
             db.session.commit()
         except Exception as _commit_err:
             db.session.rollback()
-            logger.error(f"Commit failed in services/ca/ca_signing.py:153: {_commit_err}", exc_info=True)
+            logger.error(f"Commit failed in services/ca/ca_signing.py:168: {_commit_err}", exc_info=True)
             raise
 
         logger.info(f"Signed CSR via {source}: CN={cn}, serial={serial}, CA={ca.descr}")
