@@ -6,7 +6,7 @@
  */
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Certificate, ShieldCheck, Fingerprint, Trash, X, ArrowsClockwise } from '@phosphor-icons/react'
+import { Certificate, ShieldCheck, Fingerprint, Trash, X, ArrowsClockwise, ShieldWarning } from '@phosphor-icons/react'
 import { FloatingWindow } from './ui/FloatingWindow'
 import { CertificateDetails } from './CertificateDetails'
 import { CADetails } from './CADetails'
@@ -59,7 +59,7 @@ const ENTITY_CONFIG = {
 export function FloatingDetailWindow({ windowInfo }) {
   const { t } = useTranslation()
   const { closeWindow, focusWindow, sameWindow } = useWindowManager()
-  const { showSuccess, showError, showConfirm } = useNotification()
+  const { showSuccess, showError, showConfirm, showPrompt } = useNotification()
   const { canWrite, canDelete } = usePermission()
   const [data, setData] = useState(windowInfo.data?.fullData || null)
   const [loading, setLoading] = useState(!windowInfo.data?.fullData)
@@ -184,6 +184,42 @@ export function FloatingDetailWindow({ windowInfo }) {
     }
   }
 
+  const handleOffline = async () => {
+    const reason = await showPrompt(t('cas.reason'), {
+      title: t('cas.takeOffline'),
+      type: 'text',
+      placeholder: t('cas.reason'),
+      confirmText: t('cas.takeOffline')
+    })
+    if (reason === null) return
+    try {
+      await casService.takeOffline(windowInfo.entityId, { reason: reason || '' })
+      showSuccess(t('messages.success.offline.ca'))
+      window.dispatchEvent(new CustomEvent('ucm:data-changed', { detail: { type: windowInfo.type } }))
+      closeWindow(windowInfo.id)
+    } catch (err) {
+      showError(err.message || t('cas.offlineFailed'))
+    }
+  }
+
+  const handleRestore = async () => {
+    const pw = await showPrompt(t('cas.enterPassword'), {
+      title: t('cas.restore'),
+      type: 'password',
+      placeholder: t('common.password'),
+      confirmText: t('cas.restore')
+    })
+    if (!pw) return
+    try {
+      await casService.restore(windowInfo.entityId, { password: pw })
+      showSuccess(t('messages.success.restore.ca'))
+      window.dispatchEvent(new CustomEvent('ucm:data-changed', { detail: { type: windowInfo.type } }))
+      closeWindow(windowInfo.id)
+    } catch (err) {
+      showError(err.message || t('cas.restoreFailed'))
+    }
+  }
+
   const title = data ? config.getTitle(data) : t('common.loading')
   const subtitle = data ? (windowInfo.type === 'ca' ? t(config.getSubtitle(data)) : config.getSubtitle(data)) : ''
 
@@ -202,6 +238,8 @@ export function FloatingDetailWindow({ windowInfo }) {
     onRenew: isCert && canWrite('certificates') && !data.revoked && data.has_private_key ? handleRenew : null,
     onRevoke: (isCert || isUserCert) && canWrite(resource) && !data.revoked ? handleRevoke : null,
     onUnhold: isCert && canWrite('certificates') && data.revoked && (data.revoke_reason === 'certificateHold' || data.revoke_reason === 'certificate_hold') ? handleUnhold : null,
+    onOffline: isCA && canWrite('cas') && !data.offline ? handleOffline : null,
+    onRestore: isCA && canWrite('cas') && data.offline ? handleRestore : null,
     onDelete: canDelete(resource) ? handleDelete : null,
     t,
   } : null
@@ -286,7 +324,7 @@ function DetailContent({ type, data }) {
 /**
  * ActionBar — Toolbar under the window header with labeled action buttons
  */
-function ActionBar({ onExport, hasPrivateKey, canExportKey, entityType, entityName, onRenew, onRevoke, onUnhold, onDelete, t }) {
+function ActionBar({ onExport, hasPrivateKey, canExportKey, entityType, entityName, onRenew, onRevoke, onUnhold, onOffline, onRestore, onDelete, t }) {
   const [showExportModal, setShowExportModal] = useState(false)
   const btnBase = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-150'
 
@@ -320,6 +358,22 @@ function ActionBar({ onExport, hasPrivateKey, canExportKey, entityType, entityNa
         <button onClick={onUnhold} className={cn(btnBase, 'text-text-secondary hover:text-accent-success hover:bg-accent-success-op10')}>
           <ArrowsClockwise size={14} weight="duotone" />
           {t('certificates.removeHold', 'Remove Hold')}
+        </button>
+      )}
+
+      {/* Take Offline — CA only */}
+      {onOffline && (
+        <button onClick={onOffline} className={cn(btnBase, 'text-text-secondary hover:text-status-warning hover:bg-status-warning-op10')}>
+          <ShieldWarning size={14} weight="duotone" />
+          {t('cas.takeOffline', 'Take Offline')}
+        </button>
+      )}
+
+      {/* Restore — CA only, when offline */}
+      {onRestore && (
+        <button onClick={onRestore} className={cn(btnBase, 'text-text-secondary hover:text-accent-success hover:bg-accent-success-op10')}>
+          <ArrowsClockwise size={14} weight="duotone" />
+          {t('cas.restore', 'Restore')}
         </button>
       )}
 

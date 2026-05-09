@@ -16,6 +16,7 @@ from utils.response import success_response, error_response, created_response, n
 from utils.pagination import paginate
 from utils.dn_validation import validate_dn_field, validate_dn
 from utils.protocol_url import get_protocol_base_url
+from utils.decorators import require_json_body
 from services.ca_service import CAService
 from services.audit_service import AuditService
 from services.notification_service import NotificationService
@@ -685,13 +686,14 @@ def delete_ca(ca_id):
 
 @bp.route('/api/v2/cas/<int:ca_id>/offline', methods=['POST'])
 @require_auth(['write:cas'])
+@require_json_body
 def take_ca_offline(ca_id):
     """Take a CA offline."""
     ca = CA.query.get(ca_id)
     if not ca:
         return error_response('CA not found', 404)
 
-    data = request.get_json() or {}
+    data = g.json_data or {}
     reason = data.get('reason', '')
     if reason and isinstance(reason, str) and len(reason) > _MAX_DESCRIPTION_LEN:
         return error_response(f'reason too long (max {_MAX_DESCRIPTION_LEN} chars)', 400)
@@ -725,13 +727,14 @@ def take_ca_offline(ca_id):
 
 @bp.route('/api/v2/cas/<int:ca_id>/restore', methods=['POST'])
 @require_auth(['write:cas'])
+@require_json_body
 def restore_ca(ca_id):
     """Restore a CA to online state."""
     ca = CA.query.get(ca_id)
     if not ca:
         return error_response('CA not found', 404)
 
-    data = request.get_json() or {}
+    data = g.json_data or {}
     mode = data.get('mode', ca.offline_mode or 'password_protected')
 
     if mode == 'password_protected':
@@ -768,9 +771,3 @@ def restore_ca(ca_id):
         db.session.rollback()
         logger.error(f"Failed to restore CA: {e}")
         return error_response('Failed to restore CA', 500)
-
-        return no_content_response()
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Failed to delete CA {ca_name}: {e}")
-        return error_response('Failed to delete CA', 500)

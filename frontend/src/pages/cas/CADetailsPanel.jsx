@@ -10,6 +10,7 @@ import {
 } from '../../components'
 import { ExportModal } from '../../components/ExportModal'
 import { formatDate } from '../../lib/utils'
+import { useNotification } from '../../contexts/NotificationContext'
 
 // =============================================================================
 // CA DETAILS PANEL
@@ -17,6 +18,7 @@ import { formatDate } from '../../lib/utils'
 
 export function CADetailsPanel({ ca, canWrite, canDelete, onExport, onDelete, t }) {
   const [showExportModal, setShowExportModal] = useState(false)
+  const { showPrompt } = useNotification()
   return (
     <>
     <div className="p-3 space-y-3">
@@ -45,24 +47,30 @@ export function CADetailsPanel({ ca, canWrite, canDelete, onExport, onDelete, t 
 
       {/* Offline banner */}
       {ca.offline && (
-        <div className="rounded-lg px-3 py-2 bg-amber/20 border border-amber/40">
-          <div className="flex items-center gap-2 text-amber">
+        <div className="rounded-lg px-3 py-2 bg-status-warning/20 border border-status-warning/40">
+          <div className="flex items-center gap-2 text-status-warning">
             <ShieldWarning size={16} />
-            <span className="text-xs font-medium">{t('cas.offline.offline')}</span>
+            <span className="text-xs font-medium">{t('cas.offline')}</span>
           </div>
           {ca.offline_reason && (
-            <p className="text-xs text-amber/70 mt-1">{ca.offline_reason}</p>
+            <p className="text-xs text-text-tertiary mt-1">{ca.offline_reason}</p>
           )}
           {canWrite('cas') && (
             <Button
               type="button"
               size="xs"
               variant="secondary"
-              className="mt-1.5 text-amber border-amber/30"
-              onClick={() => {
-                const pw = prompt(t('cas.offline.enterPassword'))
-                if (!pw) return
-                onExport('restore', pw)
+              className="mt-1.5"
+              onClick={async () => {
+                const pw = await showPrompt(t('cas.enterPassword'), {
+                  title: t('cas.restore'),
+                  type: 'password',
+                  placeholder: t('common.password'),
+                  confirmText: t('cas.restore')
+                })
+                if (pw) {
+                  onExport('restore', pw)
+                }
               }}
             >
               {t('cas.offline.restore')}
@@ -88,9 +96,16 @@ export function CADetailsPanel({ ca, canWrite, canDelete, onExport, onDelete, t 
             type="button"
             size="xs"
             variant="danger"
-            onClick={() => {
-              const reason = prompt(t('cas.offline.reason')) || ''
-              onExport('offline', reason)
+            onClick={async () => {
+              const reason = await showPrompt(t('cas.reason'), {
+                title: t('cas.takeOffline'),
+                type: 'text',
+                placeholder: t('cas.reason'),
+                confirmText: t('cas.takeOffline')
+              })
+              if (reason !== null) {
+                onExport('offline', reason || '')
+              }
             }}
           >
             <ShieldWarning size={12} className="sm:w-3.5 sm:h-3.5" /> {t('cas.offline.takeOffline')}
