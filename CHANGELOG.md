@@ -24,6 +24,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 - Token capped at 8192 bytes.
 - Tokens stored using the same encrypted-property pattern as other secrets (master key in `/etc/ucm/master.key`).
 
+### Fixed
+- `DELETE /api/v2/webhooks/<id>` now returns 204 No Content (was 200 with body), aligning with the project DELETE convention.
+
 ## [2.155] - 2026-05-10
 
 Auto-renewal UI, PostgreSQL migration recovery (closes [#115](https://github.com/NeySlim/ultimate-ca-manager/issues/115)), LAN-friendly rate limiting, and master-key backup safeguards.
