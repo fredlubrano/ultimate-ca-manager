@@ -11,7 +11,7 @@
 
 > **UCM is a young and actively developed project.** Feedback, bug reports, and feature requests are very welcome! Feel free to [open an issue](https://github.com/NeySlim/ultimate-ca-manager/issues) — every report helps make UCM better.
 
-> **Latest release — v2.155** (2026-05-10): auto-renewal UI, PostgreSQL migration recovery, LAN-friendly rate limiting, and master-key backup safeguards. See the [v2.155 release notes](https://github.com/NeySlim/ultimate-ca-manager/releases/latest) and the full [CHANGELOG](CHANGELOG.md).
+> **Latest release — v2.156** (2026-05-12): per-webhook custom authentication ([#116](https://github.com/NeySlim/ultimate-ca-manager/issues/116)) with five auth types (`none`, `bearer`, `basic`, `api_key`, `custom`), encrypted tokens at rest, and a live request-preview pane in the webhook form. See the [v2.156 release notes](https://github.com/NeySlim/ultimate-ca-manager/releases/latest) and the full [CHANGELOG](CHANGELOG.md).
 
 ![Dashboard](docs/screenshots/dashboard-dark.png)
 
