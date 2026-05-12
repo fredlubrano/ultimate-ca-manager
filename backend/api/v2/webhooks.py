@@ -15,7 +15,7 @@ from services.webhook_service import WebhookEndpoint, WebhookService
 from utils.db_transaction import safe_commit
 from utils.decorators import require_json_body
 from utils.encryption import encrypt_if_needed
-from utils.response import created_response, error_response, success_response
+from utils.response import created_response, error_response, no_content_response, success_response
 from utils.ssrf_protection import validate_url_not_cloud_metadata
 
 logger = logging.getLogger(__name__)
@@ -409,7 +409,7 @@ def delete_webhook(endpoint_id):
     ok, _err = safe_commit(logger, "Failed to delete webhook")
     if not ok:
         return _err
-    return success_response(message="Webhook deleted")
+    return no_content_response()
 
 
 @bp.route('/api/v2/webhooks/<int:endpoint_id>/toggle', methods=['POST'])
