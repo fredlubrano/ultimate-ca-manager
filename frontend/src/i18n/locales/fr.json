@@ -2258,7 +2258,8 @@
       "notifications": "Notifications",
       "interface": "Interface",
       "about": "Info",
-      "integrations": "Intégrations"
+      "integrations": "Intégrations",
+      "automation": "Automatisation"
     },
     "remoteSyslog": "Syslog distant",
     "remoteSyslogDesc": "Transférer les événements d'audit vers un serveur syslog distant pour la centralisation des logs et l'intégration SIEM.",
