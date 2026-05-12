@@ -2060,7 +2060,8 @@
       "notifications": "Notificações",
       "interface": "Interface",
       "about": "Info",
-      "integrations": "Integrações"
+      "integrations": "Integrações",
+      "automation": "Automação"
     },
     "remoteSyslog": "Remote Syslog",
     "remoteSyslogDesc": "Forward audit log events to a remote syslog server for centralized logging and SIEM integration.",

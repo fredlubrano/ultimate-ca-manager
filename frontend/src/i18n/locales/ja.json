@@ -2060,7 +2060,8 @@
       "notifications": "通知",
       "interface": "インターフェース",
       "about": "情報",
-      "integrations": "統合"
+      "integrations": "統合",
+      "automation": "自動化"
     },
     "remoteSyslog": "Remote Syslog",
     "remoteSyslogDesc": "Forward audit log events to a remote syslog server for centralized logging and SIEM integration.",
