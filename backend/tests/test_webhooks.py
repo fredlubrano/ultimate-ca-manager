@@ -192,7 +192,7 @@ class TestWebhookCRUD:
         wh_id = created['id']
 
         r = auth_client.delete(f'{WH}/{wh_id}')
-        assert r.status_code == 200
+        assert r.status_code == 204
 
         # Verify deleted — should 404
         r = auth_client.get(f'{WH}/{wh_id}')
