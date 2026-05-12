@@ -731,7 +731,7 @@ export const helpContent = {
           { label: 'Database', text: 'Active backend (SQLite or native PostgreSQL), size, table count, bidirectional migration UI with safety checks' },
           { label: 'HTTPS', text: 'TLS certificate for the UCM web interface' },
           { label: 'Updates', text: 'Check for new versions, view changelog, auto-update (DEB/RPM)' },
-          { label: 'Webhooks', text: 'HTTP webhooks for certificate events (issue, revoke, expire) — internal LAN URLs allowed; cloud-metadata IPs blocked' },
+          { label: 'Webhooks', text: 'HTTP webhooks for certificate events (issue, revoke, expire) — internal LAN URLs allowed; cloud-metadata IPs blocked. Optional outbound auth: Bearer, Basic, API key, or custom header' },
         ]
       },
       {
