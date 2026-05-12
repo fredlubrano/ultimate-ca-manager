@@ -1647,12 +1647,25 @@ Configure HTTP webhooks to notify external systems on events:
 - User login, logout
 - Backup created
 
+### Authentication
+
+Optional outbound authentication (all apply in addition to the optional HMAC signature):
+
+- **None** — No auth header (public webhooks)
+- **Bearer** — Authorization: Bearer {token}
+- **Basic** — Authorization: Basic base64(username:password)
+- **API Key** — Custom header (e.g. X-Api-Key: {token})
+- **Custom** — Authorization: {scheme} {token} (e.g. auth-key VALUE)
+
+Tokens are stored encrypted and never returned in the UI.
+
 ### Creating a Webhook
 1. Click **Add Webhook**
 2. Enter the **URL** (must be HTTPS)
 3. Select the **events** to subscribe to
-4. Optionally set a **secret** for HMAC signature verification
-5. Click **Create**
+4. Choose **authentication type** and provide credentials (optional)
+5. Optionally set a **secret** for HMAC signature verification
+6. Click **Create**
 
 ### Testing
 Click **Test** to send a sample event to the webhook URL and verify it's reachable.
