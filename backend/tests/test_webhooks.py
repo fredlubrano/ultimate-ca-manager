@@ -102,7 +102,7 @@ class TestWebhookCRUD:
             'url': 'https://hook.example.com/test',
             'events': ['certificate.issued']
         })
-        data = assert_success(r)
+        data = assert_success(r, 201)
         assert data.get('name') == 'Test Hook'
         assert data.get('url') == 'https://hook.example.com/test'
         assert 'id' in data
@@ -114,7 +114,7 @@ class TestWebhookCRUD:
             'url': 'https://hook.example.com/get-test',
             'events': ['certificate.revoked']
         })
-        created = assert_success(r)
+        created = assert_success(r, 201)
         wh_id = created['id']
 
         r = auth_client.get(f'{WH}/{wh_id}')
@@ -129,7 +129,7 @@ class TestWebhookCRUD:
             'url': 'https://hook.example.com/update-test',
             'events': ['certificate.issued']
         })
-        created = assert_success(r)
+        created = assert_success(r, 201)
         wh_id = created['id']
 
         r = put_json(auth_client, f'{WH}/{wh_id}', {
@@ -146,7 +146,7 @@ class TestWebhookCRUD:
             'url': 'https://hook.example.com/toggle-test',
             'events': ['certificate.issued']
         })
-        created = assert_success(r)
+        created = assert_success(r, 201)
         wh_id = created['id']
         original_enabled = created.get('enabled', True)
 
@@ -161,7 +161,7 @@ class TestWebhookCRUD:
             'url': 'https://hook.example.com/test-target',
             'events': ['certificate.issued']
         })
-        created = assert_success(r)
+        created = assert_success(r, 201)
         wh_id = created['id']
 
         r = post_json(auth_client, f'{WH}/{wh_id}/test', {})
@@ -175,7 +175,7 @@ class TestWebhookCRUD:
             'url': 'https://hook.example.com/regen-test',
             'events': ['certificate.issued']
         })
-        created = assert_success(r)
+        created = assert_success(r, 201)
         wh_id = created['id']
         r = post_json(auth_client, f'{WH}/{wh_id}/regenerate-secret', {})
         data = assert_success(r)
@@ -188,7 +188,7 @@ class TestWebhookCRUD:
             'url': 'https://hook.example.com/delete-test',
             'events': ['certificate.issued']
         })
-        created = assert_success(r)
+        created = assert_success(r, 201)
         wh_id = created['id']
 
         r = auth_client.delete(f'{WH}/{wh_id}')
