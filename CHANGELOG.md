@@ -9,6 +9,13 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.158] - 2026-06-03
+
+### Fixed
+- SSH certificate issuance: cast TTL values to int to prevent str/int comparison error (#119)
+- SSH setup script: fix import path after module reorganization (#119)
+- mTLS certificate generation: use correct CertificateService method signature (#119)
+
 ## [2.157] - 2026-05-13
 
 ### Fixed
