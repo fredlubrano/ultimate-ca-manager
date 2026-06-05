@@ -459,18 +459,22 @@ export default function DiscoveryPage() {
       }
     },
     {
-      key: 'schedule_interval',
+      key: 'schedule_interval_minutes',
       header: t('discovery.schedule'),
       priority: 3,
       hideOnMobile: true,
       render: (val) => {
-        if (!val) return <Badge variant="secondary" size="sm">{t('discovery.manual')}</Badge>
-        const hours = Math.round(val / 3600)
+        if (!val || val === 0) return <Badge variant="secondary" size="sm">{t('discovery.manual')}</Badge>
+        const hours = Math.round(val / 60)
+        if (hours >= 24) {
+          const days = Math.round(hours / 24)
+          return <Badge variant="info" size="sm" icon={Clock}>{days}d</Badge>
+        }
         return <Badge variant="info" size="sm" icon={Clock}>{hours}h</Badge>
       }
     },
     {
-      key: 'enabled',
+      key: 'schedule_enabled',
       header: t('common.status'),
       priority: 2,
       render: (val) => (
