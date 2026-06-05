@@ -1,4 +1,3 @@
-import re
 import logging
 
 from flask import request, g
@@ -43,18 +42,13 @@ def change_password():
     if not new_password:
         return error_response('New password is required', 400)
 
-    if len(new_password) < 8:
-        return error_response('Password must be at least 8 characters', 400)
-
-    # Password complexity check
-    if not re.search(r'[A-Z]', new_password):
-        return error_response('Password must contain at least one uppercase letter', 400)
-    if not re.search(r'[a-z]', new_password):
-        return error_response('Password must contain at least one lowercase letter', 400)
-    if not re.search(r'[0-9]', new_password):
-        return error_response('Password must contain at least one digit', 400)
-    if not re.search(r'[!@#$%^&*()_+\-=\[\]{}|;:,.<>?/~`]', new_password):
-        return error_response('Password must contain at least one special character', 400)
+    # Admin bypass: admin can skip policy validation if enabled
+    is_admin = user.role == 'admin'
+    from security.password_policy import validate_password, is_admin_bypass_enabled
+    if not (is_admin and is_admin_bypass_enabled()):
+        is_valid, errors = validate_password(new_password)
+        if not is_valid:
+            return error_response(errors[0], 400)
 
     # Skip current-password verification only when the SERVER says so
     if not skip_current_check:
