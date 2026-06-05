@@ -175,9 +175,8 @@ def patch_eab_credential(cred_id):
 def revoke_eab_credential(cred_id):
     """Revoke or permanently delete an EAB credential.
 
-    * Active credentials are revoked (status -> 'revoked') rather than
-      hard-deleted so audit / UI history keeps the binding visible.
-    * Used or already-revoked credentials can be permanently deleted.
+    * Active credentials are soft-revoked (status -> 'revoked').
+    * Used or already-revoked credentials are permanently deleted.
     """
     from utils.datetime_utils import utc_now as _utc_now
     cred = AcmeEabCredential.query.get(cred_id)
@@ -186,14 +185,9 @@ def revoke_eab_credential(cred_id):
 
     user_id = getattr(g, 'user_id', None) or (getattr(g, 'current_user', None).id if getattr(g, 'current_user', None) else None)
 
-    # Permanent delete for used/revoked credentials
-    if cred.status in ('used', 'revoked'):
-        AuditService.log_action(
-            action='acme.eab_credential.delete',
-            resource_type='acme_eab_credential',
-            resource_id=str(cred_id),
-            details=f'Deleted EAB credential kid={cred.kid} (was {cred.status})'
-        )
+    if cred.status == 'revoked':
+        # Permanent delete for already-revoked
+        kid = cred.kid
         db.session.delete(cred)
         try:
             db.session.commit()
@@ -201,12 +195,33 @@ def revoke_eab_credential(cred_id):
             db.session.rollback()
             logger.error(f"Failed to delete EAB credential {cred_id}: {e}")
             return error_response('Failed to delete EAB credential', 500)
+        AuditService.log_action(
+            action='acme.eab_credential.deleted',
+            resource_type='acme_eab_credential',
+            resource_id=str(cred_id),
+            details=f'Permanently deleted EAB credential kid={kid}'
+        )
+        return no_content_response()
+
+    if cred.status == 'used':
+        # Permanent delete for used credentials
+        kid = cred.kid
+        db.session.delete(cred)
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Failed to delete EAB credential {cred_id}: {e}")
+            return error_response('Failed to delete EAB credential', 500)
+        AuditService.log_action(
+            action='acme.eab_credential.deleted',
+            resource_type='acme_eab_credential',
+            resource_id=str(cred_id),
+            details=f'Permanently deleted used EAB credential kid={kid}'
+        )
         return no_content_response()
 
     # Soft-revoke for active credentials
-    if cred.status == 'revoked':
-        return success_response(data=cred.to_dict(), message='Already revoked')
-
     cred.status = 'revoked'
     cred.revoked_at = _utc_now()
     cred.revoked_by_user_id = user_id
