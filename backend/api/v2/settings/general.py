@@ -36,6 +36,15 @@ def get_general_settings():
         'base_url': get_config('base_url', ''),
         'date_format': get_config('date_format', 'short'),
         'show_time': get_config('show_time', 'true') == 'true',
+        # Password policy
+        'min_password_length': int(get_config('min_password_length', '8')),
+        'max_password_length': int(get_config('max_password_length', '128')),
+        'password_require_uppercase': get_config('password_require_uppercase', 'true') == 'true',
+        'password_require_lowercase': get_config('password_require_lowercase', 'true') == 'true',
+        'password_require_numbers': get_config('password_require_numbers', 'true') == 'true',
+        'password_require_special': get_config('password_require_special', 'true') == 'true',
+        # Security toggles
+        'enforce_2fa': get_config('enforce_2fa', 'false') == 'true',
     })
 
 
@@ -50,7 +59,13 @@ def update_general_settings():
         'site_name', 'system_name', 'timezone', 'auto_backup_enabled', 'backup_frequency',
         'backup_retention_days', 'backup_password', 'session_timeout',
         'session_max_lifetime', 'max_login_attempts', 'lockout_duration',
-        'protocol_base_url', 'http_protocol_port', 'base_url', 'date_format', 'show_time'
+        'protocol_base_url', 'http_protocol_port', 'base_url', 'date_format', 'show_time',
+        # Password policy
+        'min_password_length', 'max_password_length',
+        'password_require_uppercase', 'password_require_lowercase',
+        'password_require_numbers', 'password_require_special',
+        # Security toggles
+        'enforce_2fa',
     ]
 
     # Validate http_protocol_port if provided
