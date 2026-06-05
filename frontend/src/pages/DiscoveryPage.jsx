@@ -197,9 +197,9 @@ export default function DiscoveryPage() {
         await discoveryService.createProfile(formData)
         showSuccess(t('discovery.profileCreated'))
       }
+      await loadProfiles()
       setShowProfileForm(false)
       setEditingProfile(null)
-      loadProfiles()
     } catch (error) {
       showError(error.message || t('messages.errors.saveFailed'))
     }
