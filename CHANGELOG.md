@@ -9,6 +9,14 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.162-rc1] - 2026-06-06
+
+### Fixed
+- ACME domain form (#123) — Radix Select fields (DNS provider, issuing CA) now display correctly instead of appearing blank. Values kept as strings in state (Radix requirement), converted to integers only on submit.
+- ACME domain form — initial state for `dns_provider_id` now safely handles undefined values via optional chaining.
+- Policies form — Radix Select values for CA and approval group now display correctly (strings for Radix compat).
+- Duplicate CHANGELOG entries in 2.161 cleaned up.
+
 ## [2.161] - 2026-06-05
 
 ### Added
@@ -22,8 +30,6 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 - Password policy centralization (#121) — all validation moved to `security/password_policy.py`, enforced across login, password change, account creation, and force-change flows. Admin bypass retained.
 - Discovery profiles (#122) — corrected field name mismatches (`schedule_enabled`, `schedule_interval_minutes`) in `DiscoveryPage.jsx` and `ProfileDetailPanel.jsx`; profile list now refreshes after create/update.
 - All `db.session.commit()` calls wrapped in `safe_commit()` — prevents 500 crashes from IntegrityError.
-- GitHub code scanning alerts: `react-router` → `6.30.4`, batch-updated Python dependencies.
-- Frontend quality check: removed React 18 false-positive hook provider tests (479 tests clean).
 - GitHub code scanning alerts: `react-router` → `6.30.4`, batch-updated Python dependencies.
 - Frontend quality check: removed React 18 false-positive hook provider tests (479 tests clean).
 
