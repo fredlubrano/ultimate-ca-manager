@@ -7,9 +7,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ---
 
-## [Unreleased]
 
-## [2.162-rc1] - 2026-06-06
+## [2.162] - 2026-06-06
 
 ### Fixed
 - ACME domain form (#123) — Radix Select fields (DNS provider, issuing CA) now display correctly instead of appearing blank. Values kept as strings in state (Radix requirement), converted to integers only on submit.
