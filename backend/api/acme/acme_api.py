@@ -435,7 +435,7 @@ a{{color:#2563eb}}
 {paragraphs_html}
 </body></html>"""
     
-    response = acme_response({'html': html, 'raw': body})
+    response = make_response(html, 200)
     response.headers['Content-Type'] = 'text/html; charset=utf-8'
     return response
 
