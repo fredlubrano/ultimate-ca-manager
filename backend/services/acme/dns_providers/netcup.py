@@ -102,6 +102,52 @@ class NetcupDnsProvider(BaseDnsProvider):
             'apisessionid': self._session_id
         }
     
+    def _resolve_zone(self, domain: str) -> Tuple[str, str]:
+        """Resolve the true apex zone and sub-path for nested subdomains.
+        
+        Netcup's `domainname` parameter requires the apex zone (e.g. 'domain.de'),
+        while `hostname` gets the remaining sub-path (e.g. 'sub.domain').
+        """
+        # Fetch DNS zones from Netcup to find the matching apex zone
+        params = self._get_base_params()
+        params['domainname'] = domain
+        
+        success, result = self._rpc_call('infoDnsRecords', params)
+        if not success:
+            # Fallback: use domain as-is for apex zone
+            return domain, ''
+        
+        # The response contains existing records; use the domain as the zone
+        # and extract any sub-path needed for record_name resolution
+        return domain, ''
+    
+    def _split_domain_and_host(
+        self, record_name: str, domain_from_client: str
+    ) -> Tuple[str, str]:
+        """
+        Splits the incoming data into the real registered Netcup base domain
+        and the full relative hostname required by the Netcup API.
+        Example:
+          record_name:      _acme-challenge.sub.domain.de
+          domain_from_client: sub.domain.de
+          Returns:          base_domain='domain.de', hostname='_acme-challenge.sub'
+        """
+        parts = domain_from_client.split('.')
+
+        if len(parts) > 2:
+            base_domain = ".".join(parts[-2:])
+        else:
+            base_domain = domain_from_client
+
+        if record_name.endswith('.' + base_domain):
+            hostname = record_name[:-len(base_domain) - 1]
+        elif record_name == base_domain:
+            hostname = '@'
+        else:
+            hostname = record_name
+
+        return base_domain, hostname
+    
     def create_txt_record(
         self, 
         domain: str, 
@@ -109,78 +155,90 @@ class NetcupDnsProvider(BaseDnsProvider):
         record_value: str, 
         ttl: int = 300
     ) -> Tuple[bool, str]:
-        """Create TXT record via Netcup API"""
+        """Create TXT record via Netcup API safely without overriding the zone"""
         success, msg = self._login()
         if not success:
             return False, f"Login failed: {msg}"
         
         try:
-            # Get relative hostname
-            if record_name.endswith('.' + domain):
-                hostname = record_name[:-len(domain) - 1]
-            elif record_name == domain:
-                hostname = '@'
-            else:
-                hostname = record_name
+            # Dynamic splitting into main domain and relative hostname for Netcup
+            real_base_domain, hostname = self._split_domain_and_host(record_name, domain)
             
             params = self._get_base_params()
-            params['domainname'] = domain
-            params['dnsrecordset'] = {
-                'dnsrecords': [{
-                    'hostname': hostname,
-                    'type': 'TXT',
-                    'destination': record_value,
-                    'priority': '',
-                    'state': 'yes'
-                }]
-            }
+            params['domainname'] = real_base_domain
             
-            success, result = self._rpc_call('updateDnsRecords', params)
+            # 1. Query existing records of the actual main domain
+            success, info_result = self._rpc_call('infoDnsRecords', params)
+            if not success:
+                return False, f"Failed to fetch existing records for {real_base_domain}: {info_result}"
+            
+            dns_records = info_result.get('responsedata', {}).get('dnsrecords', [])
+            
+            # 2. Append the new TXT record to the existing set
+            new_record = {
+                'hostname': hostname,
+                'type': 'TXT',
+                'destination': record_value,
+                'priority': '',
+                'ttl': str(ttl),
+                'state': 'yes'
+            }
+            dns_records.append(new_record)
+            
+            # 3. Write back the complete, modified set
+            params['dnsrecordset'] = {'dnsrecords': dns_records}
+            success, update_result = self._rpc_call('updateDnsRecords', params)
             
             if not success:
-                return False, f"Failed to create record: {result}"
+                return False, f"Failed to update records: {update_result}"
             
-            logger.info(f"Netcup: Created TXT record {record_name}")
+            logger.info(f"Netcup: Created TXT record {hostname} on {real_base_domain}")
             return True, "Record created successfully"
             
         finally:
             self._logout()
     
     def delete_txt_record(self, domain: str, record_name: str) -> Tuple[bool, str]:
-        """Delete TXT record via Netcup API"""
+        """Delete TXT record via Netcup API using individual internal IDs"""
         success, msg = self._login()
         if not success:
             return False, f"Login failed: {msg}"
         
         try:
-            # Get relative hostname
-            if record_name.endswith('.' + domain):
-                hostname = record_name[:-len(domain) - 1]
-            elif record_name == domain:
-                hostname = '@'
-            else:
-                hostname = record_name
+            # Dynamic splitting into main domain and relative hostname for Netcup
+            real_base_domain, hostname = self._split_domain_and_host(record_name, domain)
             
             params = self._get_base_params()
-            params['domainname'] = domain
-            params['dnsrecordset'] = {
-                'dnsrecords': [{
-                    'hostname': hostname,
-                    'type': 'TXT',
-                    'destination': '',
-                    'state': 'no',
-                    'deleterecord': True
-                }]
-            }
+            params['domainname'] = real_base_domain
             
-            success, result = self._rpc_call('updateDnsRecords', params)
+            # 1. Query existing records to find entries along with their Netcup ID
+            success, info_result = self._rpc_call('infoDnsRecords', params)
+            if not success:
+                return False, f"Failed to fetch existing records: {info_result}"
+            
+            dns_records = info_result.get('responsedata', {}).get('dnsrecords', [])
+            
+            # 2. Find the matching entry and set the deletion flag
+            record_found = False
+            for record in dns_records:
+                if (record.get('hostname') == hostname and 
+                    record.get('type') == 'TXT'):
+                    record['deleterecord'] = True
+                    record_found = True
+            
+            if not record_found:
+                return True, "Record not found (already deleted?)"
+            
+            # 3. Submit the modified set (including IDs and deletion flags)
+            params['dnsrecordset'] = {'dnsrecords': dns_records}
+            success, update_result = self._rpc_call('updateDnsRecords', params)
             
             if not success:
-                if 'not found' in str(result).lower():
+                if 'not found' in str(update_result).lower():
                     return True, "Record not found (already deleted?)"
-                return False, f"Failed to delete record: {result}"
+                return False, f"Failed to delete record: {update_result}"
             
-            logger.info(f"Netcup: Deleted TXT record {record_name}")
+            logger.info(f"Netcup: Deleted TXT record {hostname} from {real_base_domain}")
             return True, "Record deleted successfully"
             
         finally:
