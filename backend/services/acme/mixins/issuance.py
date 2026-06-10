@@ -185,22 +185,8 @@ class IssuanceMixin:
         Returns:
             List of IP address strings
         """
-        from cryptography import x509
-        
-        ips = []
-        
-        # Get SANs
-        try:
-            san_ext = csr.extensions.get_extension_for_oid(x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
-            for name in san_ext.value:
-                if isinstance(name, x509.IPAddress):
-                    ip_str = str(name.value)
-                    if ip_str not in ips:
-                        ips.append(ip_str)
-        except Exception:
-            pass
-        
-        return ips
+        from utils.acme_ip import extract_ip_from_csr_san
+        return extract_ip_from_csr_san(csr)
     
     def _extract_domains_from_csr(self, csr) -> List[str]:
         """Extract domain names from CSR
