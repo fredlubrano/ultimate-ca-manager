@@ -10,6 +10,18 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.166] - 2026-06-10
+
+### Fixed
+- **ACME ToS XSS** — HTML-escape terms of service content before rendering in React (#125).
+- **Password policy bypass** — removed hardcoded `len < 8` check that could be bypassed with custom policy; policy enforcement now uses the full `validate_password()` result.
+- **Migration transaction** — explicit `rollback()` after FK disable failure prevents `InFailedSqlTransaction` poison in psycopg2 connections.
+- **Netcup DNS** — multi-part TLD support in `_split_domain_and_host` (e.g. `co.uk`).
+- **Policy config cache** — `@lru_cache` on policy config to avoid repeated DB reads; removed dead code from legacy password checks.
+- **ACME EAB** — proper notes field on EAB credentials, persisted in DB.
+- **Auto-renewal** — fixed source validation (whitelist check) preventing valid sources from being rejected.
+- **ExportDropdown** — hardcoded English strings replaced with `t()` interpolation (all 9 locales synced).
+
 ## [2.165] - 2026-06-09
 
 ### Added
