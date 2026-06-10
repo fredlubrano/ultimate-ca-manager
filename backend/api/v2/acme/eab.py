@@ -12,6 +12,7 @@ from models import db, AcmeEabCredential, SystemConfig
 from services.audit_service import AuditService
 from auth.unified import require_auth
 from utils.response import success_response, error_response, no_content_response
+from utils.db_transaction import safe_commit
 
 from . import bp, logger
 
@@ -41,11 +42,7 @@ def set_eab_required():
             value='true' if value else 'false',
             description='Require External Account Binding for new ACME account registration'
         ))
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Failed to set acme_eab_required: {e}")
+    if not safe_commit(logger, "Failed to update setting"):
         return error_response('Failed to update setting', 500)
 
     AuditService.log_action(
@@ -114,11 +111,7 @@ def create_eab_credential():
         status='active'
     )
     db.session.add(cred)
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Failed to create EAB credential: {e}")
+    if not safe_commit(logger, "Failed to create EAB credential"):
         return error_response('Failed to create EAB credential', 500)
 
     AuditService.log_action(
@@ -154,11 +147,7 @@ def patch_eab_credential(cred_id):
     if 'notes' in data:
         cred.notes = (data['notes'] or '').strip() or None
 
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Failed to patch EAB credential {cred_id}: {e}")
+    if not safe_commit(logger, "Failed to update EAB credential"):
         return error_response('Failed to update EAB credential', 500)
 
     AuditService.log_action(
@@ -189,11 +178,7 @@ def revoke_eab_credential(cred_id):
         # Permanent delete for already-revoked
         kid = cred.kid
         db.session.delete(cred)
-        try:
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Failed to delete EAB credential {cred_id}: {e}")
+        if not safe_commit(logger, "Failed to delete EAB credential"):
             return error_response('Failed to delete EAB credential', 500)
         AuditService.log_action(
             action='acme.eab_credential.deleted',
@@ -207,11 +192,7 @@ def revoke_eab_credential(cred_id):
         # Permanent delete for used credentials
         kid = cred.kid
         db.session.delete(cred)
-        try:
-            db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            logger.error(f"Failed to delete EAB credential {cred_id}: {e}")
+        if not safe_commit(logger, "Failed to delete EAB credential"):
             return error_response('Failed to delete EAB credential', 500)
         AuditService.log_action(
             action='acme.eab_credential.deleted',
@@ -225,11 +206,7 @@ def revoke_eab_credential(cred_id):
     cred.status = 'revoked'
     cred.revoked_at = _utc_now()
     cred.revoked_by_user_id = user_id
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        logger.error(f"Failed to revoke EAB credential {cred_id}: {e}")
+    if not safe_commit(logger, "Failed to revoke EAB credential"):
         return error_response('Failed to revoke EAB credential', 500)
 
     AuditService.log_action(

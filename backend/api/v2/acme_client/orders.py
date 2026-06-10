@@ -11,6 +11,7 @@ POST   /api/v2/acme/client/orders/<id>/renew
 """
 
 import logging
+import time
 from flask import request
 
 from api.v2.acme_client import bp
@@ -272,7 +273,10 @@ def verify_challenges(order_id):
         )
 
     except Exception as e:
-        db.session.rollback()
+        try:
+            db.session.rollback()
+        except Exception as rb_err:
+            logger.error(f'Rollback failed during ACME challenge verification: {rb_err}')
         logger.error(f'ACME challenge verification failed: {e}')
         return error_response('Verification failed', 500)
 
@@ -421,8 +425,6 @@ def _auto_poll_and_finalize(client, order) -> dict:
     but inline during the initial certificate request. Returns a status dict
     that the caller embeds in the API response.
     """
-    import time
-
     result = {
         'dns_propagation_wait': False,
         'challenge_submitted': False,
@@ -439,8 +441,8 @@ def _auto_poll_and_finalize(client, order) -> dict:
             return result
 
         # 1. Wait for DNS propagation (same delay as renewal service)
-        logger.info('Waiting 30s for DNS propagation...')
-        time.sleep(30)
+        logger.info('Waiting 10s for DNS propagation...')
+        time.sleep(10)
         result['dns_propagation_wait'] = True
 
         # 2. Submit challenges for validation
@@ -453,8 +455,8 @@ def _auto_poll_and_finalize(client, order) -> dict:
                 logger.warning(f'Challenge submission failed for {domain}: {msg}')
 
         # 3. Poll order status until ready/valid/invalid or timeout
-        max_wait = 120  # seconds
-        poll_interval = 5
+        max_wait = 60  # seconds
+        poll_interval = 3
         elapsed = 0
         while elapsed < max_wait:
             time.sleep(poll_interval)
@@ -490,7 +492,9 @@ def _auto_poll_and_finalize(client, order) -> dict:
                 break
 
     except Exception as e:
-        result['error'] = str(e)
+        result['error'] = 'ACME order failed, see server logs for details'
         logger.error(f'Auto-poll error for order {order.id}: {e}')
+
+    logger.info(f'Auto-poll result for order {order.id}: status={result.get("polling_status")}, finalized={result["finalized"]}, error={result["error"]}')
 
     return result

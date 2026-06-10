@@ -13,6 +13,7 @@ from auth.unified import AuthManager, require_auth, require_permission
 from utils.response import success_response, error_response
 from utils.db_transaction import safe_commit
 from models import User, db
+from security.password_policy import validate_password
 
 logger = logging.getLogger(__name__)
 from datetime import datetime
@@ -416,19 +417,14 @@ def reset_password():
     if not token:
         return error_response('Reset token is required', 400)
     
-    if not new_password or len(new_password) < 8:
-        return error_response('Password must be at least 8 characters', 400)
-    
-    # Validate password strength
-    try:
-        from security.password_policy import validate_password
-        is_valid, errors = validate_password(new_password)
-        if not is_valid:
-            first = errors[0] if errors else {'message': 'Invalid password'}
-            return error_response(first.get('message', 'Invalid password'), 400)
-    except ImportError as e:
-        logger.warning(f"Password policy module not available, skipping strength check: {e}")
-        pass  # Password policy not available
+    if not new_password:
+        return error_response('New password is required', 400)
+
+    # Validate password strength against configurable policy
+    is_valid, errors = validate_password(new_password)
+    if not is_valid:
+        first = errors[0] if errors else {'message': 'Invalid password'}
+        return error_response(first.get('message', 'Invalid password'), 400)
     
     # Find user by token hash
     token_hash = hashlib.sha256(token.encode()).hexdigest()

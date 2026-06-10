@@ -3507,6 +3507,7 @@
     },
     "formatJksDesc": "Java KeyStore、証明書 + 鍵",
     "jksNote": "JKSには常に秘密鍵が含まれます",
+    "pkcs12Title": "PKCS#12をエクスポート",
     "pkcs12PasswordPrompt": "PKCS#12 ファイルのパスワードを入力してください"
   },
   "userCertificates": {

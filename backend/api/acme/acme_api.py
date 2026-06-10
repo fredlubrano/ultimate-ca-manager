@@ -13,6 +13,7 @@ from services.acme import AcmeService
 from models.acme_models import AcmeAccount, AcmeOrder, AcmeChallenge
 from config.settings import Config
 import logging
+import re
 from utils.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
@@ -402,8 +403,9 @@ def terms_of_service():
         for block in body.split('\n\n'):
             block = block.strip()
             if block:
-                # Auto-linkify URLs and emails
-                import re
+                # Escape HTML to prevent XSS
+                block = block.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                # Auto-linkify URLs and emails (after escaping)
                 block = re.sub(
                     r'(https?://[^\s<>()]+)',
                     r'<a href="\1" target="_blank" rel="noopener">\1</a>',

@@ -8,6 +8,7 @@ from services.audit_service import AuditService
 from utils.response import success_response, error_response
 from utils.db_transaction import safe_commit
 from auth.unified import require_auth
+from security.password_policy import validate_password, is_admin_bypass_enabled
 
 from . import bp
 
@@ -45,7 +46,6 @@ def change_password():
 
     # Admin bypass: admin can skip policy validation if enabled
     is_admin = user.role == 'admin'
-    from security.password_policy import validate_password, is_admin_bypass_enabled
     if not (is_admin and is_admin_bypass_enabled()):
         is_valid, errors = validate_password(new_password)
         if not is_valid:

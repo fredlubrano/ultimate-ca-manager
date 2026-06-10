@@ -54,6 +54,7 @@ def downgrade(conn):
         )
         conn.commit()
     else:
+        from sqlalchemy import text
         conn.execute(
             text("DELETE FROM system_config WHERE key = 'acme.terms_of_service'")
         )
