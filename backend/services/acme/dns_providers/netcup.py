@@ -102,40 +102,49 @@ class NetcupDnsProvider(BaseDnsProvider):
             'apisessionid': self._session_id
         }
     
-    def _resolve_zone(self, domain: str) -> Tuple[str, str]:
-        """Resolve the true apex zone and sub-path for nested subdomains.
-        
-        Netcup's `domainname` parameter requires the apex zone (e.g. 'domain.de'),
-        while `hostname` gets the remaining sub-path (e.g. 'sub.domain').
-        """
-        # Fetch DNS zones from Netcup to find the matching apex zone
-        params = self._get_base_params()
-        params['domainname'] = domain
-        
-        success, result = self._rpc_call('infoDnsRecords', params)
-        if not success:
-            # Fallback: use domain as-is for apex zone
-            return domain, ''
-        
-        # The response contains existing records; use the domain as the zone
-        # and extract any sub-path needed for record_name resolution
-        return domain, ''
-    
+    # Known multi-part (2-level) TLDs that need 3-part base domain
+    _MULTI_PART_TLDS = {
+        'co.uk', 'org.uk', 'ac.uk', 'me.uk', 'net.uk',  # UK
+        'com.au', 'net.au', 'org.au', 'edu.au',  # Australia
+        'co.jp', 'or.jp', 'ne.jp', 'ac.jp', 'go.jp',  # Japan
+        'co.nz', 'org.nz', 'net.nz', 'govt.nz',  # New Zealand
+        'com.br', 'net.br', 'org.br',  # Brazil
+        'co.in', 'co.za', 'co.ke', 'co.zw',  # India/South Africa/Kenya/Zimbabwe
+        'com.hk', 'net.hk', 'org.hk',  # Hong Kong
+        'com.sg', 'net.sg', 'org.sg', 'gov.sg',  # Singapore
+        'com.tw', 'org.tw', 'edu.tw', 'gov.tw', 'idv.tw',  # Taiwan
+        'com.vn', 'net.vn', 'org.vn',  # Vietnam
+        'com.my', 'net.my', 'org.my',  # Malaysia
+        'com.mx', 'net.mx', 'org.mx',  # Mexico
+        'com.ar', 'net.ar', 'org.ar',  # Argentina
+        'com.pe', 'net.pe', 'org.pe',  # Peru
+        'com.co', 'net.co', 'org.co',  # Colombia
+        'com.ec', 'net.ec', 'org.ec',  # Ecuador
+        'com.ve', 'net.ve', 'org.ve',  # Venezuela
+    }
+
     def _split_domain_and_host(
         self, record_name: str, domain_from_client: str
     ) -> Tuple[str, str]:
         """
         Splits the incoming data into the real registered Netcup base domain
         and the full relative hostname required by the Netcup API.
+        Handles multi-part TLDs (e.g. .co.uk, .com.au).
         Example:
-          record_name:      _acme-challenge.sub.domain.de
-          domain_from_client: sub.domain.de
-          Returns:          base_domain='domain.de', hostname='_acme-challenge.sub'
+          record_name:      _acme-challenge.sub.example.co.uk
+          domain_from_client: sub.example.co.uk
+          Returns:          base_domain='example.co.uk', hostname='_acme-challenge.sub'
         """
         parts = domain_from_client.split('.')
 
-        if len(parts) > 2:
-            base_domain = ".".join(parts[-2:])
+        # Check for multi-part TLDs
+        if len(parts) >= 3:
+            last_two = '.'.join(parts[-2:])
+            if last_two in self._MULTI_PART_TLDS:
+                # 3-part base domain (e.g. example.co.uk)
+                base_domain = '.'.join(parts[-3:])
+            else:
+                base_domain = '.'.join(parts[-2:])
         else:
             base_domain = domain_from_client
 
@@ -174,7 +183,15 @@ class NetcupDnsProvider(BaseDnsProvider):
             
             dns_records = info_result.get('responsedata', {}).get('dnsrecords', [])
             
-            # 2. Append the new TXT record to the existing set
+            # 2. Remove any existing duplicate (same hostname + type + value)
+            dns_records = [
+                r for r in dns_records
+                if not (r.get('hostname') == hostname
+                        and r.get('type') == 'TXT'
+                        and r.get('destination') == record_value)
+            ]
+
+            # 3. Append the new TXT record
             new_record = {
                 'hostname': hostname,
                 'type': 'TXT',

@@ -3510,6 +3510,7 @@
     },
     "formatJksDesc": "Java KeyStore, certificate + key",
     "jksNote": "JKS always includes the private key",
+    "pkcs12Title": "Export PKCS#12",
     "pkcs12PasswordPrompt": "Enter password for PKCS#12 file"
   },
   "userCertificates": {

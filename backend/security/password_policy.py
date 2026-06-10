@@ -10,6 +10,7 @@ Default policy:
 - At least 1 special character
 """
 
+import functools
 import re
 import logging
 from typing import Tuple, List, Optional
@@ -45,8 +46,17 @@ class PasswordPolicy:
 _DEFAULT_POLICY = PasswordPolicy()
 
 
-def load_policy_from_config() -> PasswordPolicy:
-    """Load password policy from SystemConfig, fallback to defaults."""
+def _invalidate_policy_cache():
+    """Call this after updating password policy in SystemConfig."""
+    load_policy_from_config.cache_clear()
+
+
+@functools.lru_cache(maxsize=16)
+def load_policy_from_config(cache_bust: int = 0) -> PasswordPolicy:
+    """Load password policy from SystemConfig, fallback to defaults.
+
+    Cached via lru_cache; call _invalidate_policy_cache() after policy changes.
+    """
     try:
         from models import SystemConfig
 

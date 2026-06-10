@@ -13,18 +13,8 @@ logger = logging.getLogger(__name__)
 # Create the blueprint here
 bp = Blueprint('users_v2', __name__)
 
-# Password policy constants (shared across sub-modules)
-MIN_PASSWORD_LENGTH = 8
-PASSWORD_REQUIREMENTS = """Password must:
-- Be at least 8 characters long
-- Contain at least one uppercase letter
-- Contain at least one lowercase letter
-- Contain at least one number
-- Contain at least one special character (!@#$%^&*(),.?":{}|<>)"""
-
 # Import password policy (always available since v2.160)
 from security.password_policy import validate_password, get_password_strength, get_policy_requirements
-HAS_PASSWORD_POLICY = True
 
 
 def validate_password_strength(password, username=None):
@@ -32,15 +22,6 @@ def validate_password_strength(password, username=None):
     SECURITY: Validate password meets security requirements
     Returns (is_valid, error_message)
     """
-    # Use new security module if available
-    if HAS_PASSWORD_POLICY:
-        is_valid, errors = validate_password(password, username=username)
-        if not is_valid:
-            first = errors[0] if errors else {'message': 'Invalid password'}
-            return False, first.get('message', 'Invalid password') if isinstance(first, dict) else str(first)
-        return True, None
-
-    # Fallback: use validate_password with default policy (same rules)
     is_valid, errors = validate_password(password, username=username)
     if not is_valid:
         first = errors[0] if errors else {'message': 'Invalid password'}
