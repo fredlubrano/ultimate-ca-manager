@@ -25,6 +25,7 @@ from utils.acme_ip import (
     ip_to_reverse_ptr,
     is_ip_private,
     extract_ip_from_csr_san,
+    format_ip_for_url,
 )
 
 
@@ -110,45 +111,68 @@ class TestIPValidation:
         assert is_ip_private('8.8.8.8') is False
         assert is_ip_private('1.1.1.1') is False
 
+    def test_format_ip_for_url(self):
+        """IPv6 literals must be bracketed for URLs (RFC 3986); IPv4 unchanged"""
+        assert format_ip_for_url('192.0.2.1') == '192.0.2.1'
+        assert format_ip_for_url('2001:db8::1') == '[2001:db8::1]'
+        assert format_ip_for_url('::1') == '[::1]'
+        # Non-IP passes through unchanged
+        assert format_ip_for_url('example.com') == 'example.com'
 
-class TestACMEAPIIPSupport:
-    """Test ACME API endpoints accept IP identifiers"""
 
-    def test_new_order_accepts_ip_identifier(self, client, admin_auth):
-        """new-order endpoint should accept IP identifiers"""
-        response = client.post('/api/v2/acme/new-order', json={
-            'identifiers': [
-                {'type': 'ip', 'value': '192.168.1.1'}
-            ]
-        })
-        
-        # Should not reject IP identifier type
-        assert response.status_code != 400 or 'unsupportedIdentifier' not in response.get_json().get('type', '')
+class TestACMEIdentifierValidation:
+    """Test the shared identifier validator used by new-order / new-authz.
 
-    def test_new_order_validates_ip_format(self, client, admin_auth):
-        """new-order should validate IP address format"""
-        response = client.post('/api/v2/acme/new-order', json={
-            'identifiers': [
-                {'type': 'ip', 'value': 'invalid-ip'}
-            ]
-        })
-        
-        # Should reject invalid IP format
-        data = response.get_json()
-        assert response.status_code == 400
-        assert 'malformed' in data.get('type', '').lower() or 'invalid' in data.get('message', '').lower()
+    ACME endpoints require a full JWS+nonce+account flow, so the RFC 8555/8738
+    identifier validation logic is exercised directly through the helper that
+    both routes call.
+    """
 
-    def test_new_order_mixed_identifiers(self, client, admin_auth):
-        """new-order should accept mixed DNS and IP identifiers"""
-        response = client.post('/api/v2/acme/new-order', json={
-            'identifiers': [
-                {'type': 'dns', 'value': 'example.com'},
-                {'type': 'ip', 'value': '192.168.1.1'}
-            ]
-        })
-        
-        # Should accept mixed identifier types
-        assert response.status_code in [200, 201]
+    def test_accepts_ip_identifier(self):
+        """IP identifier should be accepted and left untouched (canonical)"""
+        from api.acme.acme_api import validate_acme_identifier
+        ident = {'type': 'ip', 'value': '192.168.1.1'}
+        ok, err_type, _ = validate_acme_identifier(ident)
+        assert ok is True
+        assert err_type is None
+        assert ident['value'] == '192.168.1.1'
+
+    def test_normalizes_ipv6_identifier(self):
+        """IPv6 identifier should be normalized to canonical form"""
+        from api.acme.acme_api import validate_acme_identifier
+        ident = {'type': 'ip', 'value': '2001:0db8:0000:0000:0000:0000:0000:0001'}
+        ok, _, _ = validate_acme_identifier(ident)
+        assert ok is True
+        assert ident['value'] == '2001:db8::1'
+
+    def test_rejects_invalid_ip_format(self):
+        """Invalid IP should be rejected as malformed"""
+        from api.acme.acme_api import validate_acme_identifier
+        ok, err_type, detail = validate_acme_identifier({'type': 'ip', 'value': 'invalid-ip'})
+        assert ok is False
+        assert err_type == 'malformed'
+        assert detail
+
+    def test_rejects_unsupported_type(self):
+        """Unsupported identifier type should be rejected"""
+        from api.acme.acme_api import validate_acme_identifier
+        ok, err_type, _ = validate_acme_identifier({'type': 'email', 'value': 'a@b.com'})
+        assert ok is False
+        assert err_type == 'unsupportedIdentifier'
+
+    def test_rejects_missing_fields(self):
+        """Identifier missing type/value should be rejected"""
+        from api.acme.acme_api import validate_acme_identifier
+        ok, err_type, _ = validate_acme_identifier({'type': 'dns'})
+        assert ok is False
+        assert err_type == 'malformed'
+
+    def test_accepts_dns_identifier(self):
+        """DNS identifier should be accepted"""
+        from api.acme.acme_api import validate_acme_identifier
+        ok, err_type, _ = validate_acme_identifier({'type': 'dns', 'value': 'example.com'})
+        assert ok is True
+        assert err_type is None
 
 
 class TestChallengeCreation:
@@ -231,43 +255,47 @@ class TestChallengeCreation:
 class TestHTTP01IPValidation:
     """Test HTTP-01 challenge validation for IP addresses"""
 
-    def test_http01_ip_uses_direct_ip_in_url(self):
-        """HTTP-01 for IP should use IP directly in URL (no DNS resolution)"""
+    def _run_http01(self, ip_value):
+        """Drive validate_http01_challenge for an IP identifier, return the URL hit."""
+        import requests
         from services.acme.mixins.challenge import ChallengeMixin
-        
-        # Mock challenge with IP identifier
+
         challenge = Mock()
         challenge.token = 'test-token'
         challenge.authorization.identifier_type = 'ip'
-        challenge.authorization.identifier_value = '192.168.1.1'
-        
+        challenge.authorization.identifier_value = ip_value
+
         account = Mock()
         account.jwk_thumbprint = 'test-thumbprint'
-        
+
         mixin = ChallengeMixin()
-        
-        # Mock requests.get to verify URL
-        with patch('services.acme.mixins.challenge.requests.get') as mock_get:
+        mixin._compute_key_authorization = Mock(return_value='expected-key-auth')
+        mixin._acme_allow_private_ips = Mock(return_value=True)
+        mixin._update_authorization_status = Mock()
+
+        # `requests` is imported locally inside the method, so patch the module attr.
+        with patch.object(requests, 'get') as mock_get:
             mock_response = Mock()
             mock_response.text = 'expected-key-auth'
             mock_response.status_code = 200
+            mock_response.raise_for_status = Mock()
             mock_get.return_value = mock_response
-            
-            # Mock _compute_key_authorization
-            mixin._compute_key_authorization = Mock(return_value='expected-key-auth')
-            mixin._acme_allow_private_ips = Mock(return_value=True)
-            mixin._update_authorization_status = Mock()
-            
             try:
                 mixin.validate_http01_challenge(challenge, account)
-            except:
-                pass  # Expected to fail due to mocking
-            
-            # Verify URL uses IP directly
-            if mock_get.called:
-                called_url = mock_get.call_args[0][0]
-                assert '192.168.1.1' in called_url
-                assert 'http://' in called_url
+            except Exception:
+                pass  # db.session.commit may fail outside app context — URL already captured
+            assert mock_get.called, "requests.get was not called"
+            return mock_get.call_args[0][0]
+
+    def test_http01_ipv4_uses_direct_ip_in_url(self):
+        """HTTP-01 for IPv4 should use the IP directly in the URL (no DNS resolution)"""
+        url = self._run_http01('192.168.1.1')
+        assert url == 'http://192.168.1.1/.well-known/acme-challenge/test-token'
+
+    def test_http01_ipv6_url_is_bracketed(self):
+        """HTTP-01 for IPv6 MUST bracket the literal in the URL (RFC 3986)"""
+        url = self._run_http01('2001:db8::1')
+        assert url == 'http://[2001:db8::1]/.well-known/acme-challenge/test-token'
 
 
 class TestTLSALPN01IPValidation:

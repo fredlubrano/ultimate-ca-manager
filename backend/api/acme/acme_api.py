@@ -116,6 +116,38 @@ def acme_error(error_type: str, detail: str, status_code: int = 400) -> Any:
     return response
 
 
+def validate_acme_identifier(identifier: Dict[str, Any]) -> Tuple[bool, Optional[str], Optional[str]]:
+    """Validate a single ACME identifier (RFC 8555 DNS + RFC 8738 IP).
+
+    Normalizes IP identifier values to their canonical form in place.
+
+    Args:
+        identifier: dict with 'type' and 'value' keys
+
+    Returns:
+        Tuple of (is_valid, acme_error_type, detail). When is_valid is True,
+        error_type and detail are None and ``identifier['value']`` may have
+        been rewritten to its canonical form.
+    """
+    if not identifier or 'type' not in identifier or 'value' not in identifier:
+        return False, 'malformed', 'Valid identifier required'
+
+    # Support both DNS (RFC 8555) and IP (RFC 8738) identifiers
+    if identifier['type'] not in ('dns', 'ip'):
+        return False, 'unsupportedIdentifier', f'Identifier type {identifier["type"]} not supported'
+
+    # Validate IP address format for IP identifiers (RFC 8738)
+    if identifier['type'] == 'ip':
+        from utils.acme_ip import validate_ip_address
+        is_valid, result = validate_ip_address(identifier['value'])
+        if not is_valid:
+            return False, 'malformed', result
+        # Normalize to canonical form
+        identifier['value'] = result
+
+    return True, None, None
+
+
 def _account_id_from_jws(jws_data: Dict[str, Any]) -> Optional[str]:
     """Extract account_id token from a JWS's protected header `kid`.
     
@@ -722,23 +754,11 @@ def new_authz():
         if account.status == 'deactivated':
             return acme_error('unauthorized', 'Account is deactivated', 401)
         
-        # Validate identifier
+        # Validate identifier (RFC 8555 DNS + RFC 8738 IP)
         identifier = payload.get('identifier')
-        if not identifier or 'type' not in identifier or 'value' not in identifier:
-            return acme_error('malformed', 'Valid identifier required')
-        
-        # Support both DNS (RFC 8555) and IP (RFC 8738) identifiers
-        if identifier['type'] not in ('dns', 'ip'):
-            return acme_error('unsupportedIdentifier', f'Identifier type {identifier["type"]} not supported')
-        
-        # Validate IP address format for IP identifiers (RFC 8738)
-        if identifier['type'] == 'ip':
-            from utils.acme_ip import validate_ip_address
-            is_valid, result = validate_ip_address(identifier['value'])
-            if not is_valid:
-                return acme_error('malformed', result)
-            # Normalize to canonical form
-            identifier['value'] = result
+        ok, err_type, err_detail = validate_acme_identifier(identifier)
+        if not ok:
+            return acme_error(err_type, err_detail)
         
         auth = service.create_pre_authorization(account_id, identifier)
         
@@ -833,23 +853,11 @@ def new_order():
         if not identifiers:
             return acme_error('malformed', 'At least one identifier required')
         
-        # Validate all identifiers (RFC 8555 + RFC 8738)
-        from utils.acme_ip import validate_ip_address
+        # Validate all identifiers (RFC 8555 DNS + RFC 8738 IP)
         for identifier in identifiers:
-            if not identifier or 'type' not in identifier or 'value' not in identifier:
-                return acme_error('malformed', 'Valid identifier required')
-            
-            # Support both DNS (RFC 8555) and IP (RFC 8738) identifiers
-            if identifier['type'] not in ('dns', 'ip'):
-                return acme_error('unsupportedIdentifier', f'Identifier type {identifier["type"]} not supported')
-            
-            # Validate IP address format for IP identifiers (RFC 8738)
-            if identifier['type'] == 'ip':
-                is_valid, result = validate_ip_address(identifier['value'])
-                if not is_valid:
-                    return acme_error('malformed', result)
-                # Normalize to canonical form
-                identifier['value'] = result
+            ok, err_type, err_detail = validate_acme_identifier(identifier)
+            if not ok:
+                return acme_error(err_type, err_detail)
         
         # Parse optional dates
         not_before = payload.get('notBefore')

@@ -40,8 +40,14 @@ class ChallengeMixin:
         )
         
         # Fetch from well-known URL
-        # RFC 8738: For IP identifiers, use the IP directly as host
-        url = f"http://{identifier_value}/.well-known/acme-challenge/{challenge.token}"
+        # RFC 8738: For IP identifiers, use the IP directly as host.
+        # RFC 3986: IPv6 literals MUST be bracketed in the URL.
+        if identifier_type == "ip":
+            from utils.acme_ip import format_ip_for_url
+            url_host = format_ip_for_url(identifier_value)
+        else:
+            url_host = identifier_value
+        url = f"http://{url_host}/.well-known/acme-challenge/{challenge.token}"
         
         try:
             # SSRF protection: reject domains resolving to private/loopback IPs

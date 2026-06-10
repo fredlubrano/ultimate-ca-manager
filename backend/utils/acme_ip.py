@@ -90,6 +90,34 @@ def ip_to_reverse_ptr(ip_str: str) -> Optional[str]:
         return None
 
 
+def format_ip_for_url(ip_str: str) -> str:
+    """Format an IP address for use as the host part of a URL (RFC 3986)
+
+    IPv6 literals MUST be wrapped in square brackets when used in a URL,
+    otherwise the colons are misparsed (e.g. ``http://2001:db8::1/`` is
+    rejected by most HTTP clients). IPv4 and hostnames are returned as-is.
+
+    Args:
+        ip_str: IP address (or hostname) string
+
+    Returns:
+        Bracketed form for IPv6, unchanged otherwise
+
+    Examples:
+        >>> format_ip_for_url('192.0.2.1')
+        '192.0.2.1'
+        >>> format_ip_for_url('2001:db8::1')
+        '[2001:db8::1]'
+    """
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        if ip.version == 6:
+            return f'[{ip_str}]'
+    except ValueError:
+        pass
+    return ip_str
+
+
 def is_ip_private(ip_str: str) -> bool:
     """Check if IP address is private/reserved (for SSRF protection)
     
