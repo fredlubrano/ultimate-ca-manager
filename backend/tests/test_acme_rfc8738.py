@@ -393,10 +393,44 @@ class TestIssuanceIPMatching:
     def test_extract_ips_from_csr_method(self):
         """IssuanceMixin should have _extract_ips_from_csr method"""
         from services.acme.mixins.issuance import IssuanceMixin
-        
+
         mixin = IssuanceMixin()
         assert hasattr(mixin, '_extract_ips_from_csr')
         assert callable(getattr(mixin, '_extract_ips_from_csr'))
+
+
+class TestIPOnlyOrderCAResolution:
+    """Regression for #134: IP-only orders must honor the global default issuing CA,
+    not fall back to the first available CA (typically the root)."""
+
+    def test_resolve_ca_with_no_domains_uses_global_default(self, app, auth_client, create_ca):
+        ca = create_ca(cn='IP Default Issuing CA')
+
+        with app.app_context():
+            from models import db, CA
+            from models.system_config import SystemConfig
+            from services.acme.mixins.issuance import IssuanceMixin
+
+            ca_obj = CA.query.get(ca['id'])
+            cfg = SystemConfig.query.filter_by(key='acme.issuing_ca_id').first()
+            created = cfg is None
+            if created:
+                cfg = SystemConfig(key='acme.issuing_ca_id', value=ca_obj.refid)
+                db.session.add(cfg)
+            else:
+                old_value = cfg.value
+                cfg.value = ca_obj.refid
+            db.session.commit()
+
+            try:
+                # Empty domain list = IP-only order → must resolve to global default
+                assert IssuanceMixin()._resolve_ca_for_domains([]) == ca_obj.refid
+            finally:
+                if created:
+                    db.session.delete(cfg)
+                else:
+                    cfg.value = old_value
+                db.session.commit()
 
 
 if __name__ == '__main__':
