@@ -1204,9 +1204,21 @@ def respond_to_challenge(challenge_id: str):
                 challenge_account = challenge.authorization.order.account_id
         if challenge_account and challenge_account != account.account_id:
             return acme_error('unauthorized', 'Challenge does not belong to this account', 403)
-        
+
+        # RFC 8555 §7.1.6: 'valid' and 'invalid' are terminal challenge states.
+        # Re-POSTing to a settled challenge MUST NOT re-trigger validation —
+        # otherwise an account could retry an 'invalid' challenge until it
+        # passes, or force re-checks on an already-'valid' one. Return the
+        # current state unchanged. Likewise refuse if the parent authorization
+        # is no longer pending (expired / deactivated / revoked).
+        authz = challenge.authorization
+        if challenge.status in ('valid', 'invalid'):
+            success = (challenge.status == 'valid')
+        elif authz and authz.status != 'pending':
+            return acme_error('malformed',
+                              f'Authorization is {authz.status}, not pending', 403)
         # Trigger validation based on challenge type
-        if challenge.type == "http-01":
+        elif challenge.type == "http-01":
             success = service.validate_http01_challenge(challenge, account)
         elif challenge.type == "dns-01":
             success = service.validate_dns01_challenge(challenge, account)
@@ -1587,11 +1599,23 @@ def key_change():
         # Verify new key differs from old key
         if new_jwk == current_jwk:
             return acme_error('malformed', 'New key must differ from old key')
-        
+
+        # RFC 8555 §7.3.5: reject if the new key already identifies another
+        # account (keyConflict). Without this an attacker who compromised the
+        # old key could collapse two accounts onto one key.
+        new_thumbprint = service._compute_jwk_thumbprint(new_jwk)
+        conflict = AcmeAccount.query.filter(
+            AcmeAccount.jwk_thumbprint == new_thumbprint,
+            AcmeAccount.account_id != account.account_id,
+        ).first()
+        if conflict:
+            return acme_error('malformed',
+                              'New key is already in use by another account', 409)
+
         # Update account JWK
         try:
             account.jwk = json.dumps(new_jwk)
-            account.jwk_thumbprint = service._compute_jwk_thumbprint(new_jwk)
+            account.jwk_thumbprint = new_thumbprint
             db.session.commit()
         except Exception as e:
             db.session.rollback()
