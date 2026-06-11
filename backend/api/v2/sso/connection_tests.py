@@ -2,7 +2,7 @@ from . import bp
 from flask import request
 from auth.unified import require_auth
 from utils.response import success_response, error_response
-from .helpers import _get_ssl_verify, _cleanup_ssl_verify, _build_ldap_tls, _decrypt_ldap_password, _encrypt_ldap_password, _parse_json_field
+from .helpers import _get_ssl_verify, _cleanup_ssl_verify, _build_ldap_tls, _decrypt_ldap_password, _encrypt_ldap_password, _parse_json_field, _parse_group_list
 import ldap3
 from ldap3 import Server, Connection, ALL, Tls
 from ldap3.utils.conv import escape_filter_chars
@@ -250,19 +250,13 @@ def _ldap_authenticate_user(provider, username, password):
             return None, 'account_disabled'
 
         # ── Check required groups (default-deny) ───────────────────────────
-        required_groups = _parse_json_field(provider.ldap_required_groups or '{}')
-        if required_groups:
-            # Support both list and dict formats for backward compatibility
-            if isinstance(required_groups, dict):
-                group_list = list(required_groups.keys())
-            elif isinstance(required_groups, list):
-                group_list = required_groups
-            else:
-                group_list = []
-
-            if group_list and groups:
+        group_list = _parse_group_list(provider.ldap_required_groups)
+        if group_list:
+            if groups:
                 # Check if user belongs to ANY of the required groups
-                allowed = any(g in groups for g in group_list)
+                # (case-insensitive: AD group names are not case-sensitive)
+                user_groups_lower = {g.lower() for g in groups}
+                allowed = any(g.lower() in user_groups_lower for g in group_list)
                 if not allowed:
                     logger.info(
                         f"LDAP login denied for {username}: not in required groups {group_list}, "
@@ -270,7 +264,7 @@ def _ldap_authenticate_user(provider, username, password):
                     )
                     conn.unbind()
                     return None, 'group_denied'
-            elif group_list and not groups:
+            else:
                 logger.info(
                     f"LDAP login denied for {username}: no groups fetched, "
                     f"required groups: {group_list}"
