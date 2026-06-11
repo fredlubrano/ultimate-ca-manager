@@ -114,6 +114,25 @@ def _decrypt_ldap_password(provider) -> str:
     return password
 
 
+def _parse_group_list(value):
+    """Parse a group list field: JSON array, dict (legacy), or comma-separated string."""
+    if not value:
+        return []
+    if isinstance(value, dict):
+        return [str(g).strip() for g in value.keys() if str(g).strip()]
+    if isinstance(value, list):
+        return [str(g).strip() for g in value if str(g).strip()]
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, (list, dict)):
+                return _parse_group_list(parsed)
+        except (json.JSONDecodeError, TypeError):
+            pass
+        return [g.strip() for g in value.split(',') if g.strip()]
+    return []
+
+
 def _parse_json_field(value):
     """Parse a JSON field that may be a string, double-encoded string, or dict/list."""
     if not value:

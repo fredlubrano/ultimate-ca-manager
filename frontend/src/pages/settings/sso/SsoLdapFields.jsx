@@ -252,6 +252,14 @@ export default function SsoLdapFields({
                           {testMappingResult.resolved_role}
                         </Badge>
                       </p>
+                      {testMappingResult.required_groups?.length > 0 && (
+                        <p>
+                          <span className="text-text-secondary font-medium">{t('sso.testMappingAccess')}:</span>{' '}
+                          <Badge variant={testMappingResult.access_allowed ? 'success' : 'error'} size="sm">
+                            {testMappingResult.access_allowed ? t('sso.testMappingAccessAllowed') : t('sso.testMappingAccessDenied')}
+                          </Badge>
+                        </p>
+                      )}
                     </>
                   )}
                 </div>
