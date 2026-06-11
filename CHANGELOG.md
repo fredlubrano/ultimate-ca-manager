@@ -10,6 +10,26 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.169] - 2026-06-12
+
+### Added
+- **Syslog source field** — remote syslog messages now populate the RFC 5424 HOSTNAME field from the configured System Name (falling back to the machine hostname), so audit events are attributable in log aggregators (#135).
+
+### Fixed
+- **LDAP required groups** — the required-groups restriction now saves correctly and is enforced at login; group matching is case-insensitive and previously stored values are repaired automatically (#133).
+- **ACME IP certificates** — IP-only orders now honor the configured default issuing CA instead of falling back to the first available CA (#134).
+
+### Security
+- **ACME server** — settled challenges (valid/invalid) are no longer re-validated when re-submitted, and key rollover now rejects a key already bound to another account (keyConflict, RFC 8555).
+- **Syslog** — structured-data values and message text are escaped/sanitized (RFC 5424), preventing log injection via certificate or user fields.
+- **Email** — subjects and recipients are stripped of CR/LF to prevent SMTP header injection.
+- **DNS providers** — provider error logs no longer leak API tokens that are transmitted as URL parameters.
+- **Filesystem** — private-key and database-backup directories are tightened to owner-only permissions at startup.
+- **Audit** — security-alert and audit events now record the real client IP when behind a trusted reverse proxy.
+
+### Changed
+- **Outbound services** — webhook, email, and Microsoft CA connectors hardened against partial failures, socket leaks, and logging errors.
+
 ## [2.168] - 2026-06-11
 
 ### Fixed
