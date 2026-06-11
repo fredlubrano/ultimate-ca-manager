@@ -96,9 +96,10 @@ class IssuanceMixin:
                 logger.warning(f"CAA check error (non-blocking): {e}")
         
         # Resolve CA: domain-specific → global default → first available
-        # For IP-only orders, use global default or first available
+        # IP-only orders have no domains: skips the per-domain mappings and
+        # resolves straight to the global default (acme.issuing_ca_id)
         if not ca_refid:
-            ca_refid = self._resolve_ca_for_domains(order_domains) if order_domains else None
+            ca_refid = self._resolve_ca_for_domains(order_domains)
         
         # Sign certificate with UCM CA
         success, cert_id, error = self._sign_certificate_with_ca(
