@@ -12,6 +12,7 @@ from flask import Blueprint, request, jsonify, session, current_app
 from auth.unified import AuthManager, require_auth, require_permission
 from utils.response import success_response, error_response
 from utils.db_transaction import safe_commit
+from utils.trusted_proxy import client_ip
 from models import User, db
 from security.password_policy import validate_password
 
@@ -95,7 +96,7 @@ def _record_failed_attempt(username):
         # Send security alert notification
         try:
             from services.notification_service import NotificationService
-            ip_address = request.remote_addr or 'unknown'
+            ip_address = client_ip() or 'unknown'
             NotificationService.on_security_alert(
                 event_type='account_locked',
                 username=username,
@@ -291,7 +292,7 @@ def forgot_password():
                     'username': user.username,
                     'reset_url': reset_url,
                     'expires_in': '1 hour',
-                    'ip_address': request.remote_addr
+                    'ip_address': client_ip()
                 }
             )
         except Exception as e:
