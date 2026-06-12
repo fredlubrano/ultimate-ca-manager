@@ -2058,7 +2058,8 @@
       "about": "À propos",
       "microsoftCA": "Microsoft CA",
       "ct": "CT",
-      "autoRenewal": "Renouvellement auto"
+      "autoRenewal": "Renouvellement auto",
+      "scheduler": "Planificateur"
     },
     "systemNameHelper": "Nom d'affichage du système UCM",
     "baseUrl": "URL de base",
@@ -4161,5 +4162,22 @@
       "digit": "Au moins un chiffre (0-9)",
       "special": "Au moins un caractère spécial ({{special_chars}})"
     }
+  },
+  "scheduler": {
+    "title": "Planificateur",
+    "subtitle": "Taches de fond et leur statut",
+    "tasksTitle": "Taches de fond",
+    "runNow": "Executer",
+    "taskRan": "Tache « {{name}} » executee",
+    "runFailed": "Echec de l'execution de la tache",
+    "loadFailed": "Echec du chargement des taches",
+    "noTasks": "Aucune tache planifiee",
+    "warningsCount": "{{count}} avertissement(s)",
+    "colTask": "Tache",
+    "colSchedule": "Frequence",
+    "colLastRun": "Derniere exec.",
+    "colNextRun": "Prochaine exec.",
+    "colDuration": "Duree",
+    "colRuns": "Exec."
   }
 }

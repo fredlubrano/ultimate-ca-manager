@@ -2039,7 +2039,8 @@
       "about": "Acerca de",
       "microsoftCA": "Microsoft CA",
       "ct": "CT",
-      "autoRenewal": "Auto-renovación"
+      "autoRenewal": "Auto-renovación",
+      "scheduler": "Programador"
     },
     "testRecipient": "Destinatario de prueba",
     "testRecipientRequired": "Ingrese una dirección de correo destinataria para la prueba",
@@ -4158,5 +4159,22 @@
       "digit": "Al menos un dígito (0-9)",
       "special": "Al menos un carácter especial ({{special_chars}})"
     }
+  },
+  "scheduler": {
+    "title": "Programador",
+    "subtitle": "Tareas en segundo plano y su estado",
+    "tasksTitle": "Tareas en segundo plano",
+    "runNow": "Ejecutar",
+    "taskRan": "Tarea {{name}} ejecutada",
+    "runFailed": "Error al ejecutar la tarea",
+    "loadFailed": "Error al cargar las tareas",
+    "noTasks": "Sin tareas programadas",
+    "warningsCount": "{{count}} advertencia(s)",
+    "colTask": "Tarea",
+    "colSchedule": "Frecuencia",
+    "colLastRun": "Ultima ejec.",
+    "colNextRun": "Proxima ejec.",
+    "colDuration": "Duracion",
+    "colRuns": "Ejec."
   }
 }

@@ -2039,7 +2039,8 @@
       "about": "Über",
       "microsoftCA": "Microsoft CA",
       "ct": "CT",
-      "autoRenewal": "Auto-Erneuerung"
+      "autoRenewal": "Auto-Erneuerung",
+      "scheduler": "Planer"
     },
     "testRecipient": "Testempfänger",
     "testRecipientRequired": "Geben Sie eine Empfänger-E-Mail-Adresse für den Test ein",
@@ -4158,5 +4159,22 @@
       "digit": "Mindestens eine Ziffer (0-9)",
       "special": "Mindestens ein Sonderzeichen ({{special_chars}})"
     }
+  },
+  "scheduler": {
+    "title": "Planer",
+    "subtitle": "Hintergrundaufgaben und ihr Status",
+    "tasksTitle": "Hintergrundaufgaben",
+    "runNow": "Jetzt ausfuhren",
+    "taskRan": "Aufgabe {{name}} ausgefuhrt",
+    "runFailed": "Aufgabe konnte nicht ausgefuhrt werden",
+    "loadFailed": "Aufgaben konnten nicht geladen werden",
+    "noTasks": "Keine geplanten Aufgaben",
+    "warningsCount": "{{count}} Warnung(en)",
+    "colTask": "Aufgabe",
+    "colSchedule": "Zeitplan",
+    "colLastRun": "Letzte Ausf.",
+    "colNextRun": "Nachste Ausf.",
+    "colDuration": "Dauer",
+    "colRuns": "Ausf."
   }
 }

@@ -2040,7 +2040,8 @@
       "about": "About",
       "microsoftCA": "Microsoft CA",
       "ct": "CT",
-      "autoRenewal": "Auto-Renewal"
+      "autoRenewal": "Auto-Renewal",
+      "scheduler": "Scheduler"
     },
     "testRecipient": "Test recipient",
     "testRecipientRequired": "Enter a recipient email address for the test",
@@ -4161,5 +4162,22 @@
       "digit": "At least one number (0-9)",
       "special": "At least one special character ({{special_chars}})"
     }
+  },
+  "scheduler": {
+    "title": "Scheduler",
+    "subtitle": "Background tasks and their status",
+    "tasksTitle": "Background tasks",
+    "runNow": "Run now",
+    "taskRan": "Task '{{name}}' executed",
+    "runFailed": "Failed to run task",
+    "loadFailed": "Failed to load scheduler tasks",
+    "noTasks": "No scheduled tasks",
+    "warningsCount": "{{count}} warning(s)",
+    "colTask": "Task",
+    "colSchedule": "Schedule",
+    "colLastRun": "Last run",
+    "colNextRun": "Next run",
+    "colDuration": "Duration",
+    "colRuns": "Runs"
   }
 }

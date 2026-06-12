@@ -2039,7 +2039,8 @@
       "about": "Sobre",
       "microsoftCA": "Microsoft CA",
       "ct": "CT",
-      "autoRenewal": "Renovação auto"
+      "autoRenewal": "Renovação auto",
+      "scheduler": "Agendador"
     },
     "testRecipient": "Destinatário de teste",
     "testRecipientRequired": "Insira um endereço de email destinatário para o teste",
@@ -4158,5 +4159,22 @@
       "digit": "Pelo menos um dígito (0-9)",
       "special": "Pelo menos um caractere especial ({{special_chars}})"
     }
+  },
+  "scheduler": {
+    "title": "Agendador",
+    "subtitle": "Tarefas em segundo plano e seu estado",
+    "tasksTitle": "Tarefas em segundo plano",
+    "runNow": "Executar",
+    "taskRan": "Tarefa {{name}} executada",
+    "runFailed": "Falha ao executar a tarefa",
+    "loadFailed": "Falha ao carregar as tarefas",
+    "noTasks": "Nenhuma tarefa agendada",
+    "warningsCount": "{{count}} aviso(s)",
+    "colTask": "Tarefa",
+    "colSchedule": "Frequencia",
+    "colLastRun": "Ultima exec.",
+    "colNextRun": "Proxima exec.",
+    "colDuration": "Duracao",
+    "colRuns": "Exec."
   }
 }

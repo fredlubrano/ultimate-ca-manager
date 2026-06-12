@@ -2039,7 +2039,8 @@
       "about": "关于",
       "microsoftCA": "Microsoft CA",
       "ct": "CT",
-      "autoRenewal": "自动续订"
+      "autoRenewal": "自动续订",
+      "scheduler": "调度器"
     },
     "testRecipient": "测试收件人",
     "testRecipientRequired": "请输入测试收件人电子邮件地址",
@@ -4158,5 +4159,22 @@
       "digit": "至少一个数字 (0-9)",
       "special": "至少一个特殊字符 ({{special_chars}})"
     }
+  },
+  "scheduler": {
+    "title": "调度器",
+    "subtitle": "后台任务及其状态",
+    "tasksTitle": "后台任务",
+    "runNow": "立即运行",
+    "taskRan": "任务 {{name}} 已执行",
+    "runFailed": "运行任务失败",
+    "loadFailed": "加载任务失败",
+    "noTasks": "没有计划任务",
+    "warningsCount": "{{count}} 个警告",
+    "colTask": "任务",
+    "colSchedule": "频率",
+    "colLastRun": "上次运行",
+    "colNextRun": "下次运行",
+    "colDuration": "耗时",
+    "colRuns": "次数"
   }
 }

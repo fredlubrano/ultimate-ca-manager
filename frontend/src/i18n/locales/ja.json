@@ -2039,7 +2039,8 @@
       "about": "概要",
       "microsoftCA": "Microsoft CA",
       "ct": "CT",
-      "autoRenewal": "自動更新"
+      "autoRenewal": "自動更新",
+      "scheduler": "スケジューラ"
     },
     "testRecipient": "テスト送信先",
     "testRecipientRequired": "テスト用の送信先メールアドレスを入力してください",
@@ -4158,5 +4159,22 @@
       "digit": "少なくとも1つの数字 (0-9)",
       "special": "少なくとも1つの特殊文字 ({{special_chars}})"
     }
+  },
+  "scheduler": {
+    "title": "スケジューラ",
+    "subtitle": "バックグラウンドタスクとその状態",
+    "tasksTitle": "バックグラウンドタスク",
+    "runNow": "今すぐ実行",
+    "taskRan": "タスク {{name}} を実行しました",
+    "runFailed": "タスクの実行に失敗しました",
+    "loadFailed": "タスクの読み込みに失敗しました",
+    "noTasks": "スケジュールされたタスクはありません",
+    "warningsCount": "{{count}} 件の警告",
+    "colTask": "タスク",
+    "colSchedule": "頻度",
+    "colLastRun": "前回実行",
+    "colNextRun": "次回実行",
+    "colDuration": "所要時間",
+    "colRuns": "実行回数"
   }
 }

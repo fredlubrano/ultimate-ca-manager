@@ -2039,7 +2039,8 @@
       "about": "Informazioni",
       "microsoftCA": "Microsoft CA",
       "ct": "CT",
-      "autoRenewal": "Rinnovo automatico"
+      "autoRenewal": "Rinnovo automatico",
+      "scheduler": "Pianificatore"
     },
     "testRecipient": "Destinatario test",
     "testRecipientRequired": "Inserisci un indirizzo email destinatario per il test",
@@ -4158,5 +4159,22 @@
       "digit": "Almeno una cifra (0-9)",
       "special": "Almeno un carattere speciale ({{special_chars}})"
     }
+  },
+  "scheduler": {
+    "title": "Pianificatore",
+    "subtitle": "Attivita in background e il loro stato",
+    "tasksTitle": "Attivita in background",
+    "runNow": "Esegui",
+    "taskRan": "Attivita {{name}} eseguita",
+    "runFailed": "Impossibile eseguire l'attivita",
+    "loadFailed": "Impossibile caricare le attivita",
+    "noTasks": "Nessuna attivita pianificata",
+    "warningsCount": "{{count}} avviso/i",
+    "colTask": "Attivita",
+    "colSchedule": "Frequenza",
+    "colLastRun": "Ultima esec.",
+    "colNextRun": "Prossima esec.",
+    "colDuration": "Durata",
+    "colRuns": "Esec."
   }
 }
