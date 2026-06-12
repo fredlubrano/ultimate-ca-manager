@@ -27,6 +27,8 @@ def get_general_settings():
         'backup_frequency': get_config('backup_frequency', 'daily'),
         'backup_retention_days': int(get_config('backup_retention_days', '30')),
         'backup_password': '',  # Never return password
+        'metrics_token': '',  # Never return the token
+        'metrics_enabled': bool(get_config('metrics_token', '')),
         'session_timeout': int(get_config('session_timeout', '28800')),
         'session_max_lifetime': int(get_config('session_max_lifetime', '86400')),
         'max_login_attempts': int(get_config('max_login_attempts', '5')),
@@ -66,6 +68,8 @@ def update_general_settings():
         'password_require_numbers', 'password_require_special',
         # Security toggles
         'enforce_2fa',
+        # Prometheus metrics bearer token (empty = disabled)
+        'metrics_token',
     ]
 
     # Validate http_protocol_port if provided
