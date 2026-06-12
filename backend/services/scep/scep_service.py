@@ -569,6 +569,12 @@ class SCEPService:
         validity_days: int = 365,
     ) -> str:
         """Issue a certificate for the given SCEP request. Returns the cert refid."""
+        # Offline CAs must not sign (consistent with CSR/CRL/TSA signing paths)
+        if self.ca.offline:
+            raise ValueError(
+                f"CA is offline: {self.ca.offline_reason or 'no reason provided'}"
+            )
+
         cert_refid = str(uuid.uuid4())
         public_key = csr.public_key()
 
