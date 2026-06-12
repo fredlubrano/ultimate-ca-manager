@@ -790,7 +790,7 @@ def create_app(config_name=None):
     @app.before_request
     def redirect_to_fqdn():
         # Skip for health checks and static files
-        if request.path in ['/api/v2/health', '/api/health', '/health', '/api/auth/verify', '/api/v2/auth/verify'] or request.path.startswith(('/static/', '/assets/', '/cdp/', '/ca/', '/ocsp/', '/scep/', '/acme/', '/.well-known/', '/tsa', '/ssh/setup/')):
+        if request.path in ['/api/v2/health', '/api/health', '/health', '/metrics', '/api/v2/metrics', '/api/auth/verify', '/api/v2/auth/verify'] or request.path.startswith(('/static/', '/assets/', '/cdp/', '/ca/', '/ocsp/', '/scep/', '/acme/', '/.well-known/', '/tsa', '/ssh/setup/')):
             return None
         
         # Get configured FQDN - check both UCM_FQDN (Docker) and FQDN env vars
@@ -849,6 +849,7 @@ def create_app(config_name=None):
         # Allow health, auth, static, frontend, and protocol routes
         allowed_prefixes = (
             '/api/v2/health', '/api/health', '/health',
+            '/metrics', '/api/v2/metrics',  # Prometheus (own bearer-token gate)
             '/api/v2/auth/', '/api/auth/',
             '/api/v2/system/security/encryption-status',
             '/static/', '/assets/', '/favicon',
