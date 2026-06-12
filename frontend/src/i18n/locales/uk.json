@@ -2039,7 +2039,8 @@
       "about": "Про програму",
       "microsoftCA": "Microsoft CA",
       "ct": "CT",
-      "autoRenewal": "Авто-поновлення"
+      "autoRenewal": "Авто-поновлення",
+      "scheduler": "Планувальник"
     },
     "testRecipient": "Одержувач тесту",
     "testRecipientRequired": "Введіть адресу електронної пошти одержувача для тесту",
@@ -4158,5 +4159,22 @@
       "digit": "Щонайменше одну цифру (0-9)",
       "special": "Щонайменше один спецсимвол ({{special_chars}})"
     }
+  },
+  "scheduler": {
+    "title": "Планувальник",
+    "subtitle": "Фонові завдання та їхній стан",
+    "tasksTitle": "Фонові завдання",
+    "runNow": "Запустити",
+    "taskRan": "Завдання {{name}} виконано",
+    "runFailed": "Не вдалося виконати завдання",
+    "loadFailed": "Не вдалося завантажити завдання",
+    "noTasks": "Немає запланованих завдань",
+    "warningsCount": "{{count}} попередження",
+    "colTask": "Завдання",
+    "colSchedule": "Розклад",
+    "colLastRun": "Останній запуск",
+    "colNextRun": "Наступний запуск",
+    "colDuration": "Тривалість",
+    "colRuns": "Запуски"
   }
 }
