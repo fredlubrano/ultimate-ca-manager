@@ -1084,13 +1084,7 @@ export default function CRLOCSPPage() {
         onRowClick={handleSelectCA}
         sortable
         densityStorageKey="ucm-crlocsp-density"
-        pagination={{
-          page,
-          total: filteredCAs.length,
-          perPage,
-          onChange: setPage,
-          onPerPageChange: (v) => { setPerPage(v); setPage(1) }
-        }}
+        pagination={true}
         emptyState={{
           icon: FileX,
           title: t('common.noCA'),

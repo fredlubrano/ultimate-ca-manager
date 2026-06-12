@@ -497,13 +497,7 @@ export default function TemplatesPage() {
           )}
           sortable
           defaultSort={{ key: 'name', direction: 'asc' }}
-          pagination={{
-            page,
-            total: filteredTemplates.length,
-            perPage,
-            onChange: setPage,
-            onPerPageChange: (v) => { setPerPage(v); setPage(1) }
-          }}
+          pagination={true}
           emptyIcon={FileText}
           emptyTitle={t('templates.noTemplates')}
           emptyDescription={t('templates.noTemplatesDescription')}
