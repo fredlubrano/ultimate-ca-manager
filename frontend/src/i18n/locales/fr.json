@@ -2434,7 +2434,21 @@
     "autoRenewalRunSuccess": "Renouvellement terminé : {{renewed}} renouvelés, {{failed}} échoués",
     "autoRenewalRunFailed": "Échec du renouvellement automatique",
     "autoRenewalSettingsUpdated": "Paramètres de renouvellement automatique mis à jour",
-    "autoRenewalSettingsFailed": "Échec de la mise à jour des paramètres de renouvellement"
+    "autoRenewalSettingsFailed": "Échec de la mise à jour des paramètres de renouvellement",
+    "metrics": {
+      "title": "Métriques Prometheus",
+      "subtitle": "Endpoint /metrics optionnel pour la supervision",
+      "token": "Jeton de métriques",
+      "tokenPlaceholder": "Saisissez ou générez un jeton bearer pour activer",
+      "tokenRotatePlaceholder": "Saisissez un nouveau jeton pour le faire tourner (l'actuel est conservé)",
+      "tokenHelper": "Scrapez /metrics avec l'en-tête Authorization: Bearer <jeton>. Le jeton n'est affiché qu'ici — copiez-le maintenant.",
+      "generate": "Générer",
+      "enable": "Activer",
+      "rotate": "Renouveler",
+      "disable": "Désactiver",
+      "enabled": "Endpoint de métriques activé",
+      "disabled": "Endpoint de métriques désactivé"
+    }
   },
   "sso": {
     "subtitle": "Configurez des fournisseurs LDAP, OAuth2 ou SAML pour une authentification centralisée",

@@ -5,6 +5,15 @@ export default {
     overview: 'UCM unterstützt zwei ACME-Modi: ACME-Client für öffentliche Zertifikate von jeder RFC 8555-konformen CA (Let\'s Encrypt, ZeroSSL, Buypass, HARICA, usw.) und lokaler ACME-Server für interne PKI-Automatisierung mit Multi-CA-Domänenzuordnung.',
     sections: [
       {
+        title: "Renewal Information (ARI, RFC 9773)",
+        content: "Der lokale ACME-Server stellt eine renewalInfo-Ressource bereit, damit Clients den idealen Zeitpunkt zur Erneuerung jedes Zertifikats erfahren.",
+        items: [
+          { label: "Vorgeschlagenes Fenster", text: "Liefert ein Start/Ende-Fenster zentriert vor dem Ablauf, um Erneuerungen zeitlich zu verteilen" },
+          { label: "Widerruf", text: "Ein widerrufenes Zertifikat liefert ein Fenster in der Vergangenheit → konforme Clients erneuern sofort" },
+          { label: "Ohne Authentifizierung", text: "renewalInfo ist ein einfacher GET — weder Konto noch JWS erforderlich (RFC 9773)" },
+        ]
+      },
+      {
         title: 'ACME-Client',
         items: [
           { label: 'Client', text: 'Zertifikate von jeder ACME-CA anfordern — Let\'s Encrypt, ZeroSSL, Buypass, HARICA oder benutzerdefiniert' },
@@ -317,6 +326,14 @@ Gemischte DNS- + IP-Bestellungen werden ebenfalls unterstützt.
 Das signierte Zertifikat enthält für jede validierte IP einen **iPAddress**-SubjectAltName-Eintrag.
 
 > 💡 Interne Adressen (RFC1918, Loopback) werden sofort validiert — UCMs primäres Bereitstellungsmodell. Cloud-Metadaten-IPs bleiben blockiert.
+
+## Renewal Information (ARI, RFC 9773)
+
+Der lokale ACME-Server kündigt \`renewalInfo\` in seinem Directory an und liefert ein **vorgeschlagenes Erneuerungsfenster** pro Zertifikat.
+
+- Fenster zentriert vor Ablauf → zeitlich verteilte Erneuerungen
+- Widerrufenes Zertifikat → Fenster in der Vergangenheit (jetzt erneuern)
+- Nicht authentifizierter GET auf \`/acme/renewalInfo/<certID>\`
 
 `
   }

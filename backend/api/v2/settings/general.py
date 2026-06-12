@@ -88,6 +88,14 @@ def update_general_settings():
     for key in allowed_keys:
         if key in data:
             value = data[key]
+            # Prometheus metrics token: the API never returns the current token,
+            # so a blank value means "keep current" (avoids wiping it when other
+            # general settings are saved). A sentinel disables it explicitly.
+            if key == 'metrics_token':
+                if not value:
+                    continue
+                if value == '__disable__':
+                    value = ''
             # Convert booleans to string
             if isinstance(value, bool):
                 value = 'true' if value else 'false'

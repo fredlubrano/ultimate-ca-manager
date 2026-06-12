@@ -5,6 +5,15 @@ export default {
     overview: 'UCM 支持两种 ACME 模式：ACME 客户端用于从任何符合 RFC 8555 的 CA（Let\'s Encrypt、ZeroSSL、Buypass、HARICA 等）获取公共证书；本地 ACME 服务器用于内部 PKI 自动化，支持多 CA 域名映射。',
     sections: [
       {
+        title: "Renewal Information (ARI, RFC 9773)",
+        content: "本地 ACME 服务器公布 renewalInfo 资源，使客户端了解每个证书的理想续期时机。",
+        items: [
+          { label: "建议窗口", text: "返回一个以到期前为中心的开始/结束窗口，使续期错峰分布" },
+          { label: "吊销", text: "已吊销证书返回过去的窗口 → 合规客户端立即续期" },
+          { label: "无需认证", text: "renewalInfo 是普通 GET——无需账户或 JWS（RFC 9773）" },
+        ]
+      },
+      {
         title: 'ACME 客户端',
         items: [
           { label: '客户端', text: '从任何 ACME CA 请求证书——Let\'s Encrypt、ZeroSSL、Buypass、HARICA 或自定义' },
@@ -317,6 +326,14 @@ acme.sh --issue \\
 签名后的证书为每个已验证的 IP 包含一个 **iPAddress** SubjectAltName 条目。
 
 > 💡 内部地址（RFC1918、环回）开箱即可验证 — UCM 的主要部署模式。云元数据 IP 仍被阻止。
+
+## Renewal Information (ARI, RFC 9773)
+
+本地 ACME 服务器在其 directory 中公布 \`renewalInfo\`，并为每个证书提供**建议续期窗口**。
+
+- 窗口以到期前为中心 → 续期随时间错峰
+- 已吊销证书 → 过去的窗口（立即续期）
+- 对 \`/acme/renewalInfo/<certID>\` 的无认证 GET
 
 `
   }

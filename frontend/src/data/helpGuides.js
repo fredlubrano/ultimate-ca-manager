@@ -334,6 +334,15 @@ Select two certificates and click **Compare** to see a side-by-side diff of thei
 - **CA filter** — Show certificates from a specific CA
 - **Text search** — Search by CN, serial number, or SAN
 - **Sorting** — By name, expiry date, creation date, status
+
+## Conformance linting
+
+The **Lint** action (certificate detail) checks X.509 standards conformance. Informative only.
+
+- **RFC 5280** — IETF X.509 profile, always relevant
+- **CA/Browser Forum** — Baseline Requirements for public TLS certs (expect noise on internal PKI)
+- Severities: fatal / error / warning / notice / info
+- Engine: pkilint (+ zlint when present) — optional server dependency, degrades gracefully when absent
 `
   },
 
@@ -963,6 +972,14 @@ acme.sh --issue \\
 \`\`\`
 
 > ⚠ For internal ACME, clients must trust the UCM CA. Install the Root CA certificate in the client's trust store.
+
+## Renewal Information (ARI, RFC 9773)
+
+The local ACME server advertises \`renewalInfo\` in its directory and serves a per-certificate **suggested renewal window**.
+
+- Window centered before expiry → renewals spread over time
+- Revoked certificate → window in the past (renew now)
+- Unauthenticated GET on \`/acme/renewalInfo/<certID>\`
 `
   },
 
@@ -1695,6 +1712,38 @@ Tokens are stored encrypted and never returned in the UI.
 
 ### Testing
 Click **Test** to send a sample event to the webhook URL and verify it's reachable.
+
+## Prometheus metrics
+
+Opt-in, token-gated **\`/metrics\`** endpoint.
+
+- Enable it by setting a metrics token (Settings › General); without a token → 404
+- Scrape with the \`Authorization: Bearer <token>\` header
+- Exposes \`ucm_certificates\`, \`ucm_certificate_authorities\`, \`ucm_scheduler_task_*\`, \`ucm_webhook_deliveries\`, \`ucm_acme_*\`
+
+## Webhook delivery history
+
+Open the history (clock icon) on a webhook to see its deliveries.
+
+- **pending / delivered / failed** statuses with last HTTP code and error
+- **Retry** a delivery manually
+- Durable queue with exponential backoff (up to 5 attempts)
+
+## Scheduler view
+
+Settings › System surfaces the background tasks.
+
+- Task list with **status**, **last run**, **duration** and **failures**
+- **Run now** on any task
+- Covers expiry, CRL, webhook delivery, backups, auto-renewal…
+
+## Scheduled backups
+
+Settings › Backup enables automatic backups.
+
+- **Daily / weekly / monthly** cadence
+- **Retention**: keep the N most recent, prune older ones
+- Backups are **encrypted** with the backup password
 `
   },
 
