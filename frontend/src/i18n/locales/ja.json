@@ -2247,7 +2247,21 @@
     "autoRenewalRunSuccess": "自動更新完了: {{renewed}} 件更新、{{failed}} 件失敗",
     "autoRenewalRunFailed": "自動更新の実行に失敗しました",
     "autoRenewalSettingsUpdated": "自動更新設定を更新しました",
-    "autoRenewalSettingsFailed": "自動更新設定の更新に失敗しました"
+    "autoRenewalSettingsFailed": "自動更新設定の更新に失敗しました",
+    "metrics": {
+      "title": "Prometheus メトリクス",
+      "subtitle": "監視用のオプトイン /metrics エンドポイント",
+      "token": "メトリクストークン",
+      "tokenPlaceholder": "有効化するには bearer トークンを入力または生成",
+      "tokenRotatePlaceholder": "ローテーションする新しいトークンを入力（現在のものは保持）",
+      "tokenHelper": "Authorization: Bearer <トークン> ヘッダーで /metrics をスクレイプします。トークンはここにのみ表示されます — 今すぐコピーしてください。",
+      "generate": "生成",
+      "enable": "有効化",
+      "rotate": "ローテーション",
+      "disable": "無効化",
+      "enabled": "メトリクスエンドポイントを有効化しました",
+      "disabled": "メトリクスエンドポイントを無効化しました"
+    }
   },
   "account": {
     "profile": "プロフィール",

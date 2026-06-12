@@ -2248,7 +2248,21 @@
     "autoRenewalRunSuccess": "Auto-renewal completed: {{renewed}} renewed, {{failed}} failed",
     "autoRenewalRunFailed": "Auto-renewal run failed",
     "autoRenewalSettingsUpdated": "Auto-renewal settings updated",
-    "autoRenewalSettingsFailed": "Failed to update auto-renewal settings"
+    "autoRenewalSettingsFailed": "Failed to update auto-renewal settings",
+    "metrics": {
+      "title": "Prometheus metrics",
+      "subtitle": "Opt-in /metrics endpoint for monitoring",
+      "token": "Metrics token",
+      "tokenPlaceholder": "Enter or generate a bearer token to enable",
+      "tokenRotatePlaceholder": "Enter a new token to rotate (current is kept)",
+      "tokenHelper": "Scrape /metrics with the Authorization: Bearer <token> header. The token is shown only here — copy it now.",
+      "generate": "Generate",
+      "enable": "Enable",
+      "rotate": "Rotate",
+      "disable": "Disable",
+      "enabled": "Metrics endpoint enabled",
+      "disabled": "Metrics endpoint disabled"
+    }
   },
   "account": {
     "profile": "Profile",

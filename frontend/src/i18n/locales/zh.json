@@ -2247,7 +2247,21 @@
     "autoRenewalRunSuccess": "自动续订完成: 已续订 {{renewed}} 个，失败 {{failed}} 个",
     "autoRenewalRunFailed": "自动续订执行失败",
     "autoRenewalSettingsUpdated": "自动续订设置已更新",
-    "autoRenewalSettingsFailed": "自动续订设置更新失败"
+    "autoRenewalSettingsFailed": "自动续订设置更新失败",
+    "metrics": {
+      "title": "Prometheus 指标",
+      "subtitle": "用于监控的可选 /metrics 端点",
+      "token": "指标令牌",
+      "tokenPlaceholder": "输入或生成 bearer 令牌以启用",
+      "tokenRotatePlaceholder": "输入新令牌以轮换（保留当前令牌）",
+      "tokenHelper": "使用 Authorization: Bearer <令牌> 标头抓取 /metrics。令牌仅在此显示——请立即复制。",
+      "generate": "生成",
+      "enable": "启用",
+      "rotate": "轮换",
+      "disable": "禁用",
+      "enabled": "指标端点已启用",
+      "disabled": "指标端点已禁用"
+    }
   },
   "account": {
     "profile": "个人资料",

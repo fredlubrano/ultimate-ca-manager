@@ -2247,7 +2247,21 @@
     "autoRenewalRunSuccess": "Поновлення завершено: {{renewed}} поновлено, {{failed}} не вдалося",
     "autoRenewalRunFailed": "Помилка виконання автоматичного поновлення",
     "autoRenewalSettingsUpdated": "Налаштування автоматичного поновлення оновлено",
-    "autoRenewalSettingsFailed": "Не вдалося оновити налаштування поновлення"
+    "autoRenewalSettingsFailed": "Не вдалося оновити налаштування поновлення",
+    "metrics": {
+      "title": "Метрики Prometheus",
+      "subtitle": "Необовʼязковий endpoint /metrics для моніторингу",
+      "token": "Токен метрик",
+      "tokenPlaceholder": "Введіть або згенеруйте bearer-токен для активації",
+      "tokenRotatePlaceholder": "Введіть новий токен для ротації (поточний зберігається)",
+      "tokenHelper": "Збирайте /metrics із заголовком Authorization: Bearer <токен>. Токен показується лише тут — скопіюйте його зараз.",
+      "generate": "Згенерувати",
+      "enable": "Увімкнути",
+      "rotate": "Ротувати",
+      "disable": "Вимкнути",
+      "enabled": "Endpoint метрик увімкнено",
+      "disabled": "Endpoint метрик вимкнено"
+    }
   },
   "account": {
     "profile": "Профіль",
