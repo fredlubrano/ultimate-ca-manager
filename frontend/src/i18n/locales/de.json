@@ -4194,5 +4194,26 @@
     "colNextRun": "Nachste Ausf.",
     "colDuration": "Dauer",
     "colRuns": "Ausf."
+  },
+  "lint": {
+    "action": "Prüfen",
+    "title": "Konformitätsprüfung — {{name}}",
+    "titleGeneric": "Konformitätsprüfung",
+    "subtitle": "Prüft dieses Zertifikat anhand der X.509-Standards (nur informativ).",
+    "profile_rfc5280": "RFC 5280",
+    "profile_cabf": "CA/Browser Forum",
+    "loadFailed": "Prüfung fehlgeschlagen",
+    "unavailable": "Auf dem Server ist kein Zertifikat-Linter installiert",
+    "unavailableHint": "Installieren Sie pkilint auf dem Server, um die Prüfung zu aktivieren.",
+    "clean": "Keine Probleme gefunden",
+    "detectedType": "Erkannter Zertifikatstyp",
+    "cabfNote": "Die Baseline-Requirements-Regeln gelten für öffentliche TLS-Zertifikate; einige Befunde treffen auf eine interne PKI möglicherweise nicht zu.",
+    "severity": {
+      "fatal": "Fatal",
+      "error": "Fehler",
+      "warning": "Warnung",
+      "notice": "Hinweis",
+      "info": "Info"
+    }
   }
 }

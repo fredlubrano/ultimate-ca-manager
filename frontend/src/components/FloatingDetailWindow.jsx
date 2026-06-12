@@ -6,9 +6,10 @@
  */
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Certificate, ShieldCheck, Fingerprint, Trash, X, ArrowsClockwise, ShieldWarning, PushPin } from '@phosphor-icons/react'
+import { Certificate, ShieldCheck, Fingerprint, Trash, X, ArrowsClockwise, ShieldWarning, PushPin, SealCheck } from '@phosphor-icons/react'
 import { FloatingWindow } from './ui/FloatingWindow'
 import { CertificateDetails } from './CertificateDetails'
+import { CertificateLintModal } from './CertificateLintModal'
 import { CADetails } from './CADetails'
 import { TrustCertDetails } from './TrustCertDetails'
 import { certificatesService, casService, truststoreService, userCertificatesService } from '../services'
@@ -68,6 +69,7 @@ export function FloatingDetailWindow({ windowInfo }) {
   const [minimized, setMinimized] = useState(false)
   const [offlineModalOpen, setOfflineModalOpen] = useState(false)
   const [restoreModalOpen, setRestoreModalOpen] = useState(false)
+  const [lintOpen, setLintOpen] = useState(false)
 
   const config = ENTITY_CONFIG[windowInfo.type]
 
@@ -223,6 +225,7 @@ export function FloatingDetailWindow({ windowInfo }) {
     canExportKey: canWrite(resource),
     entityType: isCA ? 'ca' : 'certificate',
     entityName: title,
+    onLint: (isCert || isUserCert) ? () => setLintOpen(true) : null,
     onRenew: isCert && canWrite('certificates') && !data.revoked && data.has_private_key ? handleRenew : null,
     onRevoke: (isCert || isUserCert) && canWrite(resource) && !data.revoked ? handleRevoke : null,
     onUnhold: isCert && canWrite('certificates') && data.revoked && (data.revoke_reason === 'certificateHold' || data.revoke_reason === 'certificate_hold') ? handleUnhold : null,
@@ -274,6 +277,15 @@ export function FloatingDetailWindow({ windowInfo }) {
         </div>
       )}
     </FloatingWindow>
+
+    {(isCert || isUserCert) && data && (
+      <CertificateLintModal
+        certId={windowInfo.entityId}
+        certName={title}
+        open={lintOpen}
+        onClose={() => setLintOpen(false)}
+      />
+    )}
 
     {isCA && data && (
       <>
@@ -343,7 +355,7 @@ function DetailContent({ type, data, canWrite, canDelete, onExport, onDelete }) 
 /**
  * ActionBar — Toolbar under the window header with labeled action buttons
  */
-function ActionBar({ onExport, hasPrivateKey, canExportKey, entityType, entityName, onRenew, onRevoke, onUnhold, onOffline, onRestore, onManagePins, onDelete, t }) {
+function ActionBar({ onExport, hasPrivateKey, canExportKey, entityType, entityName, onLint, onRenew, onRevoke, onUnhold, onOffline, onRestore, onManagePins, onDelete, t }) {
   const [showExportModal, setShowExportModal] = useState(false)
   const btnBase = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-150'
 
@@ -355,6 +367,14 @@ function ActionBar({ onExport, hasPrivateKey, canExportKey, entityType, entityNa
         <Certificate size={14} weight="duotone" />
         {t('export.title', 'Export')}
       </button>
+
+      {/* Conformance lint — certificates only */}
+      {onLint && (
+        <button onClick={onLint} className={cn(btnBase, 'text-text-secondary hover:text-accent-primary hover:bg-accent-primary-op10')}>
+          <SealCheck size={14} weight="duotone" />
+          {t('lint.action', 'Lint')}
+        </button>
+      )}
 
       {/* Manage Pins — CA only */}
       {onManagePins && (

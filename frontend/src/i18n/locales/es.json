@@ -4194,5 +4194,26 @@
     "colNextRun": "Proxima ejec.",
     "colDuration": "Duracion",
     "colRuns": "Ejec."
+  },
+  "lint": {
+    "action": "Analizar",
+    "title": "Análisis de conformidad — {{name}}",
+    "titleGeneric": "Análisis de conformidad",
+    "subtitle": "Comprueba este certificado frente a los estándares X.509 (solo informativo).",
+    "profile_rfc5280": "RFC 5280",
+    "profile_cabf": "CA/Browser Forum",
+    "loadFailed": "Error al analizar",
+    "unavailable": "No hay ningún analizador de certificados instalado en el servidor",
+    "unavailableHint": "Instala pkilint en el servidor para habilitar el análisis.",
+    "clean": "No se encontraron problemas",
+    "detectedType": "Tipo de certificado detectado",
+    "cabfNote": "Las reglas de Baseline Requirements se aplican a certificados TLS públicos; algunos resultados pueden no aplicarse a una PKI interna.",
+    "severity": {
+      "fatal": "Fatal",
+      "error": "Error",
+      "warning": "Advertencia",
+      "notice": "Aviso",
+      "info": "Info"
+    }
   }
 }
