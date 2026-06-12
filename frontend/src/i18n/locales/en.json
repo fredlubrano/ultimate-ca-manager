@@ -4197,5 +4197,26 @@
     "colNextRun": "Next run",
     "colDuration": "Duration",
     "colRuns": "Runs"
+  },
+  "lint": {
+    "action": "Lint",
+    "title": "Conformance lint — {{name}}",
+    "titleGeneric": "Conformance lint",
+    "subtitle": "Check this certificate against X.509 standards (informative only).",
+    "profile_rfc5280": "RFC 5280",
+    "profile_cabf": "CA/Browser Forum",
+    "loadFailed": "Linting failed",
+    "unavailable": "No certificate linter is installed on the server",
+    "unavailableHint": "Install pkilint on the server to enable linting.",
+    "clean": "No issues found",
+    "detectedType": "Detected certificate type",
+    "cabfNote": "Baseline-Requirements rules target public TLS certificates; some findings may not apply to an internal PKI.",
+    "severity": {
+      "fatal": "Fatal",
+      "error": "Error",
+      "warning": "Warning",
+      "notice": "Notice",
+      "info": "Info"
+    }
   }
 }

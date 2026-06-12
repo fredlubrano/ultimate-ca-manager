@@ -107,3 +107,9 @@ certsrv>=2.1.0
 javaobj-py3>=0.4.3
 pycryptodomex>=3.20
 defusedxml>=0.7.1
+
+# Certificate conformance linting (RFC 5280 / CA-Browser Forum).
+# Pure-python wheel; its deps (pyasn1, pyasn1-modules, cryptography) are
+# already pulled in above. Optional at runtime — the linting feature
+# degrades gracefully (reports "linter unavailable") if it is not installed.
+pkilint>=0.12

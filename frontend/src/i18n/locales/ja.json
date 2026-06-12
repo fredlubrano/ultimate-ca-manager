@@ -4194,5 +4194,26 @@
     "colNextRun": "次回実行",
     "colDuration": "所要時間",
     "colRuns": "実行回数"
+  },
+  "lint": {
+    "action": "検査",
+    "title": "適合性検査 — {{name}}",
+    "titleGeneric": "適合性検査",
+    "subtitle": "この証明書を X.509 標準に照らして検査します（参考情報のみ）。",
+    "profile_rfc5280": "RFC 5280",
+    "profile_cabf": "CA/Browser Forum",
+    "loadFailed": "検査に失敗しました",
+    "unavailable": "サーバーに証明書リンターがインストールされていません",
+    "unavailableHint": "検査を有効にするには、サーバーに pkilint をインストールしてください。",
+    "clean": "問題は見つかりませんでした",
+    "detectedType": "検出された証明書タイプ",
+    "cabfNote": "Baseline Requirements のルールは公開 TLS 証明書を対象としています。一部の結果は内部 PKI に当てはまらない場合があります。",
+    "severity": {
+      "fatal": "致命的",
+      "error": "エラー",
+      "warning": "警告",
+      "notice": "通知",
+      "info": "情報"
+    }
   }
 }
