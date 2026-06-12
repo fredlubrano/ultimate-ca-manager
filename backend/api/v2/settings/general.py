@@ -87,6 +87,11 @@ def update_general_settings():
             # Convert booleans to string
             if isinstance(value, bool):
                 value = 'true' if value else 'false'
+            # Backup password is used for unattended scheduled backups, so it
+            # must be stored — but encrypted at rest, never plaintext.
+            if key == 'backup_password' and value:
+                from utils.encryption import encrypt_if_needed
+                value = encrypt_if_needed(value)
             set_config(key, value)
 
     try:

@@ -631,6 +631,19 @@ def create_app(config_name=None):
         except ImportError:
             pass
         
+        # Register scheduled backup task (every minute; runs only at configured time)
+        try:
+            from services.backup.schedule import run_scheduled_backup
+            scheduler.register_task(
+                name="scheduled_backup",
+                func=run_scheduled_backup,
+                interval=60,  # Check every minute (creates a backup only when due)
+                description="Create scheduled encrypted backups with retention"
+            )
+            app.logger.info("Registered scheduled backup task (every 60s)")
+        except ImportError:
+            pass
+
         # Register session cleanup task (every 15 minutes)
         try:
             from services.session_cleanup_task import SessionCleanupTask
