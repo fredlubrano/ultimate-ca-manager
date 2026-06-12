@@ -13,7 +13,7 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ### Added
 - **Certificate conformance linting** — a per-certificate "Lint" action runs the certificate through standards linters (pkilint, plus zlint when available) and shows structured findings, with selectable RFC 5280 and CA/Browser Forum profiles. Informative only; pkilint is an optional dependency and the feature degrades gracefully when it is absent.
 - **ACME Renewal Information (ARI)** — the ACME server now advertises and serves a `renewalInfo` resource (RFC 9773), returning a per-certificate suggested renewal window so clients can spread renewals and react immediately to revocation.
-- **Prometheus metrics** — opt-in, bearer-gated `/metrics` endpoint exposing certificate, CA, scheduler, webhook and ACME counters in Prometheus exposition format.
+- **Prometheus metrics** — opt-in, bearer-gated `/metrics` endpoint exposing certificate, CA, scheduler, webhook and ACME counters in Prometheus exposition format, configurable from Settings › General (generate/rotate/disable the token).
 - **Webhook delivery history** — per-endpoint delivery log with status, attempts and manual retry, backed by a durable async delivery queue with exponential backoff.
 - **Scheduler admin view** — Settings › System now lists background tasks with their status, last run and a run-now action.
 - **Scheduled backups** — automatic encrypted backups on a configurable cadence with retention.

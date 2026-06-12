@@ -5,6 +5,15 @@ export default {
     overview: 'UCMは2つのACMEモードをサポートしています：RFC 8555準拠のCA（Let\'s Encrypt、ZeroSSL、Buypass、HARICAなど）からパブリック証明書を取得するACMEクライアントと、マルチCA対応のドメインマッピングによる内部PKI自動化のためのローカルACMEサーバーです。',
     sections: [
       {
+        title: "Renewal Information (ARI, RFC 9773)",
+        content: "ローカル ACME サーバーは renewalInfo リソースを公開し、クライアントが各証明書の理想的な更新時期を知ることができます。",
+        items: [
+          { label: "推奨ウィンドウ", text: "有効期限前を中心とした開始/終了ウィンドウを返し、更新を時間的に分散します" },
+          { label: "失効", text: "失効した証明書は過去のウィンドウを返し、準拠クライアントは直ちに更新します" },
+          { label: "認証不要", text: "renewalInfo は単純な GET — アカウントや JWS は不要（RFC 9773）" },
+        ]
+      },
+      {
         title: 'ACMEクライアント',
         items: [
           { label: 'クライアント', text: '任意のACME CAから証明書を要求 — Let\'s Encrypt、ZeroSSL、Buypass、HARICA、またはカスタム' },
@@ -317,6 +326,14 @@ DNS + IP の混在注文も対応しています。
 署名された証明書には、検証された各IPに対する **iPAddress** SubjectAltName エントリが含まれます。
 
 > 💡 内部アドレス（RFC1918、ループバック）はそのまま検証されます — UCMの主要な導入モデルです。クラウドメタデータIPは引き続きブロックされます。
+
+## Renewal Information (ARI, RFC 9773)
+
+ローカル ACME サーバーは directory で \`renewalInfo\` を通知し、証明書ごとの**推奨更新ウィンドウ**を提供します。
+
+- 有効期限前を中心としたウィンドウ → 更新が時間的に分散
+- 失効した証明書 → 過去のウィンドウ（直ちに更新）
+- \`/acme/renewalInfo/<certID>\` への認証不要の GET
 
 `
   }

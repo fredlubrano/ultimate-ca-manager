@@ -5,6 +5,15 @@ export default {
     overview: 'UCM soporta dos modos ACME: cliente ACME para certificados públicos de cualquier CA compatible con RFC 8555 (Let\'s Encrypt, ZeroSSL, Buypass, HARICA, etc.), y servidor ACME local para automatización PKI interna con mapeo de dominios multi-CA.',
     sections: [
       {
+        title: "Renewal Information (ARI, RFC 9773)",
+        content: "El servidor ACME local publica un recurso renewalInfo para que los clientes conozcan el momento ideal para renovar cada certificado.",
+        items: [
+          { label: "Ventana sugerida", text: "Devuelve una ventana inicio/fin centrada antes de la expiración, para distribuir las renovaciones" },
+          { label: "Revocación", text: "Un certificado revocado devuelve una ventana en el pasado → los clientes conformes renuevan de inmediato" },
+          { label: "Sin autenticación", text: "renewalInfo es un simple GET — no requiere cuenta ni JWS (RFC 9773)" },
+        ]
+      },
+      {
         title: 'Cliente ACME',
         items: [
           { label: 'Cliente', text: 'Solicita certificados de cualquier CA ACME — Let\'s Encrypt, ZeroSSL, Buypass, HARICA o personalizada' },
@@ -317,6 +326,14 @@ También se admiten pedidos mixtos DNS + IP.
 El certificado firmado contiene una entrada SubjectAltName **iPAddress** por cada IP validada.
 
 > 💡 Las direcciones internas (RFC1918, loopback) se validan de forma nativa — el modelo de despliegue principal de UCM. Las IP de metadatos cloud siguen bloqueadas.
+
+## Renewal Information (ARI, RFC 9773)
+
+El servidor ACME local anuncia \`renewalInfo\` en su directory y sirve una **ventana de renovación sugerida** por certificado.
+
+- Ventana centrada antes de la expiración → renovaciones distribuidas
+- Certificado revocado → ventana en el pasado (renovar ya)
+- GET sin autenticación en \`/acme/renewalInfo/<certID>\`
 
 `
   }

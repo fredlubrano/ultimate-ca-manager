@@ -2247,7 +2247,21 @@
     "autoRenewalRunSuccess": "Rinnovo completato: {{renewed}} rinnovati, {{failed}} falliti",
     "autoRenewalRunFailed": "Esecuzione rinnovo automatico fallita",
     "autoRenewalSettingsUpdated": "Impostazioni rinnovo automatico aggiornate",
-    "autoRenewalSettingsFailed": "Aggiornamento impostazioni rinnovo fallito"
+    "autoRenewalSettingsFailed": "Aggiornamento impostazioni rinnovo fallito",
+    "metrics": {
+      "title": "Metriche Prometheus",
+      "subtitle": "Endpoint /metrics opzionale per il monitoraggio",
+      "token": "Token metriche",
+      "tokenPlaceholder": "Inserisci o genera un token bearer per attivare",
+      "tokenRotatePlaceholder": "Inserisci un nuovo token per ruotarlo (quello attuale viene mantenuto)",
+      "tokenHelper": "Esegui lo scrape di /metrics con l'header Authorization: Bearer <token>. Il token è mostrato solo qui — copialo ora.",
+      "generate": "Genera",
+      "enable": "Attiva",
+      "rotate": "Ruota",
+      "disable": "Disattiva",
+      "enabled": "Endpoint metriche attivato",
+      "disabled": "Endpoint metriche disattivato"
+    }
   },
   "account": {
     "profile": "Profilo",
