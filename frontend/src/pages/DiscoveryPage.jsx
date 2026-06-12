@@ -108,7 +108,7 @@ export default function DiscoveryPage() {
 
   const loadRuns = useCallback(async () => {
     try {
-      const params = { limit: 50 }
+      const params = { limit: 200 }
       if (profileFilter) params.profile_id = profileFilter
       const res = await discoveryService.getRuns(params)
       const data = res.data ?? res
@@ -748,13 +748,7 @@ export default function DiscoveryPage() {
             columnStorageKey="ucm-discovery-profiles-columns"
             sortable
             defaultSort={{ key: 'name', direction: 'asc' }}
-            pagination={{
-              page,
-              total: profiles.length,
-              perPage,
-              onChange: setPage,
-              onPerPageChange: (v) => { setPerPage(v); setPage(1) }
-            }}
+            pagination={true}
             toolbarActions={canWrite('certificates') && (
               isMobile ? (
                 <Button type="button" size="lg" onClick={() => { setEditingProfile(null); setShowProfileForm(true) }} className="w-11 h-11 p-0">
@@ -793,13 +787,7 @@ export default function DiscoveryPage() {
             columnStorageKey="ucm-discovery-history-columns"
             sortable
             defaultSort={{ key: 'started_at', direction: 'desc' }}
-            pagination={{
-              page,
-              total: runsTotal,
-              perPage,
-              onChange: setPage,
-              onPerPageChange: (v) => { setPerPage(v); setPage(1) }
-            }}
+            pagination={true}
             emptyIcon={ClockCounterClockwise}
             emptyTitle={t('discovery.noHistory')}
             emptyDescription={t('discovery.noHistoryDesc')}
