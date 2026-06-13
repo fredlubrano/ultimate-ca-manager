@@ -10,6 +10,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Added
+- **Helm chart** — `charts/ucm/` packages UCM for in-cluster deployment (Deployment, Service, Ingress, PVCs, generated/persisted secrets). Single-instance by design; persistent `/etc/ucm` master.key volume (retained on uninstall); SQLite by default or an external PostgreSQL via `database.databaseUrl`.
+
 ## [2.170] - 2026-06-13
 
 ### Added

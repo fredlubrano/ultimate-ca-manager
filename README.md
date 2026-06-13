@@ -161,10 +161,10 @@ Docker: data at `/opt/ucm/data/` (mount as volume), config via environment varia
 
 - [ ] **Code Signing** — Issue and manage code signing certificates (Authenticode, JAR, macOS)
 - [ ] **High Availability / Clustering** — Active-passive or active-active HA deployment
-- [ ] **Helm chart** — Package UCM itself as a Helm chart for in-cluster deployment (k8s clusters can already *consume* UCM today via the cert-manager integration shipped in v2.139)
 - [ ] **Post-Quantum Cryptography** — ML-DSA, ML-KEM, SLH-DSA key types (NIST FIPS 203/204/205)
 - [ ] **CMP Protocol (RFC 4210)** — Certificate Management Protocol support
 - [ ] **Key Archival & Recovery** — Secure key escrow with recovery workflows
+- [x] **Helm chart** — Package UCM itself as a Helm chart for in-cluster deployment under `charts/ucm/` (single-instance, persistent `master.key`, SQLite or external PostgreSQL) *(v2.171)*
 - [x] **SAN database columns derived from final SAN list** — `san_email` / `san_dns` / `san_ip` / `san_uri` always match the X.509 extension, with backfill migration *(v2.140)*
 - [x] **On-disk certificate & CA files** — `.crt` / `.key` materialized to disk on every creation path *(v2.140)*
 - [x] **ACME External Account Binding (EAB, RFC 8555 §7.3.4)** — Issue/rotate/revoke `kid`+`hmac` pairs for cert-manager / certbot / acme.sh *(v2.139)*
