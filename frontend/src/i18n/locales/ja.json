@@ -2636,6 +2636,8 @@
     "emailAttr": "メール属性",
     "externalGroup": "外部グループ",
     "fullnameAttr": "氏名属性",
+    "uidAttr": "安定 ID 属性",
+    "uidAttrHelp": "ユーザー名／メール変更後もアカウントを識別するための不変のディレクトリ ID（entryUUID / objectGUID）。空欄で自動検出。",
     "groupFilter": "グループフィルター",
     "groupFilterPlaceholder": "(objectClass=groupOfNames)",
     "isDefault": "デフォルトログインプロバイダー",

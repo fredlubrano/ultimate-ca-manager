@@ -59,6 +59,9 @@ class SSOProvider(db.Model):
     ldap_username_attr = db.Column(db.String(100), default='uid')
     ldap_email_attr = db.Column(db.String(100), default='mail')
     ldap_fullname_attr = db.Column(db.String(100), default='cn')
+    # Immutable id attribute (entryUUID on OpenLDAP, objectGUID on AD). Empty →
+    # auto-detect at login (objectGUID then entryUUID), falling back to the DN.
+    ldap_uid_attr = db.Column(db.String(100))
     ldap_group_member_attr = db.Column(db.String(100), default='member')  # member, uniqueMember, or memberOf
     
     # Default-deny: if set, user must belong to at least one of these groups
@@ -198,6 +201,7 @@ class SSOProvider(db.Model):
                 'ldap_username_attr': self.ldap_username_attr,
                 'ldap_email_attr': self.ldap_email_attr,
                 'ldap_fullname_attr': self.ldap_fullname_attr,
+                'ldap_uid_attr': self.ldap_uid_attr,
                 'ldap_bind_password': '***' if self.ldap_bind_password else None,
                 'ldap_required_groups': self.ldap_required_groups or '',
                 'account_status_attr': self.account_status_attr,

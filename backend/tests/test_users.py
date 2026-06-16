@@ -788,12 +788,12 @@ class TestLinkSSO:
         pid = self._provider_id(app)
         uid = self._make_local_user(app, 'link_local1', 'link_local1@test.local')
 
-        # Link, aligning the username to the SSO identity
+        # Link — the username is preserved (no rename, see #138)
         r = auth_client.post(f'/api/v2/users/{uid}/link-sso', data=json.dumps({
-            'provider_id': pid, 'sso_username': 'link_sso1',
+            'provider_id': pid,
         }), content_type='application/json')
         data = assert_success(r)
-        assert data['username'] == 'link_sso1'
+        assert data['username'] == 'link_local1'
         assert data['auth_source'] == 'ldap'
         assert data['sso_provider_id'] == pid
 
@@ -814,15 +814,6 @@ class TestLinkSSO:
         r = auth_client.post(f'/api/v2/users/{uid}/link-sso',
                              data=json.dumps({}), content_type='application/json')
         assert_error(r, 400)
-
-    def test_link_username_clash(self, app, auth_client):
-        pid = self._provider_id(app)
-        self._make_local_user(app, 'link_taken', 'link_taken@test.local')
-        uid = self._make_local_user(app, 'link_local3', 'link_local3@test.local')
-        r = auth_client.post(f'/api/v2/users/{uid}/link-sso', data=json.dumps({
-            'provider_id': pid, 'sso_username': 'link_taken',
-        }), content_type='application/json')
-        assert_error(r, 409)
 
     def test_unlink_non_linked(self, app, auth_client):
         uid = self._make_local_user(app, 'link_local4', 'link_local4@test.local')
