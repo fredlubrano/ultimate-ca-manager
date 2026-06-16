@@ -2636,6 +2636,8 @@
     "emailAttr": "E-Mail-Attribut",
     "externalGroup": "Externe Gruppe",
     "fullnameAttr": "Vollständiger Name Attribut",
+    "uidAttr": "Stabiles ID-Attribut",
+    "uidAttrHelp": "Unveränderliche Verzeichnis-ID, um das Konto trotz geänderter Benutzername/E-Mail zu erkennen (entryUUID / objectGUID). Leer = automatische Erkennung.",
     "groupFilter": "Gruppenfilter",
     "groupFilterPlaceholder": "(objectClass=groupOfNames)",
     "isDefault": "Standard-Login-Provider",

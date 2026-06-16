@@ -2636,6 +2636,8 @@
     "emailAttr": "Атрибут email",
     "externalGroup": "Зовнішня група",
     "fullnameAttr": "Атрибут повного імені",
+    "uidAttr": "Атрибут стабільного ID",
+    "uidAttrHelp": "Незмінний ідентифікатор каталогу для розпізнавання облікового запису попри зміни імені/email (entryUUID / objectGUID). Порожнє — автовизначення.",
     "groupFilter": "Фільтр груп",
     "groupFilterPlaceholder": "(objectClass=groupOfNames)",
     "isDefault": "Провайдер входу за замовчуванням",

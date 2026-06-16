@@ -2644,6 +2644,8 @@
     "usernameAttr": "Username Attribute",
     "emailAttr": "Email Attribute",
     "fullnameAttr": "Full Name Attribute",
+    "uidAttr": "Stable ID attribute",
+    "uidAttrHelp": "Immutable directory id used to recognise the account across username/email changes (entryUUID / objectGUID). Leave empty to auto-detect.",
     "attributeMapping": "Attribute Mapping",
     "ldapAttributes": "LDAP Attributes",
     "directoryType": "Directory Type",

@@ -147,6 +147,10 @@ def _ldap_authenticate_user(provider, username, password):
         extra_attrs = []
         if provider.account_status_attr:
             extra_attrs.append(provider.account_status_attr)
+        # Immutable id attribute(s) for stable account matching. Use the
+        # configured attr, else try both AD (objectGUID) and OpenLDAP (entryUUID).
+        uid_attrs = ([provider.ldap_uid_attr] if getattr(provider, 'ldap_uid_attr', None)
+                     else ['objectGUID', 'entryUUID'])
         conn.search(
             provider.ldap_base_dn,
             user_filter,
@@ -154,7 +158,7 @@ def _ldap_authenticate_user(provider, username, password):
                 provider.ldap_username_attr,
                 provider.ldap_email_attr,
                 provider.ldap_fullname_attr
-            ] + extra_attrs))
+            ] + extra_attrs + uid_attrs))
         )
 
         if not conn.entries:
@@ -272,9 +276,22 @@ def _ldap_authenticate_user(provider, username, password):
                 conn.unbind()
                 return None, 'group_denied'
 
+        # Immutable id for stable account matching (entryUUID/objectGUID).
+        stable_uid = None
+        for attr in ([provider.ldap_uid_attr] if getattr(provider, 'ldap_uid_attr', None)
+                     else ['objectGUID', 'entryUUID']):
+            try:
+                raw = getattr(user_entry, attr).value
+            except Exception:
+                raw = None
+            if raw:
+                stable_uid = raw.hex() if isinstance(raw, (bytes, bytearray)) else str(raw).strip()
+                break
+
         # Return user info
         return {
             'dn': user_dn,
+            'uid': stable_uid,  # immutable id (None → matching falls back to dn/username)
             'username': str(getattr(user_entry, provider.ldap_username_attr, username)),
             'email': str(getattr(user_entry, provider.ldap_email_attr, '')),
             'fullname': str(getattr(user_entry, provider.ldap_fullname_attr, '')),

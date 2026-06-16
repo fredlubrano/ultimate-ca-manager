@@ -112,12 +112,6 @@ def ldap_login():
     if not user:
         # Generic message — don't disclose whether the LDAP user exists or whether
         # auto-provisioning is on/off. Details go to logs only.
-        if error_code == 'email_conflict':
-            # The user did authenticate; this is a provisioning conflict, so a
-            # clear (non-sensitive) hint is fine and actionable.
-            return error_response(
-                "An account with your email address already exists. "
-                "Ask an administrator to link it to single sign-on.", 409)
         if error_code == 'auto_create_disabled':
             logger.warning(
                 f"LDAP login refused for '{username}': automatic account creation disabled"
@@ -282,13 +276,76 @@ def _get_saml_auth(flask_request, provider, relay_state=None):
     return OneLogin_Saml2_Auth(req, saml_settings)
 
 
+def _extract_external_id(provider, external_data):
+    """Stable, immutable identifier of the directory account, or None.
+
+    OIDC → `sub`; SAML → persistent `NameID`; LDAP → the configured uid attr
+    (entryUUID/objectGUID), falling back to the DN. This is the primary key used
+    to recognise an SSO account across username/email changes — email is never
+    used as an identity key (avoids account pre-hijacking).
+    """
+    ed = external_data or {}
+    ptype = (provider.provider_type or '').lower()
+    if ptype == 'oauth2':
+        val = ed.get('sub')
+    elif ptype == 'saml':
+        # Transient NameIDs change every login → not a stable identifier.
+        fmt = str(ed.get('name_id_format', '')).lower()
+        val = ed.get('name_id') if 'transient' not in fmt else None
+    else:  # ldap
+        val = ed.get('uid') or ed.get('ldap_uid') or ed.get('dn')
+    val = str(val).strip() if val else ''
+    return val or None
+
+
+def _bind_external_id(user, provider, external_id):
+    """Bind the stable id to the account (TOFU), unless another account already
+    owns it for this provider (guards against id theft)."""
+    if not external_id or user.sso_external_id == external_id:
+        return
+    taken = User.query.filter(
+        User.sso_provider_id == provider.id,
+        User.sso_external_id == external_id,
+        User.id != user.id,
+    ).first()
+    if taken:
+        logger.warning(
+            f"SSO external id {external_id!r} already bound to '{taken.username}'; "
+            f"not rebinding to '{user.username}'")
+        return
+    user.sso_external_id = external_id
+
+
 def _get_or_create_sso_user(provider, username, email, fullname, external_data):
     """Create or update a user from SSO authentication
 
     Returns:
         tuple: (user, error_code) - user object or None, and error code if failed
     """
-    user = User.query.filter_by(username=username).first()
+    from sqlalchemy import func
+    external_id = _extract_external_id(provider, external_data)
+
+    # 1. Stable-identifier match — robust to username/email changes (primary).
+    user = None
+    if external_id:
+        user = User.query.filter_by(
+            sso_provider_id=provider.id, sso_external_id=external_id).first()
+
+    # 2. Legacy / not-yet-bound: match by username (the historical SSO link).
+    if not user:
+        user = User.query.filter_by(username=username).first()
+
+    # 3. An account an admin deliberately linked (auth_source != local) that owns
+    #    this email but whose username differs (#138). Only *linked* accounts are
+    #    eligible — a purely local account is never matched by email (takeover).
+    if not user and email:
+        norm = email.strip().lower()
+        candidates = User.query.filter(func.lower(User.email) == norm).all()
+        user = (
+            next((u for u in candidates
+                  if u.sso_provider_id == provider.id and (u.auth_source or 'local') != 'local'), None)
+            or next((u for u in candidates if (u.auth_source or 'local') != 'local'), None)
+        )
 
     if user:
         # Backfill auth_source/sso_provider_id for users created before
@@ -302,21 +359,17 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
             user.sso_provider_id = provider.id
             user.auth_source = provider.provider_type
 
+        # Bind the stable id (trust-on-first-use) for future stable matching.
+        _bind_external_id(user, provider, external_id)
+
         # ── Userinfo sync (email, full name) ─────────────────────────────
         # Controlled by `auto_update_users`. Does NOT touch the role.
         if provider.auto_update_users:
+            # SSO identity is the stable external id, not the email, so syncing
+            # the directory email is safe even if a local account shares it
+            # (email is unique only among local accounts).
             if email and email != user.email:
-                # Don't steal an email already owned by another account.
-                other = User.query.filter(
-                    User.email == email, User.id != user.id
-                ).first()
-                if other:
-                    logger.warning(
-                        f"SSO email sync skipped for '{user.username}': {email} "
-                        f"already belongs to account '{other.username}'"
-                    )
-                else:
-                    user.email = email
+                user.email = email
             if fullname:
                 user.full_name = fullname
 
@@ -359,21 +412,12 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
         logger.warning(f"SSO user {username} not found and auto_create disabled")
         return None, 'auto_create_disabled'
 
-    # Refuse (don't auto-link) when the email already belongs to another account.
-    # Silently merging on email is the "account pre-hijacking" attack class, so an
-    # admin must link the accounts explicitly (POST /api/v2/users/<id>/link-sso).
-    # See #136.
+    # Auto-create a distinct SSO account. The email may already belong to a LOCAL
+    # account — that's fine: SSO identity is the stable external id, never the
+    # email, so the two accounts coexist (email is unique only among local
+    # accounts). An admin who wants a single merged account links them instead
+    # (POST /api/v2/users/<id>/link-sso). See #136/#138.
     effective_email = email or f'{username}@sso.local'
-    if effective_email:
-        clash = User.query.filter_by(email=effective_email).first()
-        if clash:
-            logger.warning(
-                f"SSO login for '{username}' (provider {provider.name}) refused: "
-                f"email {effective_email} already belongs to account "
-                f"'{clash.username}' (auth_source={clash.auth_source or 'local'}). "
-                f"An administrator must link the accounts."
-            )
-            return None, 'email_conflict'
 
     # Creation path keeps the historical fallback to default_role.
     role = _resolve_role(provider, external_data)
@@ -387,6 +431,7 @@ def _get_or_create_sso_user(provider, username, email, fullname, external_data):
         last_login=utc_now(),
         auth_source=provider.provider_type,
         sso_provider_id=provider.id,
+        sso_external_id=external_id,
     )
 
     # SSO users don't have a password — use sentinel that cannot match any hash

@@ -481,9 +481,9 @@ class TestSSOUserProvisioning:
             assert user is not None
             assert user.role == 'operator'
 
-    def test_new_sso_user_email_conflict_is_refused(self, app):
-        """#136: an SSO login whose email already belongs to an account is
-        refused (no duplicate, no silent merge) so an admin can link them."""
+    def test_new_sso_user_coexists_with_local_email(self, app):
+        """#136 (option A): an SSO login whose email belongs to a *local* account
+        creates a distinct SSO account — no refusal, identity is the stable id."""
         with app.app_context():
             from api.v2.sso import _get_or_create_sso_user
             from models import db, User
@@ -496,37 +496,88 @@ class TestSSOUserProvisioning:
             local = User(
                 username='local.bob136', email=shared, full_name='Local Bob',
                 role='admin', active=True, password_hash='hashed-local-pw',
+                auth_source='local',
             )
             db.session.add(local)
             db.session.commit()
 
-            provider = self._make_provider(default_role='admin')
+            provider = self._make_provider(provider_type='oauth2', default_role='viewer')
             user, err = _get_or_create_sso_user(
-                provider, 'sso.bob136', shared, 'SSO Bob', {'groups': []}
+                provider, 'sso.bob136', shared, 'SSO Bob', {'sub': 'sub-bob-136', 'groups': []}
             )
 
-            assert user is None
-            assert err == 'email_conflict'
-            # No duplicate created.
-            assert User.query.filter_by(email=shared).count() == 1
+            assert err is None
+            assert user is not None and user.username == 'sso.bob136'
+            assert user.sso_external_id == 'sub-bob-136'
+            # Both accounts coexist with the same email.
+            assert User.query.filter_by(email=shared).count() == 2
 
-    def test_sso_login_adopts_linked_account(self, app):
-        """After an admin links a local account to a provider and aligns the
-        username, the matching SSO login adopts that account (no new row)."""
+    def test_stable_id_match_survives_username_and_email_change(self, app):
+        """Primary match is the stable external id, robust to username/email drift."""
+        with app.app_context():
+            from api.v2.sso import _get_or_create_sso_user
+            from models import db, User
+
+            User.query.filter_by(username='stable.user').delete()
+            db.session.commit()
+            provider = self._make_provider(provider_type='oauth2', default_role='viewer',
+                                           auto_update_users=True)
+            u = User(username='stable.user', email='old@example.test', full_name='S',
+                     role='operator', active=True, password_hash='!SSO_NO_PASSWORD!',
+                     auth_source='oauth2', sso_provider_id=provider.id,
+                     sso_external_id='sub-stable-1')
+            db.session.add(u)
+            db.session.commit()
+            uid = u.id
+
+            # IdP now sends a different username AND email, same sub → same account.
+            user, err = _get_or_create_sso_user(
+                provider, 'renamed.user', 'new@example.test', 'S',
+                {'sub': 'sub-stable-1', 'groups': []}
+            )
+            assert err is None
+            assert user is not None and user.id == uid
+
+    def test_tofu_binds_external_id_on_first_login_after_link(self, app):
+        """An admin-linked account (no external id yet) gets the stable id bound
+        on first SSO login, then matches by it next time."""
+        with app.app_context():
+            from api.v2.sso import _get_or_create_sso_user
+            from models import db, User
+
+            User.query.filter(User.email == 'tofu@example.test').delete()
+            db.session.commit()
+            provider = self._make_provider(provider_type='oauth2', default_role='viewer')
+            linked = User(username='tofu.local', email='tofu@example.test', full_name='T',
+                          role='admin', active=True, password_hash='pw',
+                          auth_source='oauth2', sso_provider_id=provider.id,
+                          sso_external_id=None)
+            db.session.add(linked)
+            db.session.commit()
+            uid = linked.id
+
+            # First SSO login: matched by email (linked), binds the sub.
+            user, err = _get_or_create_sso_user(
+                provider, 'tofu.sso', 'tofu@example.test', 'T', {'sub': 'sub-tofu', 'groups': []}
+            )
+            assert err is None and user.id == uid
+            assert user.sso_external_id == 'sub-tofu'
+
+    def test_sso_login_adopts_linked_account_by_email(self, app):
+        """#138: a linked account is adopted by email even when the SSO username
+        differs from the (preserved) local username — no new row, no refusal."""
         with app.app_context():
             from api.v2.sso import _get_or_create_sso_user
             from models import db, User
 
             email = 'linked136@example.test'
-            for uname in ('jdoe', 'jdoe.local'):
-                User.query.filter_by(username=uname).delete()
+            User.query.filter(User.email == email).delete()
             db.session.commit()
 
             provider = self._make_provider(provider_type='ldap', default_role='viewer')
-            # Simulate the admin link: username aligned to the SSO username,
-            # auth_source/provider set on the existing local row.
+            # Admin linked the LOCAL account, keeping its local username 'jdoe.local'.
             linked = User(
-                username='jdoe', email=email, full_name='J Doe', role='admin',
+                username='jdoe.local', email=email, full_name='J Doe', role='admin',
                 active=True, password_hash='hashed-local-pw',
                 auth_source='ldap', sso_provider_id=provider.id,
             )
@@ -534,12 +585,38 @@ class TestSSOUserProvisioning:
             db.session.commit()
             uid = linked.id
 
+            # LDAP sends a different username ('jdoe') — must still adopt by email.
             user, err = _get_or_create_sso_user(
                 provider, 'jdoe', email, 'J Doe', {'groups': []}
             )
             assert err is None
             assert user is not None and user.id == uid
+            assert user.username == 'jdoe.local'  # username preserved
             assert User.query.filter_by(email=email).count() == 1
+
+    def test_sso_login_email_case_insensitive_adopt(self, app):
+        """Linked-account adoption tolerates email case differences."""
+        with app.app_context():
+            from api.v2.sso import _get_or_create_sso_user
+            from models import db, User
+
+            User.query.filter(User.email == 'Case.User@example.test').delete()
+            db.session.commit()
+            provider = self._make_provider(provider_type='ldap', default_role='viewer')
+            linked = User(
+                username='case.local', email='Case.User@example.test', full_name='C',
+                role='viewer', active=True, password_hash='x',
+                auth_source='ldap', sso_provider_id=provider.id,
+            )
+            db.session.add(linked)
+            db.session.commit()
+            uid = linked.id
+
+            user, err = _get_or_create_sso_user(
+                provider, 'case.sso', 'case.user@example.test', 'C', {'groups': []}
+            )
+            assert err is None
+            assert user is not None and user.id == uid
 
 
 # ============================================================

@@ -156,11 +156,12 @@ def link_user_sso(user_id):
 
     The recommended way to resolve an email collision between a local user and
     an SSO identity (#136): instead of creating a duplicate or silently merging
-    on email, an admin deliberately links the two. After linking, an SSO login
-    matching the (optionally updated) username adopts this account.
+    on email, an admin deliberately links the two. After linking, the matching
+    SSO login adopts this account **by email** — the local username is kept
+    unchanged (renaming it locked admins out of their account, see #138).
 
     POST /api/v2/users/{user_id}/link-sso
-    Body: {"provider_id": int, "sso_username": str?}
+    Body: {"provider_id": int}
     """
     if g.current_user.role != 'admin':
         return error_response('Insufficient permissions', 403)
@@ -181,19 +182,7 @@ def link_user_sso(user_id):
     if not provider:
         return error_response('SSO provider not found', 404)
 
-    # The username the IdP will send; defaults to the current one.
-    new_username = (data.get('sso_username') or user.username).strip()
-    if not new_username:
-        return error_response('sso_username cannot be empty', 400)
-    if new_username != user.username:
-        clash = User.query.filter(
-            User.username == new_username, User.id != user.id
-        ).first()
-        if clash:
-            return error_response('That username is already taken', 409)
-
-    old_username = user.username
-    user.username = new_username
+    # Keep the username; the SSO login is matched to this account by email.
     user.auth_source = provider.provider_type
     user.sso_provider_id = provider.id
 
@@ -205,8 +194,7 @@ def link_user_sso(user_id):
         resource_type='user',
         resource_id=str(user.id),
         resource_name=user.username,
-        details=(f'Linked account {old_username!r} to SSO provider '
-                 f'{provider.name!r} (username now {new_username!r})'),
+        details=f'Linked account {user.username!r} to SSO provider {provider.name!r}',
         success=True,
     )
     return success_response(
@@ -232,6 +220,7 @@ def unlink_user_sso(user_id):
 
     user.auth_source = 'local'
     user.sso_provider_id = None
+    user.sso_external_id = None
     # An account that never had a local password must set one before it can log in.
     needs_password = user.password_hash == SSO_NO_PASSWORD
     if needs_password:

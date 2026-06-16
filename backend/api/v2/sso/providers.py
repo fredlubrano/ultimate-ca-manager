@@ -140,6 +140,7 @@ def create_provider():
         provider.ldap_username_attr = data.get('ldap_username_attr', 'uid')
         provider.ldap_email_attr = data.get('ldap_email_attr', 'mail')
         provider.ldap_fullname_attr = data.get('ldap_fullname_attr', 'cn')
+        provider.ldap_uid_attr = data.get('ldap_uid_attr') or None
         required = _parse_group_list(data.get('ldap_required_groups'))
         provider.ldap_required_groups = json.dumps(required) if required else None
         provider.account_status_attr = data.get('account_status_attr')
@@ -253,7 +254,7 @@ def update_provider(provider_id=None, provider_type_name=None):
         for field in ['ldap_server', 'ldap_port', 'ldap_use_ssl', 'ldap_bind_dn',
                       'ldap_base_dn', 'ldap_user_filter',
                       'ldap_group_filter', 'ldap_group_member_attr', 'ldap_username_attr', 'ldap_email_attr',
-                      'ldap_fullname_attr', 'ldap_verify_ssl']:
+                      'ldap_fullname_attr', 'ldap_uid_attr', 'ldap_verify_ssl']:
             if field in data:
                 setattr(provider, field, data[field])
         # ldap_required_groups: normalize list/CSV string → JSON string (empty = clear)

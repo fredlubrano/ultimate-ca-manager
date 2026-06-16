@@ -2550,6 +2550,8 @@
     "usernameAttr": "Attribut nom d'utilisateur",
     "emailAttr": "Attribut email",
     "fullnameAttr": "Attribut nom complet",
+    "uidAttr": "Attribut ID stable",
+    "uidAttrHelp": "Identifiant immuable de l'annuaire pour reconnaître le compte malgré les changements de username/email (entryUUID / objectGUID). Laisser vide pour auto-détection.",
     "attributeMapping": "Mappage d'attributs",
     "ldapAttributes": "Attributs LDAP",
     "directoryType": "Type d'annuaire",

@@ -35,13 +35,20 @@ class UserSession(db.Model):
 class User(db.Model):
     """User model for authentication"""
     __tablename__ = "users"
-    
+    __table_args__ = (
+        # Email is unique only among LOCAL accounts (partial index). SSO users are
+        # identified by sso_external_id, never by email, so an SSO account may
+        # share an email with a local one (see #136/#138). Matches migration 045.
+        db.Index('ix_users_email_local', 'email', unique=True,
+                 sqlite_where=db.text("auth_source = 'local'"),
+                 postgresql_where=db.text("auth_source = 'local'")),
+        db.Index('ix_users_sso_identity', 'sso_provider_id', 'sso_external_id'),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
-    # UNIQUE: one account per email. An SSO login whose email already belongs to
-    # a local account is refused (no duplicate, no auto-link — see #136); an admin
-    # links the two explicitly via /api/v2/users/<id>/link-sso.
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    # Not globally UNIQUE — see __table_args__ (unique per local account only).
+    email = db.Column(db.String(120), nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     full_name = db.Column(db.String(255))  # Full name for WebAuthn/certificates
     role = db.Column(db.String(20), nullable=False, default="viewer")  # admin, operator, viewer
@@ -79,6 +86,10 @@ class User(db.Model):
         db.ForeignKey('pro_sso_providers.id', ondelete='SET NULL'),
         nullable=True,
     )
+    # Immutable identifier from the IdP (OIDC `sub` / SAML persistent NameID /
+    # LDAP entryUUID·objectGUID). Bound on first SSO login; the primary key used
+    # to recognise the directory account across username/email changes.
+    sso_external_id = db.Column(db.String(255), nullable=True)
 
     # Relationships
     custom_role = db.relationship('CustomRole', foreign_keys=[custom_role_id], lazy='select')
@@ -140,6 +151,7 @@ class User(db.Model):
             "failed_logins": self.failed_logins or 0,
             "auth_source": self.auth_source or 'local',
             "sso_provider_id": self.sso_provider_id,
+            "sso_external_id": self.sso_external_id,
         }
         try:
             if self.custom_role_id and self.custom_role:

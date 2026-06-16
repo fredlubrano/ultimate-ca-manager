@@ -2636,6 +2636,8 @@
     "emailAttr": "邮箱属性",
     "externalGroup": "外部组",
     "fullnameAttr": "全名属性",
+    "uidAttr": "稳定 ID 属性",
+    "uidAttrHelp": "用于在用户名/邮箱变更后识别账户的不可变目录 ID（entryUUID / objectGUID）。留空则自动检测。",
     "groupFilter": "组过滤器",
     "groupFilterPlaceholder": "(objectClass=groupOfNames)",
     "isDefault": "默认登录提供者",

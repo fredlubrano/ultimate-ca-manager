@@ -51,6 +51,7 @@ export default function SsoProviderForm({ provider, forcedType, onSave, onCancel
     ldap_username_attr: provider?.ldap_username_attr || 'uid',
     ldap_email_attr: provider?.ldap_email_attr || 'mail',
     ldap_fullname_attr: provider?.ldap_fullname_attr || 'cn',
+    ldap_uid_attr: provider?.ldap_uid_attr || '',
     ldap_required_groups: requiredGroupsToText(provider?.ldap_required_groups),
     account_status_attr: provider?.account_status_attr || '',
     // OAuth2

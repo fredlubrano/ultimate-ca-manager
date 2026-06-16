@@ -2636,6 +2636,8 @@
     "emailAttr": "Atributo de correo",
     "externalGroup": "Grupo externo",
     "fullnameAttr": "Atributo de nombre completo",
+    "uidAttr": "Atributo de ID estable",
+    "uidAttrHelp": "Identificador inmutable del directorio para reconocer la cuenta pese a cambios de usuario/correo (entryUUID / objectGUID). Vacío = autodetección.",
     "groupFilter": "Filtro de grupo",
     "groupFilterPlaceholder": "(objectClass=groupOfNames)",
     "isDefault": "Proveedor de inicio de sesión predeterminado",
