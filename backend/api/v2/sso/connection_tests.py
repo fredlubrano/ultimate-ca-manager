@@ -130,12 +130,17 @@ def _ldap_authenticate_user(provider, username, password):
             get_info=ALL
         )
 
-        # First bind as service account
+        # First bind as service account.
+        # check_names=False: we may request immutable-id attributes that don't
+        # exist in this server's schema (objectGUID on AD vs entryUUID on
+        # OpenLDAP) — the server simply returns the ones it has instead of
+        # ldap3 raising "invalid attribute type".
         conn = Connection(
             server,
             user=provider.ldap_bind_dn,
             password=_decrypt_ldap_password(provider),
-            auto_bind=True
+            auto_bind=True,
+            check_names=False,
         )
 
         # SECURITY: Escape username to prevent LDAP injection
@@ -147,18 +152,14 @@ def _ldap_authenticate_user(provider, username, password):
         extra_attrs = []
         if provider.account_status_attr:
             extra_attrs.append(provider.account_status_attr)
-        # Immutable id attribute(s) for stable account matching. Use the
-        # configured attr, else try both AD (objectGUID) and OpenLDAP (entryUUID).
-        uid_attrs = ([provider.ldap_uid_attr] if getattr(provider, 'ldap_uid_attr', None)
-                     else ['objectGUID', 'entryUUID'])
+        # Request all normal (*) and operational (+) attributes. This returns the
+        # immutable id wherever it lives — entryUUID (operational, OpenLDAP) or
+        # objectGUID (normal, AD) — without naming an attribute that may not exist
+        # in this schema (which makes ldap3 raise "invalid attribute type").
         conn.search(
             provider.ldap_base_dn,
             user_filter,
-            attributes=list(set([
-                provider.ldap_username_attr,
-                provider.ldap_email_attr,
-                provider.ldap_fullname_attr
-            ] + extra_attrs + uid_attrs))
+            attributes=['*', '+'],
         )
 
         if not conn.entries:
