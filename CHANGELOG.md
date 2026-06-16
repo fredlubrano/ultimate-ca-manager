@@ -8,6 +8,16 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ---
 
 
+## [2.173] - 2026-06-17
+
+### Changed
+- **SSO identity is now the directory's stable identifier**, never the email — OIDC `sub`, SAML persistent `NameID`, or LDAP `entryUUID`/`objectGUID` (configurable per provider, auto-detected by default). Accounts are recognised across username/email changes, and the email is never an authentication key (removes account-takeover risk). An SSO login whose email matches a local account now provisions a separate SSO account instead of erroring; an administrator can still merge them via *Link to SSO*, which no longer renames the local username (#136, #138).
+- **Backups** — the backup list is paginated, searchable and sortable, with multi-select bulk delete, a usage summary (count, total size, free disk) and a *Clean up now* action. Retention is always visible (no longer hidden behind the automatic-backup toggle) and is enforced daily even when automatic backups are off.
+
+### Fixed
+- **Backups could fill the disk** — pre-migration database snapshots are now capped to the most recent few, and backup retention runs as its own scheduled task (previously it only ran after a scheduled backup, so manual backups accumulated indefinitely).
+
+
 ## [2.172] - 2026-06-16
 
 ### Fixed
