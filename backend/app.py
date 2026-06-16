@@ -644,6 +644,19 @@ def create_app(config_name=None):
         except ImportError:
             pass
 
+        # Register backup retention task (daily; runs even when auto-backup is off)
+        try:
+            from services.backup.schedule import run_backup_retention
+            scheduler.register_task(
+                name="backup_retention",
+                func=run_backup_retention,
+                interval=86400,  # 24 hours
+                description="Prune backups past their retention period"
+            )
+            app.logger.info("Registered backup retention task (daily)")
+        except ImportError:
+            pass
+
         # Register webhook delivery task (drains the durable delivery queue with retry)
         try:
             from services.webhook_service import WebhookService
