@@ -343,6 +343,10 @@ def sso_callback(provider_type):
             # Only reached after signature + assertion verification succeeded
             attrs = saml_auth.get_attributes()
             name_id = saml_auth.get_nameid()
+            try:
+                name_id_format = saml_auth.get_nameid_format() or ''
+            except Exception:
+                name_id_format = ''
 
             # Map attributes
             attr_mapping = _parse_json_field(provider.attribute_mapping)
@@ -362,7 +366,8 @@ def sso_callback(provider_type):
             # Create or update user
             user, error_code = _get_or_create_sso_user(
                 provider, username, email, fullname,
-                {'name_id': name_id, 'attributes': {k: v for k, v in attrs.items()}}
+                {'name_id': name_id, 'name_id_format': name_id_format,
+                 'attributes': {k: v for k, v in attrs.items()}}
             )
 
             if not user:

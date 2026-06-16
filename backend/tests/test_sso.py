@@ -619,6 +619,75 @@ class TestSSOUserProvisioning:
             assert user is not None and user.id == uid
 
 
+class TestExternalIdExtraction:
+    """_extract_external_id resolves the stable id per protocol (#138)."""
+
+    def _p(self, ptype):
+        from unittest.mock import MagicMock
+        p = MagicMock(); p.provider_type = ptype; return p
+
+    def test_oauth2_uses_sub(self, app):
+        with app.app_context():
+            from api.v2.sso.ldap_routes import _extract_external_id
+            assert _extract_external_id(self._p('oauth2'), {'sub': 'abc-123', 'email': 'x'}) == 'abc-123'
+
+    def test_saml_persistent_nameid(self, app):
+        with app.app_context():
+            from api.v2.sso.ldap_routes import _extract_external_id
+            ed = {'name_id': 'G-9', 'name_id_format':
+                  'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent'}
+            assert _extract_external_id(self._p('saml'), ed) == 'G-9'
+
+    def test_saml_transient_nameid_ignored(self, app):
+        with app.app_context():
+            from api.v2.sso.ldap_routes import _extract_external_id
+            ed = {'name_id': 'ephemeral-xyz', 'name_id_format':
+                  'urn:oasis:names:tc:SAML:2.0:nameid-format:transient'}
+            assert _extract_external_id(self._p('saml'), ed) is None
+
+    def test_ldap_uses_uid_then_dn(self, app):
+        with app.app_context():
+            from api.v2.sso.ldap_routes import _extract_external_id
+            assert _extract_external_id(self._p('ldap'), {'uid': 'uuid-1', 'dn': 'cn=a'}) == 'uuid-1'
+            assert _extract_external_id(self._p('ldap'), {'uid': None, 'dn': 'cn=a'}) == 'cn=a'
+
+    def test_missing_id_returns_none(self, app):
+        with app.app_context():
+            from api.v2.sso.ldap_routes import _extract_external_id
+            assert _extract_external_id(self._p('oauth2'), {'email': 'x'}) is None
+
+
+class TestSamlStableMatch:
+    """SAML logins match by persistent NameID across username/email changes."""
+
+    def _make_provider(self, **kw):
+        from unittest.mock import MagicMock
+        p = MagicMock()
+        p.id = kw.get('id', 1); p.provider_type = 'saml'
+        p.auto_create_users = True; p.auto_update_users = True
+        p.sync_role_on_login = False; p.default_role = 'viewer'; p.role_mapping = None
+        return p
+
+    def test_saml_match_by_nameid(self, app):
+        with app.app_context():
+            from api.v2.sso import _get_or_create_sso_user
+            from models import db, User
+            User.query.filter_by(username='saml.local').delete(); db.session.commit()
+            provider = self._make_provider()
+            u = User(username='saml.local', email='s@example.test', full_name='S',
+                     role='admin', active=True, password_hash='!SSO_NO_PASSWORD!',
+                     auth_source='saml', sso_provider_id=provider.id,
+                     sso_external_id='nameid-persistent-1')
+            db.session.add(u); db.session.commit(); uid = u.id
+
+            ed = {'name_id': 'nameid-persistent-1',
+                  'name_id_format': 'urn:oasis:names:tc:SAML:2.0:nameid-format:persistent',
+                  'attributes': {}}
+            user, err = _get_or_create_sso_user(
+                provider, 'saml.renamed', 'changed@example.test', 'S', ed)
+            assert err is None and user.id == uid
+
+
 # ============================================================
 # LDAP Rate Limiting — Lockout helpers
 # ============================================================
