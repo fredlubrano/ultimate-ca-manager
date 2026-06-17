@@ -1205,6 +1205,8 @@
     "contactEmail": "連絡先メール",
     "autoRenewal": "自動更新",
     "autoRenewalDesc": "有効期限の30日前に証明書を自動更新",
+    "dnsPropagationTimeout": "DNS 伝播タイムアウト (秒)",
+    "dnsPropagationTimeoutHelper": "CA に検証を依頼する前に DNS-01 の TXT レコードを確認する最大時間。遅い/レジストラ DNS では増やしてください。0 = 即時送信。",
     "revokeOnRenewal": "更新後に古い証明書を失効させる",
     "revokeOnRenewalDesc": "新しい証明書の発行時に前の証明書を'superseded'の理由で自動的に失効させます",
     "renewalPolicy": "更新ポリシー",
