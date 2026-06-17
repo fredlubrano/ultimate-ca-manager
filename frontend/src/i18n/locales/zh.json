@@ -1236,6 +1236,7 @@
     "productionWarningTitle": "生产模式",
     "productionWarningDesc": "生产证书有速率限制。测试请使用暂存环境。",
     "certificateRequestCreated": "证书请求已创建",
+    "certificateRequestAutoPolling": "证书请求已创建。DNS 验证正在后台运行 — 签发后将会通知您。",
     "certificateRequestFailed": "创建证书请求失败",
     "challengeVerificationStarted": "验证已开始",
     "challengeVerificationFailed": "验证失败",

@@ -34,7 +34,7 @@ import LocalDomainForm from './acme/LocalDomainForm'
 
 export default function ACMEPage() {
   const { t } = useTranslation()
-  const { showSuccess, showError, showConfirm, showWarning } = useNotification()
+  const { showSuccess, showError, showConfirm, showWarning, showInfo } = useNotification()
   const { canWrite, canDelete } = usePermission()
 
   // Data states - ACME Server
@@ -102,6 +102,39 @@ export default function ACMEPage() {
   useEffect(() => {
     loadData()
   }, [])
+
+  // Poll status for an order running the background auto-poll flow (DNS-01 with
+  // an automated provider). request_certificate returns immediately and kicks
+  // off a background thread; the UI reflects progress by polling /status until
+  // the order reaches a terminal state.
+  useEffect(() => {
+    const order = selectedClientOrder
+    if (!order || !['processing', 'validating'].includes(order.status)) return
+    let cancelled = false
+    const poll = async () => {
+      try {
+        const result = await acmeService.checkOrderStatus(order.id)
+        if (cancelled) return
+        const updated = result.data?.order
+        const status = result.data?.status
+        if (updated) {
+          setSelectedClientOrder(updated)
+          setClientOrders(prev => prev.map(o => o.id === updated.id ? updated : o))
+        }
+        if (status === 'issued') {
+          showSuccess(t('acme.orderFinalized'))
+          loadData()
+        } else if (status === 'invalid') {
+          showError(order.error_message || t('acme.orderInvalid'))
+          loadData()
+        }
+      } catch {
+        // Network blip — keep polling; the user can also refresh manually.
+      }
+    }
+    const interval = setInterval(poll, 4000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [selectedClientOrder?.id, selectedClientOrder?.status])
 
   const loadData = async () => {
     setLoading(true)
@@ -324,15 +357,20 @@ export default function ACMEPage() {
   const handleRequestCertificate = async (data) => {
     try {
       const result = await acmeService.requestCertificate(data)
-      if (result.data?.challenge_warning) {
-        showWarning(result.data.challenge_warning)
+      const payload = result.data || {}
+      if (payload.challenge_warning) {
+        showWarning(payload.challenge_warning)
+      } else if (payload.auto_polling) {
+        // Automated DNS-01: issuance runs in the background; the detail panel
+        // polls /status until done.
+        showInfo(t('acme.certificateRequestAutoPolling'))
       } else {
         showSuccess(t('acme.certificateRequestCreated'))
       }
       setShowRequestModal(false)
       loadData()
-      if (result.data) {
-        setSelectedClientOrder(result.data)
+      if (payload.order) {
+        setSelectedClientOrder(payload.order)
       }
     } catch (error) {
       showError(error.message || t('acme.certificateRequestFailed'))

@@ -1236,6 +1236,7 @@
     "productionWarningTitle": "Produktionsmodus",
     "productionWarningDesc": "Produktionszertifikate sind ratenlimitiert. Verwenden Sie Staging zum Testen.",
     "certificateRequestCreated": "Zertifikatsanfrage erstellt",
+    "certificateRequestAutoPolling": "Zertifikatsanfrage erstellt. Die DNS-Validierung läuft im Hintergrund — Sie werden bei der Ausstellung benachrichtigt.",
     "certificateRequestFailed": "Zertifikatsanfrage fehlgeschlagen",
     "challengeVerificationStarted": "Challenge-Verifizierung gestartet",
     "challengeVerificationFailed": "Challenge-Verifizierung fehlgeschlagen",
