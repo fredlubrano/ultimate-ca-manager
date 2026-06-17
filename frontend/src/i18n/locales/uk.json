@@ -1236,6 +1236,7 @@
     "productionWarningTitle": "Режим продакшн",
     "productionWarningDesc": "Продакшн сертифікати мають обмеження. Для тестування використовуйте staging.",
     "certificateRequestCreated": "Запит на сертифікат створено",
+    "certificateRequestAutoPolling": "Запит на сертифікат створено. Перевірка DNS виконується у фоновому режимі — ви отримаєте сповіщення після випуску.",
     "certificateRequestFailed": "Не вдалося створити запит на сертифікат",
     "challengeVerificationStarted": "Перевірку розпочато",
     "challengeVerificationFailed": "Перевірка не вдалася",

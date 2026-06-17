@@ -261,6 +261,7 @@
     "productionWarningTitle": "Mode Production",
     "productionWarningDesc": "Les certificats de production sont limités. Utilisez le mode test pour les essais.",
     "certificateRequestCreated": "Demande de certificat créée",
+    "certificateRequestAutoPolling": "Demande de certificat créée. La validation DNS s'exécute en arrière-plan — vous serez notifié à l'émission.",
     "certificateRequestFailed": "Échec de la création de la demande de certificat",
     "challengeVerificationStarted": "Vérification du challenge lancée",
     "challengeVerificationFailed": "Échec de la vérification du challenge",

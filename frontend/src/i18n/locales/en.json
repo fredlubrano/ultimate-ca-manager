@@ -1236,6 +1236,7 @@
     "productionWarningTitle": "Production Mode",
     "productionWarningDesc": "Production certificates are rate limited. Use staging for testing.",
     "certificateRequestCreated": "Certificate request created",
+    "certificateRequestAutoPolling": "Certificate request created. DNS validation is running in the background — you'll be notified when it's issued.",
     "certificateRequestFailed": "Failed to create certificate request",
     "challengeVerificationStarted": "Challenge verification started",
     "challengeVerificationFailed": "Failed to verify challenge",

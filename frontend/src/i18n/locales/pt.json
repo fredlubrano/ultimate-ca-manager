@@ -1236,6 +1236,7 @@
     "productionWarningTitle": "Modo de produção",
     "productionWarningDesc": "Certificados de produção têm limites de taxa. Use staging para testes.",
     "certificateRequestCreated": "Solicitação de certificado criada",
+    "certificateRequestAutoPolling": "Solicitação de certificado criada. A validação DNS está em execução em segundo plano — você será notificado quando for emitido.",
     "certificateRequestFailed": "Falha ao criar solicitação de certificado",
     "challengeVerificationStarted": "Verificação do desafio iniciada",
     "challengeVerificationFailed": "Falha na verificação do desafio",

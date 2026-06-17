@@ -1236,6 +1236,7 @@
     "productionWarningTitle": "本番モード",
     "productionWarningDesc": "本番証明書にはレート制限があります。テストにはステージングを使用。",
     "certificateRequestCreated": "証明書リクエストを作成しました",
+    "certificateRequestAutoPolling": "証明書リクエストを作成しました。DNS検証はバックグラウンドで実行されています — 発行時に通知します。",
     "certificateRequestFailed": "証明書リクエストの作成に失敗しました",
     "challengeVerificationStarted": "チャレンジ検証を開始しました",
     "challengeVerificationFailed": "チャレンジ検証に失敗しました",
