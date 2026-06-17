@@ -230,6 +230,8 @@
     "contactEmail": "Email de contact",
     "autoRenewal": "Renouvellement automatique",
     "autoRenewalDesc": "Renouveler automatiquement les certificats 30 jours avant expiration",
+    "dnsPropagationTimeout": "Délai de propagation DNS (s)",
+    "dnsPropagationTimeoutHelper": "Durée d'attente du TXT DNS-01 (vérification active) avant de demander la validation au CA. À augmenter pour un DNS lent/registrar. 0 = soumission immédiate.",
     "revokeOnRenewal": "Révoquer l'ancien certificat après renouvellement",
     "revokeOnRenewalDesc": "Révoquer automatiquement le certificat précédent avec la raison 'superseded' lors de l'émission d'un nouveau",
     "renewalPolicy": "Politique de renouvellement",

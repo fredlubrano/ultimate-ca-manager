@@ -1205,6 +1205,8 @@
     "contactEmail": "Email de contato",
     "autoRenewal": "Renovação automática",
     "autoRenewalDesc": "Renovar certificados automaticamente 30 dias antes do vencimento",
+    "dnsPropagationTimeout": "Tempo de propagação DNS (s)",
+    "dnsPropagationTimeoutHelper": "Quanto tempo sondar o registo TXT DNS-01 antes de pedir validação à CA. Aumente para DNS lento/de registrador. 0 = enviar imediatamente.",
     "revokeOnRenewal": "Revogar certificado antigo após renovação",
     "revokeOnRenewalDesc": "Revogar automaticamente o certificado anterior com o motivo 'superseded' ao emitir um novo",
     "renewalPolicy": "Política de renovação",

@@ -274,6 +274,20 @@ export default function LetsEncryptTab({
             </div>
           )}
 
+          <Input
+            label={t('acme.dnsPropagationTimeout')}
+            type="number"
+            min="0"
+            max="3600"
+            defaultValue={clientSettings.dns_propagation_timeout ?? 120}
+            onBlur={(e) => {
+              const v = parseInt(e.target.value, 10)
+              if (!Number.isNaN(v)) onUpdateClientSetting('dns_propagation_timeout', v)
+            }}
+            disabled={!canWrite}
+            helperText={t('acme.dnsPropagationTimeoutHelper')}
+          />
+
           <Select
             label={t('acme.keyType')}
             value={clientSettings.key_type || 'RSA-2048'}

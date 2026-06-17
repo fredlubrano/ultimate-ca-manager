@@ -1205,6 +1205,8 @@
     "contactEmail": "联系邮箱",
     "autoRenewal": "自动续期",
     "autoRenewalDesc": "在到期前30天自动续期证书",
+    "dnsPropagationTimeout": "DNS 传播超时（秒）",
+    "dnsPropagationTimeoutHelper": "在请求 CA 验证前轮询 DNS-01 TXT 记录的时长。对于较慢/注册商 DNS 可调高。0 = 立即提交。",
     "revokeOnRenewal": "续期后吊销旧证书",
     "revokeOnRenewalDesc": "签发新证书时自动以'superseded'为由吊销前一个证书",
     "renewalPolicy": "续期策略",
