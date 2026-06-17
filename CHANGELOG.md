@@ -8,6 +8,15 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ---
 
 
+## [2.174] - 2026-06-17
+
+### Fixed
+- **Duplicate webhook notifications** — `certificate.expiring` (and other events) could be delivered twice with an identical payload while the delivery log showed a single event. Webhook deliveries are now claimed atomically (exactly-once) and the background scheduler runs in a single process, so each delivery is sent once even under concurrent workers (#139).
+
+### Security
+- Updated `cryptography` to 48.0.1 (GHSA-537c-gmf6-5ccf, vulnerable OpenSSL in wheels) and forced `ws` to 8.21.0 (CVE-2026-48779, WebSocket DoS).
+
+
 ## [2.173] - 2026-06-17
 
 ### Changed
