@@ -82,6 +82,7 @@ export default function ACMEPage() {
   const [localEabKid, setLocalEabKid] = useState('')
   const [localProxyUpstreamUrl, setLocalProxyUpstreamUrl] = useState('')
   const [localProxyEabKid, setLocalProxyEabKid] = useState('')
+  const [localDnsTimeout, setLocalDnsTimeout] = useState('')
   const [proxyEabHmacInput, setProxyEabHmacInput] = useState(null)
   const [testingConnection, setTestingConnection] = useState(false)
   const [connectionResult, setConnectionResult] = useState(null)
@@ -134,6 +135,7 @@ export default function ACMEPage() {
       setLocalEabKid(cs.eab_kid || '')
       setLocalProxyUpstreamUrl(cs.proxy_upstream_url || '')
       setLocalProxyEabKid(cs.proxy_eab_kid || '')
+      setLocalDnsTimeout(String(cs.dns_propagation_timeout ?? 120))
       
       setDnsProviders(dnsProvidersRes.data || [])
       setDnsProviderTypes(dnsTypesRes.data || [])
@@ -279,6 +281,23 @@ export default function ACMEPage() {
     }
   }
 
+  // Save a bounded integer field on blur (clamps client-side; matches the
+  // server-side validation so a rejected value is never sent).
+  const handleBlurSaveInt = async (key, rawValue, localSetter, { min = 0, max = 3600, fallback = 0 } = {}) => {
+    let parsed = parseInt(rawValue, 10)
+    if (Number.isNaN(parsed)) parsed = fallback
+    parsed = Math.max(min, Math.min(max, parsed))
+    localSetter(String(parsed)) // normalize the field even on success
+    if (parsed === clientSettings[key]) return
+    try {
+      await acmeService.updateClientSettings({ [key]: parsed })
+      setClientSettings(prev => ({ ...prev, [key]: parsed }))
+    } catch (error) {
+      showError(error.message || t('messages.errors.updateFailed.settings'))
+      localSetter(String(clientSettings[key] ?? fallback))
+    }
+  }
+
   const handleToggleRevokeOnRenewal = (enabled) => {
     if (enabled && revokeSuperseded && acmeSettings.superseded_count > 0) {
       setShowRevokeConfirm(true)
@@ -320,10 +339,32 @@ export default function ACMEPage() {
     }
   }
   
-  const handleVerifyChallenge = async (order) => {
+  const handleVerifyChallenge = async (order, force = false) => {
     try {
-      const result = await acmeService.verifyChallenge(order.id)
-      const updatedOrder = result.data?.order
+      const result = await acmeService.verifyChallenge(order.id, null, force)
+      const data = result.data || {}
+
+      // DNS self-check gate: the expected TXT record isn't visible to UCM yet.
+      // Don't submit (a failed validation marks the order invalid and burns the
+      // token). Surface the missing domains and offer to force-verify anyway.
+      if (data.dns_not_ready) {
+        const missing = (data.missing || []).join(', ') || '?'
+        const confirmed = await showConfirm(
+          t('acme.dnsNotReadyConfirmDesc', { domains: missing }),
+          {
+            title: t('acme.dnsNotReadyTitle'),
+            confirmText: t('acme.forceVerify'),
+            variant: 'primary',
+          }
+        )
+        if (confirmed) {
+          return handleVerifyChallenge(order, true)
+        }
+        showWarning(t('acme.dnsNotReadyWarning', { domains: missing }))
+        return
+      }
+
+      const updatedOrder = data.order
       if (updatedOrder?.status === 'ready') {
         showSuccess(t('acme.challengeValidated'))
       } else if (updatedOrder?.status === 'pending') {
@@ -936,6 +977,9 @@ export default function ACMEPage() {
             testingConnection={testingConnection}
             connectionResult={connectionResult}
             onBlurSave={handleBlurSave}
+            onBlurSaveInt={handleBlurSaveInt}
+            localDnsTimeout={localDnsTimeout}
+            onLocalDnsTimeoutChange={setLocalDnsTimeout}
             onUpdateClientSetting={handleUpdateClientSetting}
             onRegisterProxy={handleRegisterProxy}
             onUnregisterProxy={handleUnregisterProxy}
