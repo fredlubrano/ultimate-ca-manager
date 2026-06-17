@@ -65,3 +65,25 @@ def test_selfcheck_ignores_non_dns_challenges(fake_dns):
     ch = {'a.com': {'dns_txt_name': None, 'dns_txt_value': None}}  # http-01
     res = orders_mod._dns_selfcheck(ch, timeout=0)
     assert res['ok'] is True and res['missing'] == []
+
+
+def test_auto_selfcheck_budget_keeps_request_under_worker_timeout():
+    """The synchronous auto-poll self-check MUST stay bounded so the whole HTTP
+    request fits under the gunicorn worker timeout (120s) — the status poll loop
+    after it needs up to 60s. A configured timeout of 3600 must NOT be honored
+    verbatim in the auto path (#140 regression)."""
+    # budget + 60s poll loop must leave headroom under the 120s worker timeout
+    assert orders_mod._AUTO_SELFCHECK_BUDGET <= 50
+
+
+def test_auto_selfcheck_timeout_capped(monkeypatch):
+    # Simulate a config that would blow past the gunicorn worker timeout
+    monkeypatch.setattr(orders_mod, '_dns_propagation_timeout', lambda: 3600)
+    effective = orders_mod._auto_selfcheck_timeout()
+    assert effective == orders_mod._AUTO_SELFCHECK_BUDGET
+    assert effective <= 50
+
+
+def test_auto_selfcheck_timeout_respects_smaller_config(monkeypatch):
+    monkeypatch.setattr(orders_mod, '_dns_propagation_timeout', lambda: 20)
+    assert orders_mod._auto_selfcheck_timeout() == 20

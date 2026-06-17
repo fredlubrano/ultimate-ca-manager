@@ -29,6 +29,14 @@ logger = logging.getLogger(__name__)
 _DNS_SELFCHECK_DEFAULT_TIMEOUT = 120
 _DNS_SELFCHECK_INTERVAL = 5
 
+# The automated self-check runs synchronously inside the HTTP request, so it
+# MUST stay well under the gunicorn worker timeout (120s in gunicorn_config.py).
+# _auto_poll_and_finalize also runs a status poll loop (max_wait=60s) after the
+# self-check, so cap the budget regardless of the configured timeout (which can
+# be set up to 3600 for completeness). Without this cap, a slow-but-valid TXT
+# would let the worker be killed mid-request → 502 for the client (#140).
+_AUTO_SELFCHECK_BUDGET = 40
+
 
 def _dns_propagation_timeout() -> int:
     cfg = SystemConfig.query.filter_by(key='acme.client.dns_propagation_timeout').first()
@@ -36,6 +44,16 @@ def _dns_propagation_timeout() -> int:
         return max(0, int(cfg.value)) if cfg and cfg.value is not None else _DNS_SELFCHECK_DEFAULT_TIMEOUT
     except (ValueError, TypeError):
         return _DNS_SELFCHECK_DEFAULT_TIMEOUT
+
+
+def _auto_selfcheck_timeout() -> int:
+    """Effective DNS self-check timeout for the synchronous auto-poll path.
+
+    Bounded by _AUTO_SELFCHECK_BUDGET so the whole request stays under the
+    gunicorn worker timeout. The manual verify path does a single quick pass
+    (timeout=0) and is not affected.
+    """
+    return min(_dns_propagation_timeout(), _AUTO_SELFCHECK_BUDGET)
 
 
 def _txt_present(name: str, expected: str) -> bool:
@@ -524,7 +542,9 @@ def _auto_poll_and_finalize(client, order) -> dict:
 
         # 1. Self-check DNS propagation: poll for the expected TXT records up to
         #    the configured timeout before asking the CA to validate (#140).
-        timeout = _dns_propagation_timeout()
+        #    The automated path runs inline in the HTTP request, so cap the wait
+        #    so the whole request stays under the gunicorn worker timeout.
+        timeout = _auto_selfcheck_timeout()
         check = _dns_selfcheck(challenges, timeout)
         result['dns_propagation_wait'] = True
         if check['ok']:

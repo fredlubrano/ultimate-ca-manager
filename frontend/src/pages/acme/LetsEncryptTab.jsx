@@ -33,6 +33,9 @@ export default function LetsEncryptTab({
   testingConnection,
   connectionResult,
   onBlurSave,
+  onBlurSaveInt,
+  localDnsTimeout,
+  onLocalDnsTimeoutChange,
   onUpdateClientSetting,
   onRegisterProxy,
   onUnregisterProxy,
@@ -279,11 +282,9 @@ export default function LetsEncryptTab({
             type="number"
             min="0"
             max="3600"
-            defaultValue={clientSettings.dns_propagation_timeout ?? 120}
-            onBlur={(e) => {
-              const v = parseInt(e.target.value, 10)
-              if (!Number.isNaN(v)) onUpdateClientSetting('dns_propagation_timeout', v)
-            }}
+            value={localDnsTimeout}
+            onChange={(e) => onLocalDnsTimeoutChange(e.target.value)}
+            onBlur={() => onBlurSaveInt('dns_propagation_timeout', localDnsTimeout, onLocalDnsTimeoutChange, { min: 0, max: 3600, fallback: 120 })}
             disabled={!canWrite}
             helperText={t('acme.dnsPropagationTimeoutHelper')}
           />
