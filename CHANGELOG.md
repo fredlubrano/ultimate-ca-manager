@@ -8,6 +8,12 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ---
 
 
+## [2.178] - 2026-06-23
+
+### Fixed
+- **OCSP responder now echoes the request CertID hash algorithm** — the OCSP responder previously always built the `SingleResponse` CertID with SHA-256, regardless of the hash algorithm used in the request. Strict RFC 6960 clients (notably Cisco ASA) send a SHA-1 CertID and reject a response whose CertID they cannot match back to their request, causing OCSP validation to fail despite a valid `good` status. The responder now uses the request's hash algorithm (SHA-1, SHA-256, SHA-384, SHA-512) and recomputes the issuer name/key hashes accordingly, and the response cache is keyed per hash algorithm to avoid cross-algorithm cache collisions (#143).
+
+
 ## [2.177] - 2026-06-21
 
 ### Fixed
