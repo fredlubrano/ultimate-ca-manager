@@ -482,8 +482,12 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Grid Layout — flex-1 fills remaining space on desktop, natural flow on mobile */}
-        <div ref={gridContainerRef} className={isDesktopGrid ? 'flex-1 min-h-0' : ''}>
+        {/* Grid Layout — flex-1 fills remaining space on desktop, natural flow on mobile.
+            overflow-y-auto: the dynamic rowHeight is calibrated to fit 15 rows, but when
+            the grid is narrower than the lg breakpoint the sidebar pushes RGL into its md
+            layout (~33 rows), and a saved/custom lg layout can also exceed 15 rows. In both
+            cases content must scroll instead of being clipped (issue #144). */}
+        <div ref={gridContainerRef} className={isDesktopGrid ? 'flex-1 min-h-0 overflow-y-auto' : ''}>
         {gridMounted && isDesktopGrid && (
         <Responsive
           key={gridKey}
