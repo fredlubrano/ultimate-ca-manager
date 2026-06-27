@@ -1,17 +1,37 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Info, HardDrives, Globe, GithubLogo, WarningCircle, Shield
+  Info, HardDrives, Globe, GithubLogo, WarningCircle, Shield, Archive,
 } from '@phosphor-icons/react'
 import {
-  Badge, Logo, DetailContent, DetailHeader, DetailSection, DetailGrid, DetailField
+  Badge, Logo, DetailContent, DetailHeader, DetailSection, DetailGrid, DetailField, Button,
 } from '../../components'
 import { systemService } from '../../services'
+import { useNotification } from '../../contexts'
+import { usePermission } from '../../hooks'
+import { downloadBlob } from '../../lib/utils'
 
 export default function AboutSection() {
   const { t } = useTranslation()
+  const { showError, showSuccess } = useNotification()
+  const { isAdmin } = usePermission()
   const [info, setInfo] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [bundleLoading, setBundleLoading] = useState(false)
+
+  const handleDownloadBundle = async () => {
+    setBundleLoading(true)
+    try {
+      const blob = await systemService.downloadLogBundle()
+      // Filename from Content-Disposition if present, else fallback.
+      downloadBlob(blob, `ucm-logs-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '')}.zip`)
+      showSuccess(t('settings.about.logBundleSuccess'))
+    } catch (error) {
+      showError(error.message || t('settings.about.logBundleFailed'))
+    } finally {
+      setBundleLoading(false)
+    }
+  }
 
   useEffect(() => {
     const fetchInfo = async () => {
@@ -65,6 +85,28 @@ export default function AboutSection() {
           <DetailField label={t('settings.about.environment')} value={info?.is_docker ? 'Docker' : 'Native'} />
         </DetailGrid>
       </DetailSection>
+
+      {/* Diagnostic bundle — admin only */}
+      {isAdmin() && (
+        <DetailSection title={t('settings.about.diagnostic')} icon={Archive} iconClass="icon-bg-orange" className="mt-4">
+          <div className="flex items-center justify-between gap-3 p-3 bg-tertiary-50 border border-border rounded-lg">
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-text-primary">{t('settings.about.logBundle')}</div>
+              <div className="text-xs text-text-secondary">{t('settings.about.logBundleHint')}</div>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={handleDownloadBundle}
+              disabled={bundleLoading}
+            >
+              <Archive size={14} />
+              {bundleLoading ? t('common.preparing') : t('common.download')}
+            </Button>
+          </div>
+        </DetailSection>
+      )}
 
       {/* Links */}
       <DetailSection title={t('settings.about.links')} icon={Globe} iconClass="icon-bg-teal" className="mt-4">

@@ -427,7 +427,8 @@
     "healthStatus": "Estado de salud",
     "remove": "Eliminar",
     "continue": "Continuar",
-    "keyRecovery": "Recuperación de claves"
+    "keyRecovery": "Recuperación de claves",
+    "preparing": "Preparando…"
   },
   "commandPalette": {
     "searchPlaceholder": "Buscar comandos, certificados, CAs, usuarios...",
@@ -2182,7 +2183,12 @@
       "documentation": "Documentación",
       "wikiGuides": "Wiki y guías de usuario",
       "license": "Licencia",
-      "licenseDesc": "Software libre y de código abierto."
+      "licenseDesc": "Software libre y de código abierto.",
+      "diagnostic": "Diagnóstico",
+      "logBundle": "Paquete de logs",
+      "logBundleHint": "Descarga los logs de la aplicación, el log de errores, el diario del sistema y un breve diagnóstico (los tokens sensibles se censuran).",
+      "logBundleSuccess": "Paquete de logs descargado.",
+      "logBundleFailed": "Error al descargar el paquete de logs."
     },
     "emailTemplate": "Plantilla de correo",
     "templateDescription": "Personalice la plantilla HTML utilizada para todas las notificaciones por correo.",

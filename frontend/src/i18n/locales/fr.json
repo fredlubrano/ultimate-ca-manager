@@ -1216,7 +1216,8 @@
     "healthStatus": "État de santé",
     "remove": "Supprimer",
     "continue": "Continuer",
-    "keyRecovery": "Récupération de clés"
+    "keyRecovery": "Récupération de clés",
+    "preparing": "Préparation…"
   },
   "compare": {
     "title": "Comparer les certificats",
@@ -2352,7 +2353,12 @@
       "documentation": "Documentation",
       "wikiGuides": "Wiki et guides utilisateur",
       "license": "Licence",
-      "licenseDesc": "Logiciel libre et open-source."
+      "licenseDesc": "Logiciel libre et open-source.",
+      "diagnostic": "Diagnostic",
+      "logBundle": "Journal de logs",
+      "logBundleHint": "Télécharge les logs applicatifs, le log d'erreurs, le journal système et un diagnostic court (les secrets sont masqués).",
+      "logBundleSuccess": "Journal de logs téléchargé.",
+      "logBundleFailed": "Échec du téléchargement du journal."
     },
     "emailTemplate": "Modèle d'email",
     "templateDescription": "Personnalisez le modèle HTML utilisé pour toutes les notifications email.",

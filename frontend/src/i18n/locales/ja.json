@@ -427,7 +427,8 @@
     "healthStatus": "ヘルスステータス",
     "remove": "削除",
     "continue": "続行",
-    "keyRecovery": "鍵リカバリ"
+    "keyRecovery": "鍵リカバリ",
+    "preparing": "準備中…"
   },
   "commandPalette": {
     "searchPlaceholder": "コマンド、証明書、CA、ユーザーを検索...",
@@ -2182,7 +2183,12 @@
       "documentation": "ドキュメント",
       "wikiGuides": "Wikiとユーザーガイド",
       "license": "ライセンス",
-      "licenseDesc": "フリーでオープンソースなソフトウェアです。"
+      "licenseDesc": "フリーでオープンソースなソフトウェアです。",
+      "diagnostic": "診断",
+      "logBundle": "ログバンドル",
+      "logBundleHint": "アプリケーションログ、エラーログ、システムジャーナル、簡単な診断をダウンロードします（機密トークンは伏せ字になります）。",
+      "logBundleSuccess": "ログバンドルをダウンロードしました。",
+      "logBundleFailed": "ログバンドルのダウンロードに失敗しました。"
     },
     "emailTemplate": "メールテンプレート",
     "templateDescription": "すべてのメール通知に使用されるHTMLテンプレートをカスタマイズします。",
