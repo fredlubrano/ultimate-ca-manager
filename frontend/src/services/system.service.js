@@ -32,6 +32,11 @@ export const systemService = {
     return apiClient.download(`/system/backup/${encodeURIComponent(filename)}/download`)
   },
 
+  async downloadLogBundle() {
+    // Diagnostic log bundle (ZIP): ucm.log + error.log + journal + system.txt
+    return apiClient.download('/system/logs/bundle')
+  },
+
   async deleteBackup(filename) {
     return apiClient.delete(`/system/backup/${encodeURIComponent(filename)}`)
   },

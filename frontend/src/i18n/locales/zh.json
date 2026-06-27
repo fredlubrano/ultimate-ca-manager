@@ -427,7 +427,8 @@
     "healthStatus": "健康状态",
     "remove": "移除",
     "continue": "继续",
-    "keyRecovery": "密钥恢复"
+    "keyRecovery": "密钥恢复",
+    "preparing": "准备中…"
   },
   "commandPalette": {
     "searchPlaceholder": "搜索命令、证书、CA、用户...",
@@ -2182,7 +2183,12 @@
       "documentation": "文档",
       "wikiGuides": "Wiki和用户指南",
       "license": "许可证",
-      "licenseDesc": "自由开源软件。"
+      "licenseDesc": "自由开源软件。",
+      "diagnostic": "诊断",
+      "logBundle": "日志包",
+      "logBundleHint": "下载应用日志、错误日志、系统日志和简短诊断（敏感令牌已脱敏）。",
+      "logBundleSuccess": "已下载日志包。",
+      "logBundleFailed": "下载日志包失败。"
     },
     "emailTemplate": "邮件模板",
     "templateDescription": "自定义所有邮件通知使用的HTML模板。",

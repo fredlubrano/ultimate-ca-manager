@@ -427,7 +427,8 @@
     "healthStatus": "Gesundheitsstatus",
     "remove": "Entfernen",
     "continue": "Weiter",
-    "keyRecovery": "Schlüsselwiederherstellung"
+    "keyRecovery": "Schlüsselwiederherstellung",
+    "preparing": "Vorbereitung…"
   },
   "commandPalette": {
     "searchPlaceholder": "Befehle, Zertifikate, CAs, Benutzer suchen...",
@@ -2182,7 +2183,12 @@
       "documentation": "Dokumentation",
       "wikiGuides": "Wiki und Benutzerhandbücher",
       "license": "Lizenz",
-      "licenseDesc": "Freie und quelloffene Software."
+      "licenseDesc": "Freie und quelloffene Software.",
+      "diagnostic": "Diagnose",
+      "logBundle": "Log-Bündel",
+      "logBundleHint": "Lädt Anwendungslogs, Fehlerlog, Systemjournal und eine kurze Diagnose herunter (sensible Tokens werden geschwärzt).",
+      "logBundleSuccess": "Log-Bündel heruntergeladen.",
+      "logBundleFailed": "Download des Log-Bündels fehlgeschlagen."
     },
     "emailTemplate": "E-Mail-Vorlage",
     "templateDescription": "Passen Sie die HTML-Vorlage für alle E-Mail-Benachrichtigungen an.",

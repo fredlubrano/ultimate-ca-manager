@@ -52,6 +52,7 @@ from api.v2.system import audit  # noqa: F401
 from api.v2.system import alerts  # noqa: F401
 from api.v2.system import updates  # noqa: F401
 from api.v2.system import service  # noqa: F401
+from api.v2.system import logs  # noqa: F401
 from api.v2.dashboard import bp as dashboard_bp
 from api.v2.crl import bp as crl_bp
 from api.v2.csrs import bp as csrs_bp

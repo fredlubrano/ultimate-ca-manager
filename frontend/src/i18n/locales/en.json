@@ -427,7 +427,8 @@
     "healthStatus": "Health status",
     "remove": "Remove",
     "continue": "Continue",
-    "keyRecovery": "Key Recovery"
+    "keyRecovery": "Key Recovery",
+    "preparing": "Preparing…"
   },
   "commandPalette": {
     "searchPlaceholder": "Search commands, certificates, CAs, users...",
@@ -2183,7 +2184,12 @@
       "documentation": "Documentation",
       "wikiGuides": "Wiki and user guides",
       "license": "License",
-      "licenseDesc": "Free and open-source software."
+      "licenseDesc": "Free and open-source software.",
+      "diagnostic": "Diagnostic",
+      "logBundle": "Log bundle",
+      "logBundleHint": "Download application logs, error log, system journal and a short diagnostic (sensitive tokens are redacted).",
+      "logBundleSuccess": "Log bundle downloaded.",
+      "logBundleFailed": "Failed to download log bundle."
     },
     "emailTemplate": "Email Template",
     "templateDescription": "Customize the HTML template used for all email notifications.",
