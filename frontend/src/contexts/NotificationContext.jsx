@@ -1,7 +1,7 @@
 /**
  * Notification Context - Toast notifications + Confirmation dialogs
  */
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo } from 'react'
 import * as Toast from '@radix-ui/react-toast'
 import * as Dialog from '@radix-ui/react-dialog'
 import { CheckCircle, Warning, Info, XCircle, X } from '@phosphor-icons/react'
@@ -16,23 +16,23 @@ export function NotificationProvider({ children }) {
   const [promptDialog, setPromptDialog] = useState(null)
   const [promptValue, setPromptValue] = useState('')
 
-  const addToast = (type, message, duration = 5000) => {
-    const id = Date.now()
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }, [])
+
+  const addToast = useCallback((type, message, duration = 5000) => {
+    const id = Date.now() + Math.random() // unique even when called in a tight loop
     setToasts(prev => [...prev, { id, type, message, duration }])
     
     if (duration > 0) {
       setTimeout(() => removeToast(id), duration)
     }
-  }
+  }, [removeToast])
 
-  const removeToast = (id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
-  }
-
-  const showSuccess = (message) => addToast('success', message)
-  const showError = (message) => addToast('error', message)
-  const showWarning = (message) => addToast('warning', message)
-  const showInfo = (message) => addToast('info', message)
+  const showSuccess = useCallback((message) => addToast('success', message), [addToast])
+  const showError = useCallback((message) => addToast('error', message), [addToast])
+  const showWarning = useCallback((message) => addToast('warning', message), [addToast])
+  const showInfo = useCallback((message) => addToast('info', message), [addToast])
 
   // Confirmation dialog
   const showConfirm = useCallback((message, options = {}) => {
@@ -99,14 +99,14 @@ export function NotificationProvider({ children }) {
     }
   }
 
-  const value = {
+  const value = useMemo(() => ({
     showSuccess,
     showError,
     showWarning,
     showInfo,
     showConfirm,
     showPrompt,
-  }
+  }), [showSuccess, showError, showWarning, showInfo, showConfirm, showPrompt])
 
   return (
     <NotificationContext.Provider value={value}>

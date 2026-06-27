@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ShieldCheck, ShieldWarning, CheckCircle, Warning } from '@phosphor-icons/react'
 import { Modal } from './Modal'
@@ -23,9 +23,14 @@ export function CertificateLintModal({ certId, certName, open, onClose }) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [available, setAvailable] = useState(true)
+  const showErrorRef = useRef(showError)
+  showErrorRef.current = showError
+  const loadingRef = useRef(false)
 
   const run = useCallback(async (prof) => {
+    if (loadingRef.current) return // guard: never fan out concurrent lint calls (#145)
     if (!certId) return
+    loadingRef.current = true
     setLoading(true)
     try {
       const res = await certificatesService.lint(certId, prof)
@@ -33,12 +38,13 @@ export function CertificateLintModal({ certId, certName, open, onClose }) {
       setResult(data)
       setAvailable(data.available !== false)
     } catch (e) {
-      showError(e.message || t('lint.loadFailed'))
+      showErrorRef.current(e.message || t('lint.loadFailed'))
       setResult(null)
     } finally {
+      loadingRef.current = false
       setLoading(false)
     }
-  }, [certId, showError, t])
+  }, [certId, t])
 
   useEffect(() => {
     if (open) run(profile)
