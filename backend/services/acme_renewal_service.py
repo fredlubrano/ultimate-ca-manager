@@ -97,6 +97,8 @@ def renew_certificate(order) -> tuple:
     dns_provider = create_provider(dns_provider_model.provider_type, credentials)
     
     # Initialize ACME client for the same CA that issued the original order
+    # (for_order prefers the order's pinned acme_client_account_id, then
+    # account_url, so renewals stay on the same authority).
     acme_client = AcmeClientService.for_order(order)
     
     # Create new order for same domains
