@@ -42,6 +42,19 @@ CERT_KEY_TYPES = {
 }
 
 
+def _legacy_directory_url() -> Optional[str]:
+    """Read the legacy ``acme.client.directory_url`` SystemConfig value.
+
+    Returns the trimmed URL or None. Used by :meth:`AcmeClientService.for_issuance`
+    to honour the custom ACME directory configured via Settings (issue #147).
+    """
+    cfg = SystemConfig.query.filter_by(key='acme.client.directory_url').first()
+    if not cfg or not cfg.value:
+        return None
+    url = str(cfg.value).strip()
+    return url or None
+
+
 class AcmeClientService:
     """
     ACME Client for Let's Encrypt and any RFC 8555-compliant CA.
@@ -154,6 +167,88 @@ class AcmeClientService:
             raise
         logger.info(f"Created placeholder ACME account: {target_label} ({target_url})")
         return new_account
+
+    # ------------------------------------------------------------------
+    # Issuance entry-point factory (issue #147)
+    # ------------------------------------------------------------------
+    @classmethod
+    def for_issuance(cls, environment: Optional[str] = None) -> 'AcmeClientService':
+        """Build the service for a NEW issuance / registration flow.
+
+        Honors the custom ACME directory configured in Settings
+        (``acme.client.directory_url``) over the LE staging/production mapping,
+        and backfills legacy EAB (``acme.client.eab_kid`` / ``eab_hmac_key``)
+        stored in SystemConfig onto the resolved account row.
+
+        Use this for: ``request_certificate``, ``register_account``, and the
+        background auto-poll. For operations on an EXISTING order use
+        :meth:`for_order` so the CA chosen at creation time is preserved
+        even if the directory setting later changes.
+        """
+        from models.acme_client_account import AcmeClientAccount
+
+        custom = _legacy_directory_url()
+        if custom and custom not in (AcmeClientAccount.LE_STAGING_URL,
+                                     AcmeClientAccount.LE_PRODUCTION_URL):
+            svc = cls(directory_url=custom)
+            svc._sync_legacy_eab_to_account()
+            return svc
+        return cls(environment=environment)
+
+    @classmethod
+    def for_order(cls, order: 'AcmeClientOrder') -> 'AcmeClientService':
+        """Build the service for an EXISTING order (verify/finalize/status/renew).
+
+        Resolves the account from the order's recorded ``account_url`` so a
+        custom-CA order keeps its CA even if ``acme.client.directory_url``
+        was changed (or cleared) after the order was created. Falls back to
+        :meth:`for_issuance` when the account cannot be located (e.g. an order
+        created before the account was registered).
+        """
+        from models.acme_client_account import AcmeClientAccount
+
+        if order and order.account_url:
+            account = AcmeClientAccount.query.filter_by(
+                account_url=order.account_url).first()
+            if account:
+                return cls(account=account)
+        return cls.for_issuance(environment=order.environment if order else None)
+
+    def _sync_legacy_eab_to_account(self) -> bool:
+        """Copy legacy EAB keys (``acme.client.eab_*``) onto the account row.
+
+        The Settings UI persists EAB into SystemConfig, but issuance reads EAB
+        from the ``AcmeClientAccount`` row. For a custom directory configured
+        via Settings, the row is created on first use — backfill the EAB there
+        so an EAB-required CA (e.g. Actalis) registration can succeed. Does
+        NOT overwrite an EAB already present on the row.
+
+        Returns True if the account was updated.
+        """
+        if not self.account:
+            return False
+        if self.account.eab_kid and self.account.eab_hmac_key:
+            return False  # already configured on the row — leave it alone
+
+        kid_cfg = SystemConfig.query.filter_by(key='acme.client.eab_kid').first()
+        hmac_cfg = SystemConfig.query.filter_by(key='acme.client.eab_hmac_key').first()
+        kid = (kid_cfg.value if kid_cfg and kid_cfg.value else '').strip() or None
+        hmac_key = (hmac_cfg.value if hmac_cfg and hmac_cfg.value else '').strip() or None
+        if not (kid and hmac_key):
+            return False
+
+        self.account.eab_kid = kid
+        self.account.eab_hmac_key = hmac_key
+        try:
+            db.session.commit()
+            logger.info(f"Backfilled legacy EAB onto account {self.account.id} "
+                        f"({self.account.directory_url})")
+            return True
+        except Exception as exc:  # noqa: BLE001
+            db.session.rollback()
+            logger.error(f"Failed to backfill legacy EAB onto account "
+                         f"{self.account.id}: {exc}")
+            return False
 
     @staticmethod
     def _get_verify_ssl() -> bool:
