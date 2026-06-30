@@ -96,8 +96,8 @@ def renew_certificate(order) -> tuple:
     credentials = json.loads(dns_provider_model.credentials) if dns_provider_model.credentials else {}
     dns_provider = create_provider(dns_provider_model.provider_type, credentials)
     
-    # Initialize ACME client
-    acme_client = AcmeClientService(environment=order.environment)
+    # Initialize ACME client for the same CA that issued the original order
+    acme_client = AcmeClientService.for_order(order)
     
     # Create new order for same domains
     domains = order.domains_list
