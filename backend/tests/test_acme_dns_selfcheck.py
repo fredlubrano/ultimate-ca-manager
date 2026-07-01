@@ -174,3 +174,17 @@ def test_txt_present_falls_back_to_public_resolver(fake_dns, monkeypatch):
 
     monkeypatch.setattr(dns_lookup_mod, '_resolve_with_ns', _resolve_with_ns)
     assert orders_mod._txt_present('_acme-challenge.example.com', 'the-token') is True
+
+
+def test_parse_resolver_ips_accepts_valid_and_skips_invalid(caplog):
+    import logging
+
+    caplog.set_level(logging.WARNING)
+    result = dns_lookup_mod._parse_resolver_ips('8.8.8.8, not-an-ip, 1.1.1.1')
+    assert result == ['8.8.8.8', '1.1.1.1']
+    assert any('not-an-ip' in rec.message for rec in caplog.records)
+
+
+def test_parse_resolver_ips_accepts_ipv6():
+    result = dns_lookup_mod._parse_resolver_ips('2001:4860:4860::8888')
+    assert result == ['2001:4860:4860::8888']

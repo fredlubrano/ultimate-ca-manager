@@ -7,6 +7,7 @@ Checks run in order:
 3. public recursive resolvers (9.9.9.9, 8.8.8.8, 1.1.1.1) — global propagation
 4. system resolver as last resort
 """
+import ipaddress
 import logging
 from typing import Dict, List, Tuple
 
@@ -14,6 +15,24 @@ logger = logging.getLogger(__name__)
 
 # Public resolvers polled explicitly (matches typical /etc/resolv.conf on UCM hosts).
 PUBLIC_DNS_RESOLVERS: Tuple[str, ...] = ('9.9.9.9', '8.8.8.8', '1.1.1.1')
+
+
+def _parse_resolver_ips(raw: str) -> List[str]:
+    """Parse comma-separated resolver IPs; skip invalid entries with a warning."""
+    ips: List[str] = []
+    for part in str(raw).split(','):
+        candidate = part.strip()
+        if not candidate:
+            continue
+        try:
+            ipaddress.ip_address(candidate)
+        except ValueError:
+            logger.warning(
+                'Ignoring invalid acme.dns01_nameservers entry: %r', candidate
+            )
+            continue
+        ips.append(candidate)
+    return ips
 
 
 def get_configured_dns01_nameservers() -> List[str]:
@@ -24,7 +43,7 @@ def get_configured_dns01_nameservers() -> List[str]:
         setting = SystemConfig.query.filter_by(key='acme.dns01_nameservers').first()
         if not setting or not setting.value:
             return []
-        return [ip.strip() for ip in str(setting.value).split(',') if ip.strip()]
+        return _parse_resolver_ips(setting.value)
     except Exception:
         return []
 
