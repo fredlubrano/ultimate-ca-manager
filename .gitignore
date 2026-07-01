@@ -20,6 +20,9 @@ ENV/
 # IDEs
 .vscode/
 .idea/
+
+# Cursor (local only — connexion SSH, chemins de clés, etc.)
+.cursor/
 *.swp
 *.swo
 *~
