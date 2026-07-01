@@ -20,7 +20,7 @@ const EMPTY_FORM = {
 
 /**
  * Multi-CA account manager for the ACME client. Lists every external ACME
- * authority (Let's Encrypt, Actalis, ZeroSSL...) UCM can request certificates
+ * authority (Let's Encrypt, ZeroSSL...) UCM can request certificates
  * from, and lets admins add/edit/remove them, set the default, and register.
  */
 export default function CaAccountsManager({
@@ -189,7 +189,7 @@ export default function CaAccountsManager({
               label={t('acme.caLabel')}
               value={form.label}
               onChange={(e) => setForm(p => ({ ...p, label: e.target.value }))}
-              placeholder="Actalis Production"
+              placeholder="ZeroSSL Production"
               required
             />
 
@@ -198,7 +198,7 @@ export default function CaAccountsManager({
               type="url"
               value={form.directory_url}
               onChange={(e) => setForm(p => ({ ...p, directory_url: e.target.value }))}
-              placeholder="https://acme-api.actalis.com/acme/directory"
+              placeholder="https://acme.example.com/directory"
               disabled={!!editingId}
               required
               helperText={editingId ? t('acme.directoryUrlImmutable') : t('acme.directoryUrlHelper')}

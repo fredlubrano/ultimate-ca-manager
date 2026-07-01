@@ -11,7 +11,7 @@ from models import db
 class AcmeClientAccount(db.Model):
     __tablename__ = 'acme_client_accounts'
 
-    # Defaults for per-CA timing (slow authorities like Actalis need longer polls).
+    # Defaults for per-CA timing (slow authorities need longer polls).
     DEFAULT_ORDER_POLL_TIMEOUT_SEC = 180
     DEFAULT_ORDER_POLL_INTERVAL_SEC = 3
     DEFAULT_HTTP_TIMEOUT_SEC = 60

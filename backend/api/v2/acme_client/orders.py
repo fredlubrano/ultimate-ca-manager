@@ -172,7 +172,7 @@ def request_certificate():
         env_cfg = SystemConfig.query.filter_by(key='acme.client.environment').first()
         environment = env_cfg.value if env_cfg else 'staging'
     # Only Let's Encrypt staging/production are gated to those two values. A
-    # selected custom CA (Actalis, ZeroSSL...) derives 'custom' and is allowed.
+    # selected custom CA (ZeroSSL...) derives 'custom' and is allowed.
     if environment not in ['staging', 'production', 'custom']:
         return error_response('Environment must be staging or production', 400)
 

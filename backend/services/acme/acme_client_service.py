@@ -187,7 +187,7 @@ class AcmeClientService:
              it back here. Wins over everything else.
           2. A configured custom directory
              (``SystemConfig['acme.client.directory_url']``) that is not Let's
-             Encrypt — kept for the single-custom-CA setup (e.g. Actalis) so
+             Encrypt — kept for the single-custom-CA setup so
              existing installs without an explicit selection still target it.
           3. ``environment=`` — Let's Encrypt staging/production (legacy).
 
@@ -251,7 +251,7 @@ class AcmeClientService:
         The Settings UI persists EAB into SystemConfig, but issuance reads EAB
         from the ``AcmeClientAccount`` row. For a custom directory configured
         via Settings, the row is created on first use — backfill the EAB there
-        so an EAB-required CA (e.g. Actalis) registration can succeed. Does
+        so an EAB-required CA registration can succeed. Does
         NOT overwrite an EAB already present on the row.
 
         Returns True if the account was updated.

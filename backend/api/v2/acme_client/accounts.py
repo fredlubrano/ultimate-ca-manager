@@ -2,7 +2,7 @@
 ACME Client CA Accounts — multi-CA management.
 
 CRUD over ``acme_client_accounts`` (the external ACME authorities UCM can
-request certificates from: Let's Encrypt, Actalis, ZeroSSL, ...). Each row is
+request certificates from: Let's Encrypt, ZeroSSL, ...). Each row is
 one directory URL + its registration credentials and optional EAB. One row can
 be flagged ``is_default`` and is used when a request does not select a CA.
 

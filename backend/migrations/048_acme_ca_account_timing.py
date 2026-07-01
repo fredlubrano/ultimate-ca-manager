@@ -1,7 +1,7 @@
 """Migration 048: per-CA ACME client timing settings.
 
 Adds poll timeout, poll interval and HTTP timeout columns on
-``acme_client_accounts`` so slow CAs (e.g. Actalis) can be tuned without
+``acme_client_accounts`` so slow CAs can be tuned without
 changing global defaults.
 
 Dual-backend (SQLite + PostgreSQL).

@@ -462,7 +462,7 @@
     "useAsDefault": "Utiliser comme CA par défaut",
     "caTimingSettings": "Délais de validation",
     "caOrderPollTimeout": "Timeout de poll commande (secondes)",
-    "caOrderPollTimeoutHelper": "Durée d'attente de la validation par la CA (30–600). Mettre 180+ pour Actalis et CAs lentes.",
+    "caOrderPollTimeoutHelper": "Durée d'attente de la validation par la CA (30–600). Mettre 180+ pour les CAs lentes.",
     "caOrderPollInterval": "Intervalle de poll (secondes)",
     "caOrderPollIntervalHelper": "Délai entre chaque vérification du statut (1–30).",
     "caHttpTimeout": "Timeout HTTP (secondes)",
