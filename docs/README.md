@@ -25,6 +25,10 @@ Technical documentation for Ultimate Certificate Manager.
 - **[REDIS.md](./REDIS.md)** — Optional Redis integration
 - **[TESTING.md](./TESTING.md)** — Testing & linting guide (unit + E2E + ESLint + Ruff)
 
+## Design (fork)
+
+- **[PQC-ANSSI-ROADMAP.md](./PQC-ANSSI-ROADMAP.md)** — Mises à jour `cryptography` / dépendances et roadmap PQC hybride (doctrine ANSSI, lab)
+
 ## Architecture
 
 | Component | Stack |
