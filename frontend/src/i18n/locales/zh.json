@@ -3632,7 +3632,7 @@
     "format": "格式",
     "options": "选项",
     "password": "密码",
-    "passwordPlaceholder": "最少4个字符",
+    "passwordPlaceholder": "最少8个字符",
     "download": "下载",
     "includeChain": "包含CA链",
     "includeChainDesc": "包含签发CA证书",

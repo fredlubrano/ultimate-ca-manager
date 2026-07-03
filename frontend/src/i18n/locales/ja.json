@@ -3632,7 +3632,7 @@
     "format": "フォーマット",
     "options": "オプション",
     "password": "パスワード",
-    "passwordPlaceholder": "最小4文字",
+    "passwordPlaceholder": "最小8文字",
     "download": "ダウンロード",
     "includeChain": "CA チェーンを含める",
     "includeChainDesc": "発行元のCA証明書を含める",

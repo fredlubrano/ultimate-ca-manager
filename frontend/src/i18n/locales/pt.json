@@ -3632,7 +3632,7 @@
     "format": "Formato",
     "options": "Opções",
     "password": "Senha",
-    "passwordPlaceholder": "Mín. 4 caracteres",
+    "passwordPlaceholder": "Mín. 8 caracteres",
     "download": "Baixar",
     "includeChain": "Incluir cadeia CA",
     "includeChainDesc": "Incluir certificados CA emissores",
