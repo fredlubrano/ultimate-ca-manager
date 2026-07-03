@@ -1,7 +1,7 @@
 /**
  * Account Service - User profile management
  */
-import { apiClient } from './apiClient'
+import { apiClient, buildQueryString } from './apiClient'
 
 export const accountService = {
   // Profile
@@ -96,9 +96,17 @@ export const accountService = {
     return apiClient.delete(`/mtls/certificates/${certId}`)
   },
 
-  async downloadMTLSCertificate(certId) {
-    return apiClient.get(`/mtls/certificates/${certId}/download`, {
-      responseType: 'blob'
+  async downloadMTLSCertificate(certId, { format = 'pem', password } = {}) {
+    const fmt = (format === 'p12' ? 'pkcs12' : format).toLowerCase()
+    if (fmt === 'pkcs12') {
+      return apiClient.post(
+        `/mtls/certificates/${certId}/download`,
+        { format: 'pkcs12', password },
+        { responseType: 'blob' },
+      )
+    }
+    return apiClient.get(`/mtls/certificates/${certId}/download${buildQueryString({ format: fmt })}`, {
+      responseType: 'blob',
     })
   },
 
