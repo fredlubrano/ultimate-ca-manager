@@ -55,7 +55,7 @@ Quasi toute la pile PKIX repose sur **`cryptography`** (hazmat + `x509`), pas su
 1. **Normes NIST finalisées (août 2024)** — FIPS 203 (ML-KEM), 204 (ML-DSA), 205 (SLH-DSA) ; l’ANSSI s’y réfère explicitement.
 2. **ML-DSA en PKIX** — génération / chargement de certificats X.509 ML-DSA (spike lab validé sur Python 3.13).
 3. **Alignement calendrier ANSSI** — obligation PQC en qualification à partir de **2027** ; achats sans PQC déconseillés après **2030**.
-4. **Pas de régression** — validation lab `172.31.10.8` : **2032 tests pytest passés**, health OK (voir §4).
+4. **Pas de régression** — validation sur environnement de lab privé : **2032 tests pytest passés**, health OK (voir §4).
 5. **Crypto-agilité** — l’ANSSI exige la capacité à changer de jeux de paramètres PQC ; la 49 ouvre cette voie sans fork de code bas niveau.
 
 **Ce que la 49 ne résout pas seule** : formats de certificats **hybrides** PKI/IGC (travaux ANSSI / IETF encore en cours).
@@ -126,7 +126,7 @@ pas de promesse de compatibilité navigateur / clients TLS tant que les profils 
 
 ## 4. Validation lab (fork, pré-upstream)
 
-Environnement : `172.31.10.8`, `/opt/ucm/`, Python 3.13, OpenSSL 3.5.6.
+Environnement : instance lab privée (`/opt/ucm/`), Python 3.13, OpenSSL 3.5.6.
 
 | Étape | Résultat |
 |-------|----------|
