@@ -3635,7 +3635,7 @@
     "format": "Format",
     "options": "Options",
     "password": "Password",
-    "passwordPlaceholder": "Min. 4 characters",
+    "passwordPlaceholder": "Min. 8 characters",
     "download": "Download",
     "includeChain": "Include CA chain",
     "includeChainDesc": "Include issuing CA certificates",

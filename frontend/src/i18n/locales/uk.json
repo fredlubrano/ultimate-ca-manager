@@ -3632,7 +3632,7 @@
     "format": "Формат",
     "options": "Параметри",
     "password": "Пароль",
-    "passwordPlaceholder": "Мін. 4 символи",
+    "passwordPlaceholder": "Мін. 8 символів",
     "download": "Завантажити",
     "includeChain": "Включити ланцюжок CA",
     "includeChainDesc": "Включити сертифікати ЦС-емітента",

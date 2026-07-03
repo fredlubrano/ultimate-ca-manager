@@ -1,7 +1,7 @@
 /**
  * Account Service - User profile management
  */
-import { apiClient } from './apiClient'
+import { apiClient, buildQueryString } from './apiClient'
 
 export const accountService = {
   // Profile
@@ -105,8 +105,7 @@ export const accountService = {
         { responseType: 'blob' },
       )
     }
-    return apiClient.get(`/mtls/certificates/${certId}/download`, {
-      params: { format: fmt },
+    return apiClient.get(`/mtls/certificates/${certId}/download${buildQueryString({ format: fmt })}`, {
       responseType: 'blob',
     })
   },
