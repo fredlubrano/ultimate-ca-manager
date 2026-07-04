@@ -2,14 +2,14 @@
 CA certificate creation mixin for TrustStoreService
 """
 import ipaddress
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.backends import default_backend
 
-from utils.datetime_utils import utc_now
+from utils.datetime_utils import utc_now, to_naive_utc
 from utils.ca_profile import (
     build_extended_key_usage_extension,
     build_key_usage_extension,
@@ -47,6 +47,7 @@ class CACertificateCreationMixin:
         sia_urls: Optional[List[str]] = None,
         key_usage: Optional[List[str]] = None,
         extended_key_usage: Optional[List[str]] = None,
+        not_valid_after_max: Optional[datetime] = None,
     ) -> Tuple[bytes, bytes]:
         """Create a CA certificate."""
         # Normalize URL params: merge singular into list
@@ -67,9 +68,11 @@ class CACertificateCreationMixin:
             serial if serial else x509.random_serial_number()
         )
         builder = builder.not_valid_before(utc_now())
-        builder = builder.not_valid_after(
-            utc_now() + timedelta(days=validity_days)
-        )
+        not_after = utc_now() + timedelta(days=validity_days)
+        max_end = to_naive_utc(not_valid_after_max)
+        if max_end is not None and not_after > max_end:
+            not_after = max_end
+        builder = builder.not_valid_after(not_after)
 
         # CA extensions — BasicConstraints with configurable pathLenConstraint
         builder = builder.add_extension(

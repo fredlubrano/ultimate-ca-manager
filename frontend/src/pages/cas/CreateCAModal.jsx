@@ -412,7 +412,6 @@ export function CreateCAModal({ open, onClose, cas, onSuccess }) {
         )}
 
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-text-primary">{t('common.validityPeriod')}</h3>
           <Select
             label={t('common.validityPeriod')}
             options={[

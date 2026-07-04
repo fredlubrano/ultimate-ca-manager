@@ -454,6 +454,7 @@ def get_ca(ca_id):
     # Get parsed certificate details
     try:
         details = CAService.get_ca_details(ca_id)
+        fingerprints = details.get('fingerprints', {})
         # Merge details into response
         ca_data.update({
             'commonName': details.get('subject', {}).get('CN', ca.descr),
@@ -461,11 +462,18 @@ def get_ca(ca_id):
             'country': details.get('subject', {}).get('C', ''),
             'keyAlgo': details.get('public_key', {}).get('algorithm', 'RSA'),
             'keySize': details.get('public_key', {}).get('size', 2048),
-            'fingerprint': details.get('fingerprints', {}).get('sha256', ''),
+            'fingerprint': fingerprints.get('sha256', ''),
+            'thumbprint_sha256': fingerprints.get('sha256', ''),
+            'thumbprint_sha1': fingerprints.get('sha1', ''),
+            'signature_algorithm': details.get('signature_algorithm'),
             'crlStatus': crl_status,
             'nextCrlUpdate': next_crl_update
         })
-    except Exception as e:
+        from utils.serial_format import format_serial_colon
+        serial_raw = details.get('serial_number')
+        if serial_raw:
+            ca_data['serial_number'] = format_serial_colon(serial_raw)
+    except Exception:
         # Fallback if parsing fails
         pass
 

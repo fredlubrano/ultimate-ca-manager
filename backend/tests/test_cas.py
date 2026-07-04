@@ -148,6 +148,21 @@ class TestCreateCA:
         data = assert_success(r, status=201)
         assert data['id'] is not None
 
+    def test_intermediate_valid_to_clamped_to_parent(self, auth_client, create_ca):
+        root = create_ca(cn='Clamp Root', validityYears=5)
+        payload = {
+            **VALID_ROOT_CA,
+            'type': 'intermediate',
+            'commonName': 'Clamp Intermediate',
+            'parentCAId': root['id'],
+            'validityYears': 20,
+        }
+        r = post_json(auth_client, '/api/v2/cas', payload)
+        inter = assert_success(r, status=201)
+        root_detail = assert_success(auth_client.get(f'/api/v2/cas/{root["id"]}'))
+        inter_detail = assert_success(auth_client.get(f'/api/v2/cas/{inter["id"]}'))
+        assert inter_detail['valid_to'] <= root_detail['valid_to']
+
     def test_create_intermediate_ca_invalid_parent(self, auth_client):
         payload = {
             **VALID_ROOT_CA,
@@ -278,6 +293,18 @@ class TestGetCA:
         r = auth_client.get(f'/api/v2/cas/{ca["id"]}')
         data = assert_success(r)
         assert 'certs' in data
+
+    def test_get_ca_includes_x509_serial_and_fingerprints(self, auth_client, create_ca):
+        ca = create_ca(cn='SerialFingerprint CA')
+        r = auth_client.get(f'/api/v2/cas/{ca["id"]}')
+        data = assert_success(r)
+        serial = data.get('serial_number', '')
+        assert serial
+        assert ':' in serial
+        assert serial not in ('0', '1')
+        assert data.get('thumbprint_sha256')
+        assert data.get('thumbprint_sha1')
+        assert data.get('fingerprint') == data.get('thumbprint_sha256')
 
     def test_get_ca_not_found(self, auth_client):
         r = auth_client.get('/api/v2/cas/999999')

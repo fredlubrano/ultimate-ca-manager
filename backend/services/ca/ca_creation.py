@@ -16,6 +16,7 @@ from models import CA, db
 from models.hsm import HsmKey
 from services.audit_service import AuditService
 from services.trust_store import TrustStoreService
+from utils.datetime_utils import to_naive_utc
 from .helpers import save_ca_files
 
 logger = logging.getLogger(__name__)
@@ -136,6 +137,7 @@ class CACreationMixin:
         parent_ocsp_urls = None
         parent_cps_uri = None
         parent_cps_oid = None
+        parent_not_after = None
 
         if caref:
             parent_ca = CA.query.filter_by(refid=caref).first()
@@ -148,6 +150,7 @@ class CACreationMixin:
                 parent_cert_pem, default_backend()
             )
             issuer = parent_cert.subject
+            parent_not_after = to_naive_utc(parent_cert.not_valid_after_utc)
 
             # Load parent CA signing key
             if not parent_ca.has_private_key:
@@ -188,6 +191,7 @@ class CACreationMixin:
             sia_urls=sia_urls,
             key_usage=key_usage,
             extended_key_usage=extended_key_usage,
+            not_valid_after_max=parent_not_after,
         )
 
         # If using local key, use the generated key PEM
