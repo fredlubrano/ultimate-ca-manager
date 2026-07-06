@@ -105,10 +105,10 @@ curl -sk -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application
 
 ## Tests manuels — Proxy ACME E2E (Certbot)
 
-Lab validé `172.31.10.8` / `ucm.pfcorp.eu:8443` :
+Exemple validé en environnement lab (UCM + CA externe + fournisseur DNS) :
 
 ```bash
-TEST_DOMAIN="test-path2.pfcorp.eu"   # sous-domaine neuf à chaque run
+TEST_DOMAIN="cert-proxy-test.example.com"   # sous-domaine neuf à chaque run
 CFG="/tmp/certbot-proxy-path"
 rm -rf "$CFG" && mkdir -p "$CFG"/{config,work,logs}
 
@@ -116,7 +116,7 @@ certbot certonly \
   --config-dir "$CFG/config" \
   --work-dir "$CFG/work" \
   --logs-dir "$CFG/logs" \
-  --server https://ucm.pfcorp.eu:8443/acme/proxy/actalis-production/directory \
+  --server https://<ucm-host>:8443/acme/proxy/<slug>/directory \
   --no-verify-ssl \
   --preferred-challenges dns-01 \
   --authenticator manual \
@@ -149,5 +149,5 @@ Notes E2E :
 - [x] Endpoint dédié par compte (`proxy_slug` + `proxy_enabled`)
 - [x] Rétrocompat `/acme/proxy/directory`
 - [x] Tests pytest ciblés + suite lab verte
-- [x] E2E Certbot via slug (Actalis + Gandi sur lab)
+- [x] E2E Certbot via slug (CA externe + fournisseur DNS)
 - [x] i18n 9 langues + guides d'aide + aide contextuelle GUI
