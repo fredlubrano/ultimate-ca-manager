@@ -1,9 +1,21 @@
 /**
- * Client-side SAN validation for Generate CSR (mirrors backend utils/san_parse.py).
+ * Client-side SAN validation (mirrors backend utils/san_parse.py).
  * Returns i18n key + params, or null if valid.
  */
 
 const EMAIL_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
+
+function normalizeSanType(type) {
+  const map = {
+    dns: 'DNS',
+    ip: 'IP',
+    email: 'Email',
+    uri: 'URI',
+    upn: 'UPN',
+  }
+  const raw = (type || '').trim()
+  return map[raw.toLowerCase()] || raw.toUpperCase()
+}
 
 function looksLikeIpv4(v) {
   return /^(?:\d{1,3}\.){3}\d{1,3}$/.test(v)
@@ -33,47 +45,105 @@ function isValidUpn(v) {
   return parts.length === 2 && parts[0] && parts[1]
 }
 
+/** CN is an RFC822 address — not a DNS hostname. */
+export function isCnEmail(cn) {
+  return isValidEmail((cn || '').trim())
+}
+
+/** FQDN / wildcard — excludes email and literal IP. */
+export function isCnHostname(cn) {
+  const v = (cn || '').trim()
+  if (!v || isCnEmail(v)) return false
+  if (v.startsWith('*.')) return true
+  if (looksLikeIp(v)) return false
+  return v.includes('.')
+}
+
+/** Literal IP suitable for IP SAN when used as CN. */
+export function isCnIp(cn) {
+  return looksLikeIp((cn || '').trim())
+}
+
 /**
- * @param {'DNS'|'IP'|'Email'|'URI'|'UPN'} type
+ * Auto-included SAN rows for Issue Certificate (mirrors backend auto_san_buckets_from_cn).
+ * @returns {{ type: string, value: string }[]}
+ */
+export function getAutoSansFromCn({ cn, certType, subjectEmail }) {
+  const value = (cn || '').trim()
+  if (!value) return []
+
+  const items = []
+  const type = certType || 'server'
+
+  if (['server', 'combined'].includes(type)) {
+    if (isCnHostname(value)) {
+      items.push({ type: 'dns', value })
+    } else if (isCnIp(value)) {
+      items.push({ type: 'ip', value })
+    }
+  }
+  if (['email', 'combined'].includes(type) && isCnEmail(value)) {
+    items.push({ type: 'email', value })
+  }
+
+  const subj = (subjectEmail || '').trim()
+  if (
+    ['email', 'combined'].includes(type)
+    && subj
+    && isCnEmail(subj)
+    && subj !== value
+    && !items.some((s) => s.type === 'email' && s.value === subj)
+  ) {
+    items.push({ type: 'email', value: subj })
+  }
+
+  return items
+}
+
+/**
+ * @param {'DNS'|'IP'|'Email'|'URI'|'UPN'|string} type
  * @param {string} value
+ * @param {{ i18nNs?: 'csrs' | 'certificates' }} [options]
  * @returns {{ key: string, params?: object } | null}
  */
-export function getSanValidationError(type, value) {
+export function getSanValidationError(type, value, options = {}) {
+  const i18nNs = options.i18nNs || 'csrs'
+  const key = (name) => `${i18nNs}.${name}`
   const v = (value || '').trim()
   if (!v) return null
 
-  switch (type) {
+  switch (normalizeSanType(type)) {
     case 'IP':
       if (!looksLikeIp(v)) {
-        return { key: 'csrs.sanFqdnUseDns', params: { value: v } }
+        return { key: key('sanFqdnUseDns'), params: { value: v } }
       }
       return null
     case 'DNS':
       if (v.includes('://')) {
-        return { key: 'csrs.sanUriUseUri', params: { value: v } }
+        return { key: key('sanUriUseUri'), params: { value: v } }
       }
       if (looksLikeIp(v)) {
-        return { key: 'csrs.sanIpForAddress', params: { value: v } }
+        return { key: key('sanIpForAddress'), params: { value: v } }
       }
       if (v.includes('@')) {
-        return { key: 'csrs.sanEmailUseEmail', params: { value: v } }
+        return { key: key('sanEmailUseEmail'), params: { value: v } }
       }
       return null
     case 'Email':
       if (!isValidEmail(v)) {
         return v.includes('@')
-          ? { key: 'csrs.sanEmailInvalid', params: { value: v } }
-          : { key: 'csrs.sanHostnameUseDns', params: { value: v } }
+          ? { key: key('sanEmailInvalid'), params: { value: v } }
+          : { key: key('sanHostnameUseDns'), params: { value: v } }
       }
       return null
     case 'URI':
       if (!isValidUri(v)) {
-        return { key: 'csrs.sanUriInvalid', params: { value: v } }
+        return { key: key('sanUriInvalid'), params: { value: v } }
       }
       return null
     case 'UPN':
       if (!isValidUpn(v)) {
-        return { key: 'csrs.sanUpnInvalid', params: { value: v } }
+        return { key: key('sanUpnInvalid'), params: { value: v } }
       }
       return null
     default:

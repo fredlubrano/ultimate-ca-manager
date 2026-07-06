@@ -150,8 +150,69 @@ class TestCreateCertificate:
             'cn': 'ec.example.com',
             'ca_id': ca_id,
             'validity_days': 90,
-            'key_type': 'EC',
+            'key_type': 'ecdsa',
             'key_size': '256',
+        })
+        assert r.status_code == 201
+
+    def test_create_rejects_fqdn_in_san_ip(self, auth_client, create_ca):
+        ca = create_ca(cn='SAN IP Reject CA')
+        ca_id = ca.get('id', ca.get('ca_id'))
+        r = post_json(auth_client, BASE, {
+            'cn': 'reject.example.com',
+            'ca_id': ca_id,
+            'validity_days': 90,
+            'san_ip': ['www.example.org'],
+        })
+        assert r.status_code == 400
+        body = get_json(r)
+        assert 'DNS type' in body.get('message', '')
+
+    def test_create_email_cn_server_no_dns_san(self, auth_client, create_ca):
+        ca = create_ca(cn='Email CN Server CA')
+        ca_id = ca.get('id', ca.get('ca_id'))
+        r = post_json(auth_client, BASE, {
+            'cn': 'fred@fred.fr',
+            'ca_id': ca_id,
+            'validity_days': 90,
+            'cert_type': 'server',
+        })
+        created = assert_success(r, status=201)
+        cert_id = created.get('id')
+        detail = auth_client.get(f'{BASE}/{cert_id}')
+        data = assert_success(detail)
+        san_dns = data.get('san_dns')
+        if isinstance(san_dns, str) and san_dns.startswith('['):
+            san_dns = json.loads(san_dns)
+        assert 'fred@fred.fr' not in (san_dns or [])
+
+    def test_create_email_cn_email_cert(self, auth_client, create_ca):
+        ca = create_ca(cn='Email CN Email CA')
+        ca_id = ca.get('id', ca.get('ca_id'))
+        r = post_json(auth_client, BASE, {
+            'cn': 'fred@fred.fr',
+            'ca_id': ca_id,
+            'validity_days': 90,
+            'cert_type': 'email',
+        })
+        created = assert_success(r, status=201)
+        cert_id = created.get('id')
+        detail = auth_client.get(f'{BASE}/{cert_id}')
+        data = assert_success(detail)
+        san_email = data.get('san_email')
+        if isinstance(san_email, str) and san_email.startswith('['):
+            san_email = json.loads(san_email)
+        assert 'fred@fred.fr' in (san_email or [])
+
+    def test_create_ec_p521(self, auth_client, create_ca):
+        ca = create_ca(cn='EC P521 Test CA')
+        ca_id = ca.get('id', ca.get('ca_id'))
+        r = post_json(auth_client, BASE, {
+            'cn': 'p521.example.com',
+            'ca_id': ca_id,
+            'validity_days': 90,
+            'key_type': 'ecdsa',
+            'key_size': '521',
         })
         assert r.status_code == 201
 

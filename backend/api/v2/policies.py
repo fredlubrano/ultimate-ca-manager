@@ -182,8 +182,18 @@ def _issue_approved_certificate(approval):
         san_list.append(x509.RFC822Name(email))
     
     cn = data['cn']
-    if cert_type in ['server', 'combined'] and '.' in cn and cn not in data.get('san_dns', []):
-        san_list.insert(0, x509.DNSName(cn))
+    from utils.san_parse import auto_san_buckets_from_cn
+
+    implicit = auto_san_buckets_from_cn(cn, cert_type, subject_email=data.get('email'))
+    for dns in implicit.get('san_dns') or []:
+        if dns not in data.get('san_dns', []):
+            san_list.insert(0, x509.DNSName(dns))
+    for ip in implicit.get('san_ip') or []:
+        if ip not in data.get('san_ip', []):
+            san_list.insert(0, x509.IPAddress(ip_address(ip)))
+    for email in implicit.get('san_email') or []:
+        if email not in data.get('san_email', []):
+            san_list.insert(0, x509.RFC822Name(email))
     
     if san_list:
         builder = builder.add_extension(x509.SubjectAlternativeName(san_list), critical=False)

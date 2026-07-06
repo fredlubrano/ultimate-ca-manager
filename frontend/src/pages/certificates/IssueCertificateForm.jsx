@@ -2,9 +2,12 @@ import { useState, useEffect, useMemo } from 'react'
 import { Certificate, X, Plus, CaretDown, CaretUp, PushPin } from '@phosphor-icons/react'
 import { Button, Select, Input, DatePicker, EkuMultiSelect } from '../../components'
 import { templatesService, ekuService } from '../../services'
+import { getSanValidationError, getAutoSansFromCn } from '../../lib/sanValidate'
+import { useNotification } from '../../contexts'
 
 // Issue Certificate Form — full-featured with template, cert type, structured SANs, date picker
 export function IssueCertificateForm({ cas, initialData, onSubmit, onCancel, t }) {
+  const { showError } = useNotification()
   const [templates, setTemplates] = useState([])
   const [selectedTemplate, setSelectedTemplate] = useState('')
   const [showSubject, setShowSubject] = useState(false)
@@ -207,28 +210,14 @@ export function IssueCertificateForm({ cas, initialData, onSubmit, onCancel, t }
   }
 
   // Auto-included SANs based on CN and cert type
-  const autoSans = useMemo(() => {
-    const items = []
-    const cn = formData.cn.trim()
-    if (!cn) return items
-    const certType = formData.cert_type
-    const isHostname = cn.includes('.') || cn.startsWith('*')
-    const isEmail = cn.includes('@') && cn.split('@').pop()?.includes('.')
-
-    if (['server', 'combined'].includes(certType) && isHostname) {
-      items.push({ type: 'dns', value: cn })
-    }
-    if (['email', 'combined'].includes(certType) && isEmail) {
-      items.push({ type: 'email', value: cn })
-    }
-    const subjectEmail = formData.email?.trim()
-    if (['email', 'combined'].includes(certType) && subjectEmail && subjectEmail.includes('@')) {
-      if (subjectEmail !== cn && !items.some(s => s.type === 'email' && s.value === subjectEmail)) {
-        items.push({ type: 'email', value: subjectEmail })
-      }
-    }
-    return items
-  }, [formData.cn, formData.cert_type, formData.email])
+  const autoSans = useMemo(
+    () => getAutoSansFromCn({
+      cn: formData.cn,
+      certType: formData.cert_type,
+      subjectEmail: formData.email,
+    }),
+    [formData.cn, formData.cert_type, formData.email],
+  )
 
   // Wildcard → suggest base domain
   const wildcardSuggestion = useMemo(() => {
@@ -247,17 +236,28 @@ export function IssueCertificateForm({ cas, initialData, onSubmit, onCancel, t }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Build SAN arrays
+
+    const sanError = [...autoSans, ...sans]
+      .map((s) => getSanValidationError(s.type, s.value, { i18nNs: 'certificates' }))
+      .find(Boolean)
+    if (sanError) {
+      showError(t(sanError.key, sanError.params))
+      return
+    }
+
+    // Build SAN arrays (manual + auto-included from CN)
     const san_dns = [], san_ip = [], san_email = [], san_uri = [], san_upn = []
-    sans.forEach(s => {
-      const v = s.value.trim()
+    const pushSan = (type, value) => {
+      const v = value.trim()
       if (!v) return
-      if (s.type === 'dns') san_dns.push(v)
-      else if (s.type === 'ip') san_ip.push(v)
-      else if (s.type === 'email') san_email.push(v)
-      else if (s.type === 'uri') san_uri.push(v)
-      else if (s.type === 'upn') san_upn.push(v)
-    })
+      if (type === 'dns' && !san_dns.includes(v)) san_dns.push(v)
+      else if (type === 'ip' && !san_ip.includes(v)) san_ip.push(v)
+      else if (type === 'email' && !san_email.includes(v)) san_email.push(v)
+      else if (type === 'uri' && !san_uri.includes(v)) san_uri.push(v)
+      else if (type === 'upn' && !san_upn.includes(v)) san_upn.push(v)
+    }
+    autoSans.forEach((s) => pushSan(s.type, s.value))
+    sans.forEach((s) => pushSan(s.type, s.value))
 
     // Calculate validity_days from date if in date mode
     let validity_days = parseInt(formData.validity_days, 10) || 365
@@ -527,8 +527,16 @@ export function IssueCertificateForm({ cas, initialData, onSubmit, onCancel, t }
           value={formData.key_size}
           onChange={(val) => update('key_size', val)}
           options={formData.key_type === 'rsa'
-            ? [{ value: '2048', label: '2048 bits' }, { value: '4096', label: '4096 bits' }]
-            : [{ value: '256', label: 'P-256' }, { value: '384', label: 'P-384' }]
+            ? [
+              { value: '2048', label: t('certificates.keySizeRsa2048') },
+              { value: '3072', label: t('certificates.keySizeRsa3072') },
+              { value: '4096', label: t('certificates.keySizeRsa4096') },
+            ]
+            : [
+              { value: '256', label: t('certificates.keyCurveNistP256') },
+              { value: '384', label: t('certificates.keyCurveNistP384') },
+              { value: '521', label: t('certificates.keyCurveNistP521') },
+            ]
           }
         />
       </div>

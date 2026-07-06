@@ -101,6 +101,105 @@ def validate_upn_san(value: str) -> str | None:
     return f'Invalid UPN format: {value} (expected user@domain)'
 
 
+def cn_looks_like_email(cn: str) -> bool:
+    return is_valid_san_email((cn or '').strip())
+
+
+def cn_looks_like_hostname(cn: str) -> bool:
+    """FQDN / wildcard hostname — not email, not bare IP."""
+    value = (cn or '').strip()
+    if not value or cn_looks_like_email(value):
+        return False
+    if value.startswith('*.'):
+        return True
+    if _looks_like_ip(value):
+        return False
+    return '.' in value
+
+
+def cn_looks_like_ip(cn: str) -> bool:
+    return _looks_like_ip((cn or '').strip())
+
+
+def auto_san_buckets_from_cn(
+    cn: str,
+    cert_type: str,
+    *,
+    subject_email: str | None = None,
+) -> SanBuckets:
+    """Derive implicit SAN buckets from CN + cert type (issue certificate UI)."""
+    buckets = _empty_buckets()
+    value = (cn or '').strip()
+    if not value:
+        return buckets
+
+    if cert_type in ('server', 'combined'):
+        if cn_looks_like_hostname(value):
+            buckets['san_dns'].append(value)
+        elif cn_looks_like_ip(value):
+            buckets['san_ip'].append(str(ip_address(value)))
+
+    if cert_type in ('email', 'combined') and cn_looks_like_email(value):
+        buckets['san_email'].append(value)
+
+    subj = (subject_email or '').strip()
+    if (
+        cert_type in ('email', 'combined')
+        and subj
+        and cn_looks_like_email(subj)
+        and subj != value
+        and subj not in buckets['san_email']
+    ):
+        buckets['san_email'].append(subj)
+
+    return buckets
+
+
+def validate_typed_san_buckets(buckets: SanBuckets) -> str | None:
+    """Reject values that do not match their declared SAN bucket (issue #167 parity)."""
+    validators = {
+        'san_dns': validate_dns_san,
+        'san_ip': validate_ip_san,
+        'san_email': validate_email_san,
+        'san_uri': validate_uri_san,
+        'san_upn': validate_upn_san,
+    }
+    for key, validate in validators.items():
+        for value in buckets.get(key) or []:
+            err = validate(value)
+            if err:
+                return err
+    return None
+
+
+def _coerce_san_list(raw) -> List[str]:
+    if not raw:
+        return []
+    if isinstance(raw, list):
+        return [str(s).strip() for s in raw if str(s).strip()]
+    if isinstance(raw, str):
+        return [s.strip() for s in re.split(r'[,\n;]+', raw) if s.strip()]
+    return []
+
+
+def parse_cert_san_payload(data: dict) -> Tuple[SanBuckets, str | None]:
+    """Parse/validate SAN fields from POST /api/v2/certificates."""
+    buckets = _empty_buckets()
+    typed_keys = ('san_dns', 'san_ip', 'san_email', 'san_uri', 'san_upn')
+    has_typed = any(data.get(k) for k in typed_keys)
+
+    if has_typed:
+        for key in typed_keys:
+            buckets[key] = _coerce_san_list(data.get(key))
+        return buckets, validate_typed_san_buckets(buckets)
+
+    raw_sans = _coerce_san_list(data.get('san'))
+    if not raw_sans:
+        return buckets, None
+
+    return parse_csr_san_entries(raw_sans)
+
+
 def parse_csr_san_entries(entries: List[str]) -> Tuple[SanBuckets, str | None]:
     """Parse SAN list from CSR UI (``DNS:host``, ``IP:1.2.3.4``, …)."""
     buckets = _empty_buckets()
