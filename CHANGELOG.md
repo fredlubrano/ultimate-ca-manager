@@ -11,6 +11,20 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ## [Unreleased]
 
 
+## [2.185] - 2026-07-06
+
+### Added
+- **ACME proxy multi-CA with per-account slug endpoints** — the ACME proxy upstream is now selected per external CA account (`AcmeClientAccount`), so several CAs (Let's Encrypt staging, production, ZeroSSL, …) can be exposed in parallel. Each account can opt in to the proxy with a unique slug, served at `/acme/proxy/<slug>/directory` alongside the legacy `/acme/proxy/directory` (backward compatible). Reserved slugs (`directory`, `new-order`, `acct`, `challenge`, …) prevent collisions with existing routes. Migrations `050` (`acme.proxy.acme_account_id`) and `051` (`proxy_enabled`, `proxy_slug`) backfill the account already linked in proxy settings. The UI surfaces a toggle and slug field on external CA accounts and lists all enabled endpoints with a Certbot example (#170).
+- **Typed SAN validation for certificate issuance** — the Issue Certificate form (`POST /api/v2/certificates`) now validates SAN entries per type (DNS, IP, Email, URI, UPN) on both backend and frontend, with cross-type errors (e.g. an FQDN entered in the IP field is rejected with a hint to use DNS) and ECDSA curve mapping (256/384/521 → `prime256v1`/`secp384r1`/`secp521r1`). The CN auto-SAN no longer adds an email CN as a DNS SAN on server certs; email SAN is added only for Email/Combined types. New RSA 3072 size and P-384/P-521 curve options appear in the Issue Certificate selector (#169).
+- **CI: block bot Co-authored-by trailers** — a new `no-bot-attribution.yml` workflow rejects PRs whose commits carry `Co-authored-by` trailers from known AI agent identities (Cursor, Copilot, Claude, …), so commits attributed to bots can no longer reach `dev`.
+
+### Fixed
+- **ACME DNS-01 propagation diagnostics and `dns_propagation_timeout=0`** — the DNS-01 self-check succeeds as soon as the authoritative (or configured) resolver confirms the TXT record, but the per-public-resolver diagnostic log was emitted even on success and a flaky resolver (e.g. SERVFAIL from Quad9) was indistinguishable from a real propagation gap. Each failing public resolver is now logged at DEBUG with its exception type (`NXDOMAIN` / `Timeout` / `ConnectionError` / …) and the public-propagation line is explicitly marked `(diagnostic, does not block issuance)`. `dns_propagation_timeout=0` now skips the pre-check entirely on both the auto-poll background path and the manual Verify path (was a single-pass probe), matching the "submit immediately" help text (#171).
+- **TXT RDATA multi-string concatenation** — long ACME authorization tokens published as a single TXT RR carrying several `<character-string>` elements (RFC 1035 §3.3.14; Quad9 splits them across quoted strings) are now joined before matching against the expected value. A correctly published record no longer renders as `value_mismatch` / `pending` on such a resolver (#171).
+- **Migration 050 NotNullViolation on PostgreSQL** — the proxy account backfill inserted legacy credentials into `acme_client_accounts` without `created_at`/`updated_at`; on instances where those columns are `NOT NULL` without a server `DEFAULT`, the raw INSERT failed at boot (`null value in column "created_at"`). The migration now provides both timestamps explicitly on the SQLite and PostgreSQL paths.
+- **Flaky OCSP/CDP auto-URL tests** — CA OCSP/CDP/AIA auto-URL generation relied on `hostname -f` via `_get_fqdn()`, which on CI runners can return a short hostname without a domain and resolve to `None`, flaking the update-CA tests. The shared test app fixture now pins `FQDN = 'ucm.test'` so URL generation is deterministic.
+
+
 ## [2.184] - 2026-07-05
 
 ### Added
