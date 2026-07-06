@@ -209,7 +209,7 @@ Jedes externe CA-Konto kann einen eigenen ACME-Proxy-Endpunkt bereitstellen:
 1. Öffnen Sie **Externe CA-Konten** (gleiche Registerkarte Let's Encrypt)
 2. Bearbeiten oder erstellen Sie ein CA-Konto
 3. Aktivieren Sie **Über ACME-Proxy bereitstellen**
-4. Setzen Sie einen eindeutigen **Proxy-Pfad (Slug)** — z. B. `actalis-production`, `letsencrypt-staging`
+4. Setzen Sie einen eindeutigen **Proxy-Pfad (Slug)** — z. B. \`actalis-production\`, \`letsencrypt-staging\`
 5. Speichern — die URL erscheint im Proxy-Abschnitt und auf der Kontokarte
 
 Clients verwenden:
@@ -222,7 +222,7 @@ Der Legacy-Standardpfad bleibt für das in den Proxy-Einstellungen gewählte Kon
 https://ihr-ucm-server:8443/acme/proxy/directory
 \`\`\`
 
-Reservierte Slugs (nicht erlaubt): `directory`, `new-order`, `challenge`, `acct`, usw.
+Reservierte Slugs (nicht erlaubt): \`directory\`, \`new-order\`, \`challenge\`, \`acct\`, usw.
 
 ### Kontoverwaltung
 - Das **Kontostatus-Badge** zeigt an, ob UCM bei der Upstream-CA registriert ist
@@ -243,7 +243,7 @@ https://ihr-ucm-server:8443/acme/proxy/<slug>/directory
 https://ihr-ucm-server:8443/acme/proxy/directory
 \`\`\`
 
-Beispiel mit certbot (`<slug>` ersetzen):
+Beispiel mit certbot (\`<slug>\` ersetzen):
 \`\`\`
 certbot certonly \\
   --server https://ihr-ucm-server:8443/acme/proxy/<slug>/directory \\
@@ -261,7 +261,7 @@ certbot certonly \\
 
 > ⚠ Vermeiden Sie gleichzeitige Anfragen für denselben FQDN (Certbot + UCM-UI).
 
-> ℹ️ Bei selbstsigniertem UCM-HTTPS-Zertifikat (Lab) `--no-verify-ssl` zu Certbot hinzufügen.
+> ℹ️ Bei selbstsigniertem UCM-HTTPS-Zertifikat (Lab) \`--no-verify-ssl\` zu Certbot hinzufügen.
 
 ## Lokaler ACME-Server
 

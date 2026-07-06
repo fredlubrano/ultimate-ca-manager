@@ -209,7 +209,7 @@ Chaque compte CA externe peut exposer son propre endpoint proxy ACME :
 1. Ouvrez **Comptes CA externes** (même onglet Let's Encrypt)
 2. Modifiez ou créez un compte CA
 3. Activez **Exposer via le proxy ACME**
-4. Définissez un **Chemin proxy (slug)** unique — ex. `actalis-production`, `letsencrypt-staging`
+4. Définissez un **Chemin proxy (slug)** unique — ex. \`actalis-production\`, \`letsencrypt-staging\`
 5. Enregistrez — l'URL apparaît dans la section proxy et sur la fiche du compte
 
 Les clients utilisent :
@@ -222,7 +222,7 @@ Le chemin par défaut legacy reste disponible pour le compte sélectionné dans 
 https://votre-serveur-ucm:8443/acme/proxy/directory
 \`\`\`
 
-Slugs réservés (interdits) : `directory`, `new-order`, `challenge`, `acct`, etc.
+Slugs réservés (interdits) : \`directory\`, \`new-order\`, \`challenge\`, \`acct\`, etc.
 
 ### Gestion des comptes
 - Le **badge de statut du compte** indique si UCM est enregistré auprès du CA en amont
@@ -243,7 +243,7 @@ https://votre-serveur-ucm:8443/acme/proxy/<slug>/directory
 https://votre-serveur-ucm:8443/acme/proxy/directory
 \`\`\`
 
-Exemple avec certbot (remplacez `<slug>` par votre slug CA) :
+Exemple avec certbot (remplacez \`<slug>\` par votre slug CA) :
 \`\`\`
 certbot certonly \\
   --server https://votre-serveur-ucm:8443/acme/proxy/<slug>/directory \\

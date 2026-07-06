@@ -846,7 +846,7 @@ Each external CA account can expose its own ACME proxy endpoint:
 1. Open **External CA Accounts** (same Let's Encrypt tab)
 2. Edit or create a CA account
 3. Enable **Expose via ACME proxy**
-4. Set a unique **Proxy path (slug)** — e.g. `actalis-production`, `letsencrypt-staging`
+4. Set a unique **Proxy path (slug)** — e.g. \`actalis-production\`, \`letsencrypt-staging\`
 5. Save — the URL appears in the proxy section and on the account card
 
 Clients use:
@@ -859,7 +859,7 @@ The legacy default path remains available for the account selected in proxy sett
 https://your-ucm-server:8443/acme/proxy/directory
 \`\`\`
 
-Reserved slugs (cannot be used): `directory`, `new-order`, `challenge`, `acct`, etc.
+Reserved slugs (cannot be used): \`directory\`, \`new-order\`, \`challenge\`, \`acct\`, etc.
 
 ### Account Management
 - The **account status badge** shows whether UCM is registered with the upstream CA
@@ -880,7 +880,7 @@ https://your-ucm-server:8443/acme/proxy/<slug>/directory
 https://your-ucm-server:8443/acme/proxy/directory
 \`\`\`
 
-Example with certbot (replace `<slug>` with your CA slug):
+Example with certbot (replace \`<slug>\` with your CA slug):
 \`\`\`
 certbot certonly \\
   --server https://your-ucm-server:8443/acme/proxy/<slug>/directory \\

@@ -209,7 +209,7 @@ UCM підтримує ACME (Automated Certificate Management Environment) у д
 1. Відкрийте **Зовнішні CA** (та сама вкладка Let's Encrypt)
 2. Редагуйте або створіть обліковий запис CA
 3. Увімкніть **Надати через ACME-проксі**
-4. Задайте унікальний **slug** — напр. `actalis-production`
+4. Задайте унікальний **slug** — напр. \`actalis-production\`
 5. Збережіть — URL з'явиться в розділі проксі та на картці облікового запису
 
 Клієнти використовують:
@@ -222,7 +222,7 @@ https://ваш-ucm-сервер:8443/acme/proxy/<slug>/directory
 https://ваш-ucm-сервер:8443/acme/proxy/directory
 \`\`\`
 
-Зарезервовані slug: `directory`, `new-order`, `challenge`, `acct` тощо
+Зарезервовані slug: \`directory\`, \`new-order\`, \`challenge\`, \`acct\` тощо
 
 ### Управління обліковими записами
 - **Значок статусу облікового запису** показує, чи зареєстрований UCM в upstream CA
@@ -243,7 +243,7 @@ https://ваш-ucm-сервер:8443/acme/proxy/<slug>/directory
 https://ваш-ucm-сервер:8443/acme/proxy/directory
 \`\`\`
 
-Приклад certbot (замініть `<slug>`):
+Приклад certbot (замініть \`<slug>\`):
 \`\`\`
 certbot certonly \\
   --server https://ваш-ucm-сервер:8443/acme/proxy/<slug>/directory \\
@@ -261,7 +261,7 @@ certbot certonly \\
 
 > ⚠ Уникайте одночасних запитів для одного FQDN (Certbot + інтерфейс UCM).
 
-> ℹ️ Для самопідписаного HTTPS (лаб) додайте `--no-verify-ssl` до Certbot.
+> ℹ️ Для самопідписаного HTTPS (лаб) додайте \`--no-verify-ssl\` до Certbot.
 
 ## Локальний ACME-сервер
 

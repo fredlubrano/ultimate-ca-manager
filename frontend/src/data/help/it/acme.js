@@ -209,7 +209,7 @@ Ogni account CA esterno può esporre il proprio endpoint proxy ACME:
 1. Aprire **Account CA esterni** (stessa scheda Let's Encrypt)
 2. Modificare o creare un account CA
 3. Attivare **Esporre tramite proxy ACME**
-4. Impostare uno **slug** univoco — es. `actalis-production`, `letsencrypt-staging`
+4. Impostare uno **slug** univoco — es. \`actalis-production\`, \`letsencrypt-staging\`
 5. Salvare — l'URL appare nella sezione proxy e sulla scheda account
 
 I client usano:
@@ -222,7 +222,7 @@ Il percorso predefinito legacy resta disponibile per l'account selezionato nelle
 https://vostro-server-ucm:8443/acme/proxy/directory
 \`\`\`
 
-Slug riservati (vietati): `directory`, `new-order`, `challenge`, `acct`, ecc.
+Slug riservati (vietati): \`directory\`, \`new-order\`, \`challenge\`, \`acct\`, ecc.
 
 ### Gestione account
 - Il **badge stato account** mostra se UCM è registrato presso la CA upstream
@@ -243,7 +243,7 @@ https://vostro-server-ucm:8443/acme/proxy/<slug>/directory
 https://vostro-server-ucm:8443/acme/proxy/directory
 \`\`\`
 
-Esempio con certbot (sostituire `<slug>`):
+Esempio con certbot (sostituire \`<slug>\`):
 \`\`\`
 certbot certonly \\
   --server https://vostro-server-ucm:8443/acme/proxy/<slug>/directory \\
@@ -261,7 +261,7 @@ certbot certonly \\
 
 > ⚠ Evitare richieste simultanee per lo stesso FQDN (Certbot + interfaccia UCM).
 
-> ℹ️ In lab / certificato autofirmato, aggiungere `--no-verify-ssl` a Certbot.
+> ℹ️ In lab / certificato autofirmato, aggiungere \`--no-verify-ssl\` a Certbot.
 
 ## Server ACME locale
 

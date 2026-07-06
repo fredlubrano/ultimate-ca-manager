@@ -209,7 +209,7 @@ ACME代理允许内部客户端通过UCM从公共CA（Let's Encrypt、ZeroSSL等
 1. 打开 **外部 CA 账户**（同一 Let's Encrypt 选项卡）
 2. 编辑或创建 CA 账户
 3. 启用 **通过 ACME 代理暴露**
-4. 设置唯一的 **代理路径 (slug)** — 如 `actalis-production`
+4. 设置唯一的 **代理路径 (slug)** — 如 \`actalis-production\`
 5. 保存 — URL 显示在代理部分和账户卡片上
 
 客户端使用：
@@ -222,7 +222,7 @@ https://your-ucm-server:8443/acme/proxy/<slug>/directory
 https://your-ucm-server:8443/acme/proxy/directory
 \`\`\`
 
-保留 slug（不可用）：`directory`、`new-order`、`challenge`、`acct` 等
+保留 slug（不可用）：\`directory\`、\`new-order\`、\`challenge\`、\`acct\` 等
 
 ### 账户管理
 - **账户状态标记** 显示UCM是否已在上游CA注册
@@ -243,7 +243,7 @@ https://your-ucm-server:8443/acme/proxy/<slug>/directory
 https://your-ucm-server:8443/acme/proxy/directory
 \`\`\`
 
-certbot 示例（替换 `<slug>`）：
+certbot 示例（替换 \`<slug>\`）：
 \`\`\`
 certbot certonly \\
   --server https://your-ucm-server:8443/acme/proxy/<slug>/directory \\
@@ -261,7 +261,7 @@ certbot certonly \\
 
 > ⚠ 避免对同一 FQDN 并发请求（Certbot + UCM 界面）。
 
-> ℹ️ 自签名 HTTPS（实验环境）请为 Certbot 添加 `--no-verify-ssl`。
+> ℹ️ 自签名 HTTPS（实验环境）请为 Certbot 添加 \`--no-verify-ssl\`。
 
 ## 本地 ACME 服务器
 
