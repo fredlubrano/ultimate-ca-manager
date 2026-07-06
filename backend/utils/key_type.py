@@ -59,6 +59,36 @@ def normalize_ec_curve(value: str) -> str:
     raise ValueError(_EC_ERROR_HINT)
 
 
+def parse_issue_key_type(
+    key_type: str | None = None,
+    key_size: str | int | None = None,
+    *,
+    curve: str | None = None,
+) -> str:
+    """Normalize Issue Certificate ``key_type``/``key_size`` to TrustStore KEY_TYPES id."""
+    raw_type = str(key_type or 'rsa').strip()
+    raw_size = str(key_size if key_size is not None else '2048').strip()
+
+    if ' ' in raw_type and not curve:
+        return parse_csr_key_type(raw_type)
+
+    kt = raw_type.lower()
+    if kt in ('ec', 'ecdsa'):
+        if curve:
+            return normalize_ec_curve(curve)
+        if raw_size.isdigit() and int(raw_size) in (256, 384, 521):
+            return normalize_ec_curve(f'P-{raw_size}')
+        return normalize_ec_curve(raw_size)
+
+    if kt == 'rsa':
+        size = re.sub(r'^rsa\s*', '', raw_size, flags=re.IGNORECASE).strip() or raw_size
+        if size not in RSA_SIZES:
+            raise ValueError('RSA key size must be 2048, 3072, or 4096')
+        return size
+
+    raise ValueError(f'Unsupported key type: {raw_type}')
+
+
 def parse_csr_key_type(key_algo_full: str) -> str:
     """Parse frontend key_type (e.g. ``RSA 2048``, ``EC P-256``) for CSR generation."""
     raw = (key_algo_full or 'RSA 2048').strip()

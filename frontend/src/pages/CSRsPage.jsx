@@ -1016,11 +1016,11 @@ MIICijCCAXICAQAwRTELMAkGA1UEBhMCVVMx...
           <Select
             label={t('common.keyType')}
             options={[
-              { value: 'RSA 2048', label: 'RSA 2048' },
-              { value: 'RSA 4096', label: 'RSA 4096' },
-              { value: 'EC P-256', label: 'NIST P-256 (ECDSA)' },
-              { value: 'EC P-384', label: 'NIST P-384 (ECDSA)' },
-              { value: 'EC P-521', label: 'NIST P-521 (ECDSA)' },
+              { value: 'RSA 2048', label: t('csrs.keyRsa2048') },
+              { value: 'RSA 4096', label: t('csrs.keyRsa4096') },
+              { value: 'EC P-256', label: t('csrs.keyCurveNistP256') },
+              { value: 'EC P-384', label: t('csrs.keyCurveNistP384') },
+              { value: 'EC P-521', label: t('csrs.keyCurveNistP521') },
             ]}
             value={genKeyType}
             onChange={setGenKeyType}

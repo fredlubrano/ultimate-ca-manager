@@ -1,5 +1,4 @@
 """Certificate create route"""
-import re
 import logging
 import base64
 import uuid
@@ -54,54 +53,14 @@ def create_certificate():
         if not is_valid:
             return error_response(error, 400)
 
-    # Parse SAN string into typed arrays if not already provided
-    if data.get('san') and not data.get('san_dns'):
-        san_dns = []
-        san_ip = []
-        san_email = []
-        san_uri = []
-        san_upn = []
-        san_raw = data['san']
-        # Accept both string and array
-        if isinstance(san_raw, list):
-            san_raw = ','.join(str(s) for s in san_raw)
-        raw_sans = [s.strip() for s in re.split(r'[,\n;]+', san_raw) if s.strip()]
-        for entry in raw_sans:
-            entry_lower = entry.lower()
-            # Check explicit type prefixes
-            if entry_lower.startswith('upn:'):
-                san_upn.append(re.sub(r'^UPN:\s*', '', entry, flags=re.IGNORECASE))
-                continue
-            if entry_lower.startswith('uri:'):
-                san_uri.append(re.sub(r'^URI:\s*', '', entry, flags=re.IGNORECASE))
-                continue
-            if entry_lower.startswith('email:'):
-                san_email.append(re.sub(r'^EMAIL:\s*', '', entry, flags=re.IGNORECASE))
-                continue
-            # Remove type prefixes if present (e.g. "DNS:example.com", "IP:1.2.3.4")
-            entry_clean = re.sub(r'^(DNS|IP):\s*', '', entry, flags=re.IGNORECASE)
-            if not entry_clean:
-                continue
-            try:
-                ip_address(entry_clean)
-                san_ip.append(entry_clean)
-            except ValueError:
-                if '@' in entry_clean:
-                    san_email.append(entry_clean)
-                elif entry_clean.startswith('http://') or entry_clean.startswith('https://'):
-                    san_uri.append(entry_clean)
-                else:
-                    san_dns.append(entry_clean)
-        if san_dns:
-            data['san_dns'] = san_dns
-        if san_ip:
-            data['san_ip'] = san_ip
-        if san_email:
-            data['san_email'] = san_email
-        if san_uri:
-            data['san_uri'] = san_uri
-        if san_upn:
-            data['san_upn'] = san_upn
+    from utils.san_parse import parse_cert_san_payload
+
+    san_buckets, san_err = parse_cert_san_payload(data)
+    if san_err:
+        return error_response(san_err, 400)
+    for key, values in san_buckets.items():
+        if values:
+            data[key] = values
 
     # Get the CA
     ca = CA.query.get(data['ca_id'])
@@ -158,52 +117,30 @@ def create_certificate():
         from services.hsm.ca_key_loader import get_ca_signing_key
         ca_key = get_ca_signing_key(ca)
 
-        # Generate key pair
-        key_type = data.get('key_type', 'RSA')
-        key_size = data.get('key_size', '2048')
+        from utils.key_type import parse_issue_key_type
 
-        # Whitelist allowed RSA sizes / EC curves (security: prevent weak or absurdly large keys)
-        ALLOWED_RSA = (2048, 3072, 4096)
-        ALLOWED_CURVES = {'secp256r1', 'prime256v1', 'secp384r1', 'secp521r1'}
+        key_type_in = data.get('key_type') or data.get('keyType', 'rsa')
+        key_size_in = data.get('key_size') or data.get('keySize', '2048')
+        try:
+            normalized_key = parse_issue_key_type(
+                key_type_in,
+                key_size_in,
+                curve=data.get('curve'),
+            )
+        except ValueError as exc:
+            return error_response(str(exc), 400)
 
-        if key_type.upper() in ('EC', 'ECDSA'):
-            curve_map = {
-                '256': 'secp256r1', 'prime256v1': 'secp256r1', 'secp256r1': 'secp256r1',
-                '384': 'secp384r1', 'secp384r1': 'secp384r1',
-                '521': 'secp521r1', 'secp521r1': 'secp521r1',
-            }
-            ks_str = str(key_size).strip()
-            # If key_size looks like a curve name but isn't a known one, reject (don't silently fallback)
-            if ks_str and (ks_str.lower().startswith(('secp', 'prime', 'p-', 'p2', 'p3', 'p5')) or ks_str.isdigit()):
-                if ks_str not in curve_map:
-                    return error_response(
-                        f"Unsupported EC curve '{ks_str}'. Allowed: {sorted(ALLOWED_CURVES)}", 400)
-                curve_name = curve_map[ks_str]
-            else:
-                curve_name = data.get('curve', 'secp256r1')
-            if curve_name not in ALLOWED_CURVES:
-                return error_response(
-                    f"Unsupported EC curve '{curve_name}'. Allowed: {sorted(ALLOWED_CURVES)}", 400)
-            curves = {
-                'secp256r1': ec.SECP256R1(),
-                'prime256v1': ec.SECP256R1(),
-                'secp384r1': ec.SECP384R1(),
-                'secp521r1': ec.SECP521R1(),
-            }
-            curve = curves[curve_name]
-            new_key = ec.generate_private_key(curve, default_backend())
+        EC_CURVES = {
+            'prime256v1': ec.SECP256R1(),
+            'secp384r1': ec.SECP384R1(),
+            'secp521r1': ec.SECP521R1(),
+        }
+        if normalized_key in EC_CURVES:
+            new_key = ec.generate_private_key(EC_CURVES[normalized_key], default_backend())
         else:
-            try:
-                key_size_int = int(key_size)
-            except (TypeError, ValueError):
-                return error_response(
-                    f"Invalid key_size '{key_size}'. Allowed RSA sizes: {list(ALLOWED_RSA)}", 400)
-            if key_size_int not in ALLOWED_RSA:
-                return error_response(
-                    f"RSA key_size {key_size_int} not allowed. Allowed: {list(ALLOWED_RSA)}", 400)
             new_key = rsa.generate_private_key(
                 public_exponent=65537,
-                key_size=key_size_int,
+                key_size=int(normalized_key),
                 backend=default_backend()
             )
 
@@ -328,25 +265,37 @@ def create_certificate():
                 san_list.append(build_upn_other_name(upn))
 
         # Auto-add CN as SAN based on cert type
+        from utils.san_parse import auto_san_buckets_from_cn
+
         cn = data['cn']
-        cn_looks_like_hostname = '.' in cn or cn.startswith('*')
-        cn_looks_like_email = '@' in cn and '.' in cn.split('@')[-1]
-
-        # Server/combined: CN → DNS SAN
-        if cert_type in ['server', 'combined'] and cn_looks_like_hostname and cn not in (data.get('san_dns') or []):
-            san_list.insert(0, x509.DNSName(cn))
-
-        # Email/combined: CN → Email SAN (if CN is an email address)
-        if cert_type in ['email', 'combined'] and cn_looks_like_email and cn not in (data.get('san_email') or []):
-            san_list.insert(0, x509.RFC822Name(cn))
-
-        # Email/combined: Subject email → Email SAN
-        subject_email = data.get('email', '')
-        if cert_type in ['email', 'combined'] and subject_email and '@' in subject_email:
-            if subject_email != cn and subject_email not in (data.get('san_email') or []):
-                existing_emails = [str(s.value) for s in san_list if isinstance(s, x509.RFC822Name)]
-                if subject_email not in existing_emails:
-                    san_list.append(x509.RFC822Name(subject_email))
+        implicit = auto_san_buckets_from_cn(
+            cn,
+            cert_type,
+            subject_email=data.get('email'),
+        )
+        for key in ('san_dns', 'san_ip', 'san_email'):
+            existing = set(data.get(key) or [])
+            for val in implicit.get(key) or []:
+                if val in existing:
+                    continue
+                if key == 'san_dns' and any(
+                    isinstance(s, x509.DNSName) and s.value == val for s in san_list
+                ):
+                    continue
+                if key == 'san_ip' and any(
+                    isinstance(s, x509.IPAddress) and str(s.value) == val for s in san_list
+                ):
+                    continue
+                if key == 'san_email' and any(
+                    isinstance(s, x509.RFC822Name) and s.value == val for s in san_list
+                ):
+                    continue
+                if key == 'san_dns':
+                    san_list.insert(0, x509.DNSName(val))
+                elif key == 'san_ip':
+                    san_list.insert(0, x509.IPAddress(ip_address(val)))
+                elif key == 'san_email':
+                    san_list.insert(0, x509.RFC822Name(val))
 
         # Derive final SAN lists from san_list so auto-added entries are
         # reflected in the DB columns, not just the X.509 extension.

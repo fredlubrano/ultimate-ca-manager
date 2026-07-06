@@ -1,7 +1,7 @@
 """Tests for utils.key_type CSR key parsing."""
 import pytest
 
-from utils.key_type import normalize_ec_curve, parse_csr_key_type
+from utils.key_type import normalize_ec_curve, parse_csr_key_type, parse_issue_key_type
 
 
 class TestNormalizeEcCurve:
@@ -37,3 +37,21 @@ class TestParseCsrKeyType:
     def test_invalid_rsa_size(self):
         with pytest.raises(ValueError, match='2048'):
             parse_csr_key_type('RSA 1024')
+
+
+class TestParseIssueKeyType:
+    @pytest.mark.parametrize('key_type,key_size,expected', [
+        ('rsa', '2048', '2048'),
+        ('rsa', '4096', '4096'),
+        ('ecdsa', '256', 'prime256v1'),
+        ('ecdsa', '384', 'secp384r1'),
+        ('ecdsa', '521', 'secp521r1'),
+        ('EC', '256', 'prime256v1'),
+        ('ecdsa', 'secp256r1', 'prime256v1'),
+        ('ecdsa', 'NIST P-384', 'secp384r1'),
+    ])
+    def test_issue_form_fields(self, key_type, key_size, expected):
+        assert parse_issue_key_type(key_type, key_size) == expected
+
+    def test_combined_ec_label(self):
+        assert parse_issue_key_type('EC P-256', None) == 'prime256v1'
