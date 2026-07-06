@@ -11,6 +11,16 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ## [Unreleased]
 
 
+## [2.186] - 2026-07-06
+
+### Fixed
+- **ACME proxy `/directory` on fresh install** — the legacy `/acme/proxy/directory` and `/new-nonce` endpoints returned a 500 (`No external ACME CA account configured for the proxy`) on a brand-new instance before any external CA account was added, because the proxy service resolved the upstream `AcmeClientAccount` eagerly in its constructor. Resolution is now lazy: only the upstream directory URL (config-derived, defaults to Let's Encrypt staging) is needed for `/directory` and `/new-nonce`, and the account row is looked up on the first key-bearing operation (`new-account`, `new-order`, signing), preserving the helpful configuration error for actual signing paths. This had broken the release smoke gate on a fresh Docker container.
+- **ACME manual verify DNS wait and authorization poll cadence** — the synchronous manual-verify endpoint ran the DNS self-check up to the full configured `dns_propagation_timeout` (max 3600 s), risking client/proxy timeouts; it is now capped at 30 s (background auto-poll still honors the full timeout). The auto-poll loop also queried per-domain authorization status on every iteration, doubling CA traffic; it is now checked every `max(poll_interval × 5, 15)` s, with the order-status poll still catching terminal `invalid` states each interval.
+- **Contact-less upstream account registration** — `AcmeClientService.register_account` now accepts `email=None` and omits the `contact` field (RFC 8555 makes it optional; Let's Encrypt accepts contact-less registrations), so the proxy no longer blocks issuance when the only available email has a non-public TLD (`.lan`/`.local`).
+- **ACME preflight staging order cleanup on failure** — an ephemeral staging order created during a `full` preflight is now removed from the database even when a later stage of the preflight raises, instead of leaking an orphan row.
+- **Key-reuse renewal fallback** — `key_source=reuse` now falls back to the original `source_certificate_id` when the order's own `certificate_id` is missing (e.g. an order whose import failed), so the key-reuse chain survives across renewals.
+
+
 ## [2.185] - 2026-07-06
 
 ### Added
