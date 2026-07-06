@@ -22,8 +22,8 @@ jobs:
             50341347+claude@users.noreply.github.com
             198982749+github-actions[bot]@users.noreply.github.com
           '
-          # Build a grep pattern from the list (escaped dots, joined by |).
-          PATTERN=$(printf '%s\n' "$BOTS" | grep -v '^$' | sed 's/[.]/\\./g' | paste -sd'|' -)
+          # Build a grep pattern from the list (trimmed, escaped dots, joined by |).
+          PATTERN=$(printf '%s\n' "$BOTS" | grep -v '^$' | sed 's/^[[:space:]]*//; s/[.]/\\./g' | paste -sd'|' -)
           # Inspect every commit in the PR range.
           RANGE="${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}"
           bad=0
