@@ -103,22 +103,43 @@ def _authoritative_nameserver_ips(name: str) -> List[str]:
 
 
 def check_public_resolvers(name: str, expected: str) -> Dict[str, bool]:
-    """Query each public resolver individually for the expected TXT value."""
+    """Query each public resolver individually for the expected TXT value.
+
+    A resolver is ``OK`` only when it returns an answer containing the expected
+    TXT value. Any failure (NXDOMAIN, SERVFAIL, timeout, wrong value) is logged
+    at DEBUG with the exception type so operators can tell a flaky resolver
+    apart from a genuine propagation gap (issue #171).
+    """
     status: Dict[str, bool] = {}
     for resolver_ip in PUBLIC_DNS_RESOLVERS:
         try:
             answers = _resolve_with_ns(name, [resolver_ip])
             status[resolver_ip] = _answers_contain_expected(answers, expected)
-        except Exception:
+        except Exception as exc:
+            # Preserve the reason so it can be surfaced in logs; a bare bool
+            # hides SERVFAIL/timeouts behind the same 'pending' label.
+            logger.debug(
+                'DNS public resolver %s returned no matching TXT for %s: %s: %s',
+                resolver_ip, name, type(exc).__name__, exc,
+            )
             status[resolver_ip] = False
     return status
 
 
 def log_public_resolver_status(name: str, expected: str) -> Dict[str, bool]:
-    """Log and return per-resolver public propagation status."""
+    """Log and return per-resolver public propagation status.
+
+    This is a *diagnostic* log only: the DNS-01 self-check succeeds as soon as
+    the authoritative (or configured) resolver sees the TXT record, regardless of
+    whether the public recursors have caught up. The line is emitted even on
+    success to aid debugging; a ``pending`` entry does NOT block issuance.
+    """
     status = check_public_resolvers(name, expected)
     parts = [f'{ip}={"OK" if ok else "pending"}' for ip, ok in status.items()]
-    logger.info('DNS public propagation for %s: %s', name, ', '.join(parts))
+    logger.info(
+        'DNS public propagation for %s (diagnostic, does not block issuance): %s',
+        name, ', '.join(parts),
+    )
     return status
 
 

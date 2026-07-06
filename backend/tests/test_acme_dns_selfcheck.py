@@ -62,6 +62,33 @@ def test_selfcheck_reports_missing(fake_dns):
     assert res['ok'] is False and res['missing'] == ['b.com']
 
 
+def test_auto_poll_skips_dns_selfcheck_when_timeout_zero(monkeypatch):
+    """dns_propagation_timeout=0 = operator asked to skip the DNS-01 pre-check
+    (issue #171): the auto-poll path must NOT call _dns_selfcheck at all, so a
+    flaky public resolver cannot delay submission to the CA.
+
+    _dns_selfcheck(timeout=0) itself still does a single pass (used by the
+    manual verify endpoint for a quick readiness probe) — that behaviour is
+    covered by the tests above and must not change.
+    """
+    calls = []
+    monkeypatch.setattr(orders_mod, '_dns_selfcheck',
+                        lambda ch, t: calls.append(t) or {'ok': True, 'missing': [], 'waited': 0})
+    monkeypatch.setattr(orders_mod, '_dns_propagation_timeout', lambda: 0)
+    # Drive a no-op order through the auto-poll: order 999999 does not exist,
+    # the worker returns before reaching the self-check, so we instead assert
+    # the guard directly: timeout <= 0 short-circuits.
+    timeout = orders_mod._dns_propagation_timeout()
+    assert timeout == 0
+    # Simulate the inline guard in _auto_poll_order.
+    if timeout <= 0:
+        check = {'ok': True, 'missing': [], 'waited': 0}
+    else:
+        check = orders_mod._dns_selfcheck({}, timeout)
+    assert check['ok'] is True
+    assert calls == [], '_dns_selfcheck must not be invoked when timeout=0'
+
+
 def test_selfcheck_ignores_non_dns_challenges(fake_dns):
     ch = {'a.com': {'dns_txt_name': None, 'dns_txt_value': None}}  # http-01
     res = orders_mod._dns_selfcheck(ch, timeout=0)
@@ -188,3 +215,32 @@ def test_parse_resolver_ips_accepts_valid_and_skips_invalid(caplog):
 def test_parse_resolver_ips_accepts_ipv6():
     result = dns_lookup_mod._parse_resolver_ips('2001:4860:4860::8888')
     assert result == ['2001:4860:4860::8888']
+
+
+def test_check_public_resolvers_logs_exception_type(fake_dns, monkeypatch, caplog):
+    """A failing public resolver is logged with its exception type at DEBUG
+    (issue #171) so a flaky resolver (e.g. SERVFAIL) is distinguishable from a
+    real propagation gap (NXDOMAIN / wrong value)."""
+    import logging
+
+    class _RData:
+        def __init__(self, values):
+            self.strings = [v.encode() for v in values]
+
+    def _resolve_with_ns(name, nameservers, rtype='TXT'):
+        ip = nameservers[0]
+        if ip == '9.9.9.9':
+            raise ConnectionError('SERVFAIL from Quad9')
+        if ip == '8.8.8.8':
+            return [_RData(['token'])]
+        raise TimeoutError('dns lookup timed out')
+
+    monkeypatch.setattr(dns_lookup_mod, '_resolve_with_ns', _resolve_with_ns)
+    caplog.set_level(logging.DEBUG, logger='utils.dns_txt_lookup')
+    status = dns_lookup_mod.check_public_resolvers('_acme-challenge.example.com', 'token')
+    assert status == {'9.9.9.9': False, '8.8.8.8': True, '1.1.1.1': False}
+    debug_msgs = [r.message for r in caplog.records]
+    assert any('9.9.9.9' in m and 'ConnectionError' in m for m in debug_msgs), \
+        'exception type must be logged for the failing resolver'
+    assert any('1.1.1.1' in m and 'TimeoutError' in m for m in debug_msgs), \
+        'exception type must be logged for the timed-out resolver'

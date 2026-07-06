@@ -54,7 +54,13 @@ def _dns_selfcheck(challenges: dict, timeout: int) -> dict:
 
     Each poll queries configured/authoritative resolvers plus 9.9.9.9, 8.8.8.8
     and 1.1.1.1 explicitly (logged per resolver). A domain is ready when any of
-    these paths returns the expected TXT.
+    these paths returns the expected TXT. ``timeout == 0`` means "single pass,
+    no loop" (used by the manual verify endpoint for a quick readiness probe).
+
+    The auto-poll background path short-circuits *before* calling this when the
+    operator-configured ``dns_propagation_timeout`` is 0 ("submit immediately")
+    — see :func:`_auto_poll_order`. That is distinct from this function's own
+    ``timeout=0`` single-pass mode.
 
     Returns {'ok': bool, 'missing': [domains], 'waited': seconds}. Non-dns-01
     challenges (no dns_txt_value) are ignored.
@@ -608,9 +614,16 @@ def _auto_poll_and_finalize(client, order) -> dict:
 
         # 1. Self-check DNS propagation: poll for the expected TXT records up to
         #    the configured timeout before asking the CA to validate (#140).
+        #    dns_propagation_timeout=0 = operator asked to skip the pre-check
+        #    entirely ("submit immediately", issue #171): no DNS query is issued,
+        #    the CA is told to validate right away.
         timeout = _dns_propagation_timeout()
-        check = _dns_selfcheck(challenges, timeout)
         result['dns_propagation_wait'] = True
+        if timeout <= 0:
+            logger.info('DNS propagation pre-check skipped (timeout=0)')
+            check = {'ok': True, 'missing': [], 'waited': 0}
+        else:
+            check = _dns_selfcheck(challenges, timeout)
         if check['ok']:
             logger.info(f'DNS propagation confirmed after {check["waited"]}s')
         else:
