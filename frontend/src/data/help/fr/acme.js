@@ -216,9 +216,25 @@ Dirigez vos clients ACME internes vers le répertoire proxy :
 https://votre-serveur-ucm:8443/acme/proxy/directory
 \`\`\`
 
+Exemple avec certbot :
+\`\`\`
+certbot certonly \\
+  --server https://votre-serveur-ucm:8443/acme/proxy/directory \\
+  --preferred-challenges dns-01 \\
+  --authenticator manual \\
+  --manual-auth-hook /bin/true \\
+  --manual-cleanup-hook /bin/true \\
+  --non-interactive --agree-tos -m you@example.com \\
+  -d subdomain.example.com
+\`\`\`
+
 > 💡 Les identifiants EAB proxy sont distincts de l'EAB client — ils authentifient UCM auprès du CA en amont, pas vos clients auprès de UCM.
 
-> ⚠ Le mode proxy nécessite au moins un fournisseur DNS configuré dans UCM pour la résolution des défis.
+> ⚠ Prérequis : le domaine (ou un domaine parent couvrant les sous-domaines) doit être configuré dans ACME Domains avec un fournisseur DNS. Le proxy ne gère que dns-01.
+
+> ⚠ Évitez les demandes simultanées pour le même FQDN (Certbot + interface UCM) : le second enregistrement TXT peut écraser le premier.
+
+> ℹ️ En environnement lab / certificat auto-signé, ajoutez \`--no-verify-ssl\` à Certbot.
 
 ## Serveur ACME local
 

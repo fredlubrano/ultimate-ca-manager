@@ -857,13 +857,21 @@ Example with certbot:
 \`\`\`
 certbot certonly \\
   --server https://your-ucm-server:8443/acme/proxy/directory \\
-  --preferred-challenges dns \\
-  -d example.com
+  --preferred-challenges dns-01 \\
+  --authenticator manual \\
+  --manual-auth-hook /bin/true \\
+  --manual-cleanup-hook /bin/true \\
+  --non-interactive --agree-tos -m you@example.com \\
+  -d subdomain.example.com
 \`\`\`
 
 > 💡 Proxy EAB credentials are separate from client EAB — they authenticate UCM with the upstream CA, not your clients with UCM.
 
-> ⚠ Proxy mode requires at least one DNS provider configured in UCM for challenge resolution.
+> ⚠ Prerequisite: the domain (or a parent domain covering subdomains) must be configured in ACME Domains with a DNS provider. The proxy supports dns-01 only.
+
+> ⚠ Avoid concurrent requests for the same FQDN (Certbot + UCM UI): the second TXT record may overwrite the first.
+
+> ℹ️ In lab/self-signed deployments, add \`--no-verify-ssl\` to Certbot.
 
 ## Local ACME Server
 
