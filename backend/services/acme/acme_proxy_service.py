@@ -359,11 +359,11 @@ class AcmeProxyService:
         eab_required = (eab_cfg.value if eab_cfg else 'false').lower() == 'true'
         meta['externalAccountRequired'] = eab_required
         return {
-            "newNonce": f"{self.base_url}/acme/proxy/new-nonce",
-            "newAccount": f"{self.base_url}/acme/proxy/new-account",
-            "newOrder": f"{self.base_url}/acme/proxy/new-order",
-            "revokeCert": f"{self.base_url}/acme/proxy/revoke-cert",
-            "keyChange": f"{self.base_url}/acme/proxy/key-change",
+            "newNonce": f"{self.base_url}/new-nonce",
+            "newAccount": f"{self.base_url}/new-account",
+            "newOrder": f"{self.base_url}/new-order",
+            "revokeCert": f"{self.base_url}/revoke-cert",
+            "keyChange": f"{self.base_url}/key-change",
             "meta": meta,
         }
 
@@ -475,10 +475,10 @@ class AcmeProxyService:
         proxy_authzs = []
         for authz_url in upstream_order['authorizations']:
             authz_id = base64.urlsafe_b64encode(authz_url.encode()).rstrip(b'=').decode()
-            proxy_authzs.append(f"{self.base_url}/acme/proxy/authz/{authz_id}")
+            proxy_authzs.append(f"{self.base_url}/authz/{authz_id}")
             
         upstream_order['authorizations'] = proxy_authzs
-        upstream_order['finalize'] = f"{self.base_url}/acme/proxy/order/{order_id}/finalize"
+        upstream_order['finalize'] = f"{self.base_url}/order/{order_id}/finalize"
         
         return upstream_order, order_id
 
@@ -559,7 +559,7 @@ class AcmeProxyService:
                             db.session.rollback()
                             logger.error(f"Failed to start auto-DNS thread: {e}")
             
-            chall['url'] = f"{self.base_url}/acme/proxy/challenge/{chall_id}"
+            chall['url'] = f"{self.base_url}/challenge/{chall_id}"
             proxy_challenges.append(chall)
         
         if not proxy_challenges:
@@ -600,7 +600,7 @@ class AcmeProxyService:
         
         if status != 'pending':
             # Already processing or finished
-            challenge_data['url'] = f"{self.base_url}/acme/proxy/challenge/{chall_id_b64}"
+            challenge_data['url'] = f"{self.base_url}/challenge/{chall_id_b64}"
             return challenge_data, self._get_authz_link(resp.headers.get('Link'))
 
         # If still pending, check if we already triggered automation in get_authz
@@ -610,7 +610,7 @@ class AcmeProxyService:
             if chall_url in challenges_data and challenges_data[chall_url].get('status') == 'initiated':
                 # Already triggered, just return 'processing'
                 challenge_data['status'] = 'processing'
-                challenge_data['url'] = f"{self.base_url}/acme/proxy/challenge/{chall_id_b64}"
+                challenge_data['url'] = f"{self.base_url}/challenge/{chall_id_b64}"
                 return challenge_data, self._get_authz_link(resp.headers.get('Link'))
 
         # Fallback: Trigger if not already triggered (should be rare now)
@@ -638,7 +638,7 @@ class AcmeProxyService:
         thread.start()
         
         challenge_data['status'] = 'processing'
-        challenge_data['url'] = f"{self.base_url}/acme/proxy/challenge/{chall_id_b64}"
+        challenge_data['url'] = f"{self.base_url}/challenge/{chall_id_b64}"
         
         return challenge_data, self._get_authz_link(resp.headers.get('Link'))
 
@@ -812,18 +812,18 @@ class AcmeProxyService:
         order = resp.json()
         
         # Rewrite URLs
-        order['finalize'] = f"{self.base_url}/acme/proxy/order/{order_id_b64}/finalize"
+        order['finalize'] = f"{self.base_url}/order/{order_id_b64}/finalize"
         if 'certificate' in order:
             cert_url = order['certificate']
             cert_id = base64.urlsafe_b64encode(cert_url.encode()).rstrip(b'=').decode()
-            order['certificate'] = f"{self.base_url}/acme/proxy/cert/{cert_id}"
+            order['certificate'] = f"{self.base_url}/cert/{cert_id}"
         
         # Rewrite authorization URLs
         if 'authorizations' in order:
             proxy_authzs = []
             for authz_url in order['authorizations']:
                 authz_id = base64.urlsafe_b64encode(authz_url.encode()).rstrip(b'=').decode()
-                proxy_authzs.append(f"{self.base_url}/acme/proxy/authz/{authz_id}")
+                proxy_authzs.append(f"{self.base_url}/authz/{authz_id}")
             order['authorizations'] = proxy_authzs
             
         return order
@@ -888,18 +888,18 @@ class AcmeProxyService:
         order = resp.json()
         
         # Rewrite URLs
-        order['finalize'] = f"{self.base_url}/acme/proxy/order/{order_id_b64}/finalize"
+        order['finalize'] = f"{self.base_url}/order/{order_id_b64}/finalize"
         if 'certificate' in order:
             cert_url = order['certificate']
             cert_id = base64.urlsafe_b64encode(cert_url.encode()).rstrip(b'=').decode()
-            order['certificate'] = f"{self.base_url}/acme/proxy/cert/{cert_id}"
+            order['certificate'] = f"{self.base_url}/cert/{cert_id}"
             
         # Rewrite authorization URLs
         if 'authorizations' in order:
             proxy_authzs = []
             for authz_url in order['authorizations']:
                 authz_id = base64.urlsafe_b64encode(authz_url.encode()).rstrip(b'=').decode()
-                proxy_authzs.append(f"{self.base_url}/acme/proxy/authz/{authz_id}")
+                proxy_authzs.append(f"{self.base_url}/authz/{authz_id}")
             order['authorizations'] = proxy_authzs
 
         return order

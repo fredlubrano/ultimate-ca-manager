@@ -204,3 +204,68 @@ class TestProxyServiceBinding:
                 )
 
             post_mock.assert_called_once()
+
+
+class TestProxyMultiPath:
+    @pytest.fixture(autouse=True)
+    def _stub_upstream(self, monkeypatch):
+        fake_directory = {
+            'newNonce': 'https://acme-stub.example/acme/new-nonce',
+            'newAccount': 'https://acme-stub.example/acme/new-account',
+            'newOrder': 'https://acme-stub.example/acme/new-order',
+            'meta': {},
+        }
+
+        class _FakeResp:
+            status_code = 200
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return fake_directory
+
+        monkeypatch.setattr(
+            'services.acme.acme_proxy_service.requests.get',
+            lambda *args, **kwargs: _FakeResp(),
+        )
+
+    def test_resolve_proxy_by_slug(self, app, clean_proxy_state):
+        from services.acme.acme_proxy_account import resolve_proxy_by_slug
+
+        with app.app_context():
+            acct = _seed_account(label='Actalis Production')
+            acct.proxy_slug = 'actalis'
+            acct.proxy_enabled = True
+            db.session.commit()
+            resolved = resolve_proxy_by_slug('actalis')
+            assert resolved.id == acct.id
+
+    def test_directory_by_slug(self, client, app, clean_proxy_state):
+        with app.app_context():
+            acct = _seed_account(label='Actalis Production')
+            acct.proxy_slug = 'actalis'
+            acct.proxy_enabled = True
+            db.session.commit()
+
+        r = client.get('/acme/proxy/actalis/directory')
+        assert r.status_code == 200
+        data = r.get_json()
+        assert data['newOrder'].endswith('/acme/proxy/actalis/new-order')
+
+    def test_unknown_slug_returns_error(self, client):
+        r = client.get('/acme/proxy/unknown-ca/directory')
+        assert r.status_code == 500
+        assert 'not configured' in r.get_json().get('detail', '').lower()
+
+    def test_reserved_slug_rejected_on_update(self, auth_client, app, clean_proxy_state):
+        with app.app_context():
+            acct = _seed_account()
+            db.session.commit()
+            account_id = acct.id
+
+        r = auth_client.patch(
+            f'/api/v2/acme/client/accounts/{account_id}',
+            json={'proxy_enabled': True, 'proxy_slug': 'directory'},
+        )
+        assert r.status_code == 400

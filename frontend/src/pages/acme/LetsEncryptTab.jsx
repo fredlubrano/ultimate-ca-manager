@@ -54,6 +54,11 @@ export default function LetsEncryptTab({
 
   const proxyAccountId = clientSettings.proxy_acme_account_id ?? null
   const selectedProxyAccount = caAccounts.find(a => a.id === proxyAccountId)
+  const proxyServerBase = selectedProxyAccount?.proxy_enabled && selectedProxyAccount?.proxy_slug
+    ? `${window.location.origin}/acme/proxy/${selectedProxyAccount.proxy_slug}`
+    : `${window.location.origin}/acme/proxy`
+  const proxyDirectoryUrl = `${proxyServerBase}/directory`
+  const enabledProxyAccounts = caAccounts.filter(a => a.proxy_enabled && a.proxy_slug)
   const proxyAccountOptions = caAccounts.map(a => ({
     value: String(a.id),
     label: `${a.label}${a.is_default ? ` (${t('common.default')})` : ''}${a.is_registered ? '' : ` — ${t('acme.notRegistered')}`}`,
@@ -442,18 +447,46 @@ export default function LetsEncryptTab({
               {/* Proxy Endpoint & Usage */}
               <div className="p-3 bg-tertiary-op50 rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-text-secondary">{t('acme.yourProxyUrl')}</p>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => copy(`${window.location.origin}/acme/proxy/directory`)}>
+                  <p className="text-xs font-medium text-text-secondary">{t('acme.proxyPathUrl')}</p>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => copy(proxyDirectoryUrl)}>
                     <Copy size={12} />
                   </Button>
                 </div>
                 <code className="block text-xs text-accent-primary font-mono bg-bg-secondary p-2 rounded break-all">
-                  {window.location.origin}/acme/proxy/directory
+                  {proxyDirectoryUrl}
                 </code>
+                {!selectedProxyAccount?.proxy_enabled && (
+                  <>
+                    <p className="text-xs text-text-tertiary">{t('acme.proxyDefaultUrl')}</p>
+                    <code className="block text-xs text-text-secondary font-mono bg-bg-secondary p-2 rounded break-all">
+                      {window.location.origin}/acme/proxy/directory
+                    </code>
+                  </>
+                )}
+                {enabledProxyAccounts.length > 0 && (
+                  <div className="space-y-1 pt-1">
+                    <p className="text-xs font-medium text-text-secondary">{t('acme.proxyEnabledEndpoints')}</p>
+                    {enabledProxyAccounts.map((acct) => (
+                      <div key={acct.id} className="flex items-center justify-between gap-2">
+                        <code className="text-xs text-text-secondary font-mono break-all">
+                          {window.location.origin}/acme/proxy/{acct.proxy_slug}/directory
+                        </code>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copy(`${window.location.origin}/acme/proxy/${acct.proxy_slug}/directory`)}
+                        >
+                          <Copy size={12} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <p className="text-xs font-medium text-text-secondary mt-3">{t('acme.proxyUsage')}</p>
                 <pre className="text-xs text-text-primary bg-bg-secondary p-2 rounded overflow-x-auto font-mono whitespace-pre-wrap break-all">
 {`certbot certonly \\
-  --server ${window.location.origin}/acme/proxy/directory \\
+  --server ${proxyDirectoryUrl} \\
   --preferred-challenges dns-01 \\
   --authenticator manual \\
   --manual-auth-hook /bin/true \\
