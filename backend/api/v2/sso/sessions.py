@@ -11,6 +11,7 @@ import os
 import requests as http_requests
 from .helpers import _get_ssl_verify, _cleanup_ssl_verify
 from .saml_routes import _parse_saml_metadata
+from models import db
 
 
 @bp.route('/api/v2/sso/sessions', methods=['GET'])
@@ -54,7 +55,7 @@ def fetch_idp_metadata():
         # Use provider SSL settings if provider_id provided, otherwise default to True
         provider_id = data.get('provider_id')
         if provider_id:
-            provider = SSOProvider.query.get(provider_id)
+            provider = db.session.get(SSOProvider, provider_id)
             verify = _get_ssl_verify(provider, 'saml') if provider else True
         else:
             # Check if verify_ssl was explicitly passed (for new providers not yet saved)

@@ -107,7 +107,7 @@ class MicrosoftCAConnectionMixin:
     def test_connection(msca_id):
         from .templates import MicrosoftCATemplatesMixin
 
-        msca = MicrosoftCA.query.get(msca_id)
+        msca = db.session.get(MicrosoftCA, msca_id)
         if not msca:
             return {'success': False, 'error': 'Connection not found'}
 

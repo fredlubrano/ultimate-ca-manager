@@ -170,7 +170,7 @@ class ImportExportMixin:
         Returns:
             Certificate bytes
         """
-        certificate = Certificate.query.get(cert_id)
+        certificate = db.session.get(Certificate, cert_id)
         if not certificate:
             raise ValueError("Certificate not found")
 
@@ -218,7 +218,7 @@ class ImportExportMixin:
         Returns:
             Export bytes
         """
-        certificate = Certificate.query.get(cert_id)
+        certificate = db.session.get(Certificate, cert_id)
         if not certificate:
             raise ValueError("Certificate not found")
 

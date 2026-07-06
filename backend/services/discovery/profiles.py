@@ -20,7 +20,7 @@ class ProfilesMixin:
         return [r.to_dict() for r in rows]
 
     def get_profile(self, profile_id: int) -> Optional[Dict]:
-        row = ScanProfile.query.get(profile_id)
+        row = db.session.get(ScanProfile, profile_id)
         return row.to_dict() if row else None
 
     def create_profile(self, data: Dict) -> Dict:
@@ -54,7 +54,7 @@ class ProfilesMixin:
         return profile.to_dict()
 
     def update_profile(self, profile_id: int, data: Dict) -> Optional[Dict]:
-        profile = ScanProfile.query.get(profile_id)
+        profile = db.session.get(ScanProfile, profile_id)
         if not profile:
             return None
         if 'name' in data:
@@ -96,7 +96,7 @@ class ProfilesMixin:
         return profile.to_dict()
 
     def delete_profile(self, profile_id: int) -> bool:
-        profile = ScanProfile.query.get(profile_id)
+        profile = db.session.get(ScanProfile, profile_id)
         if not profile:
             return False
         db.session.delete(profile)

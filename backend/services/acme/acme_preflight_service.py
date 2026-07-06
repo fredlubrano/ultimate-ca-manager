@@ -33,7 +33,7 @@ def _step(name: str, label: str, ok: bool, detail: str = '', data: Optional[dict
 def _resolve_staging_client(acme_account_id: Optional[int]) -> Tuple[Optional[AcmeClientService], str]:
     """Build an ACME client pointed at staging (never production)."""
     if acme_account_id:
-        acct = AcmeClientAccount.query.get(acme_account_id)
+        acct = db.session.get(AcmeClientAccount, acme_account_id)
         if acct:
             if acct.directory_url == AcmeClientAccount.LE_PRODUCTION_URL:
                 staging = AcmeClientAccount.query.filter_by(
@@ -139,7 +139,7 @@ class AcmePreflightService:
         manual_dns = False
         if challenge_type == 'dns-01':
             if dns_provider_id:
-                provider = DnsProvider.query.get(dns_provider_id)
+                provider = db.session.get(DnsProvider, dns_provider_id)
                 if not provider:
                     steps.append(_step('dns_provider', 'DNS provider', False, 'DNS provider not found'))
                     overall_ok = False

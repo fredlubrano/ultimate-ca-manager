@@ -28,7 +28,7 @@ def renew_certificate(cert_id):
     """
 
     # Get original certificate
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
 

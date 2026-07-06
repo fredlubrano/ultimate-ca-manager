@@ -26,7 +26,7 @@ def issued_cert(app, create_cert):
     info = create_cert(cn='ari-test.example.com', validity_days=90)
     cert_id = info.get('id') or info.get('certificate', {}).get('id')
     with app.app_context():
-        cert = Certificate.query.get(cert_id) if cert_id else None
+        cert = db.session.get(Certificate, cert_id) if cert_id else None
         if cert is None:
             cert = Certificate.query.filter(
                 Certificate.crt.isnot(None)).order_by(Certificate.id.desc()).first()

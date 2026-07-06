@@ -75,7 +75,7 @@ def get_settings():
     if proxy_account_id_cfg and proxy_account_id_cfg.value:
         try:
             proxy_acme_account_id = int(proxy_account_id_cfg.value)
-            proxy_account = AcmeClientAccount.query.get(proxy_acme_account_id)
+            proxy_account = db.session.get(AcmeClientAccount, proxy_acme_account_id)
         except (TypeError, ValueError):
             proxy_acme_account_id = None
 
@@ -284,7 +284,7 @@ def update_settings():
                 account_id = int(raw)
             except (TypeError, ValueError):
                 return error_response('proxy_acme_account_id must be an integer', 400)
-            acct = AcmeClientAccount.query.get(account_id)
+            acct = db.session.get(AcmeClientAccount, account_id)
             if not acct:
                 return error_response('ACME CA account not found', 404)
             _set_config(
@@ -358,7 +358,7 @@ def update_settings():
         account_id_cfg = SystemConfig.query.filter_by(key='acme.proxy.acme_account_id').first()
         if account_id_cfg and account_id_cfg.value:
             try:
-                acct = AcmeClientAccount.query.get(int(account_id_cfg.value))
+                acct = db.session.get(AcmeClientAccount, int(account_id_cfg.value))
                 if acct:
                     acct.account_url = None
                     acct.account_key = None
@@ -378,7 +378,7 @@ def update_settings():
         if account_id_cfg and account_id_cfg.value:
             try:
                 from models import AcmeClientAccount
-                acct = AcmeClientAccount.query.get(int(account_id_cfg.value))
+                acct = db.session.get(AcmeClientAccount, int(account_id_cfg.value))
                 if acct:
                     acct.eab_kid = kid_val or None
                     if not kid_val and 'proxy_eab_hmac_key' in data and not data.get('proxy_eab_hmac_key'):
@@ -394,7 +394,7 @@ def update_settings():
         if account_id_cfg and account_id_cfg.value:
             try:
                 from models import AcmeClientAccount
-                acct = AcmeClientAccount.query.get(int(account_id_cfg.value))
+                acct = db.session.get(AcmeClientAccount, int(account_id_cfg.value))
                 if acct:
                     acct.eab_hmac_key = hmac_val or None
                     if not hmac_val and 'proxy_eab_kid' in data and not data.get('proxy_eab_kid'):

@@ -73,7 +73,7 @@ def list_crls():
 @require_auth(['read:crl'])
 def get_crl(ca_id):
     """Get CRL for CA"""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
         
@@ -90,7 +90,7 @@ def get_crl(ca_id):
 @require_auth(['write:crl'])
 def regenerate_crl(ca_id):
     """Force CRL regeneration"""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
     
@@ -140,7 +140,7 @@ def regenerate_crl(ca_id):
 @require_auth(['write:crl'])
 def toggle_auto_regen(ca_id):
     """Enable/disable automatic CRL regeneration for a CA"""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
     
@@ -189,7 +189,7 @@ def toggle_auto_regen(ca_id):
 @require_auth(['read:crl'])
 def get_delta_crl(ca_id):
     """Get latest delta CRL for a CA"""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
     
@@ -206,7 +206,7 @@ def get_delta_crl(ca_id):
 @require_auth(['write:crl'])
 def regenerate_delta_crl(ca_id):
     """Force delta CRL generation"""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
     if not ca.has_private_key:
@@ -244,7 +244,7 @@ def regenerate_delta_crl(ca_id):
 @require_auth(['write:crl'])
 def configure_delta_crl(ca_id):
     """Configure delta CRL settings for a CA"""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
     

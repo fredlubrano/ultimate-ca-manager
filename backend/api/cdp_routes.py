@@ -53,7 +53,7 @@ def _resolve_ca(ca_ref):
     # Fallback to numeric ID for backwards compatibility
     try:
         ca_id_int = int(ca_ref)
-        return CA.query.get(ca_id_int)
+        return db.session.get(CA, ca_id_int)
     except (ValueError, TypeError):
         return None
 

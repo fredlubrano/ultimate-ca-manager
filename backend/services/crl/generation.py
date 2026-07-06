@@ -28,7 +28,7 @@ class CRLGenerationMixin:
         validity_days: int = 7,
         username: str = 'system'
     ) -> CRLMetadata:
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             raise ValueError(f"CA with id {ca_id} not found")
 
@@ -171,7 +171,7 @@ class CRLGenerationMixin:
         validity_hours: int = 24,
         username: str = 'system'
     ) -> CRLMetadata:
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             raise ValueError(f"CA with id {ca_id} not found")
         if not ca.has_private_key:

@@ -17,6 +17,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa
 from cryptography.hazmat.backends import default_backend
+from models import db
 
 
 @pytest.fixture
@@ -282,7 +283,7 @@ class TestCaToDictHsmFields:
         from models import CA
         with app.app_context():
             data = create_ca(cn='Plain Local CA HSM Test')
-            ca = CA.query.get(data['id'])
+            ca = db.session.get(CA, data['id'])
             d = ca.to_dict()
             assert d['uses_hsm'] is False
             assert d['hsm_key_id'] is None

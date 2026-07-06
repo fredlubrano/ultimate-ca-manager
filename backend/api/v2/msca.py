@@ -153,7 +153,7 @@ def create_connection():
 @require_auth(['read:settings'])
 def get_connection(msca_id):
     """Get Microsoft CA connection details"""
-    msca = MicrosoftCA.query.get(msca_id)
+    msca = db.session.get(MicrosoftCA, msca_id)
     if not msca:
         return error_response("Connection not found", 404)
     return success_response(data=msca.to_dict())
@@ -163,7 +163,7 @@ def get_connection(msca_id):
 @require_auth(['write:settings'])
 def update_connection(msca_id):
     """Update a Microsoft CA connection"""
-    msca = MicrosoftCA.query.get(msca_id)
+    msca = db.session.get(MicrosoftCA, msca_id)
     if not msca:
         return error_response("Connection not found", 404)
 
@@ -262,7 +262,7 @@ def update_connection(msca_id):
 @require_auth(['delete:settings'])
 def delete_connection(msca_id):
     """Delete a Microsoft CA connection"""
-    msca = MicrosoftCA.query.get(msca_id)
+    msca = db.session.get(MicrosoftCA, msca_id)
     if not msca:
         return error_response("Connection not found", 404)
 
@@ -319,7 +319,7 @@ def test_connection(msca_id):
 @require_auth(['read:certificates'])
 def list_templates(msca_id):
     """List available certificate templates from MS CA"""
-    msca = MicrosoftCA.query.get(msca_id)
+    msca = db.session.get(MicrosoftCA, msca_id)
     if not msca:
         return error_response("Connection not found", 404)
 
@@ -339,7 +339,7 @@ def sign_csr(msca_id, csr_id):
     """Submit a CSR to Microsoft CA for signing"""
     from models import Certificate
 
-    msca = MicrosoftCA.query.get(msca_id)
+    msca = db.session.get(MicrosoftCA, msca_id)
     if not msca:
         return error_response("Microsoft CA connection not found", 404)
     if not msca.enabled:
@@ -353,7 +353,7 @@ def sign_csr(msca_id, csr_id):
     if len(template) > MAX_TEMPLATE_LEN:
         return error_response(f"Template name too long (max {MAX_TEMPLATE_LEN})", 400)
 
-    csr = Certificate.query.get(csr_id)
+    csr = db.session.get(Certificate, csr_id)
     if not csr or not csr.csr:
         return error_response("CSR not found", 404)
 
@@ -467,11 +467,11 @@ def check_request_status(msca_id, request_id):
 
         # If just issued, import the cert
         if result.get('status') == 'issued' and result.get('cert_pem'):
-            req = MSCARequest.query.get(request_id)
+            req = db.session.get(MSCARequest, request_id)
             if req and req.csr_id and not req.cert_id:
                 from models import Certificate
-                csr = Certificate.query.get(req.csr_id)
-                msca = MicrosoftCA.query.get(msca_id)
+                csr = db.session.get(Certificate, req.csr_id)
+                msca = db.session.get(MicrosoftCA, msca_id)
                 if csr and msca:
                     try:
                         _import_signed_cert(csr, req.cert_pem, msca, req.template, request_id)
@@ -647,7 +647,7 @@ def _import_signed_cert(csr, cert_pem, msca, template, msca_request_id):
         db.session.flush()
 
         # Link the MSCA request to the cert (same id as CSR when csr is not None)
-        msca_req = MSCARequest.query.get(msca_request_id)
+        msca_req = db.session.get(MSCARequest, msca_request_id)
         if msca_req:
             msca_req.cert_id = cert.id
             msca_req.status = 'issued'

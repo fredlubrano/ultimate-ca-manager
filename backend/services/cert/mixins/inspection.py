@@ -6,7 +6,7 @@ from typing import Dict
 
 from cryptography.hazmat.backends import default_backend
 
-from models import Certificate
+from models import db, Certificate
 from services.trust_store import TrustStoreService
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class InspectionMixin:
         Returns:
             Dictionary with sha256, sha1, md5 fingerprints
         """
-        certificate = Certificate.query.get(cert_id)
+        certificate = db.session.get(Certificate, cert_id)
         if not certificate:
             raise ValueError("Certificate not found")
 
@@ -60,7 +60,7 @@ class InspectionMixin:
         Returns:
             Detailed certificate information
         """
-        certificate = Certificate.query.get(cert_id)
+        certificate = db.session.get(Certificate, cert_id)
         if not certificate:
             raise ValueError("Certificate not found")
 

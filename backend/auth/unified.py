@@ -132,7 +132,7 @@ class AuthManager:
         if not user_id:
             return None
         
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user or not user.active:
             return None
         

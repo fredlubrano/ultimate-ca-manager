@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from models import CA
+from models import db, CA
 from models.crl import CRLMetadata
 from .generation import CRLGenerationMixin
 
@@ -16,7 +16,7 @@ class CRLManagementMixin:
 
     @staticmethod
     def auto_generate_on_revocation(ca_id: int, username: str = 'system') -> Optional[CRLMetadata]:
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             return None
 

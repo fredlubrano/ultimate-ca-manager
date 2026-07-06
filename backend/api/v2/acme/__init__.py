@@ -35,11 +35,11 @@ def resolve_acme_account(account_id):
     """
     # Try numeric PK first (admin UI path)
     if isinstance(account_id, str) and account_id.isdigit():
-        acc = AcmeAccount.query.get(int(account_id))
+        acc = db.session.get(AcmeAccount, int(account_id))
         if acc:
             return acc
     elif isinstance(account_id, int):
-        acc = AcmeAccount.query.get(account_id)
+        acc = db.session.get(AcmeAccount, account_id)
         if acc:
             return acc
     # Fallback to RFC 8555 account_id string

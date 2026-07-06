@@ -65,7 +65,7 @@ def update_scep_config():
                 ca_id_int = int(data['ca_id'])
             except (TypeError, ValueError):
                 return error_response('Invalid ca_id', 400)
-            if not CA.query.get(ca_id_int):
+            if not db.session.get(CA, ca_id_int):
                 return error_response('CA not found', 404)
             set_config('scep_ca_id', str(ca_id_int))
         else:
@@ -120,7 +120,7 @@ def list_scep_requests():
 @require_auth(['write:scep'])
 def approve_scep_request(request_id):
     """Approve SCEP request"""
-    scep_req = SCEPRequest.query.get(request_id)
+    scep_req = db.session.get(SCEPRequest, request_id)
     if not scep_req:
         return error_response('Request not found', 404)
         
@@ -164,7 +164,7 @@ def reject_scep_request(request_id):
     data = request.json
     reason = data.get('reason', 'Rejected by admin') if data else 'Rejected by admin'
     
-    scep_req = SCEPRequest.query.get(request_id)
+    scep_req = db.session.get(SCEPRequest, request_id)
     if not scep_req:
         return error_response('Request not found', 404)
         
@@ -226,7 +226,7 @@ def get_challenge_password(ca_id):
     operationally equivalent to write access — viewers MUST NOT be able to
     read it. Gated behind ``write:scep`` and audited as a sensitive read.
     """
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 
@@ -251,7 +251,7 @@ def get_challenge_password(ca_id):
 @require_auth(['write:scep'])
 def regenerate_challenge_password(ca_id):
     """Regenerate challenge password for a CA"""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
     

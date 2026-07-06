@@ -27,7 +27,7 @@ def upload_private_key(cert_id):
     - passphrase: Optional passphrase if key is encrypted
     """
 
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
 

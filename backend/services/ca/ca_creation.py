@@ -96,7 +96,7 @@ class CACreationMixin:
                     )
                 except Exception:
                     # SQLite has no row-level locks; fall back to plain lookup.
-                    hsm_key = HsmKey.query.get(hsm_key_id)
+                    hsm_key = db.session.get(HsmKey, hsm_key_id)
                 if not hsm_key:
                     raise ValueError(f"HSM key {hsm_key_id} not found")
                 if CA.query.filter_by(hsm_key_id=hsm_key.id).first():

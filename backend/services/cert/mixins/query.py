@@ -2,7 +2,7 @@
 import logging
 from typing import List, Optional
 
-from models import Certificate
+from models import db, Certificate
 
 logger = logging.getLogger(__name__)
 
@@ -20,4 +20,4 @@ class QueryMixin:
     @staticmethod
     def get_certificate(cert_id: int) -> Optional[Certificate]:
         """Get certificate by ID"""
-        return Certificate.query.get(cert_id)
+        return db.session.get(Certificate, cert_id)

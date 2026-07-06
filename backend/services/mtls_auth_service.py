@@ -82,7 +82,7 @@ class MTLSAuthService:
                 return None, None, "Certificate is not yet valid"
         
         # Get associated user
-        user = User.query.get(auth_cert.user_id)
+        user = db.session.get(User, auth_cert.user_id)
         
         if not user:
             logger.error(f"User not found for certificate: user_id={auth_cert.user_id}")
@@ -163,14 +163,14 @@ class MTLSAuthService:
         Returns:
             Tuple of (success, message)
         """
-        auth_cert = AuthCertificate.query.get(cert_id)
+        auth_cert = db.session.get(AuthCertificate, cert_id)
         
         if not auth_cert:
             return False, "Certificate not found"
         
         # Check authorization if user_id provided
         if user_id and auth_cert.user_id != user_id:
-            user = User.query.get(user_id)
+            user = db.session.get(User, user_id)
             if not user or user.role != 'admin':
                 return False, "Not authorized to revoke this certificate"
         
@@ -193,14 +193,14 @@ class MTLSAuthService:
         Returns:
             Tuple of (success, message)
         """
-        auth_cert = AuthCertificate.query.get(cert_id)
+        auth_cert = db.session.get(AuthCertificate, cert_id)
         
         if not auth_cert:
             return False, "Certificate not found"
         
         # Check authorization
         if user_id and auth_cert.user_id != user_id:
-            user = User.query.get(user_id)
+            user = db.session.get(User, user_id)
             if not user or user.role != 'admin':
                 return False, "Not authorized to delete this certificate"
         

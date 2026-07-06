@@ -38,6 +38,7 @@ from typing import Optional
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa
+from models import db
 
 logger = logging.getLogger(__name__)
 
@@ -199,7 +200,7 @@ def load_hsm_private_key(hsm_key_id: int):
     from models.hsm import HsmKey
     from services.hsm import HsmService
 
-    hsm_key = HsmKey.query.get(hsm_key_id)
+    hsm_key = db.session.get(HsmKey, hsm_key_id)
     if not hsm_key:
         raise ValueError(f"HSM key {hsm_key_id} not found")
 

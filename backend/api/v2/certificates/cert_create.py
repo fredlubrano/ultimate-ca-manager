@@ -63,7 +63,7 @@ def create_certificate():
             data[key] = values
 
     # Get the CA
-    ca = CA.query.get(data['ca_id'])
+    ca = db.session.get(CA, data['ca_id'])
     if not ca:
         return error_response('CA not found', 404)
 

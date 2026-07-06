@@ -50,7 +50,7 @@ def ldap_login():
 
     # Find LDAP provider
     if provider_id:
-        provider = SSOProvider.query.get(provider_id)
+        provider = db.session.get(SSOProvider, provider_id)
     else:
         # Use first enabled LDAP provider
         provider = SSOProvider.query.filter_by(provider_type='ldap', enabled=True).first()

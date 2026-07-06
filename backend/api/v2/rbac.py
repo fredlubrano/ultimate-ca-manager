@@ -169,14 +169,14 @@ def create_custom_role():
 @require_auth(['read:users'])
 def get_custom_role(role_id):
     """Get custom role details"""
-    role = CustomRole.query.get_or_404(role_id)
+    role = db.get_or_404(CustomRole, role_id)
     return success_response(data=role.to_dict())
 
 @bp.route('/api/v2/rbac/roles/<int:role_id>', methods=['PUT'])
 @require_auth(['admin:users'])
 def update_custom_role(role_id):
     """Update a custom role"""
-    role = CustomRole.query.get_or_404(role_id)
+    role = db.get_or_404(CustomRole, role_id)
     data = request.get_json() or {}
 
     if getattr(role, 'is_system', False):
@@ -225,7 +225,7 @@ def update_custom_role(role_id):
 @require_auth(['admin:users'])
 def delete_custom_role(role_id):
     """Delete a custom role"""
-    role = CustomRole.query.get_or_404(role_id)
+    role = db.get_or_404(CustomRole, role_id)
     
     if role.is_system:
         return error_response("System roles cannot be deleted", 403)
@@ -261,7 +261,7 @@ def delete_custom_role(role_id):
 def get_effective_permissions(user_id):
     """Get effective permissions for a user (role + groups + custom)"""
     from models import User
-    user = User.query.get_or_404(user_id)
+    user = db.get_or_404(User, user_id)
     
     permissions = set()
     
@@ -275,7 +275,7 @@ def get_effective_permissions(user_id):
     
     # Custom role permissions
     if getattr(user, 'custom_role_id', None):
-        custom_role = CustomRole.query.get(user.custom_role_id)
+        custom_role = db.session.get(CustomRole, user.custom_role_id)
         if custom_role:
             permissions.update(custom_role.get_all_permissions())
     

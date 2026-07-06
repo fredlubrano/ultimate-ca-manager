@@ -140,7 +140,7 @@ class IssuanceMixin:
         try:
             from models import Certificate
             from services.webhook_service import emit_cert_issued
-            issued = Certificate.query.get(cert_id)
+            issued = db.session.get(Certificate, cert_id)
             if issued:
                 emit_cert_issued(issued.to_dict(), ca_refid=issued.caref)
         except Exception as e:
@@ -172,7 +172,7 @@ class IssuanceMixin:
             
             from services.cert_service import CertificateService
             for prev_order in previous_orders:
-                cert = Certificate.query.get(prev_order.certificate_id)
+                cert = db.session.get(Certificate, prev_order.certificate_id)
                 if cert and not cert.revoked:
                     try:
                         CertificateService.revoke_certificate(
@@ -247,7 +247,7 @@ class IssuanceMixin:
         for domain in domains:
             ca_id = find_local_domain_ca(domain)
             if ca_id:
-                ca = CA.query.get(ca_id)
+                ca = db.session.get(CA, ca_id)
                 if ca and ca.has_private_key:
                     return ca.refid
         
@@ -255,7 +255,7 @@ class IssuanceMixin:
         for domain in domains:
             result = find_provider_for_domain(domain)
             if result and result.get('issuing_ca_id'):
-                ca = CA.query.get(result['issuing_ca_id'])
+                ca = db.session.get(CA, result['issuing_ca_id'])
                 if ca and ca.has_private_key:
                     return ca.refid
         
@@ -265,7 +265,7 @@ class IssuanceMixin:
             ca = CA.query.filter_by(refid=ca_id_cfg.value).first()
             if not ca:
                 try:
-                    ca = CA.query.get(int(ca_id_cfg.value))
+                    ca = db.session.get(CA, int(ca_id_cfg.value))
                 except (ValueError, TypeError):
                     pass
             if ca and ca.has_private_key:

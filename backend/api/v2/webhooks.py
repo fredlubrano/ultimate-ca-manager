@@ -234,7 +234,7 @@ def list_webhooks():
 @require_auth(['read:settings'])
 def get_webhook(endpoint_id):
     """Get webhook endpoint details"""
-    endpoint = WebhookEndpoint.query.get_or_404(endpoint_id)
+    endpoint = db.get_or_404(WebhookEndpoint, endpoint_id)
     return success_response(data=endpoint.to_dict())
 
 
@@ -314,7 +314,7 @@ def create_webhook():
 @require_json_body
 def update_webhook(endpoint_id):
     """Update webhook endpoint"""
-    endpoint = WebhookEndpoint.query.get_or_404(endpoint_id)
+    endpoint = db.get_or_404(WebhookEndpoint, endpoint_id)
     data = g.json_data
 
     if 'name' in data:
@@ -405,7 +405,7 @@ def update_webhook(endpoint_id):
 @require_auth(['delete:settings'])
 def delete_webhook(endpoint_id):
     """Delete webhook endpoint"""
-    endpoint = WebhookEndpoint.query.get_or_404(endpoint_id)
+    endpoint = db.get_or_404(WebhookEndpoint, endpoint_id)
     db.session.delete(endpoint)
     ok, _err = safe_commit(logger, "Failed to delete webhook")
     if not ok:
@@ -417,7 +417,7 @@ def delete_webhook(endpoint_id):
 @require_auth(['write:settings'])
 def toggle_webhook(endpoint_id):
     """Enable/disable webhook endpoint"""
-    endpoint = WebhookEndpoint.query.get_or_404(endpoint_id)
+    endpoint = db.get_or_404(WebhookEndpoint, endpoint_id)
     endpoint.enabled = not endpoint.enabled
     ok, _err = safe_commit(logger, "Failed to toggle webhook")
     if not ok:
@@ -445,7 +445,7 @@ def list_deliveries(endpoint_id):
     """Per-endpoint webhook delivery history (newest first), optional status filter."""
     from models import WebhookDelivery
     from utils.pagination import parse_request_pagination, paginate
-    WebhookEndpoint.query.get_or_404(endpoint_id)
+    db.get_or_404(WebhookEndpoint, endpoint_id)
 
     page, per_page = parse_request_pagination(default_per_page=25, max_per_page=100)
     query = WebhookDelivery.query.filter_by(endpoint_id=endpoint_id)
@@ -482,7 +482,7 @@ def retry_delivery(endpoint_id, delivery_id):
 @require_auth(['write:settings'])
 def regenerate_secret(endpoint_id):
     """Regenerate webhook secret"""
-    endpoint = WebhookEndpoint.query.get_or_404(endpoint_id)
+    endpoint = db.get_or_404(WebhookEndpoint, endpoint_id)
     new_secret = secrets.token_urlsafe(32)
     endpoint.secret = encrypt_if_needed(new_secret)
     ok, _err = safe_commit(logger, "Failed to regenerate webhook secret")

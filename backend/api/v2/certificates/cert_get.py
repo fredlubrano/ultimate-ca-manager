@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 def get_certificate(cert_id):
     """Get certificate details with chain validation status"""
 
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
 

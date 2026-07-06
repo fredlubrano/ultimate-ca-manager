@@ -114,7 +114,7 @@ def list_ca_accounts():
 @bp.route('/api/v2/acme/client/accounts/<int:account_id>', methods=['GET'])
 @require_auth(['read:acme'])
 def get_ca_account(account_id):
-    acct = AcmeClientAccount.query.get(account_id)
+    acct = db.session.get(AcmeClientAccount, account_id)
     if not acct:
         return error_response('ACME account not found', 404)
     return success_response(data=acct.to_dict())
@@ -205,7 +205,7 @@ def update_ca_account(account_id):
     changing it would orphan the registration). EAB hmac is only overwritten
     when a non-empty value is supplied.
     """
-    acct = AcmeClientAccount.query.get(account_id)
+    acct = db.session.get(AcmeClientAccount, account_id)
     if not acct:
         return error_response('ACME account not found', 404)
 
@@ -262,7 +262,7 @@ def update_ca_account(account_id):
 def delete_ca_account(account_id):
     """Delete a CA account. Orders pinned to it are detached (set NULL) so they
     fall back to the default account on the next renewal."""
-    acct = AcmeClientAccount.query.get(account_id)
+    acct = db.session.get(AcmeClientAccount, account_id)
     if not acct:
         return error_response('ACME account not found', 404)
 
@@ -301,7 +301,7 @@ def delete_ca_account(account_id):
 @require_auth(['write:acme'])
 def set_default_ca_account(account_id):
     """Mark a CA account as the default used when a request selects no CA."""
-    acct = AcmeClientAccount.query.get(account_id)
+    acct = db.session.get(AcmeClientAccount, account_id)
     if not acct:
         return error_response('ACME account not found', 404)
 
@@ -330,7 +330,7 @@ def register_ca_account(account_id):
     Generates the account key if needed and performs newAccount (with EAB when
     the account has eab_kid/eab_hmac_key). Body may override the contact email.
     """
-    acct = AcmeClientAccount.query.get(account_id)
+    acct = db.session.get(AcmeClientAccount, account_id)
     if not acct:
         return error_response('ACME account not found', 404)
 

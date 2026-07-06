@@ -9,7 +9,7 @@ from flask import request
 
 from auth.unified import require_auth
 from utils.response import success_response, error_response
-from models import Certificate
+from models import db, Certificate
 from services import cert_linting_service
 from . import bp
 
@@ -35,7 +35,7 @@ def lint_certificate(cert_id):
 
     Query param ``profile``: ``rfc5280`` (default) or ``cabf``.
     """
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert or not cert.crt:
         return error_response('Certificate not found', 404)
 

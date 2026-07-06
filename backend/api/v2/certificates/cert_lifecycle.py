@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def delete_certificate(cert_id):
     """Delete certificate"""
 
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
 
@@ -64,7 +64,7 @@ def revoke_certificate(cert_id):
     data = request.json
     reason = data.get('reason', 'unspecified') if data else 'unspecified'
 
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
 
@@ -99,7 +99,7 @@ def revoke_certificate(cert_id):
 def unhold_certificate(cert_id):
     """Remove certificate hold (temporary revocation) and restore to valid status"""
 
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
 

@@ -19,7 +19,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import pkcs12
 
-from models import Certificate, CA
+from models import db, Certificate, CA
 from models.truststore import TrustedCertificate
 from utils.response import success_response, error_response
 from utils.sanitize import sanitize_filename
@@ -235,7 +235,7 @@ def export_certificate(cert_id):
         password: string - Required for PKCS12 and JKS
     """
 
-    certificate = Certificate.query.get(cert_id)
+    certificate = db.session.get(Certificate, cert_id)
     if not certificate:
         return error_response('Certificate not found', 404)
 

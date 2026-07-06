@@ -203,7 +203,7 @@ class AcmeClientService:
 
         # 1. Explicit account selection (multi-CA).
         if account_id is not None:
-            acct = AcmeClientAccount.query.get(account_id)
+            acct = db.session.get(AcmeClientAccount, account_id)
             if acct is not None:
                 svc = cls(account=acct)
                 svc._sync_legacy_eab_to_account()
@@ -235,7 +235,7 @@ class AcmeClientService:
         from models.acme_client_account import AcmeClientAccount
 
         if order and order.acme_client_account_id:
-            acct = AcmeClientAccount.query.get(order.acme_client_account_id)
+            acct = db.session.get(AcmeClientAccount, order.acme_client_account_id)
             if acct:
                 return cls(account=acct)
         if order and order.account_url:
@@ -820,7 +820,7 @@ class AcmeClientService:
         
         # Get DNS provider
         if order.dns_provider_id:
-            dns_provider_model = DnsProvider.query.get(order.dns_provider_id)
+            dns_provider_model = db.session.get(DnsProvider, order.dns_provider_id)
             if not dns_provider_model:
                 return False, "DNS provider not found", {}
             
@@ -1038,7 +1038,7 @@ class AcmeClientService:
                     cert_key = key_generator()
                     csr_b64 = self._build_csr_b64(cert_key, domains, primary_domain)
                 else:
-                    src_cert = Certificate.query.get(src_id)
+                    src_cert = db.session.get(Certificate, src_id)
                     try:
                         cert_key = load_private_key_from_certificate(src_cert)
                     except ValueError as exc:
@@ -1234,7 +1234,7 @@ class AcmeClientService:
         if order.challenge_type != 'dns-01' or not order.dns_provider_id:
             return True, "No cleanup needed"
         
-        dns_provider_model = DnsProvider.query.get(order.dns_provider_id)
+        dns_provider_model = db.session.get(DnsProvider, order.dns_provider_id)
         if not dns_provider_model or dns_provider_model.provider_type == 'manual':
             return True, "Manual cleanup required"
         

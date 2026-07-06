@@ -320,7 +320,7 @@ class WebAuthnService:
             db.session.delete(challenge_record)
             db.session.commit()
             
-            user = User.query.get(user_id)
+            user = db.session.get(User, user_id)
             logger.info(f"WebAuthn auth successful: user={user.username}")
             
             return True, "Authentication successful", user
@@ -338,13 +338,13 @@ class WebAuthnService:
     @staticmethod
     def delete_credential(credential_id: int, user_id: int) -> Tuple[bool, str]:
         """Delete a WebAuthn credential"""
-        credential = WebAuthnCredential.query.get(credential_id)
+        credential = db.session.get(WebAuthnCredential, credential_id)
         
         if not credential:
             return False, "Credential not found"
         
         if credential.user_id != user_id:
-            user = User.query.get(user_id)
+            user = db.session.get(User, user_id)
             if not user or user.role != 'admin':
                 return False, "Not authorized"
         
@@ -358,13 +358,13 @@ class WebAuthnService:
     @staticmethod
     def toggle_credential(credential_id: int, user_id: int, enabled: bool) -> Tuple[bool, str]:
         """Enable or disable a WebAuthn credential"""
-        credential = WebAuthnCredential.query.get(credential_id)
+        credential = db.session.get(WebAuthnCredential, credential_id)
         
         if not credential:
             return False, "Credential not found"
         
         if credential.user_id != user_id:
-            user = User.query.get(user_id)
+            user = db.session.get(User, user_id)
             if not user or user.role != 'admin':
                 return False, "Not authorized"
         

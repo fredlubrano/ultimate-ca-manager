@@ -105,7 +105,7 @@ def _issue_approved_certificate(approval):
     validity_days = min(requested_validity, effective_max)
     data['validity_days'] = validity_days  # propagate clamp to the rest of the function
     
-    ca = CA.query.get(data['ca_id'])
+    ca = db.session.get(CA, data['ca_id'])
     if not ca:
         raise ValueError(f"CA {data['ca_id']} not found")
     if not ca.has_private_key:
@@ -297,7 +297,7 @@ def list_policies():
 @require_auth(['read:policies'])
 def get_policy(policy_id):
     """Get policy details"""
-    policy = CertificatePolicy.query.get_or_404(policy_id)
+    policy = db.get_or_404(CertificatePolicy, policy_id)
     return success_response(data=policy.to_dict())
 
 
@@ -359,7 +359,7 @@ def create_policy():
 @require_auth(['write:policies'])
 def update_policy(policy_id):
     """Update certificate policy"""
-    policy = CertificatePolicy.query.get_or_404(policy_id)
+    policy = db.get_or_404(CertificatePolicy, policy_id)
     data = request.get_json()
     
     # Update fields
@@ -414,7 +414,7 @@ def update_policy(policy_id):
 @require_auth(['delete:policies'])
 def delete_policy(policy_id):
     """Delete certificate policy"""
-    policy = CertificatePolicy.query.get_or_404(policy_id)
+    policy = db.get_or_404(CertificatePolicy, policy_id)
     
     # Check for pending requests
     pending = ApprovalRequest.query.filter_by(
@@ -453,7 +453,7 @@ def delete_policy(policy_id):
 @require_auth(['write:policies'])
 def toggle_policy(policy_id):
     """Enable/disable policy"""
-    policy = CertificatePolicy.query.get_or_404(policy_id)
+    policy = db.get_or_404(CertificatePolicy, policy_id)
     policy.is_active = not policy.is_active
     try:
         db.session.commit()
@@ -485,7 +485,7 @@ def list_approvals():
 @require_auth(['read:approvals'])
 def get_approval(request_id):
     """Get approval request details"""
-    approval = ApprovalRequest.query.get_or_404(request_id)
+    approval = db.get_or_404(ApprovalRequest, request_id)
     return success_response(data=approval.to_dict())
 
 

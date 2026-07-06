@@ -160,7 +160,7 @@ class ScannerMixin:
                                         on_discovery_new_cert,
                                         on_discovery_cert_changed)
 
-        run = ScanRun.query.get(run_id)
+        run = db.session.get(ScanRun, run_id)
         if not run:
             return
 
@@ -362,7 +362,7 @@ class ScannerMixin:
 
         # Update profile last_scan_at + next_scan_at
         if profile_id:
-            profile = ScanProfile.query.get(profile_id)
+            profile = db.session.get(ScanProfile, profile_id)
             if profile:
                 profile.last_scan_at = now
                 if profile.schedule_enabled:
@@ -410,7 +410,7 @@ class ScannerMixin:
 
     def _fail_run(self, run_id: int, error: str):
         """Mark a scan run as failed."""
-        run = ScanRun.query.get(run_id)
+        run = db.session.get(ScanRun, run_id)
         if run:
             run.status = 'failed'
             run.completed_at = datetime.now(timezone.utc)

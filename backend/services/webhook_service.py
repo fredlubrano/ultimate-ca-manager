@@ -409,7 +409,7 @@ class WebhookService:
             db.session.refresh(d)
 
             result['attempted'] += 1
-            endpoint = WebhookEndpoint.query.get(d.endpoint_id)
+            endpoint = db.session.get(WebhookEndpoint, d.endpoint_id)
             if not endpoint or not endpoint.enabled:
                 d.status = WebhookDelivery.STATUS_FAILED
                 d.last_error = 'Endpoint missing or disabled'
@@ -450,7 +450,7 @@ class WebhookService:
         Returns:
             (success: bool, message: str)
         """
-        endpoint = WebhookEndpoint.query.get(endpoint_id)
+        endpoint = db.session.get(WebhookEndpoint, endpoint_id)
         if not endpoint:
             return False, "Endpoint not found"
         

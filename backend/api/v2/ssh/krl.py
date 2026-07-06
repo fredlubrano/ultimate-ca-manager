@@ -12,6 +12,7 @@ from services.ssh_krl_service import SSHKRLService
 from models.ssh import SSHCertificateAuthority
 
 from .helpers import bp, logger
+from models import db
 
 
 @bp.route('/api/v2/ssh/cas/<int:ca_id>/krl', methods=['GET'])
@@ -20,7 +21,7 @@ def get_ssh_ca_krl(ca_id):
     """Download the KRL (Key Revocation List) for this CA."""
     try:
         krl_data = SSHKRLService.generate_krl(ca_id)
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = db.session.get(SSHCertificateAuthority, ca_id)
         ca_name = ca.descr if ca else 'unknown'
 
         return Response(

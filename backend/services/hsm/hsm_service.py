@@ -83,7 +83,7 @@ class HsmService:
     @staticmethod
     def get_provider(provider_id: int) -> Optional[HsmProvider]:
         """Get provider by ID"""
-        return HsmProvider.query.get(provider_id)
+        return db.session.get(HsmProvider, provider_id)
     
     @staticmethod
     def get_provider_by_name(name: str) -> Optional[HsmProvider]:
@@ -161,7 +161,7 @@ class HsmService:
         Raises:
             ValueError: If provider not found or validation fails
         """
-        provider = HsmProvider.query.get(provider_id)
+        provider = db.session.get(HsmProvider, provider_id)
         if not provider:
             raise ValueError(f"Provider not found: {provider_id}")
         
@@ -206,7 +206,7 @@ class HsmService:
         Raises:
             ValueError: If provider not found
         """
-        provider = HsmProvider.query.get(provider_id)
+        provider = db.session.get(HsmProvider, provider_id)
         if not provider:
             raise ValueError(f"Provider not found: {provider_id}")
         
@@ -233,7 +233,7 @@ class HsmService:
         Returns:
             Dict with 'success', 'message', 'details'
         """
-        provider = HsmProvider.query.get(provider_id)
+        provider = db.session.get(HsmProvider, provider_id)
         if not provider:
             raise ValueError(f"Provider not found: {provider_id}")
         
@@ -296,7 +296,7 @@ class HsmService:
     @staticmethod
     def get_key(key_id: int) -> Optional[HsmKey]:
         """Get key by ID"""
-        return HsmKey.query.get(key_id)
+        return db.session.get(HsmKey, key_id)
     
     @classmethod
     def generate_key(
@@ -320,7 +320,7 @@ class HsmService:
         Returns:
             Created HsmKey instance
         """
-        provider = HsmProvider.query.get(provider_id)
+        provider = db.session.get(HsmProvider, provider_id)
         if not provider:
             raise ValueError(f"Provider not found: {provider_id}")
         
@@ -382,7 +382,7 @@ class HsmService:
         Returns:
             True if deleted
         """
-        key = HsmKey.query.get(key_id)
+        key = db.session.get(HsmKey, key_id)
         if not key:
             raise ValueError(f"Key not found: {key_id}")
         
@@ -419,7 +419,7 @@ class HsmService:
         Returns:
             Public key PEM string
         """
-        key = HsmKey.query.get(key_id)
+        key = db.session.get(HsmKey, key_id)
         if not key:
             raise ValueError(f"Key not found: {key_id}")
         
@@ -459,7 +459,7 @@ class HsmService:
         Returns:
             Signature bytes
         """
-        key = HsmKey.query.get(key_id)
+        key = db.session.get(HsmKey, key_id)
         if not key:
             raise ValueError(f"Key not found: {key_id}")
         
@@ -497,7 +497,7 @@ class HsmService:
         Returns:
             Dict with 'added', 'removed', 'unchanged' counts
         """
-        provider = HsmProvider.query.get(provider_id)
+        provider = db.session.get(HsmProvider, provider_id)
         if not provider:
             raise ValueError(f"Provider not found: {provider_id}")
         

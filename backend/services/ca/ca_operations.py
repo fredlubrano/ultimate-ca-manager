@@ -30,7 +30,7 @@ class CAOperationsMixin:
         Raises:
             ValueError: If CA not found
         """
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             raise ValueError("CA not found")
 
@@ -56,7 +56,7 @@ class CAOperationsMixin:
             List of certificate PEMs (leaf to root)
         """
         chain = []
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
 
         while ca:
             cert_pem = get_ca_cert_pem(ca)

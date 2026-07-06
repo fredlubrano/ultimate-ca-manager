@@ -29,7 +29,7 @@ def list_user_mtls_certificates(user_id):
     """List mTLS certificates for a specific user (admin only)."""
     from models.auth_certificate import AuthCertificate
 
-    target_user = User.query.get(user_id)
+    target_user = db.session.get(User, user_id)
     if not target_user:
         return error_response('User not found', 404)
 
@@ -45,7 +45,7 @@ def create_user_mtls_certificate(user_id):
     from models.auth_certificate import AuthCertificate
     from services.cert_service import CertificateService
 
-    target_user = User.query.get(user_id)
+    target_user = db.session.get(User, user_id)
     if not target_user:
         return error_response('User not found', 404)
 
@@ -219,11 +219,11 @@ def delete_user_mtls_certificate(user_id, cert_id):
     """Delete an mTLS certificate for a user (admin only)."""
     from models.auth_certificate import AuthCertificate
 
-    target_user = User.query.get(user_id)
+    target_user = db.session.get(User, user_id)
     if not target_user:
         return error_response('User not found', 404)
 
-    auth_cert = AuthCertificate.query.get(cert_id)
+    auth_cert = db.session.get(AuthCertificate, cert_id)
     if not auth_cert or auth_cert.user_id != user_id:
         return error_response('Certificate not found', 404)
 

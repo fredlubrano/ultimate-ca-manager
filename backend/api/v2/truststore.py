@@ -321,7 +321,7 @@ def add_trusted_certificate():
 @require_auth(['read:truststore'])
 def get_trusted_certificate(cert_id):
     """Get single trusted certificate details"""
-    cert = TrustedCertificate.query.get(cert_id)
+    cert = db.session.get(TrustedCertificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
     
@@ -336,7 +336,7 @@ def remove_trusted_certificate(cert_id):
     
     DELETE /api/v2/truststore/{cert_id}
     """
-    cert = TrustedCertificate.query.get(cert_id)
+    cert = db.session.get(TrustedCertificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
     

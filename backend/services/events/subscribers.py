@@ -8,6 +8,7 @@ emitter functions. This lets lifecycle code emit ONE event instead of calling
 three notification systems by hand.
 """
 import logging
+from models import db
 
 logger = logging.getLogger(__name__)
 
@@ -28,17 +29,17 @@ def email_subscriber(event_type, payload, ca_refid, meta):
 
     if event_type == 'certificate.issued':
         cid = _cert(payload).get('id')
-        cert = Certificate.query.get(cid) if cid else None
+        cert = db.session.get(Certificate, cid) if cid else None
         if cert:
             NotificationService.on_certificate_issued(cert, actor)
     elif event_type == 'certificate.revoked':
         cid = _cert(payload).get('id')
-        cert = Certificate.query.get(cid) if cid else None
+        cert = db.session.get(Certificate, cid) if cid else None
         if cert:
             NotificationService.on_certificate_revoked(cert, (meta or {}).get('reason'), actor)
     elif event_type == 'ca.created':
         cid = _ca(payload).get('id')
-        ca = CA.query.get(cid) if cid else None
+        ca = db.session.get(CA, cid) if cid else None
         if ca:
             NotificationService.on_ca_created(ca, actor)
 

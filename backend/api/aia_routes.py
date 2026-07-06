@@ -10,7 +10,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import Encoding
 import logging
 
-from models import CA
+from models import db, CA
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ def _resolve_ca(ca_ref):
         return ca
     try:
         ca_id_int = int(ca_ref)
-        return CA.query.get(ca_id_int)
+        return db.session.get(CA, ca_id_int)
     except (ValueError, TypeError):
         return None
 

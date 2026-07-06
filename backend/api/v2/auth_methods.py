@@ -411,7 +411,7 @@ def login_2fa():
     if not code or len(code) < 6:
         return error_response('Invalid verification code format', 400)
 
-    user = User.query.get(pending_user_id)
+    user = db.session.get(User, pending_user_id)
     if not user or not user.active:
         session.clear()
         return error_response('Invalid credentials', 401)

@@ -117,7 +117,7 @@ def export_ca(ca_id):
         password: string - Required for PKCS12
     """
 
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 

@@ -1,7 +1,7 @@
 """Tests for SSH certificate signing / revocation (previously 0 coverage)."""
 import pytest
 
-from models import SSHCertificate
+from models import db, SSHCertificate
 from services.ssh_ca_service import SSHCAService
 from services.ssh_cert import SSHCertificateService
 
@@ -52,7 +52,7 @@ class TestRevokeAndKrl:
             cert = SSHCertificateService.sign_certificate(
                 ca.id, _client_pubkey(), 'user', ['bob'])
             SSHCertificateService.revoke_certificate(cert.id, reason='superseded', username='t')
-            assert SSHCertificate.query.get(cert.id).revoked is True
+            assert db.session.get(SSHCertificate, cert.id).revoked is True
 
     def test_krl_generation(self, app):
         import shutil

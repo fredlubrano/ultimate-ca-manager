@@ -26,7 +26,7 @@ def _resolve_test_url(data: dict) -> str:
     account_id = data.get('acme_account_id') or data.get('proxy_acme_account_id')
     if account_id is not None:
         try:
-            acct = AcmeClientAccount.query.get(int(account_id))
+            acct = db.session.get(AcmeClientAccount, int(account_id))
         except (TypeError, ValueError):
             acct = None
         if not acct:

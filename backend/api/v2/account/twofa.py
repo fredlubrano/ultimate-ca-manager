@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 @require_auth()
 def enable_2fa():
     """Enable 2FA (TOTP) - generates QR code and secret"""
-    user = User.query.get(g.current_user.id)
+    user = db.session.get(User, g.current_user.id)
     if not user:
         return error_response('User not found', 404)
 
@@ -76,7 +76,7 @@ def confirm_2fa():
     if not code:
         return error_response('Verification code required', 400)
 
-    user = User.query.get(g.current_user.id)
+    user = db.session.get(User, g.current_user.id)
     if not user or not user.totp_secret:
         return error_response('2FA setup not initiated', 400)
 
@@ -132,7 +132,7 @@ def disable_2fa():
     if not code and not backup_code:
         return error_response('Code or backup code required', 400)
 
-    user = User.query.get(g.current_user.id)
+    user = db.session.get(User, g.current_user.id)
     if not user:
         return error_response('User not found', 404)
 
@@ -179,7 +179,7 @@ def disable_2fa():
 @require_auth()
 def get_recovery_codes():
     """Get current recovery codes (masked)"""
-    user = User.query.get(g.current_user.id)
+    user = db.session.get(User, g.current_user.id)
     if not user or not user.totp_confirmed:
         return error_response('2FA not enabled', 400)
 
@@ -204,7 +204,7 @@ def regenerate_recovery_codes():
     if not code:
         return error_response('2FA code required', 400)
 
-    user = User.query.get(g.current_user.id)
+    user = db.session.get(User, g.current_user.id)
     if not user or not user.totp_confirmed:
         return error_response('2FA not enabled', 400)
 

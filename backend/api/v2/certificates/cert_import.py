@@ -193,7 +193,7 @@ def import_certificate():
 
             # Update CA link if provided
             if ca_id:
-                ca = CA.query.get(ca_id)
+                ca = db.session.get(CA, ca_id)
                 if ca:
                     existing_cert.caref = ca.refid
 
@@ -217,7 +217,7 @@ def import_certificate():
         # Regular certificate - find parent CA
         caref = None
         if ca_id:
-            ca = CA.query.get(ca_id)
+            ca = db.session.get(CA, ca_id)
             if ca:
                 caref = ca.refid
         else:

@@ -103,7 +103,7 @@ class User(db.Model):
         """Get groups this user belongs to via GroupMember"""
         from models.group import GroupMember, Group
         memberships = GroupMember.query.filter_by(user_id=self.id).all()
-        return [Group.query.get(m.group_id) for m in memberships if Group.query.get(m.group_id)]
+        return [db.session.get(Group, m.group_id) for m in memberships if db.session.get(Group, m.group_id)]
     
     def set_password(self, password: str):
         """Hash and set password.

@@ -11,7 +11,7 @@ class SSHCertificateManagementMixin:
 
     @staticmethod
     def revoke_certificate(cert_id, reason='unspecified', username=None):
-        cert = SSHCertificate.query.get(cert_id)
+        cert = db.session.get(SSHCertificate, cert_id)
         if not cert:
             raise ValueError(f"SSH certificate not found: {cert_id}")
 
@@ -34,7 +34,7 @@ class SSHCertificateManagementMixin:
 
     @staticmethod
     def delete_certificate(cert_id):
-        cert = SSHCertificate.query.get(cert_id)
+        cert = db.session.get(SSHCertificate, cert_id)
         if not cert:
             raise ValueError(f"SSH certificate not found: {cert_id}")
 
@@ -52,11 +52,11 @@ class SSHCertificateManagementMixin:
 
     @staticmethod
     def export_certificate(cert_id):
-        cert = SSHCertificate.query.get(cert_id)
+        cert = db.session.get(SSHCertificate, cert_id)
         if not cert:
             raise ValueError(f"SSH certificate not found: {cert_id}")
 
-        ca = SSHCertificateAuthority.query.get(cert.ssh_ca_id)
+        ca = db.session.get(SSHCertificateAuthority, cert.ssh_ca_id)
         ca_pub = ca.public_key if ca else None
 
         return {

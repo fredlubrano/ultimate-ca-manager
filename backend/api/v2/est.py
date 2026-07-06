@@ -73,7 +73,7 @@ def update_est_config():
     if 'ca_id' in data:
         # Look up refid from CA id
         if data['ca_id']:
-            ca = CA.query.get(data['ca_id'])
+            ca = db.session.get(CA, data['ca_id'])
             if not ca:
                 return error_response('CA not found', 404)
             set_config('est_ca_refid', ca.refid)

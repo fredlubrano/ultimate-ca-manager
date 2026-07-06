@@ -1,6 +1,6 @@
 import logging
 from typing import List, Tuple
-from models import CA
+from models import db, CA
 from services.email_service import EmailService
 from .templates import NotificationTemplatesMixin
 from ._constants import CERT_EXPIRING, CRL_EXPIRING
@@ -63,7 +63,7 @@ class NotificationSenderMixin:
 
     @staticmethod
     def send_crl_expiring_notification(crl, days_remaining, recipients):
-        ca = CA.query.get(crl.ca_id)
+        ca = db.session.get(CA, crl.ca_id)
         ca_name = ca.descr if ca else "Unknown CA"
 
         subject = f"UCM Alert: CRL Expiring in {days_remaining} days - {ca_name}"

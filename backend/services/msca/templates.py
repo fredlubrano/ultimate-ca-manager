@@ -2,6 +2,7 @@ import logging
 import re
 from models.msca import MicrosoftCA
 from .connection import MicrosoftCAConnectionMixin
+from models import db
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,7 @@ class MicrosoftCATemplatesMixin:
 
     @staticmethod
     def list_templates(msca_id):
-        msca = MicrosoftCA.query.get(msca_id)
+        msca = db.session.get(MicrosoftCA, msca_id)
         if not msca:
             raise ValueError('Connection not found')
 

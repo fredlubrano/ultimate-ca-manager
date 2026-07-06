@@ -1301,7 +1301,7 @@ def download_certificate(order_id: str):
     
     # Get certificate from database
     from models import Certificate, CA
-    cert = Certificate.query.get(order.certificate_id)
+    cert = db.session.get(Certificate, order.certificate_id)
     if not cert or not cert.crt:
         return acme_error('serverInternal', 'Certificate not found in database', 500)
     

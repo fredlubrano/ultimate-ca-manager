@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 
 from models.ssh import SSHCertificateAuthority, SSHCertificate
+from models import db
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class SSHKRLService:
             ValueError: If CA not found
             RuntimeError: If ssh-keygen fails
         """
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = db.session.get(SSHCertificateAuthority, ca_id)
         if not ca:
             raise ValueError(f"SSH CA not found: {ca_id}")
 

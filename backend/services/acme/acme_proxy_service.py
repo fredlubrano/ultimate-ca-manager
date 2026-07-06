@@ -738,7 +738,7 @@ class AcmeProxyService:
                 txt_value = base64.urlsafe_b64encode(digest).rstrip(b'=').decode()
                 
                 # Get fresh order and provider
-                order = AcmeClientOrder.query.get(order_id)
+                order = db.session.get(AcmeClientOrder, order_id)
                 provider_info = find_provider_for_domain(domain)
                 if not order or not provider_info:
                     logger.error(f"[ACME Proxy BG] Order {order_id} or provider for {domain} not found")
@@ -1033,7 +1033,7 @@ class AcmeProxyService:
                     if order.dns_records_created:
                         records = json.loads(order.dns_records_created)
                         for record in records:
-                            provider_model = DnsProvider.query.get(record['provider_id'])
+                            provider_model = db.session.get(DnsProvider, record['provider_id'])
                             if provider_model:
                                 credentials = json.loads(provider_model.credentials) if provider_model.credentials else {}
                                 provider = create_provider(provider_model.provider_type, credentials)

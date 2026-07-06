@@ -45,7 +45,7 @@ def bulk_revoke_certificates():
     results = {'success': [], 'failed': []}
     for cert_id in ids:
         try:
-            cert = Certificate.query.get(cert_id)
+            cert = db.session.get(Certificate, cert_id)
             if not cert:
                 results['failed'].append({'id': cert_id, 'error': 'Not found'})
                 continue
@@ -84,7 +84,7 @@ def bulk_renew_certificates():
 
     for cert_id in ids:
         try:
-            cert = Certificate.query.get(cert_id)
+            cert = db.session.get(Certificate, cert_id)
             if not cert:
                 results['failed'].append({'id': cert_id, 'error': 'Not found'})
                 continue
@@ -192,7 +192,7 @@ def bulk_delete_certificates():
 
     for cert_id in ids:
         try:
-            cert = Certificate.query.get(cert_id)
+            cert = db.session.get(Certificate, cert_id)
             if not cert:
                 results['failed'].append({'id': cert_id, 'error': 'Not found'})
                 continue

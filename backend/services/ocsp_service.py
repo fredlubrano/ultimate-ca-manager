@@ -153,7 +153,7 @@ class OCSPService:
             return None, None
         
         try:
-            responder_record = Certificate.query.get(int(responder_cert_id))
+            responder_record = db.session.get(Certificate, int(responder_cert_id))
             if not responder_record or not responder_record.crt or not responder_record.prv:
                 logger.warning(f"Delegated OCSP responder cert {responder_cert_id} not found or incomplete")
                 return None, None

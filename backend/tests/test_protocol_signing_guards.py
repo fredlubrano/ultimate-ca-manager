@@ -45,7 +45,7 @@ class TestTsaConfigGuard:
     def test_tsa_offline_ca_returns_503(self, app, client, create_ca):
         ca = create_ca(cn='TSA Offline CA')
         with app.app_context():
-            ca_obj = CA.query.get(ca['id'])
+            ca_obj = db.session.get(CA, ca['id'])
             ca_obj.offline = True
             ca_obj.offline_reason = 'test'
             db.session.commit()
@@ -72,7 +72,7 @@ class TestScepOfflineGuard:
             from cryptography.x509.oid import NameOID
             from services.scep.scep_service import SCEPService
 
-            ca_obj = CA.query.get(ca['id'])
+            ca_obj = db.session.get(CA, ca['id'])
             ca_obj.offline = True
             ca_obj.offline_reason = 'maintenance'
             db.session.commit()

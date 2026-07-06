@@ -75,7 +75,7 @@ class SSHCertificateDecodeMixin:
         matched_ca = SSHCertificateAuthority.query.filter_by(fingerprint=ca_fingerprint).first()
 
         if ssh_ca_id is not None:
-            provided_ca = SSHCertificateAuthority.query.get(ssh_ca_id)
+            provided_ca = db.session.get(SSHCertificateAuthority, ssh_ca_id)
             if not provided_ca:
                 raise ValueError(f"SSH CA not found: {ssh_ca_id}")
             if provided_ca.fingerprint != ca_fingerprint:

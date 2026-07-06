@@ -7,6 +7,7 @@ import logging
 from flask import Blueprint, request, g
 from auth.unified import require_auth
 from utils.response import success_response, error_response
+from models import db
 
 logger = logging.getLogger('ucm.acme')
 
@@ -36,7 +37,7 @@ def get_acme_settings():
         ca = CA.query.filter_by(refid=ca_id).first()
         if not ca:
             try:
-                ca = CA.query.get(int(ca_id))
+                ca = db.session.get(CA, int(ca_id))
             except (ValueError, TypeError):
                 pass
         if ca:

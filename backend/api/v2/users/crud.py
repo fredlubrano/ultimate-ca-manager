@@ -212,7 +212,7 @@ def create_user():
             return error_response('Only admins can assign custom roles', 403)
         try:
             from models.rbac import CustomRole
-            if not CustomRole.query.get(int(custom_role_id)):
+            if not db.session.get(CustomRole, int(custom_role_id)):
                 return error_response('Custom role not found', 404)
             custom_role_id = int(custom_role_id)
         except (ValueError, ImportError):
@@ -262,7 +262,7 @@ def get_user(user_id):
     if g.current_user.role != 'admin' and g.current_user.id != user_id:
         return error_response('Access denied', 403)
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return error_response('User not found', 404)
     return success_response(data=user.to_dict())
@@ -286,7 +286,7 @@ def update_user(user_id):
     if g.current_user.role != 'admin' and g.current_user.id != user_id:
         return error_response('Access denied', 403)
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return error_response('User not found', 404)
 
@@ -330,7 +330,7 @@ def update_user(user_id):
         if data['custom_role_id']:
             try:
                 from models.rbac import CustomRole
-                if not CustomRole.query.get(int(data['custom_role_id'])):
+                if not db.session.get(CustomRole, int(data['custom_role_id'])):
                     return error_response('Custom role not found', 404)
                 user.custom_role_id = int(data['custom_role_id'])
             except (ValueError, ImportError):

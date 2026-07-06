@@ -17,7 +17,7 @@ class CAcrudMixin:
     @staticmethod
     def get_ca(ca_id: int) -> Optional[CA]:
         """Get CA by ID"""
-        return CA.query.get(ca_id)
+        return db.session.get(CA, ca_id)
 
     @staticmethod
     def get_ca_by_refid(refid: str) -> Optional[CA]:
@@ -44,7 +44,7 @@ class CAcrudMixin:
         Raises:
             ValueError: If CA is used by certificates or is parent of other CAs
         """
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             return False
 

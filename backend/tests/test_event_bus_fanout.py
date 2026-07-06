@@ -36,7 +36,7 @@ class TestFanout:
         with app.app_context():
             ca = create_ca(cn='Fanout CA')
             cert = create_cert(cn='fanout.example.com', ca_id=ca['id'])
-            cert_obj = __import__('models').Certificate.query.get(cert['id'])
+            cert_obj = __import__('models').db.session.get(__import__('models').Certificate, cert['id'])
 
             # create_cert already issued one event via the real path — reset so
             # we assert exactly on our explicit emit below.
@@ -63,7 +63,7 @@ class TestFanout:
                             lambda *a, **k: ws_calls.append(a))
         with app.app_context():
             ca = create_ca(cn='Fanout CA2')
-            ca_obj = __import__('models').CA.query.get(ca['id'])
+            ca_obj = __import__('models').db.session.get(__import__('models').CA, ca['id'])
             email_calls.clear()  # create_ca already fired one event via the real path
             ws_calls.clear()
             emit_ca_created(ca_obj.to_dict(), actor='bob')
@@ -80,7 +80,7 @@ class TestFanout:
         with app.app_context():
             ca = create_ca(cn='Iso CA')
             cert = create_cert(cn='iso.example.com', ca_id=ca['id'])
-            cert_obj = __import__('models').Certificate.query.get(cert['id'])
+            cert_obj = __import__('models').db.session.get(__import__('models').Certificate, cert['id'])
             emit_cert_issued(cert_obj.to_dict(), ca_refid=cert_obj.caref)  # must not raise
             assert ws_calls  # WS still fired despite email throwing
 

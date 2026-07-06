@@ -13,7 +13,7 @@ class MicrosoftCACertsMixin:
 
     @staticmethod
     def get_ca_cert(msca_id):
-        msca = MicrosoftCA.query.get(msca_id)
+        msca = db.session.get(MicrosoftCA, msca_id)
         if not msca:
             return None
 
@@ -35,7 +35,7 @@ class MicrosoftCACertsMixin:
     def submit_csr(msca_id, csr_pem, template,
                    csr_id=None, submitted_by=None,
                    enrollee_name=None, enrollee_upn=None):
-        msca = MicrosoftCA.query.get(msca_id)
+        msca = db.session.get(MicrosoftCA, msca_id)
         if not msca:
             raise ValueError('Connection not found')
 

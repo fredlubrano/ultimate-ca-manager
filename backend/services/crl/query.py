@@ -10,7 +10,7 @@ class CRLQueryMixin:
 
     @staticmethod
     def get_revoked_certificates(ca_id: int) -> List[Certificate]:
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             raise ValueError(f"CA with id {ca_id} not found")
 

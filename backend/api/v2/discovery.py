@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 bp = Blueprint('discovery', __name__)
 
 import re
+from models import db
 _VALID_TARGET_RE = re.compile(r'^[a-zA-Z0-9._:\-\[\]/]+$')
 
 _MAX_TARGETS_PROFILE = 1000
@@ -321,7 +322,7 @@ def get_stats():
 def get_discovered(disc_id):
     """Get discovered certificate detail with parsed extensions."""
     from models.discovered_certificate import DiscoveredCertificate
-    cert = DiscoveredCertificate.query.get(disc_id)
+    cert = db.session.get(DiscoveredCertificate, disc_id)
     if not cert:
         return error_response("Not found", 404)
 

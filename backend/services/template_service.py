@@ -192,7 +192,7 @@ class TemplateService:
         Returns:
             CertificateTemplate object or None
         """
-        return CertificateTemplate.query.get(template_id)
+        return db.session.get(CertificateTemplate, template_id)
     
     @staticmethod
     def get_template_by_name(name: str) -> Optional[CertificateTemplate]:
@@ -263,7 +263,7 @@ class TemplateService:
         Raises:
             ValueError: If template is system template
         """
-        template = CertificateTemplate.query.get(template_id)
+        template = db.session.get(CertificateTemplate, template_id)
         if not template:
             raise ValueError("Template not found")
         
@@ -319,7 +319,7 @@ class TemplateService:
         Raises:
             ValueError: If template is system template or in use
         """
-        template = CertificateTemplate.query.get(template_id)
+        template = db.session.get(CertificateTemplate, template_id)
         if not template:
             raise ValueError("Template not found")
         
@@ -354,7 +354,7 @@ class TemplateService:
         Returns:
             Dict with rendered dn, extensions, and other template data
         """
-        template = CertificateTemplate.query.get(template_id)
+        template = db.session.get(CertificateTemplate, template_id)
         if not template:
             raise ValueError("Template not found")
         
@@ -398,12 +398,12 @@ class TemplateService:
             ValueError: If CA or template not found, or already pinned
         """
         # Verify CA exists
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             raise ValueError(f"CA with id {ca_id} not found")
         
         # Verify template exists
-        template = CertificateTemplate.query.get(template_id)
+        template = db.session.get(CertificateTemplate, template_id)
         if not template:
             raise ValueError(f"Template with id {template_id} not found")
         

@@ -9,7 +9,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 
-from models import CA
+from models import db, CA
 from services.trust_store import TrustStoreService
 from .ca_operations import CAOperationsMixin
 from .helpers import get_ca_cert_pem
@@ -35,7 +35,7 @@ class CAExportMixin:
         Raises:
             ValueError: If CA not found or unsupported format
         """
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             raise ValueError("CA not found")
 
@@ -75,7 +75,7 @@ class CAExportMixin:
         """
         from security.encryption import decrypt_private_key
 
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             raise ValueError("CA not found")
 
@@ -132,7 +132,7 @@ class CAExportMixin:
         Raises:
             ValueError: If CA not found
         """
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             raise ValueError("CA not found")
 
@@ -153,7 +153,7 @@ class CAExportMixin:
         Raises:
             ValueError: If CA not found
         """
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             raise ValueError("CA not found")
 

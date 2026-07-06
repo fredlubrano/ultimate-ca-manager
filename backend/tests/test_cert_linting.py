@@ -3,7 +3,7 @@ import json
 
 import pytest
 
-from models import Certificate
+from models import db, Certificate
 from services import cert_linting_service as L
 
 pkilint_available = L.linters_status()['pkilint']
@@ -15,7 +15,7 @@ def lintable_cert(app, create_cert):
     info = create_cert(cn='lint-test.example.com', validity_days=365)
     cert_id = info.get('id')
     with app.app_context():
-        cert = Certificate.query.get(cert_id)
+        cert = db.session.get(Certificate, cert_id)
         return {'id': cert_id, 'crt': cert.crt}
 
 

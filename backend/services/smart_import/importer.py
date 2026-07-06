@@ -212,7 +212,7 @@ class SmartImporter:
                 from services.webhook_service import emit_cert_imported
                 from models import Certificate
                 for cid in result.imported_ids.get('certificates', []):
-                    obj = Certificate.query.get(cid)
+                    obj = db.session.get(Certificate, cid)
                     if obj:
                         emit_cert_imported(obj.to_dict(), ca_refid=obj.caref)
             except Exception as e:

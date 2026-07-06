@@ -76,7 +76,7 @@ class LifecycleMixin:
         """
         # Apply template if provided
         if template_id:
-            template = CertificateTemplate.query.get(template_id)
+            template = db.session.get(CertificateTemplate, template_id)
             if template:
                 # Use template defaults if values not explicitly provided
                 key_type = key_type if key_type != '2048' else template.key_type or key_type
@@ -277,7 +277,7 @@ class LifecycleMixin:
         Returns:
             Updated certificate
         """
-        certificate = Certificate.query.get(cert_id)
+        certificate = db.session.get(Certificate, cert_id)
         if not certificate:
             raise ValueError("Certificate not found")
 
@@ -344,7 +344,7 @@ class LifecycleMixin:
         Returns:
             True if deleted
         """
-        certificate = Certificate.query.get(cert_id)
+        certificate = db.session.get(Certificate, cert_id)
         if not certificate:
             return False
 

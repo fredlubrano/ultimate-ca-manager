@@ -51,7 +51,7 @@ class GroupMember(db.Model):
     
     def to_dict(self):
         from models import User
-        user = User.query.get(self.user_id)
+        user = db.session.get(User, self.user_id)
         return {
             'id': self.id,
             'group_id': self.group_id,

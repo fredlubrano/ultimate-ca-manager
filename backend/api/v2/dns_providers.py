@@ -112,7 +112,7 @@ def create_dns_provider():
 @require_auth(['read:acme'])
 def get_provider(provider_id):
     """Get a specific DNS provider"""
-    provider = DnsProvider.query.get(provider_id)
+    provider = db.session.get(DnsProvider, provider_id)
     if not provider:
         return error_response('Provider not found', 404)
     
@@ -123,7 +123,7 @@ def get_provider(provider_id):
 @require_auth(['write:acme'])
 def update_provider(provider_id):
     """Update a DNS provider configuration"""
-    provider = DnsProvider.query.get(provider_id)
+    provider = db.session.get(DnsProvider, provider_id)
     if not provider:
         return error_response('Provider not found', 404)
     
@@ -187,7 +187,7 @@ def update_provider(provider_id):
 @require_auth(['delete:acme'])
 def delete_provider(provider_id):
     """Delete a DNS provider"""
-    provider = DnsProvider.query.get(provider_id)
+    provider = db.session.get(DnsProvider, provider_id)
     if not provider:
         return error_response('Provider not found', 404)
     
@@ -224,7 +224,7 @@ def delete_provider(provider_id):
 @require_auth(['write:acme'])
 def test_provider(provider_id):
     """Test DNS provider connection"""
-    provider_model = DnsProvider.query.get(provider_id)
+    provider_model = db.session.get(DnsProvider, provider_id)
     if not provider_model:
         return error_response('Provider not found', 404)
     

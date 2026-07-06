@@ -50,7 +50,7 @@ def list_providers():
 @require_auth(['read:sso'])
 def get_provider(provider_id):
     """Get SSO provider details"""
-    provider = SSOProvider.query.get_or_404(provider_id)
+    provider = db.get_or_404(SSOProvider, provider_id)
     # Include secrets only for admins
     include_secrets = request.args.get('include_secrets') == 'true'
     return success_response(data=provider.to_dict(include_secrets=include_secrets))
@@ -181,7 +181,7 @@ def create_provider():
 def update_provider(provider_id=None, provider_type_name=None):
     """Update SSO provider by ID or by type name (for single-provider types)"""
     if provider_id:
-        provider = SSOProvider.query.get_or_404(provider_id)
+        provider = db.get_or_404(SSOProvider, provider_id)
     elif provider_type_name:
         # Find provider by type (for backward compatibility / simple configs)
         provider = SSOProvider.query.filter_by(provider_type=provider_type_name).first()
@@ -303,7 +303,7 @@ def update_provider(provider_id=None, provider_type_name=None):
 @require_auth(['delete:sso'])
 def delete_provider(provider_id):
     """Delete SSO provider"""
-    provider = SSOProvider.query.get_or_404(provider_id)
+    provider = db.get_or_404(SSOProvider, provider_id)
     provider_name = provider.name
     provider_type = provider.provider_type
 
@@ -331,7 +331,7 @@ def delete_provider(provider_id):
 @require_auth(['write:sso'])
 def toggle_provider(provider_id):
     """Enable/disable SSO provider"""
-    provider = SSOProvider.query.get_or_404(provider_id)
+    provider = db.get_or_404(SSOProvider, provider_id)
     provider.enabled = not provider.enabled
     ok, _err = safe_commit(logger, "Failed to toggle SSO provider")
     if not ok:
@@ -353,7 +353,7 @@ def toggle_provider(provider_id):
 @require_auth(['write:sso'])
 def test_provider(provider_id):
     """Test SSO provider connection"""
-    provider = SSOProvider.query.get_or_404(provider_id)
+    provider = db.get_or_404(SSOProvider, provider_id)
 
     if provider.provider_type == 'ldap':
         return _test_ldap_connection(provider)

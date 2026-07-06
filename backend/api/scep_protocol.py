@@ -40,7 +40,7 @@ def get_scep_service():
 
     # Find CA
     try:
-        ca = CA.query.get(int(ca_id))
+        ca = db.session.get(CA, int(ca_id))
         if not ca:
             ca = CA.query.filter_by(refid=ca_id).first()
     except (ValueError, TypeError):

@@ -90,7 +90,7 @@ def _audit(action, req, *, success=True, extra=None):
 @require_auth(['write:key_recovery'])
 def request_key_recovery(cert_id):
     """Open a recovery request for a certificate's archived private key."""
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
     if not cert.prv:
@@ -138,7 +138,7 @@ def list_key_recovery():
 @bp.route('/api/v2/key-recovery/<int:rid>/approve', methods=['POST'])
 @require_auth(['admin:key_recovery'])
 def approve_key_recovery(rid):
-    req = KeyRecoveryRequest.query.get(rid)
+    req = db.session.get(KeyRecoveryRequest, rid)
     if not req:
         return error_response('Recovery request not found', 404)
     if req.status != STATUS_PENDING:
@@ -163,7 +163,7 @@ def approve_key_recovery(rid):
 @bp.route('/api/v2/key-recovery/<int:rid>/reject', methods=['POST'])
 @require_auth(['admin:key_recovery'])
 def reject_key_recovery(rid):
-    req = KeyRecoveryRequest.query.get(rid)
+    req = db.session.get(KeyRecoveryRequest, rid)
     if not req:
         return error_response('Recovery request not found', 404)
     if req.status != STATUS_PENDING:
@@ -184,7 +184,7 @@ def reject_key_recovery(rid):
 @require_auth(['write:key_recovery'])
 def recover_key(rid):
     """Download the recovered key as PKCS#12 (once, after approval)."""
-    req = KeyRecoveryRequest.query.get(rid)
+    req = db.session.get(KeyRecoveryRequest, rid)
     if not req:
         return error_response('Recovery request not found', 404)
     if req.status != STATUS_APPROVED:
@@ -198,7 +198,7 @@ def recover_key(rid):
     if len(password) < 8:
         return error_response('A PKCS#12 password of at least 8 characters is required', 400)
 
-    cert = Certificate.query.get(req.cert_id)
+    cert = db.session.get(Certificate, req.cert_id)
     if not cert or not cert.prv:
         return error_response('The certificate or its archived key no longer exists', 410)
 

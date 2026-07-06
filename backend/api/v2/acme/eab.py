@@ -129,7 +129,7 @@ def create_eab_credential():
 @bp.route('/api/v2/acme/eab-credentials/<int:cred_id>', methods=['GET'])
 @require_auth(['read:acme'])
 def get_eab_credential(cred_id):
-    cred = AcmeEabCredential.query.get(cred_id)
+    cred = db.session.get(AcmeEabCredential, cred_id)
     if not cred:
         return error_response('EAB credential not found', 404)
     return success_response(data=cred.to_dict())
@@ -139,7 +139,7 @@ def get_eab_credential(cred_id):
 @require_auth(['write:acme'])
 def patch_eab_credential(cred_id):
     """Patch mutable EAB credential fields (notes)."""
-    cred = AcmeEabCredential.query.get(cred_id)
+    cred = db.session.get(AcmeEabCredential, cred_id)
     if not cred:
         return error_response('EAB credential not found', 404)
 
@@ -168,7 +168,7 @@ def revoke_eab_credential(cred_id):
     * Used or already-revoked credentials are permanently deleted.
     """
     from utils.datetime_utils import utc_now as _utc_now
-    cred = AcmeEabCredential.query.get(cred_id)
+    cred = db.session.get(AcmeEabCredential, cred_id)
     if not cred:
         return error_response('EAB credential not found', 404)
 

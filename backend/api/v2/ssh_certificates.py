@@ -15,6 +15,7 @@ from services.audit_service import AuditService
 from sqlalchemy import or_, and_
 from models.ssh import SSHCertificate, SSHCertificateAuthority
 from utils.datetime_utils import utc_now
+from models import db
 
 logger = logging.getLogger(__name__)
 
@@ -191,7 +192,7 @@ def list_ssh_certificates():
 @require_auth(['read:ssh'])
 def get_ssh_certificate(cert_id):
     """Get SSH certificate details."""
-    cert = SSHCertificate.query.get(cert_id)
+    cert = db.session.get(SSHCertificate, cert_id)
     if not cert:
         return error_response('SSH certificate not found', 404)
 
@@ -431,7 +432,7 @@ def revoke_ssh_certificate(cert_id):
 @require_auth(['delete:ssh'])
 def delete_ssh_certificate(cert_id):
     """Delete an SSH certificate record."""
-    cert = SSHCertificate.query.get(cert_id)
+    cert = db.session.get(SSHCertificate, cert_id)
     if not cert:
         return error_response('SSH certificate not found', 404)
 

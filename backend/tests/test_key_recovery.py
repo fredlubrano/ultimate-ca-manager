@@ -84,7 +84,7 @@ class TestRecover:
         assert r.headers['Content-Type'] == 'application/x-pkcs12'
         assert r.data[:1] == b'\x30'  # DER SEQUENCE — a PKCS12 blob
         with app.app_context():
-            assert KeyRecoveryRequest.query.get(rid).status == 'recovered'
+            assert db.session.get(KeyRecoveryRequest, rid).status == 'recovered'
 
     def test_cannot_recover_before_approval(self, app, auth_client, archived_cert):
         _set_dual_control(app, False)

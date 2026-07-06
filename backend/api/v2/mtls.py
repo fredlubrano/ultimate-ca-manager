@@ -181,7 +181,7 @@ def create_mtls_certificate():
     ca_id = data.get('ca_id')
     ca = None
     if ca_id:
-        ca = CA.query.get(ca_id) or CA.query.filter_by(refid=str(ca_id)).first()
+        ca = db.session.get(CA, ca_id) or CA.query.filter_by(refid=str(ca_id)).first()
     if not ca:
         trusted_refid = _get_mtls_config('mtls_trusted_ca_id')
         if trusted_refid:
@@ -270,7 +270,7 @@ def delete_mtls_certificate(cert_id):
     """Delete an enrolled mTLS certificate"""
     user = g.current_user
 
-    auth_cert = AuthCertificate.query.get(cert_id)
+    auth_cert = db.session.get(AuthCertificate, cert_id)
     if not auth_cert:
         return error_response('Certificate not found', 404)
 
@@ -325,7 +325,7 @@ def download_mtls_certificate(cert_id):
     if not auth_cert and getattr(user, 'role', '') != 'admin':
         return error_response('Certificate not found or not authorized', 404)
     if not auth_cert:
-        auth_cert = AuthCertificate.query.get(cert_id)
+        auth_cert = db.session.get(AuthCertificate, cert_id)
     if not auth_cert:
         return error_response('Certificate not found', 404)
 
@@ -559,7 +559,7 @@ def enroll_import_certificate():
     enroll_user_id = user.id
     enroll_username = user.username
     if target_user_id and user.role == 'admin':
-        target = User.query.get(target_user_id)
+        target = db.session.get(User, target_user_id)
         if target:
             enroll_user_id = target.id
             enroll_username = target.username
@@ -676,7 +676,7 @@ def assign_certificate():
     if not cert_id:
         return error_response('cert_id is required', 400)
 
-    certificate = Certificate.query.get(cert_id)
+    certificate = db.session.get(Certificate, cert_id)
     if not certificate:
         return error_response('Certificate not found', 404)
 
@@ -687,7 +687,7 @@ def assign_certificate():
     enroll_user_id = user.id
     enroll_username = user.username
     if target_user_id and user.role == 'admin':
-        target = User.query.get(target_user_id)
+        target = db.session.get(User, target_user_id)
         if not target:
             return error_response('Target user not found', 404)
         enroll_user_id = target.id

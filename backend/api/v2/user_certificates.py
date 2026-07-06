@@ -188,7 +188,7 @@ def list_user_certificates():
 
         # Cache user lookup
         if ac.user_id not in user_cache:
-            user_cache[ac.user_id] = User.query.get(ac.user_id)
+            user_cache[ac.user_id] = db.session.get(User, ac.user_id)
         owner = user_cache[ac.user_id]
 
         results.append(_build_cert_response(ac, cert, owner))
@@ -246,7 +246,7 @@ def get_user_certificate(cert_id):
     """Get a single user certificate by auth_certificate ID."""
     user = g.current_user
 
-    auth_cert = AuthCertificate.query.get(cert_id)
+    auth_cert = db.session.get(AuthCertificate, cert_id)
     if not auth_cert:
         return error_response('Certificate not found', 404)
 
@@ -254,7 +254,7 @@ def get_user_certificate(cert_id):
         return error_response('Certificate not found', 404)
 
     cert = _get_certificate_for_auth_cert(auth_cert)
-    owner = User.query.get(auth_cert.user_id)
+    owner = db.session.get(User, auth_cert.user_id)
 
     return success_response(data=_build_cert_response(auth_cert, cert, owner))
 
@@ -268,7 +268,7 @@ def export_user_certificate(cert_id):
     if _is_auditor(user):
         return error_response('Auditors cannot export certificates', 403)
 
-    auth_cert = AuthCertificate.query.get(cert_id)
+    auth_cert = db.session.get(AuthCertificate, cert_id)
     if not auth_cert:
         return error_response('Certificate not found', 404)
 
@@ -467,7 +467,7 @@ def revoke_user_certificate(cert_id):
     """Revoke a user certificate. Operators and admins only."""
     user = g.current_user
 
-    auth_cert = AuthCertificate.query.get(cert_id)
+    auth_cert = db.session.get(AuthCertificate, cert_id)
     if not auth_cert:
         return error_response('Certificate not found', 404)
 
@@ -501,7 +501,7 @@ def revoke_user_certificate(cert_id):
             success=True
         )
 
-        owner = User.query.get(auth_cert.user_id)
+        owner = db.session.get(User, auth_cert.user_id)
         return success_response(
             data=_build_cert_response(auth_cert, cert, owner),
             message='Certificate revoked successfully'
@@ -520,7 +520,7 @@ def delete_user_certificate(cert_id):
     """Delete a user certificate. Operators and admins only."""
     user = g.current_user
 
-    auth_cert = AuthCertificate.query.get(cert_id)
+    auth_cert = db.session.get(AuthCertificate, cert_id)
     if not auth_cert:
         return error_response('Certificate not found', 404)
 

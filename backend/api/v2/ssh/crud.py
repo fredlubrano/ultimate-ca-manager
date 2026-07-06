@@ -11,6 +11,7 @@ from services.audit_service import AuditService
 from models.ssh import SSHCertificateAuthority
 
 from .helpers import bp, logger
+from models import db
 
 
 @bp.route('/api/v2/ssh/cas', methods=['GET'])
@@ -53,7 +54,7 @@ def list_ssh_cas():
 @require_auth(['read:ssh'])
 def get_ssh_ca(ca_id):
     """Get SSH CA details."""
-    ca = SSHCertificateAuthority.query.get(ca_id)
+    ca = db.session.get(SSHCertificateAuthority, ca_id)
     if not ca:
         return error_response('SSH CA not found', 404)
 
@@ -252,7 +253,7 @@ def update_ssh_ca(ca_id):
 @require_auth(['delete:ssh'])
 def delete_ssh_ca(ca_id):
     """Delete an SSH CA."""
-    ca = SSHCertificateAuthority.query.get(ca_id)
+    ca = db.session.get(SSHCertificateAuthority, ca_id)
     if not ca:
         return error_response('SSH CA not found', 404)
 

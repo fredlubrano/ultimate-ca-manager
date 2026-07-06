@@ -89,7 +89,7 @@ def renew_certificate(order) -> tuple:
     old_certificate_id = order.certificate_id
     
     # Get DNS provider
-    dns_provider_model = DnsProvider.query.get(order.dns_provider_id)
+    dns_provider_model = db.session.get(DnsProvider, order.dns_provider_id)
     if not dns_provider_model:
         raise Exception("DNS provider not found")
     
@@ -197,7 +197,7 @@ def renew_certificate(order) -> tuple:
     
     # Update expiry from new certificate
     from models import Certificate
-    new_cert = Certificate.query.get(cert_id)
+    new_cert = db.session.get(Certificate, cert_id)
     if new_cert and new_cert.valid_to:
         order.expires_at = new_cert.valid_to
     

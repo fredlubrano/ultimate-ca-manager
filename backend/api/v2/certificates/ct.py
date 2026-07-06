@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 @require_auth(['write:certificates'])
 def submit_to_ct(cert_id):
     """Submit a certificate to Certificate Transparency logs."""
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
     if not cert.crt:
@@ -41,7 +41,7 @@ def submit_to_ct(cert_id):
 
         # Add issuer cert if available
         if cert.ca_id:
-            ca = CA.query.get(cert.ca_id)
+            ca = db.session.get(CA, cert.ca_id)
             if ca and ca.crt:
                 ca_pem = base64.b64decode(ca.crt).decode('utf-8')
                 chain.append(ca_pem)

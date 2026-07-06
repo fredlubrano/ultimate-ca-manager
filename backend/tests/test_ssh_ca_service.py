@@ -58,7 +58,7 @@ class TestImportAndDelete:
                                         key_type='ed25519', username='t')
             cid = ca.id
             assert SSHCAService.delete_ca(cid) == 'Doomed CA'  # returns the deleted CA's name
-            assert SSHCertificateAuthority.query.get(cid) is None
+            assert db.session.get(SSHCertificateAuthority, cid) is None
 
 
 if __name__ == '__main__':

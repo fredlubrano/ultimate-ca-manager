@@ -411,7 +411,7 @@ class TestIPOnlyOrderCAResolution:
             from models.system_config import SystemConfig
             from services.acme.mixins.issuance import IssuanceMixin
 
-            ca_obj = CA.query.get(ca['id'])
+            ca_obj = db.session.get(CA, ca['id'])
             cfg = SystemConfig.query.filter_by(key='acme.issuing_ca_id').first()
             created = cfg is None
             if created:

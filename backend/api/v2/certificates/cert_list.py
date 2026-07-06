@@ -50,7 +50,7 @@ def list_certificates():
     if ca_id_list:
         ca_refs = []
         for cid in ca_id_list:
-            ca = CA.query.get(cid)
+            ca = db.session.get(CA, cid)
             if ca:
                 ca_refs.append(ca.refid)
         if ca_refs:

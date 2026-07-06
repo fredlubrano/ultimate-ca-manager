@@ -120,7 +120,7 @@ def get_acme_settings():
         if not ca:
             # Try by ID
             try:
-                ca = CA.query.get(int(ca_id))
+                ca = db.session.get(CA, int(ca_id))
             except (ValueError, TypeError):
                 pass  # ca_id is not a valid integer
         if ca:

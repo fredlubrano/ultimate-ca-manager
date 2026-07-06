@@ -28,7 +28,7 @@ def list_local_domains():
 @require_auth(['read:acme'])
 def get_local_domain(domain_id):
     """Get a specific local domain"""
-    domain = AcmeLocalDomain.query.get_or_404(domain_id)
+    domain = db.get_or_404(AcmeLocalDomain, domain_id)
     return success_response(data=domain.to_dict())
 
 
@@ -51,7 +51,7 @@ def create_local_domain():
     if not issuing_ca_id:
         return error_response('Issuing CA is required', 400)
     
-    ca = CA.query.get(issuing_ca_id)
+    ca = db.session.get(CA, issuing_ca_id)
     if not ca:
         return error_response('Issuing CA not found', 404)
     if not ca.prv:
@@ -93,14 +93,14 @@ def create_local_domain():
 @require_auth(['write:acme'])
 def update_local_domain(domain_id):
     """Update a local domain mapping"""
-    domain = AcmeLocalDomain.query.get_or_404(domain_id)
+    domain = db.get_or_404(AcmeLocalDomain, domain_id)
     data = request.json
     
     if not data:
         return error_response('Request body required', 400)
     
     if 'issuing_ca_id' in data:
-        ca = CA.query.get(data['issuing_ca_id'])
+        ca = db.session.get(CA, data['issuing_ca_id'])
         if not ca:
             return error_response('Issuing CA not found', 404)
         if not ca.prv:
@@ -133,7 +133,7 @@ def update_local_domain(domain_id):
 @require_auth(['delete:acme'])
 def delete_local_domain(domain_id):
     """Delete a local domain mapping"""
-    domain = AcmeLocalDomain.query.get_or_404(domain_id)
+    domain = db.get_or_404(AcmeLocalDomain, domain_id)
     domain_name = domain.domain
     
     db.session.delete(domain)

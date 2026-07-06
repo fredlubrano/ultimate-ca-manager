@@ -22,6 +22,7 @@ import pytest
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from models import db
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -109,7 +110,7 @@ class TestIssue142HsmCertIssuance:
 
         with app.app_context():
             from models import CA
-            ca = CA.query.get(ca_id)
+            ca = db.session.get(CA, ca_id)
             assert ca.prv is None and ca.has_private_key, \
                 'precondition: CA is HSM-backed with no local prv'
 
@@ -145,7 +146,7 @@ class TestIssue142HsmCertIssuance:
         # Verify the issued cert is signed by the HSM key.
         from models import Certificate
         with app.app_context():
-            cert = Certificate.query.get(cert_data['id'])
+            cert = db.session.get(Certificate, cert_data['id'])
             issued = __import__('cryptography').x509.load_pem_x509_certificate(
                 __import__('base64').b64decode(cert.crt), default_backend())
             hsm_provider_and_key['real_key'].public_key().verify(
@@ -157,7 +158,7 @@ class TestIssue142HsmCertIssuance:
         ca_id = _make_hsm_ca(app, hsm_provider_and_key)
         with app.app_context():
             from models import db, CA
-            ca = CA.query.get(ca_id)
+            ca = db.session.get(CA, ca_id)
             ca.offline = True
             db.session.commit()
 
@@ -263,7 +264,7 @@ class TestIssue142EstAutoRenewalSigningPath:
             p.start()
         try:
             with app.app_context():
-                ca = CA.query.get(ca_id)
+                ca = db.session.get(CA, ca_id)
                 cert_pem, serial = CAService.sign_csr_from_crypto(
                     ca, csr, validity_days=90, source='est')
         finally:

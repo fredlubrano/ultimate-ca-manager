@@ -31,7 +31,7 @@ def change_password():
     # server-side from User.force_password_change. The client must NOT be able
     # to influence this — a stolen session on a non-force-change user could
     # otherwise rotate the password without knowing the current one.
-    user = User.query.get(g.current_user.id)
+    user = db.session.get(User, g.current_user.id)
     if not user:
         return error_response('User not found', 404)
 

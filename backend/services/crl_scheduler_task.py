@@ -39,7 +39,7 @@ class CRLSchedulerTask:
             Tuple of (should_regenerate: bool, reason: str or None)
         """
         try:
-            ca = CA.query.get(ca_id)
+            ca = db.session.get(CA, ca_id)
             if not ca:
                 return False, f"CA {ca_id} not found"
             
@@ -87,7 +87,7 @@ class CRLSchedulerTask:
             True if successful, False if failed
         """
         try:
-            ca = CA.query.get(ca_id)
+            ca = db.session.get(CA, ca_id)
             if not ca:
                 logger.error(f"Cannot regenerate CRL: CA {ca_id} not found")
                 return False

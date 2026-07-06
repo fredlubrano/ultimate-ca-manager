@@ -55,7 +55,7 @@ def _sanitize_preferences(payload):
 @require_auth()
 def get_profile():
     """Get current user profile with full details"""
-    user = User.query.get(g.current_user.id)
+    user = db.session.get(User, g.current_user.id)
     if not user:
         return error_response('User not found', 404)
 
@@ -129,7 +129,7 @@ def update_profile():
 @require_auth()
 def get_preferences():
     """Return the current user's stored preferences."""
-    user = User.query.get(g.current_user.id)
+    user = db.session.get(User, g.current_user.id)
     if not user:
         return error_response('User not found', 404)
     return success_response(data=user.get_preferences())
@@ -148,7 +148,7 @@ def update_preferences():
     if payload is None:
         return error_response('JSON body required', 400)
 
-    user = User.query.get(g.current_user.id)
+    user = db.session.get(User, g.current_user.id)
     if not user:
         return error_response('User not found', 404)
 

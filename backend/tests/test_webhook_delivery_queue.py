@@ -59,7 +59,7 @@ class TestEnqueue:
         # still holds (which would raise ObjectDeletedError on next access).
         from sqlalchemy import inspect
         with app.app_context():
-            held = WebhookEndpoint.query.get(endpoint)
+            held = db.session.get(WebhookEndpoint, endpoint)
             _ = held.name  # ensure loaded
             WebhookService.enqueue_deliveries('certificate.issued', {'id': 1})
             assert not inspect(held).expired  # still usable, no refresh needed
@@ -96,7 +96,7 @@ class TestProcessDeliveries:
         with app.app_context():
             res = WebhookService.process_pending_deliveries()
             assert res['delivered'] == 1
-            assert WebhookDelivery.query.get(did).status == 'delivered'
+            assert db.session.get(WebhookDelivery, did).status == 'delivered'
 
     def test_failure_retries_with_backoff(self, app, endpoint, monkeypatch):
         did = self._queue(app, endpoint)
@@ -105,7 +105,7 @@ class TestProcessDeliveries:
         with app.app_context():
             res = WebhookService.process_pending_deliveries()
             assert res['retry'] == 1
-            d = WebhookDelivery.query.get(did)
+            d = db.session.get(WebhookDelivery, did)
             assert d.status == 'pending' and d.attempts == 1
             assert d.next_attempt_at > utc_now()  # backed off into the future
 
@@ -116,7 +116,7 @@ class TestProcessDeliveries:
         with app.app_context():
             res = WebhookService.process_pending_deliveries()
             assert res['failed'] == 1
-            assert WebhookDelivery.query.get(did).status == 'failed'
+            assert db.session.get(WebhookDelivery, did).status == 'failed'
 
     def test_concurrent_process_delivers_once(self, app, endpoint, monkeypatch):
         """#139: a pending row is delivered exactly once even if a second
@@ -135,7 +135,7 @@ class TestProcessDeliveries:
         with app.app_context():
             WebhookService.process_pending_deliveries()
             assert len(calls) == 1  # the concurrent run could not re-claim it
-            assert WebhookDelivery.query.get(did).status == 'delivered'
+            assert db.session.get(WebhookDelivery, did).status == 'delivered'
 
     def test_future_deliveries_not_picked(self, app, endpoint, monkeypatch):
         self._queue(app, endpoint, next_attempt_at=utc_now() + timedelta(hours=1))
@@ -149,11 +149,11 @@ class TestProcessDeliveries:
     def test_disabled_endpoint_marks_failed(self, app, endpoint, monkeypatch):
         did = self._queue(app, endpoint)
         with app.app_context():
-            WebhookEndpoint.query.get(endpoint).enabled = False
+            db.session.get(WebhookEndpoint, endpoint).enabled = False
             db.session.commit()
             res = WebhookService.process_pending_deliveries()
             assert res['failed'] == 1
-            assert WebhookDelivery.query.get(did).status == 'failed'
+            assert db.session.get(WebhookDelivery, did).status == 'failed'
 
 
 if __name__ == '__main__':

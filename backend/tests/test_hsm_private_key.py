@@ -189,9 +189,8 @@ class TestLoadHsmPrivateKey:
             ).decode()
             rec = self._make_key_record('RSA-2048', pub_pem)
 
-            with patch('models.hsm.HsmKey.query') as mock_q, \
+            with patch('models.db.session.get', return_value=rec), \
                  patch('services.hsm.HsmService.get_public_key', return_value=pub_pem):
-                mock_q.get.return_value = rec
                 wrapper = load_hsm_private_key(42)
 
             assert isinstance(wrapper, HsmRSAPrivateKey)
@@ -209,9 +208,8 @@ class TestLoadHsmPrivateKey:
             ).decode()
             rec = self._make_key_record('EC-P256', pub_pem)
 
-            with patch('models.hsm.HsmKey.query') as mock_q, \
+            with patch('models.db.session.get', return_value=rec), \
                  patch('services.hsm.HsmService.get_public_key', return_value=pub_pem):
-                mock_q.get.return_value = rec
                 wrapper = load_hsm_private_key(42)
 
             assert isinstance(wrapper, HsmECPrivateKey)
@@ -219,8 +217,7 @@ class TestLoadHsmPrivateKey:
     def test_factory_unknown_key_id(self, app):
         from services.hsm.hsm_private_key import load_hsm_private_key
         with app.app_context():
-            with patch('models.hsm.HsmKey.query') as mock_q:
-                mock_q.get.return_value = None
+            with patch('models.db.session.get', return_value=None):
                 with pytest.raises(ValueError, match='not found'):
                     load_hsm_private_key(999)
 
@@ -230,8 +227,7 @@ class TestLoadHsmPrivateKey:
             rec = self._make_key_record(
                 'AES-256', 'irrelevant', key_type='symmetric'
             )
-            with patch('models.hsm.HsmKey.query') as mock_q:
-                mock_q.get.return_value = rec
+            with patch('models.db.session.get', return_value=rec):
                 with pytest.raises(ValueError, match='asymmetric'):
                     load_hsm_private_key(1)
 
@@ -241,7 +237,6 @@ class TestLoadHsmPrivateKey:
             rec = self._make_key_record(
                 'RSA-2048', 'irrelevant', purpose='encryption'
             )
-            with patch('models.hsm.HsmKey.query') as mock_q:
-                mock_q.get.return_value = rec
+            with patch('models.db.session.get', return_value=rec):
                 with pytest.raises(ValueError, match='signing'):
                     load_hsm_private_key(1)

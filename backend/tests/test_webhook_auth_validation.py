@@ -18,6 +18,7 @@ import json
 
 import pytest
 from tests.conftest import assert_error, assert_success
+from models import db
 
 CONTENT_JSON = 'application/json'
 WH = '/api/v2/webhooks'
@@ -162,7 +163,7 @@ class TestPutTokenAbsent:
         # Verify plaintext unchanged via direct model read
         from services.webhook_service import WebhookEndpoint
         with app.app_context():
-            ep = WebhookEndpoint.query.get(wh_id)
+            ep = db.session.get(WebhookEndpoint, wh_id)
             assert ep.auth_token == 'original-secret', \
                 "Stored token must be unchanged when absent from PUT"
 
@@ -196,7 +197,7 @@ class TestPutClearToken:
 
         from services.webhook_service import WebhookEndpoint
         with app.app_context():
-            ep = WebhookEndpoint.query.get(wh_id)
+            ep = db.session.get(WebhookEndpoint, wh_id)
             assert ep._auth_token is None
             assert ep.auth_token is None
 

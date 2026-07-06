@@ -32,7 +32,7 @@ def list_domains():
 @require_auth(['read:acme'])
 def get_domain(domain_id):
     """Get a specific domain"""
-    domain = AcmeDomain.query.get_or_404(domain_id)
+    domain = db.get_or_404(AcmeDomain, domain_id)
     return success_response(data=domain.to_dict())
 
 
@@ -54,7 +54,7 @@ def create_domain():
         return error_response('DNS provider is required', 400)
     
     # Check provider exists
-    provider = DnsProvider.query.get(dns_provider_id)
+    provider = db.session.get(DnsProvider, dns_provider_id)
     if not provider:
         return error_response('DNS provider not found', 404)
     
@@ -70,7 +70,7 @@ def create_domain():
     # Validate issuing CA if specified
     issuing_ca_id = data.get('issuing_ca_id')
     if issuing_ca_id:
-        ca = CA.query.get(issuing_ca_id)
+        ca = db.session.get(CA, issuing_ca_id)
         if not ca:
             return error_response('Issuing CA not found', 404)
         if not ca.has_private_key:
@@ -111,7 +111,7 @@ def create_domain():
 @require_auth(['write:acme'])
 def update_domain(domain_id):
     """Update a domain configuration"""
-    domain = AcmeDomain.query.get_or_404(domain_id)
+    domain = db.get_or_404(AcmeDomain, domain_id)
     data = request.json
     
     if not data:
@@ -119,7 +119,7 @@ def update_domain(domain_id):
     
     # Update DNS provider if specified
     if 'dns_provider_id' in data:
-        provider = DnsProvider.query.get(data['dns_provider_id'])
+        provider = db.session.get(DnsProvider, data['dns_provider_id'])
         if not provider:
             return error_response('DNS provider not found', 404)
         domain.dns_provider_id = data['dns_provider_id']
@@ -133,7 +133,7 @@ def update_domain(domain_id):
     
     if 'issuing_ca_id' in data:
         if data['issuing_ca_id']:
-            ca = CA.query.get(data['issuing_ca_id'])
+            ca = db.session.get(CA, data['issuing_ca_id'])
             if not ca:
                 return error_response('Issuing CA not found', 404)
             if not ca.has_private_key:
@@ -165,7 +165,7 @@ def update_domain(domain_id):
 @require_auth(['delete:acme'])
 def delete_domain(domain_id):
     """Delete a domain registration"""
-    domain = AcmeDomain.query.get_or_404(domain_id)
+    domain = db.get_or_404(AcmeDomain, domain_id)
     domain_name = domain.domain
     
     try:
@@ -250,7 +250,7 @@ def test_domain_access():
     # Get or resolve provider
     provider_id = data.get('dns_provider_id')
     if provider_id:
-        provider = DnsProvider.query.get(provider_id)
+        provider = db.session.get(DnsProvider, provider_id)
         if not provider:
             return error_response('DNS provider not found', 404)
     else:

@@ -52,7 +52,7 @@ def update_notification_settings():
 
     config_id = data.get('id')
     if config_id:
-        config = NotificationConfig.query.get(config_id)
+        config = db.session.get(NotificationConfig, config_id)
         if not config:
             return error_response('Configuration not found', 404)
     else:

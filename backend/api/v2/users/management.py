@@ -44,7 +44,7 @@ def reset_user_password(user_id):
     if g.current_user.role != 'admin' and g.current_user.id != user_id:
         return error_response('Access denied', 403)
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return error_response('User not found', 404)
 
@@ -112,7 +112,7 @@ def reset_user_2fa(user_id):
     if g.current_user.role != 'admin':
         return error_response('Access denied', 403)
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return error_response('User not found', 404)
 
@@ -151,7 +151,7 @@ def toggle_user_status(user_id):
     if g.current_user.id == user_id:
         return error_response('Cannot toggle your own account status', 403)
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return error_response('User not found', 404)
 
@@ -205,7 +205,7 @@ def link_user_sso(user_id):
 
     from models.sso import SSOProvider
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return error_response('User not found', 404)
     if (user.auth_source or 'local') != 'local' or user.sso_provider_id:
@@ -215,7 +215,7 @@ def link_user_sso(user_id):
     provider_id = data.get('provider_id')
     if not provider_id:
         return error_response('provider_id is required', 400)
-    provider = SSOProvider.query.get(provider_id)
+    provider = db.session.get(SSOProvider, provider_id)
     if not provider:
         return error_response('SSO provider not found', 404)
 
@@ -249,7 +249,7 @@ def unlink_user_sso(user_id):
     if g.current_user.role != 'admin':
         return error_response('Insufficient permissions', 403)
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return error_response('User not found', 404)
     if (user.auth_source or 'local') == 'local' and not user.sso_provider_id:
@@ -291,7 +291,7 @@ def unlock_user(user_id):
     if g.current_user.role != 'admin':
         return error_response('Insufficient permissions', 403)
 
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return error_response('User not found', 404)
 

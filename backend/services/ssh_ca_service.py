@@ -289,7 +289,7 @@ class SSHCAService:
 
         Does NOT allow changing key material.
         """
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = db.session.get(SSHCertificateAuthority, ca_id)
         if not ca:
             raise ValueError(f"SSH CA not found: {ca_id}")
 
@@ -321,7 +321,7 @@ class SSHCAService:
 
         Blocks if certificates exist (user must delete them first).
         """
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = db.session.get(SSHCertificateAuthority, ca_id)
         if not ca:
             raise ValueError(f"SSH CA not found: {ca_id}")
 
@@ -367,7 +367,7 @@ class SSHCAService:
         This is what goes in sshd_config TrustedUserCAKeys or
         /etc/ssh/ssh_known_hosts for host CAs.
         """
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = db.session.get(SSHCertificateAuthority, ca_id)
         if not ca:
             raise ValueError(f"SSH CA not found: {ca_id}")
 
@@ -379,7 +379,7 @@ class SSHCAService:
 
         Internal use only — never expose the private key to API consumers.
         """
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = db.session.get(SSHCertificateAuthority, ca_id)
         if not ca:
             raise ValueError(f"SSH CA not found: {ca_id}")
 

@@ -160,7 +160,7 @@ class CSRMixin:
             Updated Certificate with signed cert (or new CA record for intermediate_ca)
         """
         # Get certificate with CSR
-        certificate = Certificate.query.get(cert_id)
+        certificate = db.session.get(Certificate, cert_id)
         if not certificate:
             raise ValueError("Certificate not found")
 

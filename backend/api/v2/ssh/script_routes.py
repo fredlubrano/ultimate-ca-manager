@@ -14,6 +14,7 @@ from models.ssh import SSHCertificateAuthority
 from .helpers import bp, logger
 from .setup_scripts import _generate_setup_script
 from .validation import validate_setup_hostname
+from models import db
 
 
 @bp.route('/api/v2/ssh/cas/<int:ca_id>/public-key', methods=['GET'])
@@ -25,7 +26,7 @@ def get_ssh_ca_public_key(ca_id):
     """
     try:
         pub_key = SSHCAService.get_public_key(ca_id)
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = db.session.get(SSHCertificateAuthority, ca_id)
 
         return Response(
             pub_key,
@@ -46,7 +47,7 @@ def get_ssh_ca_public_key(ca_id):
 def get_ssh_ca_setup_script(ca_id):
     """Generate a distro-agnostic server setup script for SSH CA trust."""
     try:
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = db.session.get(SSHCertificateAuthority, ca_id)
         if not ca:
             return error_response('SSH CA not found', 404)
 

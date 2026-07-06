@@ -112,7 +112,7 @@ def list_orders():
 @require_auth(['read:acme'])
 def get_order(order_id):
     """Get a specific ACME client order"""
-    order = AcmeClientOrder.query.get(order_id)
+    order = db.session.get(AcmeClientOrder, order_id)
     if not order:
         return error_response('Order not found', 404)
 
@@ -198,7 +198,7 @@ def request_certificate():
             acme_account_id = int(acme_account_id)
         except (TypeError, ValueError):
             return error_response('acme_account_id must be an integer', 400)
-        selected_account = AcmeClientAccount.query.get(acme_account_id)
+        selected_account = db.session.get(AcmeClientAccount, acme_account_id)
         if not selected_account:
             return error_response('ACME account not found', 404)
         # Drive environment from the selected account so the order/Audit row
@@ -211,7 +211,7 @@ def request_certificate():
     dns_provider_id = data.get('dns_provider_id')
     provider = None
     if challenge_type == 'dns-01' and dns_provider_id:
-        provider = DnsProvider.query.get(dns_provider_id)
+        provider = db.session.get(DnsProvider, dns_provider_id)
         if not provider:
             return error_response('DNS provider not found', 404)
         if not provider.enabled:
@@ -252,7 +252,7 @@ def request_certificate():
             src_id = int(data['source_certificate_id'])
         except (TypeError, ValueError):
             return error_response('source_certificate_id must be an integer', 400)
-        src_cert = Certificate.query.get(src_id)
+        src_cert = db.session.get(Certificate, src_id)
         if not src_cert or not src_cert.prv:
             return error_response('source_certificate_id must reference a certificate with a stored private key', 400)
 
@@ -351,7 +351,7 @@ def verify_challenges(order_id):
         "domain": "example.com"  // Verify specific domain, or all if not specified
     }
     """
-    order = AcmeClientOrder.query.get(order_id)
+    order = db.session.get(AcmeClientOrder, order_id)
     if not order:
         return error_response('Order not found', 404)
 
@@ -456,7 +456,7 @@ def verify_challenges(order_id):
 @require_auth(['read:acme'])
 def check_order_status(order_id):
     """Check current order status from ACME server"""
-    order = AcmeClientOrder.query.get(order_id)
+    order = db.session.get(AcmeClientOrder, order_id)
     if not order:
         return error_response('Order not found', 404)
 
@@ -479,7 +479,7 @@ def check_order_status(order_id):
 @require_auth(['write:acme'])
 def finalize_order(order_id):
     """Finalize order and obtain certificate"""
-    order = AcmeClientOrder.query.get(order_id)
+    order = db.session.get(AcmeClientOrder, order_id)
     if not order:
         return error_response('Order not found', 404)
 
@@ -522,7 +522,7 @@ def finalize_order(order_id):
 @require_auth(['delete:acme'])
 def cancel_order(order_id):
     """Cancel/delete an order"""
-    order = AcmeClientOrder.query.get(order_id)
+    order = db.session.get(AcmeClientOrder, order_id)
     if not order:
         return error_response('Order not found', 404)
 
@@ -556,7 +556,7 @@ def cancel_order(order_id):
 @require_auth(['write:acme'])
 def renew_order(order_id):
     """Manually trigger renewal for an order"""
-    order = AcmeClientOrder.query.get(order_id)
+    order = db.session.get(AcmeClientOrder, order_id)
     if not order:
         return error_response('Order not found', 404)
 
@@ -751,7 +751,7 @@ def _run_auto_poll_background(order_id: int, environment: str) -> None:
     def _worker():
         with app.app_context():
             try:
-                order = AcmeClientOrder.query.get(order_id)
+                order = db.session.get(AcmeClientOrder, order_id)
                 if not order:
                     logger.error(f'Auto-poll background: order {order_id} not found')
                     return
@@ -765,7 +765,7 @@ def _run_auto_poll_background(order_id: int, environment: str) -> None:
                 logger.error(f'Auto-poll background failed for order {order_id}: {e}', exc_info=True)
                 try:
                     with app.app_context():
-                        order = AcmeClientOrder.query.get(order_id)
+                        order = db.session.get(AcmeClientOrder, order_id)
                         if order and order.status not in ('issued', 'invalid', 'expired'):
                             order.status = 'pending'
                             order.error_message = 'Background processing failed; retry manually'

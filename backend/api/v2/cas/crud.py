@@ -248,7 +248,7 @@ def create_ca():
         # Resolve parent CA for intermediate CAs
         caref = None
         if data.get('type') == 'intermediate' and data.get('parentCAId'):
-            parent_ca = CA.query.get(int(data['parentCAId']))
+            parent_ca = db.session.get(CA, int(data['parentCAId']))
             if not parent_ca:
                 return error_response('Parent CA not found', 400)
             if not parent_ca.has_private_key:
@@ -502,7 +502,7 @@ def update_ca(ca_id):
         is_active: bool - Active status
     """
 
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 
@@ -650,7 +650,7 @@ def update_ca(ca_id):
 def delete_ca(ca_id):
     """Delete CA and all dependent records (CRLs, OCSP responses, etc.)"""
 
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 
@@ -737,7 +737,7 @@ def take_ca_offline(ca_id):
     from cryptography.hazmat.backends import default_backend
     from flask import Response
 
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 
@@ -851,7 +851,7 @@ def restore_ca(ca_id):
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.backends import default_backend
 
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 

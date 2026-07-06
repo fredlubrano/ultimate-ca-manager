@@ -22,7 +22,7 @@ class SSHCertificateSigningMixin:
                          extensions=None, critical_options=None,
                          descr=None, source='web', username=None,
                          owner_group_id=None):
-        ca = SSHCertificateAuthority.query.get(ca_id)
+        ca = db.session.get(SSHCertificateAuthority, ca_id)
         if not ca:
             raise ValueError(f"SSH CA not found: {ca_id}")
 

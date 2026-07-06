@@ -4,16 +4,16 @@ from cryptography import x509
 from cryptography.x509 import ocsp
 from cryptography.hazmat.primitives import hashes
 
-from models import CA, Certificate
+from models import db, CA, Certificate
 from services.ocsp_service import OCSPService
 
 
 def _ca_model(ca_dict):
-    return CA.query.get(ca_dict['id'])
+    return db.session.get(CA, ca_dict['id'])
 
 
 def _cert_model(cert_dict):
-    return Certificate.query.get(cert_dict['id'])
+    return db.session.get(Certificate, cert_dict['id'])
 
 
 def _build_ocsp_request(cert_serial, issuer_cert):

@@ -5,6 +5,7 @@ from utils.response import success_response, error_response
 from models.sso import SSOProvider
 from .helpers import _parse_json_field, _parse_group_list, _resolve_role_from_mapping, _resolve_role, _check_ldap_lockout, _clear_ldap_failed_attempts, _decrypt_ldap_password, _build_ldap_tls
 import logging
+from models import db
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 @require_auth(['write:sso'])
 def test_mapping(provider_id):
     """Dry-run LDAP group lookup: fetches groups for a username without creating a session"""
-    provider = SSOProvider.query.get_or_404(provider_id)
+    provider = db.get_or_404(SSOProvider, provider_id)
 
     if provider.provider_type != 'ldap':
         return error_response("Test mapping is only available for LDAP providers", 400)

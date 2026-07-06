@@ -89,7 +89,7 @@ def list_templates():
     # If ca_id is provided, return templates with pin status
     if ca_id:
         # Verify CA exists
-        ca = CA.query.get(ca_id)
+        ca = db.session.get(CA, ca_id)
         if not ca:
             return error_response('CA not found', 404)
         
@@ -247,7 +247,7 @@ def create_template():
 @require_auth(["read:templates"])
 def get_template(template_id):
     """Get single template details"""
-    template = CertificateTemplate.query.get(template_id)
+    template = db.session.get(CertificateTemplate, template_id)
     if not template:
         return error_response('Template not found', 404)
     
@@ -267,7 +267,7 @@ def update_template(template_id):
         "is_active": false
     }
     """
-    template = CertificateTemplate.query.get(template_id)
+    template = db.session.get(CertificateTemplate, template_id)
     if not template:
         return error_response('Template not found', 404)
     
@@ -348,7 +348,7 @@ def delete_template(template_id):
     
     DELETE /api/v2/templates/{template_id}
     """
-    template = CertificateTemplate.query.get(template_id)
+    template = db.session.get(CertificateTemplate, template_id)
     if not template:
         return error_response('Template not found', 404)
     
@@ -407,7 +407,7 @@ def bulk_delete_templates():
     results = {'success': [], 'failed': []}
 
     for template_id in ids:
-        template = CertificateTemplate.query.get(template_id)
+        template = db.session.get(CertificateTemplate, template_id)
         if not template:
             results['failed'].append({'id': template_id, 'error': 'Not found'})
             continue
@@ -449,7 +449,7 @@ def duplicate_template(template_id):
 
     POST /api/v2/templates/{template_id}/duplicate
     """
-    template = CertificateTemplate.query.get(template_id)
+    template = db.session.get(CertificateTemplate, template_id)
     if not template:
         return error_response('Template not found', 404)
 
@@ -507,7 +507,7 @@ def export_template(template_id):
     GET /api/v2/templates/{template_id}/export
     """
     
-    template = CertificateTemplate.query.get(template_id)
+    template = db.session.get(CertificateTemplate, template_id)
     if not template:
         return error_response('Template not found', 404)
     
@@ -712,7 +712,7 @@ def list_templates_with_pin_status(ca_id):
     Returns all templates with is_pinned flag indicating which are pinned to this CA.
     """
     # Verify CA exists
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
     
@@ -748,8 +748,8 @@ def pin_template_to_ca(ca_id, template_id):
         pin = TemplateService.pin_template_to_ca(ca_id, template_id, username)
         
         # Get template and CA names for audit
-        template = CertificateTemplate.query.get(template_id)
-        ca = CA.query.get(ca_id)
+        template = db.session.get(CertificateTemplate, template_id)
+        ca = db.session.get(CA, ca_id)
         
         AuditService.log_action(
             action='template_pinned_to_ca',
@@ -792,8 +792,8 @@ def unpin_template_from_ca(ca_id, template_id):
             return error_response('Template is not pinned to this CA', 404)
         
         # Get template and CA names for audit
-        template = CertificateTemplate.query.get(template_id)
-        ca = CA.query.get(ca_id)
+        template = db.session.get(CertificateTemplate, template_id)
+        ca = db.session.get(CA, ca_id)
         
         AuditService.log_action(
             action='template_unpinned_from_ca',

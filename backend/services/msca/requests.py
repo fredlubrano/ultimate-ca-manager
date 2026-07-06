@@ -14,7 +14,7 @@ class MicrosoftCARequestsMixin:
     def check_request(msca_id, request_id):
         from .connection import MicrosoftCAConnectionMixin
 
-        req = MSCARequest.query.get(request_id)
+        req = db.session.get(MSCARequest, request_id)
         if not req or req.msca_id != msca_id:
             raise ValueError('Request not found')
 
@@ -24,7 +24,7 @@ class MicrosoftCARequestsMixin:
         if not req.request_id:
             return req.to_dict()
 
-        msca = MicrosoftCA.query.get(msca_id)
+        msca = db.session.get(MicrosoftCA, msca_id)
         if not msca:
             raise ValueError('Connection not found')
 

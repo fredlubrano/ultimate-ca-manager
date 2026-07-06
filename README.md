@@ -11,7 +11,7 @@
 
 > **UCM is a young and actively developed project.** Feedback, bug reports, and feature requests are very welcome! Feel free to [open an issue](https://github.com/NeySlim/ultimate-ca-manager/issues) — every report helps make UCM better.
 
-> **Latest release — v2.185** (2026-07-06): multi-CA ACME proxy with per-account endpoints (`/acme/proxy/<slug>/directory`), typed SAN validation on certificate issuance, and DNS-01 propagation fixes (multi-string TXT records, `dns_propagation_timeout=0` honored). See the [v2.185 release notes](https://github.com/NeySlim/ultimate-ca-manager/releases/latest) and the full [CHANGELOG](CHANGELOG.md).
+> **Latest release — v2.186** (2026-07-06): ACME proxy works out of the box on fresh installs (lazy account resolution), the manual DNS-01 verify no longer blocks the request (30s cap, background auto-poll keeps the full timeout), authorization polling is throttled to respect CA rate limits, and contact-less proxy registration is accepted again. See the [v2.186 release notes](https://github.com/NeySlim/ultimate-ca-manager/releases/latest) and the full [CHANGELOG](CHANGELOG.md).
 
 ![Dashboard](docs/screenshots/dashboard-dark.png)
 

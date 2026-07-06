@@ -134,7 +134,7 @@ def create_group():
 @require_auth(['read:groups'])
 def get_group(group_id):
     """Get group details with members"""
-    group = Group.query.get(group_id)
+    group = db.session.get(Group, group_id)
     if not group:
         return error_response('Group not found', 404)
     return success_response(data=group.to_dict(include_members=True))
@@ -147,7 +147,7 @@ def update_group(group_id):
     if g.current_user.role != 'admin':
         return error_response('Insufficient permissions', 403)
     
-    group = Group.query.get(group_id)
+    group = db.session.get(Group, group_id)
     if not group:
         return error_response('Group not found', 404)
     
@@ -193,7 +193,7 @@ def delete_group(group_id):
     if g.current_user.role != 'admin':
         return error_response('Insufficient permissions', 403)
     
-    group = Group.query.get(group_id)
+    group = db.session.get(Group, group_id)
     if not group:
         return error_response('Group not found', 404)
     
@@ -226,7 +226,7 @@ def delete_group(group_id):
 @require_auth(['read:groups'])
 def list_group_members(group_id):
     """List members of a group"""
-    group = Group.query.get(group_id)
+    group = db.session.get(Group, group_id)
     if not group:
         return error_response('Group not found', 404)
     return success_response(data=[m.to_dict() for m in group.members])
@@ -239,7 +239,7 @@ def add_group_member(group_id):
     if g.current_user.role != 'admin':
         return error_response('Insufficient permissions', 403)
     
-    group = Group.query.get(group_id)
+    group = db.session.get(Group, group_id)
     if not group:
         return error_response('Group not found', 404)
     
@@ -249,7 +249,7 @@ def add_group_member(group_id):
     if not user_id:
         return error_response("user_id is required", 400)
     
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return error_response(f"User not found", 404)
     
@@ -291,7 +291,7 @@ def remove_group_member(group_id, user_id):
     if not member:
         return error_response('Member not found', 404)
     
-    group = Group.query.get(group_id)
+    group = db.session.get(Group, group_id)
     try:
         db.session.delete(member)
         db.session.commit()

@@ -3,6 +3,7 @@ Notifications mixin — sends email digest after a discovery scan completes.
 """
 import logging
 from typing import Dict
+from models import db
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class NotificationsMixin:
         if not profile_id:
             return
         from models import ScanProfile
-        profile = ScanProfile.query.get(profile_id)
+        profile = db.session.get(ScanProfile, profile_id)
         if not profile:
             return
 

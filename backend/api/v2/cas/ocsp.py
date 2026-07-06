@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 @require_auth(['read:cas'])
 def get_ocsp_responder(ca_id):
     """Get the delegated OCSP responder certificate for a CA."""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 
@@ -31,7 +31,7 @@ def get_ocsp_responder(ca_id):
     if not config or not config.value:
         return success_response(data={'responder': None})
 
-    cert = Certificate.query.get(int(config.value))
+    cert = db.session.get(Certificate, int(config.value))
     if not cert:
         return success_response(data={'responder': None})
 
@@ -49,7 +49,7 @@ def get_ocsp_responder(ca_id):
 @require_auth(['write:cas'])
 def set_ocsp_responder(ca_id):
     """Set the delegated OCSP responder certificate for a CA."""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 
@@ -62,7 +62,7 @@ def set_ocsp_responder(ca_id):
     except (TypeError, ValueError):
         return error_response('certificate_id must be an integer', 400)
 
-    cert = Certificate.query.get(cert_id)
+    cert = db.session.get(Certificate, cert_id)
     if not cert:
         return error_response('Certificate not found', 404)
 
@@ -113,7 +113,7 @@ def set_ocsp_responder(ca_id):
 @require_auth(['delete:cas'])
 def delete_ocsp_responder(ca_id):
     """Remove the delegated OCSP responder for a CA."""
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 
@@ -143,7 +143,7 @@ def list_eligible_ocsp_responders(ca_id):
     """List certificates eligible as OCSP delegated responder for a CA.
     Eligible = issued by this CA, has OCSPSigning EKU, has private key, not revoked/expired.
     """
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
 

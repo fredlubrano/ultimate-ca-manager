@@ -61,7 +61,7 @@ class TestRetry:
         r = auth_client.post(f'/api/v2/webhooks/{endpoint_with_deliveries}/deliveries/{fid}/retry')
         assert r.status_code == 200
         with app.app_context():
-            d = WebhookDelivery.query.get(fid)
+            d = db.session.get(WebhookDelivery, fid)
             assert d.status == 'pending'
             assert d.attempts == 0 and d.last_error is None
 

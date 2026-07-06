@@ -223,7 +223,7 @@ def get_acme_history():
         for order in client_orders:
             dns_provider = None
             if order.dns_provider_id:
-                provider = DnsProvider.query.get(order.dns_provider_id)
+                provider = db.session.get(DnsProvider, order.dns_provider_id)
                 dns_provider = provider.name if provider else None
 
             client_orders_map[order.certificate_id] = {

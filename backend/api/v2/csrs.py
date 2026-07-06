@@ -120,7 +120,7 @@ def list_csrs_history():
 @require_auth(['read:csrs'])
 def get_csr(csr_id):
     """Get CSR details"""
-    cert = Certificate.query.get(csr_id)
+    cert = db.session.get(Certificate, csr_id)
     if not cert or not cert.csr:
         return error_response('CSR not found', 404)
     
@@ -449,7 +449,7 @@ def import_csr():
 def export_csr(csr_id):
     """Export CSR as PEM file"""
     
-    cert = Certificate.query.get(csr_id)
+    cert = db.session.get(Certificate, csr_id)
     if not cert or not cert.csr:
         return error_response('CSR not found', 404)
     
@@ -497,7 +497,7 @@ def upload_csr_private_key(csr_id):
     - passphrase: Optional passphrase if key is encrypted
     """
     
-    csr = Certificate.query.get(csr_id)
+    csr = db.session.get(Certificate, csr_id)
     if not csr:
         return error_response('CSR not found', 404)
     
@@ -607,7 +607,7 @@ def sign_csr(csr_id):
         validity_days: Number of days the certificate should be valid (default: 365)
     """
     
-    cert = Certificate.query.get(csr_id)
+    cert = db.session.get(Certificate, csr_id)
     if not cert:
         return error_response('CSR not found', 404)
     
@@ -651,7 +651,7 @@ def sign_csr(csr_id):
         return error_response('CA ID required', 400)
     
     # Get the CA from CA table (not Certificate table)
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca:
         return error_response('CA not found', 404)
     
@@ -736,7 +736,7 @@ def bulk_sign_csrs():
     if not ca_id:
         return error_response('ca_id required', 400)
 
-    ca = CA.query.get(ca_id)
+    ca = db.session.get(CA, ca_id)
     if not ca or not ca.crt or not ca.has_private_key:
         return error_response('CA not found or not valid for signing', 404)
 
@@ -758,7 +758,7 @@ def bulk_sign_csrs():
 
     for csr_id in ids:
         try:
-            cert = Certificate.query.get(csr_id)
+            cert = db.session.get(Certificate, csr_id)
             if not cert:
                 results['failed'].append({'id': csr_id, 'error': 'Not found'})
                 continue

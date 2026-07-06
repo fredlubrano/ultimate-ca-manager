@@ -75,7 +75,7 @@ class AuditQueryMixin:
 
     @staticmethod
     def get_log_by_id(log_id: int) -> Optional[AuditLog]:
-        return AuditLog.query.get(log_id)
+        return db.session.get(AuditLog, log_id)
 
     @staticmethod
     def get_actions_list() -> List[str]:

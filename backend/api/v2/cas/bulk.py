@@ -40,7 +40,7 @@ def bulk_delete_cas():
 
     for ca_id in ids:
         try:
-            ca = CA.query.get(ca_id)
+            ca = db.session.get(CA, ca_id)
             if not ca:
                 results['failed'].append({'id': ca_id, 'error': 'Not found'})
                 continue

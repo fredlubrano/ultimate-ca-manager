@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from models import SystemConfig
+from models import db, SystemConfig
 from models.acme_client_account import AcmeClientAccount
 
 logger = logging.getLogger(__name__)
@@ -99,7 +99,7 @@ def resolve_proxy_account(explicit_id: Optional[int] = None) -> AcmeClientAccoun
                 logger.warning("Invalid %s value: %r", PROXY_ACCOUNT_ID_KEY, raw)
 
     if account_id is not None:
-        acct = AcmeClientAccount.query.get(account_id)
+        acct = db.session.get(AcmeClientAccount, account_id)
         if not acct:
             raise RuntimeError(f"Configured proxy CA account id={account_id} was not found")
         return acct

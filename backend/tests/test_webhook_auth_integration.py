@@ -32,6 +32,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from tests.conftest import assert_error, assert_success
+from models import db
 
 CONTENT_JSON = 'application/json'
 WH = '/api/v2/webhooks'
@@ -188,7 +189,7 @@ class TestDeliveryBearer:
 
         with app.app_context():
             from services.webhook_service import WebhookEndpoint, WebhookService
-            ep = WebhookEndpoint.query.get(wh_id)
+            ep = db.session.get(WebhookEndpoint, wh_id)
             with patch('utils.ssrf_protection.safe_request_post',
                        side_effect=_fake_post):
                 WebhookService._perform_delivery(
@@ -214,7 +215,7 @@ class TestDeliveryBasic:
 
         with app.app_context():
             from services.webhook_service import WebhookEndpoint, WebhookService
-            ep = WebhookEndpoint.query.get(wh_id)
+            ep = db.session.get(WebhookEndpoint, wh_id)
             with patch('utils.ssrf_protection.safe_request_post',
                        side_effect=_fake_post):
                 WebhookService._perform_delivery(
@@ -244,7 +245,7 @@ class TestDeliveryApiKey:
 
         with app.app_context():
             from services.webhook_service import WebhookEndpoint, WebhookService
-            ep = WebhookEndpoint.query.get(wh_id)
+            ep = db.session.get(WebhookEndpoint, wh_id)
             with patch('utils.ssrf_protection.safe_request_post',
                        side_effect=_fake_post):
                 WebhookService._perform_delivery(
@@ -273,7 +274,7 @@ class TestDeliveryCustom:
 
         with app.app_context():
             from services.webhook_service import WebhookEndpoint, WebhookService
-            ep = WebhookEndpoint.query.get(wh_id)
+            ep = db.session.get(WebhookEndpoint, wh_id)
             with patch('utils.ssrf_protection.safe_request_post',
                        side_effect=_fake_post):
                 WebhookService._perform_delivery(
@@ -298,7 +299,7 @@ class TestDeliveryNone:
 
         with app.app_context():
             from services.webhook_service import WebhookEndpoint, WebhookService
-            ep = WebhookEndpoint.query.get(wh_id)
+            ep = db.session.get(WebhookEndpoint, wh_id)
             with patch('utils.ssrf_protection.safe_request_post',
                        side_effect=_fake_post):
                 WebhookService._perform_delivery(
@@ -372,7 +373,7 @@ class TestEncryptionAtRest:
 
         with app.app_context():
             from services.webhook_service import WebhookEndpoint
-            ep = WebhookEndpoint.query.get(wh_id)
+            ep = db.session.get(WebhookEndpoint, wh_id)
 
             assert ep._auth_token is not None, "Token should be persisted"
             assert ep._auth_token != plaintext, \
@@ -393,7 +394,7 @@ class TestEncryptionAtRest:
 
         with app.app_context():
             from services.webhook_service import WebhookEndpoint
-            ep = WebhookEndpoint.query.get(wh_id)
+            ep = db.session.get(WebhookEndpoint, wh_id)
 
             assert ep._auth_token != plaintext
             assert ep._auth_token.startswith('gAAAAA')
@@ -419,7 +420,7 @@ class TestNoPlaintextInLogs:
 
             with app.app_context():
                 from services.webhook_service import WebhookEndpoint, WebhookService
-                ep = WebhookEndpoint.query.get(wh_id)
+                ep = db.session.get(WebhookEndpoint, wh_id)
                 with patch('utils.ssrf_protection.safe_request_post',
                            side_effect=_fake_post):
                     WebhookService._perform_delivery(

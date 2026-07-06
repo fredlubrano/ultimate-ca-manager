@@ -93,11 +93,11 @@ class QueryMixin:
         return [r.to_dict() for r in rows], total
 
     def get_run(self, run_id: int) -> Optional[Dict]:
-        run = ScanRun.query.get(run_id)
+        run = db.session.get(ScanRun, run_id)
         return run.to_dict() if run else None
 
     def delete(self, disc_id: int) -> bool:
-        row = DiscoveredCertificate.query.get(disc_id)
+        row = db.session.get(DiscoveredCertificate, disc_id)
         if not row:
             return False
         db.session.delete(row)
