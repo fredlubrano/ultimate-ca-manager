@@ -10,6 +10,12 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Added
+- **Configurable public vhost for ACME directory URLs** — a dedicated public hostname/port (`acme_public_vhost`, `acme_public_port` in Settings → General) can now be advertised in the local ACME server and ACME proxy directory URLs (`/acme/*`, `/acme/proxy/*`), independent of the admin UI URL — the split admin/ACME reverse-proxy topology (e.g. `admin.ucm.example.com` vs `acme.ucm.example.com` behind one wildcard certificate). JWS verification accepts both the advertised public origin and the inbound URL; without a configured vhost, behavior is unchanged (request host). Wildcard hostnames are rejected for the vhost value (TLS SAN concept, not an advertised URL), and an optional `acme_public_tls_cert_id` records which managed certificate to deploy on the ACME vhost (metadata only). Settings APIs expose `acme_public_base_url` / `acme_proxy_public_base_url` and the UI directory URLs follow the configured origin (#173, thanks @fredlubrano).
+
+### Changed
+- **SQLAlchemy 2.0 `Session.get`** — all 353 `Model.query.get()` / `query.get_or_404()` call sites migrated to `db.session.get()` / `db.get_or_404()`, eliminating ~4500 `LegacyAPIWarning` per test run ahead of a future SQLAlchemy major bump.
+
 
 ## [2.186] - 2026-07-06
 
