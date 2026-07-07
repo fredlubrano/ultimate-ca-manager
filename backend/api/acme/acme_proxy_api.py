@@ -18,6 +18,7 @@ from cryptography.hazmat.primitives import serialization
 from services.acme.acme_proxy_service import AcmeProxyService
 from services.acme.acme_proxy_account import resolve_proxy_by_slug
 from services.acme import AcmeService
+from utils.acme_public_url import get_acme_public_origin
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,7 @@ acme_proxy_bp = Blueprint('acme_proxy', __name__, url_prefix='/acme/proxy')
 # ==================== Helpers ====================
 
 def _proxy_base_url(slug=None):
-    root = f"{request.scheme}://{request.host}/acme/proxy"
+    root = f"{get_acme_public_origin(request)}/acme/proxy"
     return f"{root}/{slug}" if slug else root
 
 

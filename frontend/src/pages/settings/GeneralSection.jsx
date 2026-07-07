@@ -88,6 +88,33 @@ export default function GeneralSection({ settings, updateSetting, handleSave, sa
             placeholder="8080"
             helperText={t('settings.httpProtocolPortHelper')}
           />
+          <Input
+            label={t('settings.acmeProxyVhost')}
+            value={settings.acme_proxy_vhost || ''}
+            onChange={(e) => updateSetting('acme_proxy_vhost', e.target.value)}
+            placeholder="acme.example.com"
+            helperText={t('settings.acmeProxyVhostHelper')}
+          />
+          <Input
+            label={t('settings.acmeProxyPort')}
+            type="number"
+            min={1}
+            max={65535}
+            value={settings.acme_proxy_port ?? 443}
+            onChange={(e) => {
+              const val = parseInt(e.target.value, 10) || 443
+              updateSetting('acme_proxy_port', Math.min(65535, Math.max(1, val)))
+            }}
+            helperText={t('settings.acmeProxyPortHelper')}
+          />
+          <Input
+            label={t('settings.acmeProxyTlsCertId')}
+            type="number"
+            min={1}
+            value={settings.acme_proxy_tls_cert_id || ''}
+            onChange={(e) => updateSetting('acme_proxy_tls_cert_id', e.target.value)}
+            helperText={t('settings.acmeProxyTlsCertIdHelper')}
+          />
         </div>
       </DetailSection>
       <DetailSection title={t('settings.sessionTimezone')} icon={Clock} iconClass="icon-bg-teal">
