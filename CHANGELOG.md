@@ -8,7 +8,7 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ---
 
 
-## [Unreleased]
+## [2.187] - 2026-07-08
 
 ### Added
 - **Configurable public vhost for ACME directory URLs** — a dedicated public hostname/port (`acme_public_vhost`, `acme_public_port` in Settings → General) can now be advertised in the local ACME server and ACME proxy directory URLs (`/acme/*`, `/acme/proxy/*`), independent of the admin UI URL — the split admin/ACME reverse-proxy topology (e.g. `admin.ucm.example.com` vs `acme.ucm.example.com` behind one wildcard certificate). JWS verification accepts both the advertised public origin and the inbound URL; without a configured vhost, behavior is unchanged (request host). Wildcard hostnames are rejected for the vhost value (TLS SAN concept, not an advertised URL), and an optional `acme_public_tls_cert_id` records which managed certificate to deploy on the ACME vhost (metadata only). Settings APIs expose `acme_public_base_url` / `acme_proxy_public_base_url` and the UI directory URLs follow the configured origin (#173, thanks @fredlubrano).
