@@ -205,9 +205,17 @@ def create_user(auth_client):
     return _create
 
 
+_APP_FIXTURES = frozenset({'app', 'client', 'auth_client', 'viewer_client'})
+
+
 @pytest.fixture(autouse=True)
-def _clear_acme_public_vhost_settings(app):
-    """Clear acme_proxy_* SystemConfig so public URL tests do not leak into ACME JWS tests."""
+def _clear_acme_public_vhost_settings(request):
+    """Clear acme_proxy_* SystemConfig when a test uses the shared Flask app."""
+    if not _APP_FIXTURES.intersection(request.fixturenames):
+        yield
+        return
+
+    app = request.getfixturevalue('app')
     from models import db, SystemConfig
 
     keys = ('acme_proxy_vhost', 'acme_proxy_port', 'acme_proxy_tls_cert_id')
