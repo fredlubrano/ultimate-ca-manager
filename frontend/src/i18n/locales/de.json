@@ -2116,7 +2116,7 @@
     "restoreBackup": "Sicherung wiederherstellen",
     "restoreFromBackup": "Aus Sicherung wiederherstellen",
     "restoreFromBackupDesc": "Laden Sie eine .ucmbkp-Datei hoch, um alle Daten wiederherzustellen",
-    "restoreWarning": "Dies wird ALLE aktuellen Daten durch den Sicherungsinhalt ERSETZEN. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "restoreWarning": "Dies ERSETZT alle aktuellen Daten — einschließlich Benutzer, privater Schlüssel und gespeicherter Geheimnisse — durch den Sicherungsinhalt und ist unwiderruflich. Stellen Sie nur eine selbst erstellte Sicherung wieder her: Eine Sicherung, deren Passwort ein Angreifer kontrolliert, kann ein dauerhaftes Administratorkonto einschleusen.",
     "restoring": "Wird wiederhergestellt...",
     "retentionPeriod": "Aufbewahrungszeitraum (Tage)",
     "rowCount": "Gesamtzeilen",

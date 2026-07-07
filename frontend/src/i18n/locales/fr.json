@@ -2343,7 +2343,7 @@
     "encryptionPasswordHelper": "Utilisez un mot de passe fort - vous en aurez besoin pour restaurer la sauvegarde",
     "creating": "Création en cours...",
     "createAndDownload": "Créer et télécharger",
-    "restoreWarning": "Ceci REMPLACERA TOUTES les données actuelles par le contenu de la sauvegarde. Cette action est irréversible.",
+    "restoreWarning": "Ceci REMPLACE toutes les données actuelles — utilisateurs, clés privées et secrets stockés compris — par le contenu de la sauvegarde, et est irréversible. Ne restaurez qu'une sauvegarde que vous avez créée vous-même : une sauvegarde dont un attaquant contrôle le mot de passe peut implanter un compte administrateur persistant.",
     "file": "Fichier",
     "backupPassword": "Mot de passe de la sauvegarde",
     "enterBackupPassword": "Entrez le mot de passe utilisé pour créer la sauvegarde",

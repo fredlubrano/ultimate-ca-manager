@@ -2116,7 +2116,7 @@
     "restoreBackup": "Restaurar respaldo",
     "restoreFromBackup": "Restaurar desde copia de seguridad",
     "restoreFromBackupDesc": "Cargue un archivo .ucmbkp para restaurar todos los datos",
-    "restoreWarning": "Esto REEMPLAZARÁ TODOS los datos actuales con el contenido de la copia de seguridad. Esta acción no se puede deshacer.",
+    "restoreWarning": "Esto REEMPLAZA todos los datos actuales — incluidos usuarios, claves privadas y secretos almacenados — con el contenido de la copia de seguridad, y es irreversible. Restaure solo una copia que haya creado usted mismo: una copia cuya contraseña controla un atacante puede implantar una cuenta de administrador persistente.",
     "restoring": "Restaurando...",
     "retentionPeriod": "Período de retención (días)",
     "rowCount": "Filas totales",

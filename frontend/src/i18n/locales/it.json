@@ -2116,7 +2116,7 @@
     "restoreBackup": "Ripristina backup",
     "restoreFromBackup": "Ripristina da backup",
     "restoreFromBackupDesc": "Carica un file .ucmbkp per ripristinare tutti i dati",
-    "restoreWarning": "Questo SOSTITUIRÀ TUTTI i dati attuali con il contenuto del backup. Questa azione non può essere annullata.",
+    "restoreWarning": "Questo SOSTITUISCE tutti i dati attuali — inclusi utenti, chiavi private e segreti memorizzati — con il contenuto del backup, ed è irreversibile. Ripristina solo un backup creato da te: un backup la cui password è controllata da un attaccante può impiantare un account amministratore persistente.",
     "restoring": "Ripristino in corso...",
     "retentionPeriod": "Periodo di conservazione (giorni)",
     "rowCount": "Righe totali",

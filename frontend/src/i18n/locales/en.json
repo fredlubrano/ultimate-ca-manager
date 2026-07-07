@@ -2117,7 +2117,7 @@
     "restoreBackup": "Restore Backup",
     "restoreFromBackup": "Restore from Backup",
     "restoreFromBackupDesc": "Upload a .ucmbkp file to restore all data",
-    "restoreWarning": "This will REPLACE ALL current data with the backup contents. This action is irreversible.",
+    "restoreWarning": "This REPLACES all current data — including users, private keys and stored secrets — with the backup contents, and is irreversible. Only restore a backup you created yourself: a backup whose password an attacker controls can implant a persistent admin account.",
     "restoring": "Restoring...",
     "retentionPeriod": "Retention Period (days)",
     "rowCount": "Total Rows",
