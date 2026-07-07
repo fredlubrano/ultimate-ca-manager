@@ -224,6 +224,31 @@ def clear_acme_public_vhost_settings(app):
     _delete_keys()
 
 
+@pytest.fixture
+def set_acme_public_config(app, clear_acme_public_vhost_settings):
+    """Callable fixture: persist acme_public_vhost/port SystemConfig rows.
+
+    Depends on clear_acme_public_vhost_settings so any value set here is
+    removed after the test (shared session-scoped DB).
+    """
+    from models import db, SystemConfig
+
+    def _set(vhost: str = '', port: str = '443'):
+        with app.app_context():
+            for key, value in (
+                ('acme_public_vhost', vhost),
+                ('acme_public_port', port),
+            ):
+                row = SystemConfig.query.filter_by(key=key).first()
+                if not row:
+                    row = SystemConfig(key=key)
+                    db.session.add(row)
+                row.value = value
+            db.session.commit()
+
+    return _set
+
+
 # ============================================================
 # Helpers
 # ============================================================

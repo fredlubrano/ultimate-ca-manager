@@ -16,6 +16,10 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ### Changed
 - **SQLAlchemy 2.0 `Session.get`** — all 353 `Model.query.get()` / `query.get_or_404()` call sites migrated to `db.session.get()` / `db.get_or_404()`, eliminating ~4500 `LegacyAPIWarning` per test run ahead of a future SQLAlchemy major bump.
 
+### Fixed
+- **mTLS certificate import always failed** — `POST /api/v2/mtls/enroll-import` crashed on every valid PEM (undefined variable, then a str stored into the binary `cert_pem` column). The endpoint now imports and enrolls correctly; covered by a regression test.
+- **Public ACME vhost hardening (post-#173 review)** — the local ACME server now accepts the JWS `url` on both the advertised public origin and the inbound request origin (the tolerance moved into `verify_jws` itself, shared with the proxy, so in-flight orders survive an `acme_public_vhost` change on `/acme/*` too); CAA enforcement and `caaIdentities` follow the configured public hostname instead of the inbound `Host`; the vhost is validated as a real FQDN (rejects `..`, leading/trailing hyphens, single labels); non-string vhost values and out-of-band garbage port rows return 400/defaults instead of 500; the public origin is memoized per request (one combined SystemConfig read instead of up to 10 per proxy request); the TLS certificate is picked from a dropdown of key-bearing certificates instead of a raw database id, and clearing it removes the config row; the CA Accounts panel shows the same public directory URLs as the other tabs.
+
 
 ## [2.186] - 2026-07-06
 

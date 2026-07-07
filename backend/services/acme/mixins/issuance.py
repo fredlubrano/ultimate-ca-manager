@@ -78,10 +78,12 @@ class IssuanceMixin:
                     pass
                 
                 if not caa_identifiers:
-                    # Use server hostname as default CAA identity
+                    # Default CAA identity = the public hostname the directory
+                    # advertises (configured acme_public_vhost, else request host)
                     from flask import request as flask_request
+                    from utils.acme_public_url import get_acme_public_host
                     try:
-                        caa_identifiers = [flask_request.host.split(':')[0]]
+                        caa_identifiers = [get_acme_public_host(flask_request)]
                     except Exception:
                         pass
                 

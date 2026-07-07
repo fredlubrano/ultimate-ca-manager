@@ -7,7 +7,7 @@ import {
 import { ToggleSwitch } from '../../components/ui/ToggleSwitch'
 import { HelpCard, Button, Badge, CompactSection, Select, Input } from '../../components'
 import { useClipboard } from '../../hooks'
-import { formatDate, cn } from '../../lib/utils'
+import { formatDate, cn, publicBaseUrl } from '../../lib/utils'
 
 export default function LetsEncryptTab({
   clientOrders,
@@ -54,7 +54,7 @@ export default function LetsEncryptTab({
 
   const proxyAccountId = clientSettings.proxy_acme_account_id ?? null
   const selectedProxyAccount = caAccounts.find(a => a.id === proxyAccountId)
-  const publicProxyBase = (clientSettings.acme_proxy_public_base_url || `${window.location.origin}/acme/proxy`).replace(/\/$/, '')
+  const publicProxyBase = publicBaseUrl(clientSettings.acme_proxy_public_base_url, '/acme/proxy')
   const proxyServerBase = selectedProxyAccount?.proxy_enabled && selectedProxyAccount?.proxy_slug
     ? `${publicProxyBase}/${selectedProxyAccount.proxy_slug}`
     : publicProxyBase

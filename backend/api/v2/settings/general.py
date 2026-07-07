@@ -10,9 +10,16 @@ from services.audit_service import AuditService
 from api.v2.key_recovery import _dual_control_enabled, _dual_control_env
 import json
 import logging
-import re
 
 from . import bp, get_config, set_config
+
+
+def _int_config(key, default):
+    """Read an int SystemConfig value, tolerating empty/garbage stored values."""
+    try:
+        return int(get_config(key, str(default)) or default)
+    except (TypeError, ValueError):
+        return default
 from utils.hsts import hsts_env_locked
 
 logger = logging.getLogger(__name__)
@@ -41,7 +48,7 @@ def get_general_settings():
         'base_url': get_config('base_url', ''),
         # ACME public endpoint (local server + proxy directory URLs behind reverse proxy)
         'acme_public_vhost': get_config('acme_public_vhost', ''),
-        'acme_public_port': int(get_config('acme_public_port', '443')),
+        'acme_public_port': _int_config('acme_public_port', 443),
         'acme_public_tls_cert_id': int(get_config('acme_public_tls_cert_id', '0') or 0) or None,
         'date_format': get_config('date_format', 'short'),
         'show_time': get_config('show_time', 'true') == 'true',
@@ -112,20 +119,22 @@ def update_general_settings():
         data['http_protocol_port'] = str(port)
 
     if 'acme_public_vhost' in data:
-        host = (data.get('acme_public_vhost') or '').strip().lower()
+        raw_vhost = data.get('acme_public_vhost')
+        if raw_vhost is not None and not isinstance(raw_vhost, str):
+            return error_response('acme_public_vhost must be a string', 400)
+        host = (raw_vhost or '').strip().lower()
         if host:
             if host.startswith('*.'):
                 return error_response(
                     'acme_public_vhost must be a concrete hostname (wildcard is TLS SAN only, not an advertised URL)',
                     400,
                 )
-            if (
-                '://' in host
-                or '/' in host
-                or ':' in host
-                or not re.fullmatch(r'[a-z0-9.-]+', host)
-            ):
-                return error_response('acme_public_vhost must be a hostname only', 400)
+            from utils.acme_public_url import is_valid_public_vhost
+            if not is_valid_public_vhost(host):
+                return error_response(
+                    'acme_public_vhost must be a valid FQDN (no scheme, port, or path)',
+                    400,
+                )
         data['acme_public_vhost'] = host
 
     if 'acme_public_port' in data:
@@ -140,7 +149,10 @@ def update_general_settings():
     if 'acme_public_tls_cert_id' in data:
         cert_id_raw = data.get('acme_public_tls_cert_id')
         if cert_id_raw in (None, '', 0, '0'):
-            data['acme_public_tls_cert_id'] = ''
+            # Clearing removes the row entirely (no dead empty-string config)
+            from models import SystemConfig
+            SystemConfig.query.filter_by(key='acme_public_tls_cert_id').delete()
+            data.pop('acme_public_tls_cert_id')
         else:
             try:
                 cert_id = int(cert_id_raw)

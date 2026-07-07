@@ -27,6 +27,7 @@ const EMPTY_FORM = {
  */
 export default function CaAccountsManager({
   accounts = [],
+  proxyPublicBase = '',
   canWrite,
   canDelete,
   onCreate,
@@ -145,7 +146,7 @@ export default function CaAccountsManager({
                     <p className="text-xs text-text-tertiary mt-0.5">{acct.email}</p>
                     {acct.proxy_enabled && acct.proxy_slug && (
                       <p className="text-xs text-accent-primary font-mono mt-1 break-all">
-                        /acme/proxy/{acct.proxy_slug}/directory
+                        {proxyPublicBase || '/acme/proxy'}/{acct.proxy_slug}/directory
                       </p>
                     )}
                     <p className="text-xs text-text-tertiary mt-0.5">

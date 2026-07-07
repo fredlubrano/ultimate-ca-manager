@@ -65,6 +65,43 @@ class TestMTLSAuthRequired:
         r = _post(app.test_client(), '/api/v2/mtls/enroll-import')
         assert r.status_code == 401
 
+    def test_enroll_import_valid_pem_succeeds(self, auth_client):
+        """Regression: enroll-import 500ed with NameError (cert_pem undefined)
+        on every valid non-duplicate PEM."""
+        from datetime import datetime, timedelta, timezone
+        from cryptography import x509
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from cryptography.x509.oid import NameOID
+
+        key = ec.generate_private_key(ec.SECP256R1())
+        subject = x509.Name([
+            x509.NameAttribute(NameOID.COMMON_NAME, 'enroll-import.example.com'),
+        ])
+        now = datetime.now(timezone.utc)
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(subject)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now - timedelta(minutes=5))
+            .not_valid_after(now + timedelta(days=30))
+            .sign(key, hashes.SHA256())
+        )
+        pem = cert.public_bytes(serialization.Encoding.PEM).decode()
+
+        r = _post(auth_client, '/api/v2/mtls/enroll-import',
+                  {'pem': pem, 'name': 'enroll-import-regression'})
+        assert r.status_code in (200, 201), r.get_json()
+        data = r.get_json()['data']
+        assert 'enroll-import.example.com' in data['cert_subject']
+
+        # Shared session-scoped DB: remove the enrollment so later tests that
+        # assume the admin has no mTLS certificate keep passing.
+        r = auth_client.delete(f"/api/v2/mtls/certificates/{data['id']}")
+        assert r.status_code == 200
+
     def test_available_certificates_requires_auth(self, app):
         r = app.test_client().get('/api/v2/mtls/available-certificates')
         assert r.status_code == 401

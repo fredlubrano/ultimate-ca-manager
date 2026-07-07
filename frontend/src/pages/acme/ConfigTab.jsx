@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { publicBaseUrl } from '../../lib/utils'
 import { FloppyDisk, Globe, ArrowsClockwise, Lightning, FileText, PencilSimple } from '@phosphor-icons/react'
 import { ToggleSwitch } from '../../components/ui/ToggleSwitch'
 import { Select, Button, HelpCard, CompactSection, CompactGrid, CompactField, Input, Modal } from '../../components'
@@ -25,7 +26,7 @@ export default function ConfigTab({ acmeSettings, cas, updateSetting, onSaveConf
 
   const tos = acmeSettings.terms_of_service
   const tosExists = tos?.title || tos?.body
-  const acmePublicBase = (acmeSettings.acme_public_base_url || `${window.location.origin}/acme`).replace(/\/$/, '')
+  const acmePublicBase = publicBaseUrl(acmeSettings.acme_public_base_url, '/acme')
 
   // Preview of saved ToS (from props)
   const savedPreview = useMemo(() => renderTosPreview(tos?.body), [tos?.body])

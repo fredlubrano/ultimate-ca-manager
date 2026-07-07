@@ -196,3 +196,11 @@ export function formatSerialNumberHex(serial) {
   return hex.match(/.{2}/g).join(':')
 }
 
+
+/**
+ * Public base URL for ACME endpoints: API-provided value (configured vhost)
+ * or the current origin + fallbackPath, trailing slash stripped.
+ */
+export function publicBaseUrl(configured, fallbackPath) {
+  return (configured || `${window.location.origin}${fallbackPath}`).replace(/\/$/, '')
+}

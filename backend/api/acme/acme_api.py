@@ -15,7 +15,7 @@ from config.settings import Config
 import logging
 import re
 from utils.datetime_utils import utc_now
-from utils.acme_public_url import get_acme_public_origin
+from utils.acme_public_url import get_acme_public_origin, get_acme_public_host, get_acme_expected_urls
 
 logger = logging.getLogger(__name__)
 
@@ -192,8 +192,15 @@ def verify_jws(jws_data: Dict[str, Any], expected_url: str, account_key: Optiona
         protected_json = base64.urlsafe_b64decode(protected_b64).decode('utf-8')
         protected = json.loads(protected_json)
         
-        # Verify URL matches expected
-        if protected.get('url') != expected_url:
+        # Verify URL matches expected (RFC 8555 §6.4). Besides the canonical
+        # URL (public origin), the same path on the inbound request origin is
+        # accepted so in-flight clients survive an acme_public_vhost change —
+        # see get_acme_expected_urls.
+        try:
+            expected_urls = get_acme_expected_urls(request, expected_url)
+        except RuntimeError:
+            expected_urls = [expected_url]  # no request context (unit tests)
+        if protected.get('url') not in expected_urls:
             return False, None, None, f"URL mismatch: expected {expected_url}, got {protected.get('url')}"
         
         # Verify nonce
@@ -400,7 +407,7 @@ def directory():
     directory_data['meta'] = {
         'termsOfService': f'{service.base_url}/acme/terms',
         'website': 'https://github.com/fabriziosalmi/ultimate-ca-manager',
-        'caaIdentities': [request.host],
+        'caaIdentities': [get_acme_public_host(request)],
         'externalAccountRequired': eab_required
     }
     

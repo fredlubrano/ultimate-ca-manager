@@ -595,7 +595,7 @@ def enroll_import_certificate():
         cert_serial=serial,
         cert_subject=subject_dn,
         cert_issuer=issuer_dn,
-        cert_pem=cert_pem,
+        cert_pem=pem_str.encode('utf-8'),  # LargeBinary column
         name=cert_name,
         valid_from=valid_from,
         valid_until=valid_until,

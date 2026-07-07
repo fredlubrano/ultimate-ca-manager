@@ -14,7 +14,7 @@ import {
 import { acmeService, casService, certificatesService } from '../services'
 import { useNotification } from '../contexts'
 import { usePermission } from '../hooks'
-import { formatDate, downloadBlob } from '../lib/utils'
+import { formatDate, downloadBlob, publicBaseUrl } from '../lib/utils'
 import AccountDetailPanel from './acme/AccountDetailPanel'
 import LetsEncryptTab from './acme/LetsEncryptTab'
 import ConfigTab from './acme/ConfigTab'
@@ -1135,6 +1135,7 @@ export default function ACMEPage() {
           <div className="px-4 pb-4">
             <CaAccountsManager
               accounts={caAccounts}
+              proxyPublicBase={publicBaseUrl(clientSettings.acme_proxy_public_base_url, '/acme/proxy')}
               canWrite={canWrite('acme')}
               canDelete={canDelete('acme')}
               onCreate={handleCreateCaAccount}

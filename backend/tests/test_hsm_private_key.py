@@ -189,10 +189,12 @@ class TestLoadHsmPrivateKey:
             ).decode()
             rec = self._make_key_record('RSA-2048', pub_pem)
 
-            with patch('models.db.session.get', return_value=rec), \
+            with patch('models.db.session.get', return_value=rec) as mock_get, \
                  patch('services.hsm.HsmService.get_public_key', return_value=pub_pem):
                 wrapper = load_hsm_private_key(42)
 
+            from models.hsm import HsmKey
+            mock_get.assert_called_once_with(HsmKey, 42)
             assert isinstance(wrapper, HsmRSAPrivateKey)
             assert isinstance(wrapper, rsa.RSAPrivateKey)
 
@@ -208,18 +210,22 @@ class TestLoadHsmPrivateKey:
             ).decode()
             rec = self._make_key_record('EC-P256', pub_pem)
 
-            with patch('models.db.session.get', return_value=rec), \
+            with patch('models.db.session.get', return_value=rec) as mock_get, \
                  patch('services.hsm.HsmService.get_public_key', return_value=pub_pem):
                 wrapper = load_hsm_private_key(42)
 
+            from models.hsm import HsmKey
+            mock_get.assert_called_once_with(HsmKey, 42)
             assert isinstance(wrapper, HsmECPrivateKey)
 
     def test_factory_unknown_key_id(self, app):
         from services.hsm.hsm_private_key import load_hsm_private_key
         with app.app_context():
-            with patch('models.db.session.get', return_value=None):
+            with patch('models.db.session.get', return_value=None) as mock_get:
                 with pytest.raises(ValueError, match='not found'):
                     load_hsm_private_key(999)
+            from models.hsm import HsmKey
+            mock_get.assert_called_once_with(HsmKey, 999)
 
     def test_factory_rejects_symmetric(self, app):
         from services.hsm.hsm_private_key import load_hsm_private_key
