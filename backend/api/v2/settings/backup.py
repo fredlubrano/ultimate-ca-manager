@@ -88,10 +88,12 @@ def create_backup():
 @bp.route('/api/v2/settings/backup/restore', methods=['POST'])
 @require_auth(['admin:system'])
 def restore_backup():
-    """Restore from backup file"""
-    import tempfile
-    import os
+    """Restore from backup file.
 
+    A restore replaces users, private keys and secrets from the archive — only
+    restore backups you produced yourself (see the Backup & Restore wiki page
+    for the trust model).
+    """
     if 'file' not in request.files:
         return error_response('No backup file provided', 400)
 
@@ -100,23 +102,27 @@ def restore_backup():
         return error_response('No file selected', 400)
 
     password = request.form.get('password')
-
-    # Security: Require password for restore
     if not password:
         return error_response('Backup password required', 400)
 
     try:
         from services.backup_service import BackupService
+        from utils.file_validation import validate_upload, BACKUP_EXTENSIONS
 
-        # Save uploaded file temporarily
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.ucmbkp') as tmp:
-            file.save(tmp.name)
-            tmp_path = tmp.name
+        # Read + size-cap the upload as bytes (restore_backup expects bytes, not
+        # a path). Reading in memory also avoids leaving the encrypted backup on
+        # disk in /tmp, which the previous NamedTemporaryFile(delete=False) path
+        # did on every failed attempt.
+        try:
+            backup_bytes, _ = validate_upload(
+                file, BACKUP_EXTENSIONS, max_size=100 * 1024 * 1024
+            )
+        except ValueError as exc:
+            logger.warning(f"Backup upload validation error: {exc}")
+            return error_response('Invalid backup file', 400)
 
         service = BackupService()
-        service.restore_backup(tmp_path, password)
-
-        os.unlink(tmp_path)
+        service.restore_backup(backup_bytes, password)
 
         AuditService.log_action(
             action='system_restore',

@@ -36,6 +36,25 @@ def _enforce_body_limit():
     return None
 
 
+def _read_est_body_text():
+    """Read the EST request body as text, hard-capped at EST_MAX_BODY_BYTES.
+
+    ``_enforce_body_limit`` only inspects Content-Length, which a chunked
+    (Content-Length-less) request omits — so the cap must also be enforced at
+    read time. Reads at most one byte past the cap from the request stream so a
+    malicious unbounded/chunked body cannot be buffered into memory.
+
+    Returns ``(text_or_None, error_response_or_None)``.
+    """
+    raw = request.stream.read(EST_MAX_BODY_BYTES + 1)
+    if len(raw) > EST_MAX_BODY_BYTES:
+        return None, Response('Request body too large', status=413)
+    try:
+        return raw.decode('utf-8'), None
+    except UnicodeDecodeError:
+        return None, Response('Invalid request body encoding', status=400)
+
+
 @bp.before_request
 def _enforce_est_enabled():
     """RFC 7030: when EST is administratively disabled, every endpoint
@@ -179,6 +198,13 @@ def _validate_est_csr(csr):
     if not cn_attrs or not str(cn_attrs[0].value).strip():
         return False, Response('CSR subject must include a non-empty CN', status=400)
 
+    # Key-strength policy — never certify a weak/exotic key (e.g. 512-bit RSA).
+    from utils.key_type import validate_enrollment_public_key
+    key_err = validate_enrollment_public_key(csr.public_key())
+    if key_err:
+        logger.warning("EST: rejecting weak enrollment key: %s", key_err)
+        return False, Response(key_err, status=400)
+
     return True, None
 
 
@@ -246,10 +272,12 @@ def simple_enroll():
         return Response('EST not configured', status=503)
     
     try:
-        # Get CSR from request body (base64 encoded PKCS#10)
+        # Get CSR from request body (base64 encoded PKCS#10), capped read
         content_type = request.content_type or ''
-        csr_data = request.get_data(as_text=True)
-        
+        csr_data, too_big = _read_est_body_text()
+        if too_big is not None:
+            return too_big
+
         if PKCS10_MIME in content_type:
             # Decode base64 CSR
             csr_der = base64.b64decode(csr_data)
@@ -348,8 +376,10 @@ def simple_reenroll():
     # Process enrollment directly (not delegating to simple_enroll which allows Basic auth)
     try:
         content_type = request.content_type or ''
-        csr_data = request.get_data(as_text=True)
-        
+        csr_data, too_big = _read_est_body_text()
+        if too_big is not None:
+            return too_big
+
         from cryptography import x509
         from cryptography.hazmat.backends import default_backend
         
@@ -515,8 +545,10 @@ def server_keygen():
     auth_method = 'mtls' if _trusted_client_cert() else 'basic'
 
     try:
-        csr_data = request.get_data(as_text=True)
-        if not csr_data or len(csr_data) > EST_MAX_BODY_BYTES:
+        csr_data, too_big = _read_est_body_text()
+        if too_big is not None:
+            return too_big
+        if not csr_data:
             return Response('Invalid CSR', status=400)
         
         from cryptography import x509

@@ -110,3 +110,41 @@ def parse_csr_key_type(key_algo_full: str) -> str:
         return normalize_ec_curve(raw)
 
     raise ValueError(f'Unsupported key type: {raw}')
+
+
+# ---------------------------------------------------------------------------
+# Public-key strength policy for protocol enrollment (EST / SCEP)
+# ---------------------------------------------------------------------------
+# EST (RFC 7030 §3.7) and SCEP (RFC 8894) both defer key-strength policy to the
+# local CA. UCM enforces the same floor it applies to UI/API issuance: RSA >=
+# 2048 and NIST P-256/384/521 for EC. Legacy/edge curves and short RSA keys are
+# refused so a weak (e.g. 512-bit) or exotic key never gets a CA signature.
+MIN_RSA_BITS = 2048
+_ALLOWED_EC_CURVES = frozenset({'secp256r1', 'prime256v1', 'secp384r1', 'secp521r1'})
+
+
+def validate_enrollment_public_key(public_key) -> str | None:
+    """Return an error string if *public_key* is too weak to certify, else None.
+
+    Accepts a cryptography public-key object (from a parsed CSR). Ed25519 /
+    Ed448 are accepted (fixed, strong). Unknown key types are rejected — an
+    enrollment endpoint should not sign a key it cannot assess.
+    """
+    from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed25519, ed448
+
+    if isinstance(public_key, rsa.RSAPublicKey):
+        bits = public_key.key_size
+        if bits < MIN_RSA_BITS:
+            return f'RSA key too small ({bits} bits); minimum is {MIN_RSA_BITS}'
+        return None
+
+    if isinstance(public_key, ec.EllipticCurvePublicKey):
+        curve = public_key.curve.name.lower()
+        if curve not in _ALLOWED_EC_CURVES:
+            return f'Unsupported EC curve {public_key.curve.name!r} (allowed: P-256/384/521)'
+        return None
+
+    if isinstance(public_key, (ed25519.Ed25519PublicKey, ed448.Ed448PublicKey)):
+        return None
+
+    return f'Unsupported public key type: {type(public_key).__name__}'

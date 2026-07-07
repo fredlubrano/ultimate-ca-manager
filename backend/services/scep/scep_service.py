@@ -6,6 +6,7 @@ import base64
 import hmac
 import json
 import logging
+import os
 import uuid
 from datetime import timedelta, timezone
 from typing import Optional, Tuple
@@ -44,6 +45,16 @@ from services.scep.response_builder import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _scep_allow_no_challenge() -> bool:
+    """Opt-in to allow SCEP auto-approval without a challenge password.
+
+    Default-deny: only a truthy env override re-enables the RFC 8894 §2.4
+    unauthenticated-authorisation behaviour, for deployments that gate SCEP
+    another way (isolated network, mTLS front).
+    """
+    return os.environ.get('UCM_SCEP_ALLOW_NO_CHALLENGE', '').lower() in ('1', 'true', 'yes')
 
 
 class SCEPService:
@@ -244,6 +255,16 @@ class SCEPService:
 
             logger.debug(f"SCEP: CSR parsed, subject={csr.subject.rfc4514_string()}")
 
+            # ---- 5b. Key-strength policy — refuse weak/exotic enrollment keys ----
+            from utils.key_type import validate_enrollment_public_key
+            key_err = validate_enrollment_public_key(csr.public_key())
+            if key_err:
+                logger.warning("SCEP: rejecting weak enrollment key: %s", key_err)
+                return self._create_error_response(
+                    self.FAIL_BAD_REQUEST, key_err,
+                    transaction_id=transaction_id, recipient_nonce=sender_nonce,
+                ), 200
+
             # ---- 6. Also check challengePassword in CSR attributes (scepclient) ----
             if not challenge_pwd:
                 try:
@@ -273,6 +294,32 @@ class SCEPService:
                         self.FAIL_BAD_MESSAGE_CHECK, "Invalid challenge password",
                         transaction_id=transaction_id, recipient_nonce=sender_nonce,
                     ), 200
+
+            # ---- 7b. Fail closed: no challenge + auto-approve = anonymous cert ----
+            # RFC 8894 §2.4 permits omitting the challengePassword, but then the
+            # request "allows for unauthenticated authorisation" and the CA
+            # should place it in manual approval mode or reject it. An initial
+            # PKCSReq is signed by an ephemeral self-signed key, so with no
+            # challenge configured AND auto-approve on, ANY anonymous client on
+            # the public /pkiclient.exe endpoint would receive a CA-signed cert.
+            # Refuse auto-issuance in that case (manual queue stays allowed, and
+            # renewals are authenticated by the existing cert via _validate_renewal).
+            # UCM_SCEP_ALLOW_NO_CHALLENGE=1 opts back in for a cloistered network.
+            if (
+                message_type != self.MSG_TYPE_RENEWAL_REQ
+                and self.auto_approve
+                and not self.challenge_password
+                and not _scep_allow_no_challenge()
+            ):
+                logger.warning(
+                    "SCEP: refusing auto-approval with no challengePassword "
+                    "configured (set a SCEP challenge or UCM_SCEP_ALLOW_NO_CHALLENGE=1)"
+                )
+                return self._create_error_response(
+                    self.FAIL_BAD_MESSAGE_CHECK,
+                    "Enrollment requires a challenge password",
+                    transaction_id=transaction_id, recipient_nonce=sender_nonce,
+                ), 200
 
             # ---- 8. Renewal linkage validation (RFC 8894 §2.3) ----
             if message_type == self.MSG_TYPE_RENEWAL_REQ:

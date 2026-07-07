@@ -157,3 +157,24 @@ class TestCsrExtensionPolicy:
         cert = self._issue('intermediate_ca')
         bc = cert.extensions.get_extension_for_class(x509.BasicConstraints).value
         assert bc.ca is True
+
+
+class TestScepChallengeGuard:
+    """RFC 8894 §2.4: no challengePassword + auto-approve must not auto-issue.
+
+    The guard in _process_pkcs_req combines message_type != RENEWAL,
+    self.auto_approve and not self.challenge_password with the env opt-in
+    helper below; the default-deny opt-in is the load-bearing decision."""
+
+    def test_opt_in_defaults_to_deny(self, monkeypatch):
+        from services.scep import scep_service as mod
+        monkeypatch.delenv('UCM_SCEP_ALLOW_NO_CHALLENGE', raising=False)
+        assert mod._scep_allow_no_challenge() is False
+
+    def test_opt_in_env_allows_no_challenge(self, monkeypatch):
+        from services.scep import scep_service as mod
+        for val in ('1', 'true', 'YES'):
+            monkeypatch.setenv('UCM_SCEP_ALLOW_NO_CHALLENGE', val)
+            assert mod._scep_allow_no_challenge() is True
+        monkeypatch.setenv('UCM_SCEP_ALLOW_NO_CHALLENGE', 'off')
+        assert mod._scep_allow_no_challenge() is False

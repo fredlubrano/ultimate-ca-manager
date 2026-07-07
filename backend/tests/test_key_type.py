@@ -55,3 +55,38 @@ class TestParseIssueKeyType:
 
     def test_combined_ec_label(self):
         assert parse_issue_key_type('EC P-256', None) == 'prime256v1'
+
+
+class TestEnrollmentKeyStrength:
+    """Key-strength floor shared by EST and SCEP enrollment."""
+
+    def test_rejects_short_rsa(self):
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from utils.key_type import validate_enrollment_public_key
+        key = rsa.generate_private_key(65537, 1024)
+        err = validate_enrollment_public_key(key.public_key())
+        assert err and 'too small' in err
+
+    def test_accepts_rsa_2048(self):
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from utils.key_type import validate_enrollment_public_key
+        key = rsa.generate_private_key(65537, 2048)
+        assert validate_enrollment_public_key(key.public_key()) is None
+
+    def test_accepts_p256(self):
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from utils.key_type import validate_enrollment_public_key
+        key = ec.generate_private_key(ec.SECP256R1())
+        assert validate_enrollment_public_key(key.public_key()) is None
+
+    def test_rejects_exotic_curve(self):
+        from cryptography.hazmat.primitives.asymmetric import ec
+        from utils.key_type import validate_enrollment_public_key
+        key = ec.generate_private_key(ec.SECP192R1())
+        err = validate_enrollment_public_key(key.public_key())
+        assert err and 'curve' in err.lower()
+
+    def test_accepts_ed25519(self):
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        from utils.key_type import validate_enrollment_public_key
+        assert validate_enrollment_public_key(ed25519.Ed25519PrivateKey.generate().public_key()) is None
