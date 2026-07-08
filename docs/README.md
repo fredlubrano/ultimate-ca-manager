@@ -31,6 +31,10 @@ Technical documentation for Ultimate Certificate Manager.
 - **[testing/ACME-PROXY-MULTI-CA.md](./testing/ACME-PROXY-MULTI-CA.md)** — Multi-CA proxy endpoints
 - **[testing/ACME-DNS-PROPAGATION.md](./testing/ACME-DNS-PROPAGATION.md)** — DNS-01 propagation checks
 
+## Proposals
+
+- **[proposals/ACME-PROXY-HTTP01-CLIENT-DNS01-UPSTREAM.md](./proposals/ACME-PROXY-HTTP01-CLIENT-DNS01-UPSTREAM.md)** — Draft: HTTP-01 client + DNS-01 upstream in the ACME proxy
+
 ## Architecture
 
 | Component | Stack |
