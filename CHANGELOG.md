@@ -8,7 +8,7 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ---
 
 
-## [Unreleased]
+## [2.188] - 2026-07-08
 
 ### Security
 - **DNS provider credentials encrypted at rest (GHSA-38cv-3c4g-w55w)** — DNS-01 provider API keys/tokens (Cloudflare, Route53, …) were stored as plaintext JSON in `dns_providers.credentials` despite the column being labelled encrypted, so anyone with database read access (or a raw export of the field) obtained domain-control credentials. The field is now encrypted at rest via a model property (utils.encryption Fernet, mirroring the EAB HMAC key), read paths transparently decrypt (legacy plaintext rows still read), and migration `052` encrypts any pre-existing rows. Backup export/restore round-trips the decrypted value so cross-machine restore keeps working; regression tested (round-trip, at-rest ciphertext, constructor/restore path, migration idempotency). Reported externally by Ralph.
