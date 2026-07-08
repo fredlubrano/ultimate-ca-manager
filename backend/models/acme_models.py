@@ -268,16 +268,40 @@ class DnsProvider(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     provider_type = db.Column(db.String(50), nullable=False)  # ovh, cloudflare, hetzner, manual, etc.
-    credentials = db.Column(db.Text)  # Encrypted JSON with API keys
+    # Encrypted-at-rest JSON with the provider API keys/tokens (domain-control
+    # credentials). Stored via the ``credentials`` property below, which mirrors
+    # the EAB HMAC key pattern (utils.encryption Fernet). DB column name is kept
+    # as ``credentials`` so no schema migration is needed; migration 052 encrypts
+    # any pre-existing plaintext rows.
+    _credentials = db.Column('credentials', db.Text)
     zones = db.Column(db.Text)  # JSON array of managed zones/domains
     is_default = db.Column(db.Boolean, default=False)
     enabled = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
-    
+
     # Relationships
     client_orders = db.relationship('AcmeClientOrder', back_populates='dns_provider', lazy='dynamic')
-    
+
+    @property
+    def credentials(self):
+        """Decrypted JSON credentials string (transparently reads legacy plaintext)."""
+        if not self._credentials:
+            return self._credentials
+        try:
+            from utils.encryption import decrypt_if_needed
+            return decrypt_if_needed(self._credentials)
+        except Exception:
+            return self._credentials
+
+    @credentials.setter
+    def credentials(self, value):
+        if value:
+            from utils.encryption import encrypt_if_needed
+            self._credentials = encrypt_if_needed(value)
+        else:
+            self._credentials = None
+
     @property
     def zones_list(self):
         """Parse zones JSON to list"""
