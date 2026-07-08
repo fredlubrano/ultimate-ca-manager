@@ -8,6 +8,13 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ---
 
 
+## [Unreleased]
+
+### Security
+- **DNS provider credentials encrypted at rest (GHSA-38cv-3c4g-w55w)** — DNS-01 provider API keys/tokens (Cloudflare, Route53, …) were stored as plaintext JSON in `dns_providers.credentials` despite the column being labelled encrypted, so anyone with database read access (or a raw export of the field) obtained domain-control credentials. The field is now encrypted at rest via a model property (utils.encryption Fernet, mirroring the EAB HMAC key), read paths transparently decrypt (legacy plaintext rows still read), and migration `052` encrypts any pre-existing rows. Backup export/restore round-trips the decrypted value so cross-machine restore keeps working; regression tested (round-trip, at-rest ciphertext, constructor/restore path, migration idempotency). Reported externally by Ralph.
+- **Dev-dependency advisories** — bumped transitive build/lint tooling out of vulnerable ranges via npm overrides: `js-yaml` → 4.3.0 (GHSA-h67p-54hq-rp68, quadratic-complexity DoS in merge-key handling; pulled in by eslint) and `@babel/core` → 7.29.7 (GHSA-4x5r-pxfx-6jf8, arbitrary file read via `sourceMappingURL`; pulled in by @vitejs/plugin-react). Both are build-time only and never shipped in the runtime bundle.
+
+
 ## [2.187] - 2026-07-08
 
 ### Added
@@ -17,7 +24,6 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 - **SQLAlchemy 2.0 `Session.get`** — all 353 `Model.query.get()` / `query.get_or_404()` call sites migrated to `db.session.get()` / `db.get_or_404()`, eliminating ~4500 `LegacyAPIWarning` per test run ahead of a future SQLAlchemy major bump.
 
 ### Security
-- **DNS provider credentials encrypted at rest (GHSA-38cv-3c4g-w55w)** — DNS-01 provider API keys/tokens (Cloudflare, Route53, …) were stored as plaintext JSON in `dns_providers.credentials` despite the column being labelled encrypted, so anyone with database read access (or a raw export of the field) obtained domain-control credentials. The field is now encrypted at rest via a model property (utils.encryption Fernet, mirroring the EAB HMAC key), read paths transparently decrypt (legacy plaintext rows still read), and migration `052` encrypts any pre-existing rows. Backup export/restore round-trips the decrypted value so cross-machine restore keeps working; regression tested (round-trip, at-rest ciphertext, constructor/restore path, migration idempotency). Reported externally by Ralph.
 - **CSR extension policy on certificate issuance** — the shared CSR signer copied every requested extension into the issued certificate verbatim, so a crafted CSR carrying `BasicConstraints CA:true` (and `keyCertSign`) submitted through EST, SCEP or ACME enrollment could obtain a working subordinate CA — a trust escalation from an enrollment endpoint. Leaf certificate types now force `BasicConstraints(ca=False)` and strip the CA-only key-usage bits; only the explicit intermediate-CA signing flow may assert CA powers. Regression tested.
 - **SCEP unauthenticated auto-enrollment when no challenge is set** — per RFC 8894 §2.4 an omitted `challengePassword` allows unauthenticated authorisation, so with auto-approve enabled and no challenge configured any anonymous client on the public SCEP endpoint received a CA-signed certificate. Initial `PKCSReq` auto-issuance is now refused unless a challenge is configured (manual-approval mode and renewals are unaffected); `UCM_SCEP_ALLOW_NO_CHALLENGE=1` opts back in for isolated deployments.
 - **Key-strength floor on EST and SCEP enrollment** — both protocols now reject CSRs whose public key is below policy (RSA < 2048, non-NIST EC curves) instead of signing weak/exotic keys, matching the UI/API issuance floor (EST RFC 7030 §3.7 and SCEP defer key policy to the local CA).
