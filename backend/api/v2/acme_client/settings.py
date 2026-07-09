@@ -13,6 +13,7 @@ from utils.db_transaction import safe_commit
 from utils.ssrf_protection import validate_url_not_cloud_metadata
 from utils.acme_public_url import get_acme_public_base, get_acme_proxy_public_base
 from models import db, SystemConfig
+from services.acme.acme_debug import clear_acme_debug_cache
 from services.audit_service import AuditService
 
 logger = logging.getLogger(__name__)
@@ -95,6 +96,7 @@ def get_settings():
         proxy_eab_kid = proxy_eab_kid_cfg.value if proxy_eab_kid_cfg else None
         proxy_eab_hmac_set = bool(proxy_eab_hmac_cfg and proxy_eab_hmac_cfg.value)
     dns_timeout_cfg = SystemConfig.query.filter_by(key='acme.client.dns_propagation_timeout').first()
+    debug_logging_cfg = SystemConfig.query.filter_by(key='acme.client.debug_logging').first()
     try:
         dns_timeout = int(dns_timeout_cfg.value) if dns_timeout_cfg else 120
     except (ValueError, TypeError):
@@ -106,6 +108,7 @@ def get_settings():
         'renewal_enabled': renewal_enabled.value == 'true' if renewal_enabled else True,
         'renewal_days': int(renewal_days.value) if renewal_days else 30,
         'dns_propagation_timeout': dns_timeout,
+        'debug_logging': _coerce_bool(debug_logging_cfg.value if debug_logging_cfg else None, False),
         'has_staging_account': bool(staging_account and staging_account.is_registered()),
         'has_production_account': bool(production_account and production_account.is_registered()),
         'proxy_enabled': proxy_enabled_cfg.value == 'true' if proxy_enabled_cfg else False,
@@ -189,6 +192,19 @@ def update_settings():
         _set_config('acme.client.dns_propagation_timeout', str(dns_to),
                     'Seconds to self-check DNS-01 TXT propagation before submitting to the CA')
         updates.append('dns_propagation_timeout')
+
+    if 'debug_logging' in data:
+        try:
+            debug_logging = _coerce_bool(data.get('debug_logging'), False, strict=True)
+        except ValueError:
+            return error_response('debug_logging must be a boolean', 400)
+        _set_config(
+            'acme.client.debug_logging',
+            'true' if debug_logging else 'false',
+            'Emit verbose ACME/DNS diagnostic logs at INFO level for troubleshooting',
+        )
+        clear_acme_debug_cache()
+        updates.append('debug_logging')
 
     if 'proxy_enabled' in data:
         _set_config('acme.proxy_enabled',

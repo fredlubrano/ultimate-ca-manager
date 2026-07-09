@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import Optional
 from utils.datetime_utils import utc_now
 from services.acme.dns_selfcheck import dns_propagation_timeout, wait_for_challenges
+from services.acme.acme_debug import acme_log
 
 logger = logging.getLogger(__name__)
 
@@ -188,6 +189,11 @@ def renew_certificate(order) -> tuple:
 
         # Wait for DNS propagation using active self-check.
         timeout = dns_propagation_timeout('acme.client.dns_propagation_timeout')
+        acme_log(
+            logger,
+            'Renewal DNS propagation wait: timeout=%ss, domains=%s',
+            timeout, ', '.join(sorted(challenges)),
+        )
         if timeout <= 0:
             logger.info("DNS propagation pre-check skipped (timeout=0)")
             check = {'ok': True, 'missing': [], 'waited': 0}

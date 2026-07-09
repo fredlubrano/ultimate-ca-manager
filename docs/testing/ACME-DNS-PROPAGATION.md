@@ -33,6 +33,7 @@ on such a resolver.
 | Key | Purpose |
 |-----|---------|
 | `acme.client.dns_propagation_timeout` | Seconds to poll before auto DNS submits to the CA. `0` = skip the propagation wait entirely. Default `120`. |
+| `acme.client.debug_logging` | When `true`, DNS poll diagnostics (pending TXT, poll ticks, wait banners) log at **INFO** instead of DEBUG. Memoized per app context. |
 | `acme.dns01_nameservers` | Optional comma-separated resolver IPs used **first** for propagation checks (and DNS-01 challenge cleanup). |
 
 ### `dns_propagation_timeout` behavior
@@ -96,4 +97,5 @@ DEBUG DNS public resolver 9.9.9.9 returned no matching TXT for _acme-challenge.e
 - A `DEBUG` line per failing resolver shows the exception type
   (`NXDOMAIN` / `Timeout` / `NoAnswer` / `ConnectionError` / …) so a flaky
   resolver is distinguishable from a genuine propagation gap. Enable DEBUG on
-  the `utils.dns_txt_lookup` logger to see them.
+  the `utils.dns_txt_lookup` logger to see them, or turn on **Verbose ACME/DNS
+  logs** in **ACME → Let's Encrypt** to promote poll diagnostics to INFO.
