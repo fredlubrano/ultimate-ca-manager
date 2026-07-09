@@ -3,10 +3,8 @@ Shared DNS-01 propagation self-check helpers for ACME flows.
 """
 import logging
 import time
-from typing import Dict
 
 from models import SystemConfig
-from services.acme.acme_debug import acme_log
 from utils.dns_txt_lookup import log_public_resolver_status, txt_record_present
 
 logger = logging.getLogger(__name__)
@@ -26,6 +24,11 @@ def dns_propagation_timeout(config_key: str = 'acme.client.dns_propagation_timeo
     return DNS_SELFCHECK_DEFAULT_TIMEOUT
 
 
+def challenge_txt_name(domain: str, challenge: dict) -> str:
+    """TXT owner name for a dns-01 challenge dict (renewal rows may omit dns_txt_name)."""
+    return challenge.get('dns_txt_name') or f"_acme-challenge.{domain.lstrip('*.')}"
+
+
 def wait_for_challenges(challenges: dict, timeout: int) -> dict:
     """
     Poll DNS until every dns-01 TXT record is visible, or timeout.
@@ -42,14 +45,13 @@ def wait_for_challenges(challenges: dict, timeout: int) -> dict:
     while pending:
         for domain in list(pending):
             c = pending[domain]
-            txt_name = c['dns_txt_name']
+            txt_name = challenge_txt_name(domain, c)
             txt_value = c['dns_txt_value']
             if txt_record_present(txt_name, txt_value):
                 logger.info('DNS TXT confirmed for %s (%s)', domain, txt_name)
                 del pending[domain]
             else:
-                acme_log(
-                    logger,
+                logger.debug(
                     'DNS TXT still pending for %s (%s) after %ss',
                     domain, txt_name, waited,
                 )
@@ -58,11 +60,11 @@ def wait_for_challenges(challenges: dict, timeout: int) -> dict:
             break
         time.sleep(DNS_SELFCHECK_INTERVAL)
         waited += DNS_SELFCHECK_INTERVAL
-        acme_log(
-            logger,
-            'DNS propagation poll tick: waited=%ss, remaining=%s',
-            waited, ', '.join(sorted(pending)) if pending else 'none',
-        )
+        if pending:
+            logger.debug(
+                'DNS propagation poll tick: waited=%ss, remaining=%s',
+                waited, ', '.join(sorted(pending)),
+            )
     if pending:
         logger.warning(
             'DNS propagation poll finished without all TXT records: waited=%ss, missing=%s',

@@ -23,7 +23,6 @@ from services.acme.acme_proxy_account import (
     legacy_upstream_directory_url,
 )
 from services.acme.dns_selfcheck import dns_propagation_timeout, wait_for_txt
-from services.acme.acme_debug import acme_log
 
 logger = logging.getLogger(__name__)
 
@@ -757,11 +756,6 @@ class AcmeProxyService:
 
                 # Active DNS self-check instead of fixed sleep.
                 timeout = dns_propagation_timeout('acme.client.dns_propagation_timeout')
-                acme_log(
-                    logger,
-                    '[ACME Proxy BG] DNS propagation wait for %s: timeout=%ss, record=%s',
-                    domain, timeout, full_record_name,
-                )
                 if timeout <= 0:
                     logger.info("[ACME Proxy BG] DNS propagation wait skipped (timeout=0)")
                     check = {'ok': True, 'missing': [], 'waited': 0}
