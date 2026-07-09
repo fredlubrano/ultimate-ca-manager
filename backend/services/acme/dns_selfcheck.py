@@ -5,6 +5,7 @@ import logging
 import time
 
 from models import SystemConfig
+from utils.acme_debug import acme_log
 from utils.dns_txt_lookup import log_public_resolver_status, txt_record_present
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,8 @@ def wait_for_challenges(challenges: dict, timeout: int) -> dict:
                 logger.info('DNS TXT confirmed for %s (%s)', domain, txt_name)
                 del pending[domain]
             else:
-                logger.debug(
+                acme_log(
+                    logger,
                     'DNS TXT still pending for %s (%s) after %ss',
                     domain, txt_name, waited,
                 )
@@ -61,7 +63,8 @@ def wait_for_challenges(challenges: dict, timeout: int) -> dict:
         time.sleep(DNS_SELFCHECK_INTERVAL)
         waited += DNS_SELFCHECK_INTERVAL
         if pending:
-            logger.debug(
+            acme_log(
+                logger,
                 'DNS propagation poll tick: waited=%ss, remaining=%s',
                 waited, ', '.join(sorted(pending)),
             )

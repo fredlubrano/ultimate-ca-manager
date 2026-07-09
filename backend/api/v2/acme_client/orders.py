@@ -27,6 +27,7 @@ from services.acme.dns_selfcheck import (
     dns_propagation_timeout as _shared_dns_propagation_timeout,
     wait_for_challenges as _shared_wait_for_challenges,
 )
+from utils.acme_debug import acme_log
 from utils.dns_txt_lookup import txt_record_present
 
 logger = logging.getLogger(__name__)
@@ -620,6 +621,11 @@ def _auto_poll_and_finalize(client, order) -> dict:
         #    the CA is told to validate right away.
         timeout = _dns_propagation_timeout()
         result['dns_propagation_wait'] = True
+        acme_log(
+            logger,
+            'Auto-poll DNS propagation for order %s: timeout=%ss, domains=%s',
+            order.id, timeout, ', '.join(sorted(challenges)),
+        )
         if timeout <= 0:
             logger.info('DNS propagation pre-check skipped (timeout=0)')
             check = {'ok': True, 'missing': [], 'waited': 0}
