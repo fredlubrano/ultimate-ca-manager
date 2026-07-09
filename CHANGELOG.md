@@ -10,6 +10,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Fixed
+- **AD CS Kerberos authentication crashed on a missing unused dependency** — the kerberos auth mode built the certsrv client in NTLM mode before attaching the Kerberos handler, which made the certsrv library import `requests_ntlm` even though it was never used. Every Test Connection / sign in kerberos mode failed with "No module named 'requests_ntlm'". The client is now built with a neutral placeholder auth and the Kerberos handler attached directly; all three auth modes (basic, certificate/mTLS, kerberos) smoke-tested end-to-end against a Windows Server 2025 AD CS.
+
 
 ## [2.188] - 2026-07-08
 
