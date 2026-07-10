@@ -91,6 +91,39 @@ class TestScepOfflineGuard:
             with pytest.raises(ValueError, match='offline'):
                 svc._auto_approve_request(_Req(), csr)
 
+    def test_auto_approve_issues_for_online_ca(self, app, create_ca):
+        """Regression: _auto_approve_request clamps validity to the CA expiry by
+        comparing utc_now() (naive-UTC) with ca_cert.not_valid_after_utc (aware).
+        The mismatch raised 'can't compare offset-naive and offset-aware
+        datetimes', which the SCEP handler masked as a generic failInfo=2 —
+        breaking every auto-approved enrollment. Assert issuance succeeds."""
+        ca = create_ca(cn='SCEP Online CA')
+        with app.app_context():
+            from cryptography import x509
+            from cryptography.hazmat.primitives import hashes
+            from cryptography.hazmat.primitives.asymmetric import rsa
+            from cryptography.x509.oid import NameOID
+            from models import Certificate
+            from services.scep.scep_service import SCEPService
+
+            ca_obj = db.session.get(CA, ca['id'])
+            svc = SCEPService(ca_refid=ca_obj.refid, auto_approve=True)
+
+            key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+            csr = (
+                x509.CertificateSigningRequestBuilder()
+                .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'online.example.com')]))
+                .sign(key, hashes.SHA256())
+            )
+
+            class _Req:
+                id = 2
+
+            refid = svc._auto_approve_request(_Req(), csr)
+            assert refid, 'expected a certificate refid'
+            issued = Certificate.query.filter_by(refid=refid).first()
+            assert issued is not None and issued.caref == ca_obj.refid
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

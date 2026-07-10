@@ -545,7 +545,10 @@ class SCEPService:
             # attacker who recovers an old/expired key MUST NOT be able to
             # bootstrap a new cert via renewal. RFC 8894 §3.3.2 implies the
             # renewal is performed by a currently-valid certificate.
-            now = utc_now()
+            # nb/na below are timezone-aware; utc_now() is naive-UTC (project
+            # convention), so make now aware too or the comparison raises
+            # "can't compare offset-naive and offset-aware datetimes".
+            now = utc_now().replace(tzinfo=timezone.utc)
             try:
                 nb = signer_cert.not_valid_before_utc
                 na = signer_cert.not_valid_after_utc
@@ -636,7 +639,10 @@ class SCEPService:
         # validator the moment the CA expires.
         not_before = utc_now()
         requested_not_after = not_before + timedelta(days=validity_days)
-        ca_not_after = self.ca_cert.not_valid_after_utc
+        # not_valid_after_utc is timezone-aware; utc_now() is naive-UTC (project
+        # convention). Drop the tzinfo so the comparisons below stay naive-vs-naive
+        # — mixing the two raises "can't compare offset-naive and offset-aware".
+        ca_not_after = self.ca_cert.not_valid_after_utc.replace(tzinfo=None)
         # Leave a small safety margin so we don't issue a cert valid up to the
         # exact second of CA expiry.
         max_not_after = ca_not_after - timedelta(minutes=1)
