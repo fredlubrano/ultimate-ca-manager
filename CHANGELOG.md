@@ -10,6 +10,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Fixed
+- **API-key creation rejected valid permission resources** — the permission validator in `POST /api/v2/account/apikeys` used a hardcoded resource list that had drifted from the scopes actually enforced by the API: keys could not be scoped to `csrs`, `user_certificates`, `templates`, `truststore`, `est`, `hsm`, `ssh`, `policies`, `approvals`, `key_recovery`, `audit`, `groups` or `sso` (e.g. `write:csrs`, required to sign a CSR, was rejected — leaving CSR signing reachable only with a full-access `*` key). The valid set is now derived from `ROLE_PERMISSIONS` plus the admin-only resources (`users`, `system`, `sso`), with a regression test that scans every `@require_auth` scope so the validator can no longer drift. Contributed by @heidrickla (#178).
+
 
 ## [2.189] - 2026-07-09
 

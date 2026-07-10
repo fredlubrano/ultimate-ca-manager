@@ -63,10 +63,7 @@ def create_api_key():
     # Validate permissions format — users cannot grant permissions they don't have
     user_perms = get_role_permissions(g.current_user.role)
     valid_categories = ['read', 'write', 'delete', 'admin']
-    # Derived from ROLE_PERMISSIONS (single source of truth) so this validator can't drift
-    # from the resources @require_auth actually enforces — the previous hardcoded list was
-    # missing csrs/user_certificates/templates/truststore/est/hsm/ssh/policies/approvals/
-    # key_recovery/audit/groups and listed two non-resources (users/system).
+    # Canonical resource set (ROLE_PERMISSIONS + admin-only resources) — see auth/permissions.py
     valid_resources = VALID_RESOURCES
 
     for perm in data['permissions']:
