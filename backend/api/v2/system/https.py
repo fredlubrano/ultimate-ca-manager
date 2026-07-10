@@ -13,7 +13,6 @@ from pathlib import Path
 import os
 import shutil
 import base64
-import pwd
 from datetime import datetime, timedelta, timezone
 import logging
 from utils.datetime_utils import utc_now, utc_isoformat
@@ -151,12 +150,13 @@ def regenerate_https_cert():
         ))
         os.chmod(key_path, 0o600)
 
-        # Set ownership
+        # Set ownership to the ucm service user (POSIX only; skipped elsewhere / if absent)
         try:
+            import pwd  # POSIX-only; import lazily so this module loads on non-POSIX too
             ucm_user = pwd.getpwnam('ucm')
             os.chown(cert_path, ucm_user.pw_uid, ucm_user.pw_gid)
             os.chown(key_path, ucm_user.pw_uid, ucm_user.pw_gid)
-        except KeyError:
+        except (KeyError, ImportError):
             pass
 
         current_app.logger.info(f"Regenerated HTTPS certificate for {common_name}")
@@ -257,13 +257,14 @@ def apply_https_cert():
         key_path.write_text(key_data)
         os.chmod(key_path, 0o600)
 
-        # Set ownership to ucm user (if exists)
+        # Set ownership to ucm user (POSIX only; skipped on non-POSIX or if user absent)
         try:
+            import pwd  # POSIX-only; import lazily so this module loads on non-POSIX too
             ucm_user = pwd.getpwnam('ucm')
             os.chown(cert_path, ucm_user.pw_uid, ucm_user.pw_gid)
             os.chown(key_path, ucm_user.pw_uid, ucm_user.pw_gid)
-        except KeyError:
-            pass  # ucm user doesn't exist, skip chown
+        except (KeyError, ImportError):
+            pass  # ucm user doesn't exist (or non-POSIX), skip chown
 
         current_app.logger.info(f"Applied certificate {cert.refid} as HTTPS cert")
 
