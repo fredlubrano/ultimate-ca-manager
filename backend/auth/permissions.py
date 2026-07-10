@@ -53,6 +53,18 @@ ROLE_PERMISSIONS = {
 }
 
 
+# Canonical set of resources referenced anywhere in ROLE_PERMISSIONS. Derived from this
+# single source of truth so that permission validators (e.g. API-key creation) stay in
+# sync with the `action:resource` scopes actually enforced by @require_auth and can't
+# silently drift from them.
+VALID_RESOURCES = sorted({
+    perm.split(':', 1)[1]
+    for perms in ROLE_PERMISSIONS.values()
+    for perm in perms
+    if ':' in perm
+})
+
+
 def get_role_permissions(role: str) -> list:
     """Get permissions for a role"""
     return ROLE_PERMISSIONS.get(role, [])
