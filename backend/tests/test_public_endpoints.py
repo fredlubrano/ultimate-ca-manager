@@ -157,14 +157,14 @@ class TestPreflightDiagnostics:
         with app.app_context():
             from utils.public_endpoints import run_preflight_checks
 
-            monkeypatch.setenv('UCM_CORPORATE_DNS_SERVERS', '172.31.10.190')
+            monkeypatch.setenv('UCM_CORPORATE_DNS_SERVERS', '10.0.0.53')
             monkeypatch.setattr(
                 'utils.public_endpoints._resolve_host_ips',
                 lambda host: ([], 'Name or service not known'),
             )
             monkeypatch.setattr(
                 'utils.public_endpoints._resolve_host_ips_internal',
-                lambda host: (['172.31.10.8'], None),
+                lambda host: (['10.0.0.8'], None),
             )
             monkeypatch.setattr(
                 'utils.public_endpoints._resolve_host_ips_public',
@@ -175,7 +175,7 @@ class TestPreflightDiagnostics:
             result = run_preflight_checks()
             admin = next(c for c in result['checks'] if c['label'] == 'admin')
             assert result['internal_dns_configured'] is True
-            assert result['corporate_dns_servers'] == ['172.31.10.190']
+            assert result['corporate_dns_servers'] == ['10.0.0.53']
             assert admin['dns_local'] == 'fail'
             assert admin['dns_internal'] == 'warn'
             assert admin['dns_public'] == 'fail'
@@ -201,7 +201,7 @@ class TestPreflightDiagnostics:
                     import dns.resolver
 
                     if rtype == 'A':
-                        return [FakeAnswer('172.31.10.8')]
+                        return [FakeAnswer('10.0.0.8')]
                     raise dns.resolver.NXDOMAIN()
 
             import dns.resolver as dns_resolver_mod
@@ -216,13 +216,13 @@ class TestPreflightDiagnostics:
             try:
                 ips, err = pe._resolve_host_ips_via_nameservers(
                     'admin.ucm.example.com',
-                    ['172.31.10.190'],
+                    ['10.0.0.53'],
                     nxdomain_detail='NXDOMAIN (internal DNS)',
                     empty_detail='no internal DNS records',
                 )
             finally:
                 dns.resolver.Resolver = orig
-            assert ips == ['172.31.10.8']
+            assert ips == ['10.0.0.8']
             assert err is None
 
     def test_preflight_public_dns_ok_with_local_loopback(self, app, monkeypatch):
@@ -256,7 +256,7 @@ class TestPreflightDiagnostics:
 
             assert _select_preflight_connect_ip(['169.254.169.254']) is None
             assert _select_preflight_connect_ip(['127.0.0.1']) is None
-            assert _select_preflight_connect_ip(['172.31.10.8']) == '172.31.10.8'
+            assert _select_preflight_connect_ip(['10.0.0.8']) == '10.0.0.8'
 
     def test_preflight_skips_probe_to_metadata_ip(self, app, monkeypatch):
         with app.app_context():
@@ -335,7 +335,7 @@ class TestMiddlewareRedirect:
                 'Host': 'acme.ucm.example.com:8443',
                 'X-Forwarded-Host': 'admin.ucm.example.com',
             },
-            environ_overrides={'REMOTE_ADDR': '172.31.10.50'},
+            environ_overrides={'REMOTE_ADDR': '10.0.0.50'},
         )
         assert resp.status_code == 403
         app.config['TRUSTED_PROXY_HOPS'] = 0

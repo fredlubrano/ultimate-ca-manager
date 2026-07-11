@@ -262,7 +262,7 @@ def _resolve_host_ips_via_nameservers(
 
 
 def _resolve_host_ips_internal(hostname: str) -> tuple[list[str], Optional[str]]:
-    """Resolve via corporate DNS (e.g. 172.31.10.190). Skipped when not configured."""
+    """Resolve via corporate DNS (e.g. 10.0.0.53). Skipped when not configured."""
     nameservers = _get_internal_dns_nameservers()
     if not nameservers:
         return [], None

@@ -37,14 +37,14 @@ python3 -m pytest tests/test_public_endpoints.py tests/test_acme_public_url.py -
 | Badge | Source | Purpose |
 |-------|--------|---------|
 | **DNS (local)** | `getaddrinfo` → `/etc/hosts` + `resolv.conf` | What the UCM process uses at runtime |
-| **DNS (interne)** | `UCM_CORPORATE_DNS_SERVERS` or `acme.dns01_nameservers` | Split-horizon / corporate resolver (e.g. `172.31.10.190`) |
+| **DNS (interne)** | `UCM_CORPORATE_DNS_SERVERS` or `acme.dns01_nameservers` | Split-horizon / corporate resolver (e.g. `10.0.0.53`) |
 | **DNS (public)** | 9.9.9.9, 8.8.8.8, 1.1.1.1 | Internet clients without VPN |
 
 Configure corporate DNS in `/etc/ucm/ucm.env` (independent of `resolv.conf`):
 
 ```bash
 # Comma-separated IPs — used for preflight « DNS (interne) » only
-UCM_CORPORATE_DNS_SERVERS=172.31.10.190
+UCM_CORPORATE_DNS_SERVERS=10.0.0.53
 ```
 
 Fallback: SystemConfig `acme.dns01_nameservers` (same comma-separated format).
@@ -64,8 +64,8 @@ PORT=8443
 |----|---------|----------|
 | L-01 | `curl -sk https://${LAB}:${PORT}/api/health` | `"status":"ok"` |
 | L-02 | `curl -skI https://ucm.example.com:${PORT}/` | 302 → admin URL |
-| L-03 | `curl -skI https://172.31.10.8:${PORT}/` | 302 → admin URL |
-| L-04 | `curl -skI -H "Host: localhost" https://172.31.10.8:${PORT}/` | 302 → admin (not 200) |
+| L-03 | `curl -skI https://192.0.2.8:${PORT}/` | 302 → admin URL |
+| L-04 | `curl -skI -H "Host: localhost" https://192.0.2.8:${PORT}/` | 302 → admin (not 200) |
 | L-05 | `curl -sk -o /dev/null -w "%{http_code}" -H "Host: acme.ucm.example.com" https://127.0.0.1:${PORT}/` | 404 |
 | L-06 | `curl -sk -o /dev/null -w "%{http_code}" -H "Host: acme.ucm.example.com" https://127.0.0.1:${PORT}/acme/directory` | 200 |
 
