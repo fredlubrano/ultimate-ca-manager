@@ -322,6 +322,16 @@ class AcmeClientService:
     # =========================================================================
     # Directory & Nonce
     # =========================================================================
+
+    @staticmethod
+    def _validate_outbound_acme_url(url: str) -> None:
+        """Block loopback/cloud-metadata targets for ACME sub-URLs from directory JSON."""
+        from utils.ssrf_protection import validate_url_not_cloud_metadata
+
+        try:
+            validate_url_not_cloud_metadata(url)
+        except ValueError as exc:
+            raise ValueError(f'ACME outbound URL blocked: {exc}') from exc
     
     def _fetch_directory(self) -> Dict[str, Any]:
         """Fetch ACME directory from server"""
@@ -349,10 +359,19 @@ class AcmeClientService:
         otherwise fail challenge submission, status polling and finalization.
         """
         directory = self._fetch_directory()
+        nonce_url = directory['newNonce']
+        self._validate_outbound_acme_url(nonce_url)
         last_exc: Optional[Exception] = None
         for attempt in range(3):
             try:
-                resp = self.session.head(directory['newNonce'], timeout=30)
+                from utils.ssrf_protection import safe_request_head
+
+                resp = safe_request_head(
+                    nonce_url,
+                    timeout=30,
+                    verify=self.verify_ssl,
+                    headers=dict(self.session.headers),
+                )
                 resp.raise_for_status()
                 return resp.headers['Replay-Nonce']
             except Exception as exc:  # noqa: BLE001
@@ -581,12 +600,19 @@ class AcmeClientService:
     
     def _post(self, url: str, payload: Any, use_jwk: bool = False) -> requests.Response:
         """POST signed JWS to ACME endpoint"""
+        from utils.ssrf_protection import safe_request_post
+
+        self._validate_outbound_acme_url(url)
         jws = self._sign_jws(url, payload, use_jwk=use_jwk)
-        resp = self.session.post(
+        resp = safe_request_post(
             url,
             json=jws,
-            headers={"Content-Type": "application/jose+json"},
+            headers={
+                "Content-Type": "application/jose+json",
+                **dict(self.session.headers),
+            },
             timeout=self._http_timeout(),
+            verify=self.verify_ssl,
         )
         return resp
     
