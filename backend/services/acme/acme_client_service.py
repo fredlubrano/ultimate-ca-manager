@@ -330,7 +330,12 @@ class AcmeClientService:
 
         from utils.ssrf_protection import safe_request_get
 
-        resp = safe_request_get(self.directory_url, timeout=self._http_timeout())
+        resp = safe_request_get(
+            self.directory_url,
+            timeout=self._http_timeout(),
+            verify=self.verify_ssl,
+            headers={'User-Agent': self.session.headers.get('User-Agent', 'UCM-ACME-Client/2.1')},
+        )
         resp.raise_for_status()
         self.directory = resp.json()
         logger.info(f"Fetched ACME directory from {self.directory_url}")
