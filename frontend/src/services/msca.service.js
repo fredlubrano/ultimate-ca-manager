@@ -28,6 +28,10 @@ const mscaService = {
   testInline: (data) =>
     apiClient.post('/microsoft-cas/test', data),
 
+  // CRL revocation sync (one-way CA → UCM)
+  syncCrl: (id) =>
+    apiClient.post(`/microsoft-cas/${id}/sync-crl`),
+
   // Templates
   getTemplates: (id) =>
     apiClient.get(`/microsoft-cas/${id}/templates`),

@@ -37,6 +37,25 @@ def _check_size(name: str, value, limit: int):
     return None
 
 
+def _clean_crl_url(raw):
+    """Validate a user-supplied CRL URL. Returns (value_or_None, error_response_or_None)."""
+    if not isinstance(raw, str):
+        return None, error_response("crl_url must be a string", 400)
+    url = raw.strip()
+    if not url:
+        return None, None
+    if len(url) > MAX_SERVER_LEN:
+        return None, error_response(f"crl_url too long (max {MAX_SERVER_LEN})", 400)
+    if not url.lower().startswith(('http://', 'https://')):
+        return None, error_response("crl_url must be an http(s) URL", 400)
+    try:
+        from utils.ssrf_protection import validate_url_not_cloud_metadata
+        validate_url_not_cloud_metadata(url)
+    except ValueError as e:
+        return None, error_response(f"Invalid crl_url: {e}", 400)
+    return url, None
+
+
 def _audit(action: str, msca, details: str, success: bool = True):
     try:
         AuditService.log_action(
@@ -132,6 +151,14 @@ def create_connection():
             msca.kerberos_principal = data.get('kerberos_principal', '').strip() or None
             msca.kerberos_keytab_path = data.get('kerberos_keytab_path', '').strip() or None
 
+        # CRL revocation sync (#185)
+        msca.crl_sync_enabled = bool(data.get('crl_sync_enabled', False))
+        if 'crl_url' in data:
+            url, err = _clean_crl_url(data['crl_url'])
+            if err:
+                return err
+            msca.crl_url = url
+
         db.session.add(msca)
         ok, err = safe_commit(logger, "Failed to create connection")
         if not ok:
@@ -208,6 +235,13 @@ def update_connection(msca_id):
             msca.default_template = data['default_template'].strip()
         if 'enabled' in data:
             msca.enabled = data['enabled']
+        if 'crl_sync_enabled' in data:
+            msca.crl_sync_enabled = bool(data['crl_sync_enabled'])
+        if 'crl_url' in data:
+            url, err = _clean_crl_url(data['crl_url'])
+            if err:
+                return err
+            msca.crl_url = url
 
         # Auth method change: clear ALL stale credentials for the old method
         # so a basic→certificate switch doesn't leave the old encrypted password
@@ -311,6 +345,39 @@ def test_connection(msca_id):
     if result.get('success'):
         return success_response(data=result, message="Connection successful")
     return error_response(result.get('error', 'Connection test failed'), 400)
+
+
+@bp.route('/<int:msca_id>/sync-crl', methods=['POST'])
+@require_auth(['write:certificates'])
+def sync_crl(msca_id):
+    """Fetch the CA's CRL and revoke matching UCM certificates (one-way CA → UCM)"""
+    msca = db.session.get(MicrosoftCA, msca_id)
+    if not msca:
+        return error_response("Connection not found", 404)
+    if not msca.enabled:
+        return error_response("Microsoft CA connection is disabled", 400)
+
+    username = None
+    try:
+        username = g.current_user.username if hasattr(g, 'current_user') and g.current_user else None
+    except Exception:
+        pass
+
+    try:
+        summary = MicrosoftCAService.sync_crl(msca_id, username=username or 'system')
+        _audit('msca.crl_sync_manual', msca,
+               f"revoked={summary['revoked']} checked={summary['checked']}")
+        return success_response(
+            data=summary,
+            message=f"CRL sync complete: {summary['revoked']} certificate(s) revoked"
+        )
+    except ValueError as e:
+        _audit('msca.crl_sync_manual', msca, f"error={e}", success=False)
+        return error_response(str(e), 400)
+    except Exception as e:
+        logger.error(f"CRL sync failed for MS CA '{msca.name}': {e}", exc_info=True)
+        _audit('msca.crl_sync_manual', msca, f"error={e}", success=False)
+        return error_response("CRL sync failed", 500)
 
 
 # --- Templates ---

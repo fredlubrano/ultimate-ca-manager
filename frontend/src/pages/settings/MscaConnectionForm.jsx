@@ -26,6 +26,8 @@ export default function MscaConnectionForm({ connection, onSave, onCancel }) {
     ca_bundle: connection?.ca_bundle || '',
     default_template: connection?.default_template || '',
     enabled: connection?.enabled ?? true,
+    crl_sync_enabled: connection?.crl_sync_enabled ?? false,
+    crl_url: connection?.crl_url || '',
   })
   const [availableTemplates, setAvailableTemplates] = useState([])
   const [fetchingTemplates, setFetchingTemplates] = useState(false)
@@ -219,6 +221,25 @@ export default function MscaConnectionForm({ connection, onSave, onCancel }) {
           className="font-mono text-xs"
         />
       )}
+
+      {/* CRL revocation sync (one-way CA → UCM) */}
+      <div className="space-y-2">
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={formData.crl_sync_enabled} onChange={(e) => updateField('crl_sync_enabled', e.target.checked)} className="rounded" />
+          {t('msca.crlSyncEnable')}
+        </label>
+        {formData.crl_sync_enabled && (
+          <>
+            <p className="text-xs text-text-tertiary">{t('msca.crlSyncHint')}</p>
+            <Input
+              label={t('msca.crlUrl')}
+              value={formData.crl_url}
+              onChange={(e) => updateField('crl_url', e.target.value)}
+              placeholder={t('msca.crlUrlPlaceholder')}
+            />
+          </>
+        )}
+      </div>
 
       <div className="flex justify-between gap-2 pt-4 border-t border-border">
         <Button type="button" variant="secondary" onClick={handleTestConnection} disabled={!formData.server || testing}>

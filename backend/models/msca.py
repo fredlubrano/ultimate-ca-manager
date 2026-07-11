@@ -44,6 +44,13 @@ class MicrosoftCA(db.Model):
     last_test_at = db.Column(db.DateTime)
     last_test_result = db.Column(db.String(500))
 
+    # CRL revocation sync (#185) — pull the CA's CRL and mark UCM-known certs
+    # revoked when they are revoked CA-side. One-way: CA → UCM.
+    crl_sync_enabled = db.Column(db.Boolean, default=False)
+    crl_url = db.Column(db.Text)
+    last_crl_sync_at = db.Column(db.DateTime)
+    last_crl_sync_result = db.Column(db.String(500))
+
     # Timestamps
     created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
@@ -112,6 +119,10 @@ class MicrosoftCA(db.Model):
             'enabled': self.enabled,
             'last_test_at': utc_isoformat(self.last_test_at),
             'last_test_result': self.last_test_result,
+            'crl_sync_enabled': bool(self.crl_sync_enabled),
+            'crl_url': self.crl_url or '',
+            'last_crl_sync_at': utc_isoformat(self.last_crl_sync_at),
+            'last_crl_sync_result': self.last_crl_sync_result,
             'created_at': utc_isoformat(self.created_at),
             'updated_at': utc_isoformat(self.updated_at),
             'created_by': self.created_by,

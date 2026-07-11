@@ -618,6 +618,19 @@ def create_app(config_name=None):
         except ImportError:
             pass
         
+        # Register Microsoft CA CRL revocation sync (hourly, opt-in per connection)
+        try:
+            from services.msca.crl_sync import scheduled_msca_crl_sync
+            scheduler.register_task(
+                name="msca_crl_sync",
+                func=scheduled_msca_crl_sync,
+                interval=3600,  # 1 hour
+                description="Sync revocations from Microsoft CA CRLs"
+            )
+            app.logger.info("Registered Microsoft CA CRL sync task (hourly)")
+        except ImportError:
+            pass
+
         # Register scheduled reports task (checks every minute for due reports)
         try:
             from services.report_service import run_scheduled_reports

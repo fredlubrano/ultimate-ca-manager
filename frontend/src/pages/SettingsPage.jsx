@@ -579,6 +579,22 @@ export default function SettingsPage() {
     }
   }
 
+  const handleMscaSyncCrl = async (conn) => {
+    setMscaTesting(true)
+    try {
+      const response = await mscaService.syncCrl(conn.id)
+      showSuccess(t('msca.crlSyncResult', {
+        revoked: response.data?.revoked ?? 0,
+        checked: response.data?.checked ?? 0
+      }))
+      loadMscaConnections()
+    } catch (error) {
+      showError(error.message || t('msca.crlSyncFailed'))
+    } finally {
+      setMscaTesting(false)
+    }
+  }
+
   // Webhook handlers
   const loadWebhooks = async () => {
     setWebhooksLoading(true)
@@ -1458,6 +1474,7 @@ export default function SettingsPage() {
             handleMscaEdit={handleMscaEdit}
             handleMscaToggle={handleMscaToggle}
             handleMscaTest={handleMscaTest}
+            handleMscaSyncCrl={handleMscaSyncCrl}
             setMscaConfirmDelete={setMscaConfirmDelete}
             hasPermission={hasPermission}
           />

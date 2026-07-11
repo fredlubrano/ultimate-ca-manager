@@ -10,6 +10,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Added
+- **Microsoft AD CS: CRL-based revocation sync (opt-in)** — a Microsoft CA connection can now periodically fetch the CA's CRL and mark certificates revoked on the CA as revoked in UCM (strictly one-way, CA → UCM; certificates revoked locally in UCM are never un-revoked). The CRL URL is taken from the connection settings or auto-detected from the CRL Distribution Point of certificates issued by that CA, the CRL signature is verified against the CA certificate before anything is applied, and the revocation date/reason are taken from the CRL entry. Runs hourly for opted-in connections, plus a "Sync CRL now" button and `POST /api/v2/microsoft-cas/<id>/sync-crl`. First step of the CA inventory sync discussed in #185; verified end-to-end against a Windows Server 2025 AD CS (revocation done with `certutil -revoke` on the CA propagated to UCM by the scheduled sync). (#185)
+
 ### Fixed
 - **Renewing a certificate issued by a Microsoft AD CS connection now goes through the connector** — renewal previously used the local re-sign path, which failed with "Issuing CA not found" (or "CA private key not available") because the issuing CA's key lives on the Windows CA. UCM now resubmits the certificate's original CSR (same key, subject and SANs) to the AD CS connection and template that issued it, and updates the certificate in place; if the CA holds the request for manager approval, the renewal is tracked like any pending MS CA request. EOBO-issued certificates require the same elevated permission to renew as to issue. Reported in #159. Verified end-to-end against a Windows Server 2025 AD CS.
 

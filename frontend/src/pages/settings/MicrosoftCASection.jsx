@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
-import { WindowsLogo, Plus, TestTube, ArrowsClockwise, Power, PencilSimple, Trash } from '@phosphor-icons/react'
+import { WindowsLogo, Plus, TestTube, ArrowsClockwise, ClockClockwise, Power, PencilSimple, Trash } from '@phosphor-icons/react'
 import { Button, Badge, HelpCard, DetailHeader, DetailContent, ExperimentalBadge } from '../../components'
 import { formatDate } from '../../lib/utils'
 
-export default function MicrosoftCASection({ mscaConnections, mscaLoading, mscaTesting, handleMscaCreate, handleMscaEdit, handleMscaToggle, handleMscaTest, setMscaConfirmDelete, hasPermission }) {
+export default function MicrosoftCASection({ mscaConnections, mscaLoading, mscaTesting, handleMscaCreate, handleMscaEdit, handleMscaToggle, handleMscaTest, handleMscaSyncCrl, setMscaConfirmDelete, hasPermission }) {
   const { t } = useTranslation()
   return (
     <DetailContent>
@@ -67,12 +67,22 @@ export default function MicrosoftCASection({ mscaConnections, mscaLoading, mscaT
                       {t('msca.testConnection')}: {conn.last_test_result === 'success' ? '✓' : '✗'} {formatDate(conn.last_test_at)}
                     </p>
                   )}
+                  {conn.crl_sync_enabled && conn.last_crl_sync_at && (
+                    <p className="text-xs text-text-tertiary">
+                      {t('msca.lastCrlSync')}: {conn.last_crl_sync_result?.startsWith('success') ? '✓' : '✗'} {formatDate(conn.last_crl_sync_at)}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Button type="button" size="sm" variant="secondary" onClick={() => handleMscaTest(conn)} disabled={mscaTesting} title={t('msca.testConnection')}>
                   {mscaTesting ? <ArrowsClockwise size={14} className="animate-spin" /> : <TestTube size={14} />}
                 </Button>
+                {conn.crl_sync_enabled && (
+                  <Button type="button" size="sm" variant="secondary" onClick={() => handleMscaSyncCrl(conn)} disabled={mscaTesting || !conn.enabled} title={t('msca.syncCrlNow')}>
+                    <ClockClockwise size={14} />
+                  </Button>
+                )}
                 <Button type="button" size="sm" variant="secondary" onClick={() => handleMscaToggle(conn)} title={conn.enabled ? t('common.disable') : t('common.enable')}>
                   <Power size={14} />
                 </Button>
