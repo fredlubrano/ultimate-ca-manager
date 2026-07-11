@@ -87,15 +87,14 @@ def list_certificates():
     # source; treat those as 'manual' so the manual filter still finds them.
     if source_list:
         source_conditions = []
-        for src in source_list:
-            if src == 'manual':
-                source_conditions.append(
-                    or_(Certificate.source == 'manual', Certificate.source.is_(None))
-                )
-            else:
-                source_conditions.append(Certificate.source == src)
-        if source_conditions:
-            query = query.filter(or_(*source_conditions))
+        non_manual = [s for s in source_list if s != 'manual']
+        if non_manual:
+            source_conditions.append(Certificate.source.in_(non_manual))
+        if 'manual' in source_list:
+            source_conditions.append(
+                or_(Certificate.source == 'manual', Certificate.source.is_(None))
+            )
+        query = query.filter(or_(*source_conditions))
 
     # Apply search filter (escape LIKE wildcards)
     if search:
