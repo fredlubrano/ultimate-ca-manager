@@ -29,6 +29,16 @@ from utils.datetime_utils import utc_now
 logger = logging.getLogger(__name__)
 
 
+def _is_ca_import_target(obj: ParsedObject) -> bool:
+    """True when a certificate belongs in the CA import path (permission-sensitive).
+
+    BasicConstraints CA:true is the primary signal. Legacy roots sometimes omit
+    BC but still assert keyCertSign — treat those as CA material for gating and
+    routing so they cannot slip into the leaf-certificate import path.
+    """
+    return obj.is_ca or obj.key_cert_sign
+
+
 @dataclass
 class ImportResult:
     """Result of an import operation"""
@@ -128,7 +138,7 @@ class SmartImporter:
         
         # Summary
         certs = [o for o in objects if o.type == ObjectType.CERTIFICATE]
-        cas = [o for o in objects if o.type == ObjectType.CERTIFICATE and o.is_ca]
+        cas = [o for o in certs if _is_ca_import_target(o)]
         keys = [o for o in objects if o.type == ObjectType.PRIVATE_KEY]
         csrs = [o for o in objects if o.type == ObjectType.CSR]
         
@@ -238,7 +248,7 @@ class SmartImporter:
         """Import CA certificates"""
         
         # Get all CAs from objects
-        ca_objects = [o for o in objects if o.type == ObjectType.CERTIFICATE and o.is_ca]
+        ca_objects = [o for o in objects if o.type == ObjectType.CERTIFICATE and _is_ca_import_target(o)]
         
         # Sort by chain depth (roots first)
         ca_objects.sort(key=lambda o: o.chain_depth, reverse=True)
@@ -333,7 +343,7 @@ class SmartImporter:
         """Import leaf certificates"""
         
         # Get leaf certificates (not CAs)
-        cert_objects = [o for o in objects if o.type == ObjectType.CERTIFICATE and not o.is_ca]
+        cert_objects = [o for o in objects if o.type == ObjectType.CERTIFICATE and not _is_ca_import_target(o)]
         
         for cert_obj in cert_objects:
             # Check duplicate via (serial_number, issuer) + SHA-256 fingerprint (#85)

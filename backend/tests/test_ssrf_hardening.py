@@ -33,6 +33,15 @@ def test_safe_request_post_defaults_timeout(monkeypatch):
     assert cap.get("timeout") == 30
 
 
+def test_safe_request_head_defaults_timeout(monkeypatch):
+    import requests
+    from utils import ssrf_protection
+    cap = {}
+    monkeypatch.setattr(requests, "head", lambda url, **kw: cap.update(kw) or "ok")
+    ssrf_protection.safe_request_head("https://93.184.216.34/")
+    assert cap.get("timeout") == 30
+
+
 # ---- #5: ACME proxy uses the pinned safe_request_get ----
 def test_proxy_connection_uses_pinned_safe_request(auth_client, monkeypatch):
     import api.v2.acme_client.proxy as proxy_mod
