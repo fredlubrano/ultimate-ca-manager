@@ -2653,6 +2653,52 @@ UCM passes these as ADCS request attributes:
 | Template permission | Standard enroll | Requires enrollment agent rights |
 | Use case | Self-service | Centralized PKI management |
 
+## Certificate Lifecycle
+
+### Renewing an AD CS certificate
+Renewal does **not** re-sign locally (the issuing key lives on the Windows CA). UCM resubmits the certificate's original CSR — same key, subject and SANs — to the connection and template that issued it, and updates the certificate in place. If the CA holds the renewal for manager approval, it is tracked as a pending request.
+
+### Revoking an AD CS certificate
+AD CS Web Enrollment has no revocation endpoint. Revoking an AD CS-issued certificate:
+- **Without the WinRM admin channel** — marks it revoked in UCM only; the Windows CA is not notified. Revoke it on the CA as well.
+- **With the WinRM admin channel** — UCM propagates the revocation to the Windows CA (certutil -revoke + CRL publish). Lifting a certificateHold propagates the unrevoke too.
+
+## WinRM Admin Channel (optional)
+
+The admin channel lets UCM run management operations on the Windows CA that Web Enrollment cannot: revoke/unrevoke, publish CRL, inventory, and approve/deny pending requests. It uses PowerShell remoting + certutil.
+
+### Requirements
+- **WinRM enabled** on the CA (Enable-PSRemoting; HTTPS listener on 5986 recommended)
+- The optional **pywinrm** package installed in UCM (pip install pywinrm)
+- An account allowed to **manage certificates** on the CA ("Issue and Manage Certificates")
+
+### Configuration
+1. Edit the connection and enable **WinRM admin channel**
+2. Set the host (defaults to the connection server), port, and transport
+3. **Transport**: Kerberos (recommended, reuses the connection keytab) or NTLM, over HTTP or HTTPS
+4. **Credentials**: leave empty to reuse the connection's own (Basic/Kerberos). mTLS connections have no reusable WinRM credential — set a dedicated account
+5. Click **Test admin channel**
+
+| Enroll auth mode | Reuses credentials for WinRM? |
+|------------------|-------------------------------|
+| Kerberos (keytab) | Yes — same principal/keytab |
+| Basic (user/pass) | Yes — password to NTLM/Kerberos |
+| Certificate (mTLS) | No — set a dedicated WinRM account |
+
+## CRL Revocation Sync
+
+Enable **Sync revocations from the CA's CRL** on the connection so UCM periodically fetches the CA's CRL and marks certificates revoked on the CA as revoked in UCM. This is strictly one-way (CA to UCM) and never un-revokes a certificate revoked in UCM. The CRL URL is taken from the connection or auto-detected from issued certificates' CRL Distribution Point, and its signature is verified against the CA certificate before anything is applied. Runs hourly, plus a **Sync CRL now** action.
+
+## CA Inventory Sync
+
+Enable **Import certificates issued directly on the CA** to bring certificates issued outside UCM (native tools, autoenrollment, or before UCM existed) into UCM's store, so UCM tracks the whole lifecycle. It reads the CA database with certutil -view, imports certificates UCM doesn't already have (deduplicated by serial), and is incremental by request id (with a full-rescan option). A **reconciliation** view lists certificates present on the CA but not in UCM, and vice versa. Runs every 6 hours plus an **Import from CA now** action. Requires the WinRM admin channel.
+
+## CA Control Panel
+
+The control panel (opened from the connection, requires the admin channel) manages requests awaiting CA manager approval and shows CA health:
+- **Pending requests** — list, **Approve** (certutil -resubmit; the issued certificate is imported automatically) or **Deny** (certutil -deny)
+- **Health** — CA service status, CA certificate expiry, CRL next-update, and pending-request count
+
 ## Troubleshooting
 
 | Issue | Solution |
@@ -2660,9 +2706,12 @@ UCM passes these as ADCS request attributes:
 | Connection test fails | Verify hostname, port 443, and that certsrv is accessible |
 | No templates found | Check that the UCM account has enrollment permissions on the CA |
 | EOBO denied | Verify enrollment agent certificate and template permissions |
-| Request stuck pending | Approve on the Windows CA console, then refresh status in UCM |
+| Request stuck pending | Approve it from the CA Control Panel, or on the Windows CA console then refresh status |
+| Admin channel test fails | Verify WinRM is enabled on the CA, the port/transport, and that pywinrm is installed |
+| Revocation not on the CA | Enable the WinRM admin channel — without it, revocation is local to UCM |
+| Pending not detected (non-English CA) | Fixed in v2.192 — UCM now recognizes localized AD CS pending pages |
 
-> 💡 Use the **Test Connection** button to verify authentication and discover available templates before signing.
+> 💡 Use the **Test Connection** button to verify authentication and discover available templates before signing. Enable the **WinRM admin channel** to manage revocation, CRLs, inventory and pending requests directly from UCM.
 `
   },
 

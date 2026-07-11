@@ -1289,7 +1289,7 @@ export const helpContent = {
   msca: {
     title: 'Microsoft AD CS Integration',
     subtitle: 'Sign certificates with Microsoft Certificate Authority',
-    overview: 'Connect UCM to Microsoft Active Directory Certificate Services (AD CS) to sign CSRs using your Windows PKI infrastructure. Supports certificate (mTLS), Kerberos, and Basic authentication methods.',
+    overview: 'Connect UCM to Microsoft Active Directory Certificate Services (AD CS) to sign CSRs using your Windows PKI infrastructure and manage the full certificate lifecycle. Supports certificate (mTLS), Kerberos, and Basic authentication, plus an optional WinRM admin channel for revocation, CRL, inventory and pending-request management.',
     sections: [
       {
         title: 'Authentication Methods',
@@ -1320,15 +1320,54 @@ export const helpContent = {
           { label: 'Requirements', text: 'CA template must allow enrollment on behalf of others. UCM service account needs an enrollment agent certificate.' },
         ]
       },
+      {
+        title: 'Lifecycle: Renew & Revoke',
+        icon: Certificate,
+        items: [
+          { label: 'Renew', text: 'Renewing an AD CS-issued certificate resubmits its original CSR to the same connection and template — the issuing CA signs it, UCM does not.' },
+          { label: 'Revoke', text: 'Revoking an AD CS-issued certificate is local to UCM unless the WinRM admin channel is configured, in which case it is propagated to the Windows CA.' },
+          { label: 'Pending renewal', text: 'If the CA holds the renewal for manager approval, UCM tracks it as a pending request like any other.' },
+        ]
+      },
+      {
+        title: 'WinRM Admin Channel (optional)',
+        icon: Lock,
+        items: [
+          { label: 'Purpose', text: 'Runs management operations on the Windows CA (revoke, unrevoke, publish CRL, inventory, approve/deny) via PowerShell remoting + certutil — things AD CS Web Enrollment cannot do.' },
+          { label: 'Transport', text: 'NTLM or Kerberos over HTTP/HTTPS. Kerberos + HTTPS recommended; Kerberos reuses the connection\'s keytab.' },
+          { label: 'Credentials', text: 'Reuses the connection\'s own by default. mTLS-enrolled connections must set a dedicated WinRM account (least-privilege "Issue and Manage Certificates" officer).' },
+          { label: 'Requirement', text: 'WinRM enabled on the CA and the optional pywinrm package installed. Management operations require admin:system.' },
+        ]
+      },
+      {
+        title: 'CRL Revocation Sync',
+        icon: ShieldCheck,
+        items: [
+          { label: 'One-way sync', text: 'Periodically fetches the CA\'s CRL and marks certificates revoked on the CA as revoked in UCM. Never un-revokes.' },
+          { label: 'CRL source', text: 'An explicit CRL URL, or auto-detected from the CRL Distribution Point of issued certificates.' },
+          { label: 'Verified', text: 'The CRL signature is checked against the CA certificate before anything is applied.' },
+        ]
+      },
+      {
+        title: 'CA Inventory & Control Panel',
+        icon: HardDrive,
+        items: [
+          { label: 'Inventory sync', text: 'Imports certificates issued directly on the CA that UCM doesn\'t know yet (incremental by request id, with reconciliation).' },
+          { label: 'Pending requests', text: 'List, approve (resubmit + auto-import) or deny requests awaiting CA manager approval.' },
+          { label: 'CA health', text: 'CA service status, CA certificate expiry, CRL next-update and pending count at a glance.' },
+        ]
+      },
     ],
     tips: [
       'Test the connection first to verify authentication and discover available templates.',
       'Enable EOBO by checking the checkbox in the sign modal — fields auto-fill from CSR data.',
       'Client certificate authentication is recommended for production — it doesn\'t require domain join.',
+      'Enable the WinRM admin channel to propagate revocations to the CA and manage pending requests from UCM.',
     ],
     warnings: [
       'Kerberos requires the machine to be domain-joined or a keytab configured — not available in Docker.',
       'EOBO requires an enrollment agent certificate configured on the AD CS server.',
+      'Without the WinRM admin channel, revoking an AD CS certificate only marks it revoked in UCM — the Windows CA is not notified.',
     ],
     related: ['CSRs', 'Certificates', 'Settings']
   },

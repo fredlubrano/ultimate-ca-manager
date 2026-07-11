@@ -2,7 +2,7 @@ export default {
   helpContent: {
     title: 'Microsoft AD CS-Integration',
     subtitle: 'Zertifikate mit Microsoft-Zertifizierungsstelle signieren',
-    overview: 'Verbinden Sie UCM mit Microsoft Active Directory Certificate Services (AD CS), um CSRs mit Ihrer Windows-PKI-Infrastruktur zu signieren. Unterstützt Zertifikat- (mTLS), Kerberos- und Basic-Authentifizierungsmethoden.',
+    overview: 'Verbinden Sie UCM mit Microsoft Active Directory Certificate Services (AD CS), um CSRs mit Ihrer Windows-PKI-Infrastruktur zu signieren und den vollständigen Zertifikatslebenszyklus zu verwalten. Unterstützt Zertifikat- (mTLS), Kerberos- und Basic-Authentifizierung sowie einen optionalen WinRM-Admin-Kanal für Widerruf, CRL, Inventar und die Verwaltung ausstehender Anfragen.',
     sections: [
       {
         title: 'Authentifizierungsmethoden',
@@ -30,15 +30,50 @@ export default {
           { label: 'Voraussetzungen', text: 'CA-Template muss Registrierung im Namen anderer erlauben. UCM-Dienstkonto benötigt ein Enrollment-Agent-Zertifikat.' },
         ]
       },
+      {
+        title: 'Lebenszyklus: Erneuern & Widerrufen',
+        items: [
+          { label: 'Erneuern', text: 'Die Erneuerung eines von AD CS ausgestellten Zertifikats reicht dessen ursprünglichen CSR erneut bei derselben Verbindung und demselben Template ein — die ausstellende CA signiert, nicht UCM.' },
+          { label: 'Widerrufen', text: 'Der Widerruf eines von AD CS ausgestellten Zertifikats gilt nur lokal in UCM, außer der WinRM-Admin-Kanal ist konfiguriert — dann wird er an die Windows-CA weitergegeben.' },
+          { label: 'Ausstehende Erneuerung', text: 'Hält die CA die Erneuerung für eine Manager-Genehmigung zurück, verfolgt UCM sie wie jede andere ausstehende Anfrage.' },
+        ]
+      },
+      {
+        title: 'WinRM-Admin-Kanal (optional)',
+        items: [
+          { label: 'Zweck', text: 'Führt Verwaltungsoperationen auf der Windows-CA aus (Widerrufen, Widerruf aufheben, CRL veröffentlichen, Inventar, Genehmigen/Ablehnen) über PowerShell-Remoting + certutil — Dinge, die AD CS Web Enrollment nicht kann.' },
+          { label: 'Transport', text: 'NTLM oder Kerberos über HTTP/HTTPS. Kerberos + HTTPS empfohlen; Kerberos verwendet die Keytab der Verbindung wieder.' },
+          { label: 'Anmeldedaten', text: 'Verwendet standardmäßig die der Verbindung. mTLS-Verbindungen müssen ein dediziertes WinRM-Konto festlegen (Least-Privilege-Officer „Zertifikate ausstellen und verwalten").' },
+          { label: 'Voraussetzung', text: 'WinRM auf der CA aktiviert und das optionale Paket pywinrm installiert. Verwaltungsoperationen erfordern admin:system.' },
+        ]
+      },
+      {
+        title: 'CRL-Widerrufs-Synchronisierung',
+        items: [
+          { label: 'Einweg-Sync', text: 'Ruft periodisch die CRL der CA ab und markiert auf der CA widerrufene Zertifikate auch in UCM als widerrufen. Hebt niemals einen Widerruf auf.' },
+          { label: 'CRL-Quelle', text: 'Eine explizite CRL-URL oder automatisch erkannt aus dem CRL Distribution Point ausgestellter Zertifikate.' },
+          { label: 'Verifiziert', text: 'Die CRL-Signatur wird gegen das CA-Zertifikat geprüft, bevor irgendetwas angewendet wird.' },
+        ]
+      },
+      {
+        title: 'CA-Inventar & Kontrollpanel',
+        items: [
+          { label: 'Inventar-Sync', text: 'Importiert direkt auf der CA ausgestellte Zertifikate, die UCM noch nicht kennt (inkrementell nach Anfrage-ID, mit Abgleich).' },
+          { label: 'Ausstehende Anfragen', text: 'Anfragen, die auf CA-Manager-Genehmigung warten, auflisten, genehmigen (erneut einreichen + Auto-Import) oder ablehnen.' },
+          { label: 'CA-Zustand', text: 'CA-Dienststatus, Ablauf des CA-Zertifikats, nächste CRL-Aktualisierung und Anzahl ausstehender Anfragen auf einen Blick.' },
+        ]
+      },
     ],
     tips: [
       'Testen Sie zuerst die Verbindung, um die Authentifizierung zu überprüfen und verfügbare Templates zu ermitteln.',
       'Aktivieren Sie EOBO durch Anklicken des Kontrollkästchens im Signierungsdialog — Felder werden automatisch aus CSR-Daten gefüllt.',
       'Client-Zertifikat-Authentifizierung wird für die Produktion empfohlen — sie erfordert keinen Domänenbeitritt.',
+      'Aktivieren Sie den WinRM-Admin-Kanal, um Widerrufe an die CA weiterzugeben und ausstehende Anfragen aus UCM heraus zu verwalten.',
     ],
     warnings: [
       'Kerberos erfordert, dass die Maschine der Domäne beigetreten ist oder eine Keytab konfiguriert ist — nicht verfügbar in Docker.',
       'EOBO erfordert ein auf dem AD CS-Server konfiguriertes Enrollment-Agent-Zertifikat.',
+      'Ohne den WinRM-Admin-Kanal markiert der Widerruf eines AD CS-Zertifikats es nur in UCM als widerrufen — die Windows-CA wird nicht benachrichtigt.',
     ],
   },
   helpGuides: {
@@ -124,6 +159,52 @@ UCM übergibt diese als ADCS-Anforderungsattribute:
 | Template-Berechtigung | Standard-Registrierung | Erfordert Enrollment-Agent-Rechte |
 | Anwendungsfall | Self-Service | Zentralisiertes PKI-Management |
 
+## Zertifikatslebenszyklus
+
+### Ein AD CS-Zertifikat erneuern
+Die Erneuerung signiert **nicht** lokal neu (der Ausstellungsschlüssel liegt auf der Windows-CA). UCM reicht den ursprünglichen CSR des Zertifikats — gleicher Schlüssel, gleicher Betreff, gleiche SANs — erneut bei der Verbindung und dem Template ein, die es ausgestellt haben, und aktualisiert das Zertifikat an Ort und Stelle. Hält die CA die Erneuerung für eine Manager-Genehmigung zurück, wird sie als ausstehende Anfrage verfolgt.
+
+### Ein AD CS-Zertifikat widerrufen
+AD CS Web Enrollment hat keinen Widerrufs-Endpunkt. Der Widerruf eines von AD CS ausgestellten Zertifikats:
+- **Ohne den WinRM-Admin-Kanal** — markiert es nur in UCM als widerrufen; die Windows-CA wird nicht benachrichtigt. Widerrufen Sie es auch auf der CA.
+- **Mit dem WinRM-Admin-Kanal** — UCM gibt den Widerruf an die Windows-CA weiter (certutil -revoke + CRL-Veröffentlichung). Das Aufheben eines certificateHold gibt auch die Widerrufsaufhebung weiter.
+
+## WinRM-Admin-Kanal (optional)
+
+Der Admin-Kanal ermöglicht UCM Verwaltungsoperationen auf der Windows-CA, die Web Enrollment nicht kann: Widerrufen/Widerruf aufheben, CRL veröffentlichen, Inventar sowie Genehmigen/Ablehnen ausstehender Anfragen. Er verwendet PowerShell-Remoting + certutil.
+
+### Voraussetzungen
+- **WinRM aktiviert** auf der CA (Enable-PSRemoting; HTTPS-Listener auf 5986 empfohlen)
+- Das optionale Paket **pywinrm** in UCM installiert (pip install pywinrm)
+- Ein Konto mit der Berechtigung, **Zertifikate auf der CA zu verwalten** („Issue and Manage Certificates")
+
+### Konfiguration
+1. Bearbeiten Sie die Verbindung und aktivieren Sie den **WinRM-Admin-Kanal**
+2. Legen Sie Host (standardmäßig der Verbindungsserver), Port und Transport fest
+3. **Transport**: Kerberos (empfohlen, verwendet die Verbindungs-Keytab wieder) oder NTLM, über HTTP oder HTTPS
+4. **Anmeldedaten**: leer lassen, um die der Verbindung wiederzuverwenden (Basic/Kerberos). mTLS-Verbindungen haben keine wiederverwendbaren WinRM-Anmeldedaten — legen Sie ein dediziertes Konto fest
+5. Klicken Sie auf **Admin-Kanal testen**
+
+| Enrollment-Auth-Modus | Anmeldedaten für WinRM wiederverwendbar? |
+|-----------------------|-------------------------------------------|
+| Kerberos (Keytab) | Ja — gleiches Principal/Keytab |
+| Basic (Benutzer/Passwort) | Ja — Passwort für NTLM/Kerberos |
+| Zertifikat (mTLS) | Nein — dediziertes WinRM-Konto festlegen |
+
+## CRL-Widerrufs-Synchronisierung
+
+Aktivieren Sie **Widerrufe aus der CRL der CA synchronisieren** auf der Verbindung, damit UCM periodisch die CRL der CA abruft und auf der CA widerrufene Zertifikate auch in UCM als widerrufen markiert. Dies ist strikt einseitig (CA zu UCM) und hebt niemals den Widerruf eines in UCM widerrufenen Zertifikats auf. Die CRL-URL stammt aus der Verbindung oder wird automatisch aus dem CRL Distribution Point ausgestellter Zertifikate erkannt; ihre Signatur wird gegen das CA-Zertifikat geprüft, bevor irgendetwas angewendet wird. Läuft stündlich, plus eine Aktion **CRL jetzt synchronisieren**.
+
+## CA-Inventar-Synchronisierung
+
+Aktivieren Sie **Direkt auf der CA ausgestellte Zertifikate importieren**, um außerhalb von UCM ausgestellte Zertifikate (native Tools, Autoenrollment oder aus der Zeit vor UCM) in den UCM-Speicher zu holen, damit UCM den gesamten Lebenszyklus verfolgt. Die CA-Datenbank wird mit certutil -view gelesen, UCM unbekannte Zertifikate werden importiert (dedupliziert nach Seriennummer), inkrementell nach Anfrage-ID (mit Option für vollständigen Rescan). Eine **Abgleich**-Ansicht listet Zertifikate, die auf der CA, aber nicht in UCM vorhanden sind, und umgekehrt. Läuft alle 6 Stunden, plus eine Aktion **Jetzt von der CA importieren**. Erfordert den WinRM-Admin-Kanal.
+
+## CA-Kontrollpanel
+
+Das Kontrollpanel (von der Verbindung aus geöffnet, erfordert den Admin-Kanal) verwaltet Anfragen, die auf CA-Manager-Genehmigung warten, und zeigt den CA-Zustand:
+- **Ausstehende Anfragen** — auflisten, **Genehmigen** (certutil -resubmit; das ausgestellte Zertifikat wird automatisch importiert) oder **Ablehnen** (certutil -deny)
+- **Zustand** — CA-Dienststatus, Ablauf des CA-Zertifikats, nächste CRL-Aktualisierung und Anzahl ausstehender Anfragen
+
 ## Fehlerbehebung
 
 | Problem | Lösung |
@@ -131,9 +212,12 @@ UCM übergibt diese als ADCS-Anforderungsattribute:
 | Verbindungstest schlägt fehl | Hostname, Port 443 überprüfen und sicherstellen, dass certsrv erreichbar ist |
 | Keine Templates gefunden | Prüfen, ob das UCM-Konto Registrierungsberechtigungen auf der CA hat |
 | EOBO verweigert | Enrollment-Agent-Zertifikat und Template-Berechtigungen überprüfen |
-| Anfrage bleibt ausstehend | Auf der Windows-CA-Konsole genehmigen, dann Status in UCM aktualisieren |
+| Anfrage bleibt ausstehend | Über das CA-Kontrollpanel genehmigen, oder auf der Windows-CA-Konsole und dann Status in UCM aktualisieren |
+| Admin-Kanal-Test schlägt fehl | Prüfen, ob WinRM auf der CA aktiviert ist, Port/Transport stimmen und pywinrm installiert ist |
+| Widerruf nicht auf der CA | WinRM-Admin-Kanal aktivieren — ohne ihn ist der Widerruf lokal auf UCM beschränkt |
+| Ausstehend nicht erkannt (nicht-englische CA) | Behoben in v2.192 — UCM erkennt jetzt lokalisierte AD CS-Ausstehend-Seiten |
 
-> 💡 Verwenden Sie den **Verbindung testen**-Button, um Authentifizierung und verfügbare Templates vor dem Signieren zu überprüfen.
+> 💡 Verwenden Sie den **Verbindung testen**-Button, um Authentifizierung und verfügbare Templates vor dem Signieren zu überprüfen. Aktivieren Sie den **WinRM-Admin-Kanal**, um Widerruf, CRLs, Inventar und ausstehende Anfragen direkt aus UCM zu verwalten.
 `
   }
 }

@@ -2,7 +2,7 @@ export default {
   helpContent: {
     title: 'Integrazione Microsoft AD CS',
     subtitle: 'Firma certificati con Microsoft Certificate Authority',
-    overview: 'Connetti UCM ai servizi certificati di Microsoft Active Directory (AD CS) per firmare i CSR utilizzando la tua infrastruttura PKI Windows. Supporta i metodi di autenticazione certificato (mTLS), Kerberos e Basic.',
+    overview: 'Connetti UCM ai servizi certificati di Microsoft Active Directory (AD CS) per firmare i CSR con la tua infrastruttura PKI Windows e gestire l\'intero ciclo di vita dei certificati. Supporta autenticazione con certificato (mTLS), Kerberos e Basic, più un canale di amministrazione WinRM opzionale per revoca, CRL, inventario e gestione delle richieste in sospeso.',
     sections: [
       {
         title: 'Metodi di autenticazione',
@@ -30,15 +30,50 @@ export default {
           { label: 'Requisiti', text: 'Il template CA deve consentire l\'iscrizione per conto di altri. L\'account di servizio UCM necessita di un certificato di agente di iscrizione.' },
         ]
       },
+      {
+        title: 'Ciclo di vita: rinnovo e revoca',
+        items: [
+          { label: 'Rinnova', text: 'Il rinnovo di un certificato emesso da AD CS reinvia il suo CSR originale alla stessa connessione e allo stesso template — firma la CA emittente, non UCM.' },
+          { label: 'Revoca', text: 'La revoca di un certificato emesso da AD CS è locale a UCM, a meno che il canale di amministrazione WinRM sia configurato — in tal caso viene propagata alla CA Windows.' },
+          { label: 'Rinnovo in sospeso', text: 'Se la CA trattiene il rinnovo per l\'approvazione del responsabile, UCM lo traccia come qualsiasi altra richiesta in sospeso.' },
+        ]
+      },
+      {
+        title: 'Canale di amministrazione WinRM (opzionale)',
+        items: [
+          { label: 'Scopo', text: 'Esegue operazioni di gestione sulla CA Windows (revoca, annullamento revoca, pubblicazione CRL, inventario, approvazione/rifiuto) tramite PowerShell remoting + certutil — operazioni che l\'iscrizione web di AD CS non può fare.' },
+          { label: 'Trasporto', text: 'NTLM o Kerberos su HTTP/HTTPS. Consigliato Kerberos + HTTPS; Kerberos riutilizza il keytab della connessione.' },
+          { label: 'Credenziali', text: 'Riutilizza per impostazione predefinita quelle della connessione. Le connessioni mTLS devono impostare un account WinRM dedicato (ufficiale «Rilascia e gestisci certificati» con privilegi minimi).' },
+          { label: 'Requisito', text: 'WinRM abilitato sulla CA e il pacchetto opzionale pywinrm installato. Le operazioni di gestione richiedono admin:system.' },
+        ]
+      },
+      {
+        title: 'Sincronizzazione revoche via CRL',
+        items: [
+          { label: 'Sincronizzazione unidirezionale', text: 'Recupera periodicamente la CRL della CA e contrassegna come revocati in UCM i certificati revocati sulla CA. Non annulla mai una revoca.' },
+          { label: 'Origine della CRL', text: 'Un URL di CRL esplicito, oppure rilevato automaticamente dal punto di distribuzione CRL dei certificati emessi.' },
+          { label: 'Verificata', text: 'La firma della CRL viene controllata rispetto al certificato della CA prima di applicare qualsiasi cosa.' },
+        ]
+      },
+      {
+        title: 'Inventario CA e pannello di controllo',
+        items: [
+          { label: 'Sincronizzazione inventario', text: 'Importa i certificati emessi direttamente sulla CA che UCM non conosce ancora (incrementale per id richiesta, con riconciliazione).' },
+          { label: 'Richieste in sospeso', text: 'Elenca, approva (reinvio + importazione automatica) o rifiuta le richieste in attesa di approvazione del responsabile della CA.' },
+          { label: 'Salute della CA', text: 'Stato del servizio CA, scadenza del certificato CA, prossimo aggiornamento della CRL e numero di richieste in sospeso a colpo d\'occhio.' },
+        ]
+      },
     ],
     tips: [
       'Testa prima la connessione per verificare l\'autenticazione e scoprire i template disponibili.',
       'Abilita EOBO selezionando la casella nel modale di firma — i campi si compilano automaticamente dai dati del CSR.',
       'L\'autenticazione con certificato client è raccomandata per la produzione — non richiede il join al dominio.',
+      'Abilita il canale di amministrazione WinRM per propagare le revoche alla CA e gestire le richieste in sospeso da UCM.',
     ],
     warnings: [
       'Kerberos richiede che la macchina sia unita al dominio o un keytab configurato — non disponibile in Docker.',
       'EOBO richiede un certificato di agente di iscrizione configurato sul server AD CS.',
+      'Senza il canale di amministrazione WinRM, la revoca di un certificato AD CS lo contrassegna come revocato solo in UCM — la CA Windows non viene notificata.',
     ],
   },
   helpGuides: {
@@ -124,6 +159,52 @@ UCM passa questi come attributi della richiesta ADCS:
 | Permessi template | Iscrizione standard | Richiede diritti di agente di iscrizione |
 | Caso d'uso | Self-service | Gestione PKI centralizzata |
 
+## Ciclo di vita dei certificati
+
+### Rinnovare un certificato AD CS
+Il rinnovo **non** rifirma localmente (la chiave emittente risiede sulla CA Windows). UCM reinvia il CSR originale del certificato — stessa chiave, soggetto e SAN — alla connessione e al template che lo hanno emesso, e aggiorna il certificato in loco. Se la CA trattiene il rinnovo per l'approvazione del responsabile, viene tracciato come richiesta in sospeso.
+
+### Revocare un certificato AD CS
+L'iscrizione web di AD CS non ha un endpoint di revoca. La revoca di un certificato emesso da AD CS:
+- **Senza il canale di amministrazione WinRM** — lo contrassegna come revocato solo in UCM; la CA Windows non viene notificata. Revocalo anche sulla CA.
+- **Con il canale di amministrazione WinRM** — UCM propaga la revoca alla CA Windows (certutil -revoke + pubblicazione della CRL). La rimozione di un certificateHold propaga anche l'annullamento della revoca.
+
+## Canale di amministrazione WinRM (opzionale)
+
+Il canale di amministrazione consente a UCM di eseguire sulla CA Windows operazioni di gestione che l'iscrizione web non può fare: revoca/annullamento revoca, pubblicazione CRL, inventario e approvazione/rifiuto delle richieste in sospeso. Usa PowerShell remoting + certutil.
+
+### Requisiti
+- **WinRM abilitato** sulla CA (Enable-PSRemoting; consigliato listener HTTPS sulla 5986)
+- Il pacchetto opzionale **pywinrm** installato in UCM (pip install pywinrm)
+- Un account autorizzato a **gestire i certificati** sulla CA («Issue and Manage Certificates»)
+
+### Configurazione
+1. Modifica la connessione e abilita il **canale di amministrazione WinRM**
+2. Imposta l'host (per impostazione predefinita il server della connessione), la porta e il trasporto
+3. **Trasporto**: Kerberos (consigliato, riutilizza il keytab della connessione) o NTLM, su HTTP o HTTPS
+4. **Credenziali**: lascia vuoto per riutilizzare quelle della connessione (Basic/Kerberos). Le connessioni mTLS non hanno credenziali WinRM riutilizzabili — imposta un account dedicato
+5. Clicca **Testa canale di amministrazione**
+
+| Modalità di autenticazione di iscrizione | Riutilizza le credenziali per WinRM? |
+|-------------------------------------------|---------------------------------------|
+| Kerberos (keytab) | Sì — stesso principal/keytab |
+| Basic (utente/password) | Sì — password verso NTLM/Kerberos |
+| Certificato (mTLS) | No — imposta un account WinRM dedicato |
+
+## Sincronizzazione revoche via CRL
+
+Abilita **Sincronizza le revoche dalla CRL della CA** sulla connessione affinché UCM recuperi periodicamente la CRL della CA e contrassegni come revocati in UCM i certificati revocati sulla CA. È strettamente unidirezionale (dalla CA a UCM) e non annulla mai la revoca di un certificato revocato in UCM. L'URL della CRL proviene dalla connessione o viene rilevato automaticamente dal punto di distribuzione CRL dei certificati emessi, e la sua firma viene verificata rispetto al certificato della CA prima di applicare qualsiasi cosa. Viene eseguita ogni ora, più un'azione **Sincronizza CRL ora**.
+
+## Sincronizzazione inventario CA
+
+Abilita **Importa i certificati emessi direttamente sulla CA** per portare nello store di UCM i certificati emessi al di fuori di UCM (strumenti nativi, autoenrollment, o precedenti a UCM), in modo che UCM tracci l'intero ciclo di vita. Legge il database della CA con certutil -view, importa i certificati che UCM non ha ancora (deduplicati per numero di serie) ed è incrementale per id richiesta (con opzione di riscansione completa). Una vista di **riconciliazione** elenca i certificati presenti sulla CA ma non in UCM, e viceversa. Viene eseguita ogni 6 ore, più un'azione **Importa dalla CA ora**. Richiede il canale di amministrazione WinRM.
+
+## Pannello di controllo CA
+
+Il pannello di controllo (aperto dalla connessione, richiede il canale di amministrazione) gestisce le richieste in attesa di approvazione del responsabile della CA e mostra la salute della CA:
+- **Richieste in sospeso** — elenca, **Approva** (certutil -resubmit; il certificato emesso viene importato automaticamente) o **Rifiuta** (certutil -deny)
+- **Salute** — stato del servizio CA, scadenza del certificato CA, prossimo aggiornamento della CRL e numero di richieste in sospeso
+
 ## Risoluzione dei problemi
 
 | Problema | Soluzione |
@@ -131,9 +212,12 @@ UCM passa questi come attributi della richiesta ADCS:
 | Test connessione fallito | Verifica hostname, porta 443 e che certsrv sia accessibile |
 | Nessun template trovato | Verifica che l'account UCM abbia i permessi di iscrizione sulla CA |
 | EOBO negato | Verifica il certificato di agente di iscrizione e i permessi del template |
-| Richiesta bloccata in sospeso | Approva sulla console della CA Windows, poi aggiorna lo stato in UCM |
+| Richiesta bloccata in sospeso | Approvala dal pannello di controllo CA, oppure sulla console della CA Windows e poi aggiorna lo stato in UCM |
+| Test del canale di amministrazione fallito | Verifica che WinRM sia abilitato sulla CA, la porta/il trasporto e che pywinrm sia installato |
+| Revoca assente sulla CA | Abilita il canale di amministrazione WinRM — senza di esso, la revoca è locale a UCM |
+| Sospeso non rilevato (CA non in inglese) | Corretto nella v2.192 — UCM ora riconosce le pagine di attesa AD CS localizzate |
 
-> 💡 Usa il pulsante **Testa connessione** per verificare l'autenticazione e scoprire i template disponibili prima della firma.
+> 💡 Usa il pulsante **Testa connessione** per verificare l'autenticazione e scoprire i template disponibili prima della firma. Abilita il **canale di amministrazione WinRM** per gestire revoca, CRL, inventario e richieste in sospeso direttamente da UCM.
 `
   }
 }
