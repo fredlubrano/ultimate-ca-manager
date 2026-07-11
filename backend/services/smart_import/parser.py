@@ -44,6 +44,7 @@ class ParsedObject:
     not_before: Optional[str] = None
     not_after: Optional[str] = None
     is_ca: bool = False
+    key_cert_sign: bool = False
     is_self_signed: bool = False
     san_dns: List[str] = field(default_factory=list)
     san_ip: List[str] = field(default_factory=list)
@@ -75,6 +76,7 @@ class ParsedObject:
             "not_before": self.not_before,
             "not_after": self.not_after,
             "is_ca": self.is_ca,
+            "key_cert_sign": self.key_cert_sign,
             "is_self_signed": self.is_self_signed,
             "san_dns": self.san_dns,
             "san_ip": self.san_ip,
@@ -418,13 +420,18 @@ class SmartParser:
         obj.not_before = cert.not_valid_before_utc.isoformat() if hasattr(cert, 'not_valid_before_utc') else cert.not_valid_before.isoformat()
         obj.not_after = cert.not_valid_after_utc.isoformat() if hasattr(cert, 'not_valid_after_utc') else cert.not_valid_after.isoformat()
         
-        # Check if CA
+        # Check if CA (BasicConstraints) and CA signing capability (KeyUsage)
         try:
             basic_constraints = cert.extensions.get_extension_for_oid(ExtensionOID.BASIC_CONSTRAINTS)
             obj.is_ca = basic_constraints.value.ca
         except x509.ExtensionNotFound:
             obj.is_ca = False
-        
+        try:
+            key_usage = cert.extensions.get_extension_for_oid(ExtensionOID.KEY_USAGE)
+            obj.key_cert_sign = bool(key_usage.value.key_cert_sign)
+        except x509.ExtensionNotFound:
+            obj.key_cert_sign = False
+
         # Check if self-signed
         obj.is_self_signed = (obj.subject == obj.issuer)
         

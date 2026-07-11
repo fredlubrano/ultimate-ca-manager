@@ -269,6 +269,73 @@ class TestSmartImport:
         )
         assert r.status_code != 403
 
+    def test_execute_legacy_ca_without_basic_constraints_requires_write_cas(
+        self, auth_client, app,
+    ):
+        """keyCertSign without BasicConstraints must not bypass the write:cas gate."""
+        from datetime import datetime, timedelta, timezone
+
+        from cryptography import x509
+        from cryptography.hazmat.backends import default_backend
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from cryptography.x509.oid import ExtensionOID, NameOID
+
+        key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
+        name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'legacy-root.example.com')])
+        now = datetime.now(timezone.utc)
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(name)
+            .issuer_name(name)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(now - timedelta(days=1))
+            .not_valid_after(now + timedelta(days=3650))
+            .add_extension(
+                x509.KeyUsage(
+                    digital_signature=False,
+                    content_commitment=False,
+                    key_encipherment=False,
+                    data_encipherment=False,
+                    key_agreement=False,
+                    key_cert_sign=True,
+                    crl_sign=True,
+                    encipher_only=False,
+                    decipher_only=False,
+                ),
+                critical=True,
+            )
+            .sign(key, hashes.SHA256(), default_backend())
+        )
+        cert_pem = cert.public_bytes(serialization.Encoding.PEM).decode()
+        key_pem = key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption(),
+        ).decode()
+        bundle = cert_pem + key_pem
+
+        r = post_json(auth_client, '/api/v2/account/apikeys', {
+            'name': 'legacy-ca-bypass-test',
+            'permissions': ['read:certificates', 'write:certificates'],
+        })
+        created = assert_success(r, 201)
+        api_key = created.get('key')
+        assert api_key
+
+        client = app.test_client()
+        r = client.post(
+            '/api/v2/import/execute',
+            data=json.dumps({
+                'content': bundle,
+                'options': {'import_cas': True},
+            }),
+            content_type=CONTENT_JSON,
+            headers={'X-API-Key': api_key},
+        )
+        assert r.status_code == 403
+
 
 # ============================================================
 # Policies
