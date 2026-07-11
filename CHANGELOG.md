@@ -10,6 +10,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.192] - 2026-07-11
+
 ### Security
 - **`/api/v2/auth/methods` trusted-proxy gate** — the unauthenticated auth-method discovery endpoint re-parsed reverse-proxy `X-SSL-Client-*` headers without checking `is_request_from_trusted_proxy()`, so a remote caller who knew an enrolled certificate serial could learn the mapped UCM username (`mtls_user`) without a session. The endpoint now applies the same trusted-proxy gate as `login_mtls()`. (GHSA-p4hj-mmxv-xh65)
 - **Legacy settings webhook test DNS rebinding** — `POST /api/v2/settings/webhooks/<id>/test` validated the URL once then called bare `requests.post()`, which re-resolved DNS and could reach cloud metadata or loopback despite the check. The test path now uses DNS-pinned `safe_request_post()`, matching the hardened `/api/v2/webhooks` delivery path. (GHSA-q7j8-h9jm-qxw8)
