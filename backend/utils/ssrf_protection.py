@@ -152,8 +152,8 @@ def validate_url_not_cloud_metadata(url: str) -> None:
 # hostname for SNI + certificate verification. We implement that by
 # installing a thread-local override of urllib3's create_connection.
 #
-# Caller responsibility: only use safe_request_post() / safe_request_get()
-# for outbound HTTP whose URL is provided by an authenticated UCM admin
+# Caller responsibility: only use safe_request_post() / safe_request_get() /
+# safe_request_head() for outbound HTTP whose URL is provided by an authenticated UCM admin
 # (webhooks, SSO discovery, etc.). Do NOT use it for ACME/CDP/OCSP — those
 # are protocol-driven and have their own validation.
 
@@ -274,3 +274,12 @@ def safe_request_get(url, **kwargs):
     host, ip = _resolve_and_validate(url)
     with _pin_host(host, ip):
         return requests.get(url, **kwargs)
+
+
+def safe_request_head(url, **kwargs):
+    """requests.head() with DNS-rebinding protection (e.g. ACME newNonce)."""
+    import requests
+    kwargs.setdefault('timeout', 30)
+    host, ip = _resolve_and_validate(url)
+    with _pin_host(host, ip):
+        return requests.head(url, **kwargs)
