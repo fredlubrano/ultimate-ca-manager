@@ -607,6 +607,22 @@ export default function SettingsPage() {
     }
   }
 
+  const handleMscaInventorySync = async (conn) => {
+    setMscaTesting(true)
+    try {
+      const res = await mscaService.inventorySync(conn.id)
+      showSuccess(t('msca.inventorySyncResult', {
+        imported: res.data?.imported ?? 0,
+        skipped: res.data?.skipped ?? 0
+      }))
+      loadMscaConnections()
+    } catch (error) {
+      showError(error.message || t('msca.inventorySyncFailed'))
+    } finally {
+      setMscaTesting(false)
+    }
+  }
+
   // Webhook handlers
   const loadWebhooks = async () => {
     setWebhooksLoading(true)
@@ -1488,6 +1504,7 @@ export default function SettingsPage() {
             handleMscaTest={handleMscaTest}
             handleMscaSyncCrl={handleMscaSyncCrl}
             handleMscaPublishCrl={handleMscaPublishCrl}
+            handleMscaInventorySync={handleMscaInventorySync}
             setMscaConfirmDelete={setMscaConfirmDelete}
             hasPermission={hasPermission}
           />

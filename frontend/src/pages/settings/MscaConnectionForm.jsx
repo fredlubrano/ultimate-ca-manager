@@ -37,6 +37,7 @@ export default function MscaConnectionForm({ connection, onSave, onCancel }) {
     winrm_username: connection?.winrm_username || '',
     winrm_password: '',
     ca_config: connection?.ca_config || '',
+    inventory_sync_enabled: connection?.inventory_sync_enabled ?? false,
   })
   const [testingAdmin, setTestingAdmin] = useState(false)
   const [availableTemplates, setAvailableTemplates] = useState([])
@@ -336,6 +337,13 @@ export default function MscaConnectionForm({ connection, onSave, onCancel }) {
                 <TestTube size={14} />
                 {testingAdmin ? t('common.testing') : t('msca.testAdminChannel')}
               </Button>
+            )}
+            <label className="flex items-center gap-2 text-sm pt-1">
+              <input type="checkbox" checked={formData.inventory_sync_enabled} onChange={(e) => updateField('inventory_sync_enabled', e.target.checked)} className="rounded" />
+              {t('msca.inventorySyncEnable')}
+            </label>
+            {formData.inventory_sync_enabled && (
+              <p className="text-xs text-text-tertiary">{t('msca.inventorySyncHint')}</p>
             )}
           </div>
         )}

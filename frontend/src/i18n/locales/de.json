@@ -4096,6 +4096,12 @@
     "publishCrl": "CRL auf CA veröffentlichen",
     "publishCrlSuccess": "CRL auf der Microsoft-CA veröffentlicht",
     "publishCrlFailed": "CRL-Veröffentlichung fehlgeschlagen",
+    "inventorySyncEnable": "Direkt auf der CA ausgestellte Zertifikate importieren (Inventar)",
+    "inventorySyncHint": "Importiert regelmäßig auf der Windows-CA ausgestellte Zertifikate, die UCM noch nicht kennt, damit UCM den gesamten Zertifikatslebenszyklus verfolgt. Inkrementell; läuft über den Admin-Kanal.",
+    "lastInventorySync": "Letztes Inventar",
+    "inventorySyncNow": "Jetzt von CA importieren",
+    "inventorySyncResult": "Inventar abgeschlossen: {{imported}} importiert ({{skipped}} bereits bekannt)",
+    "inventorySyncFailed": "Inventarisierung fehlgeschlagen",
     "testFailed": "Verbindungstest fehlgeschlagen",
     "templatesFetchHint": "Testen Sie die Verbindung, um verfügbare Vorlagen automatisch zu laden",
     "warnings": {

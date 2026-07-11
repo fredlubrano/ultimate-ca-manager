@@ -1,10 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
-import { WindowsLogo, Plus, TestTube, ArrowsClockwise, ClockClockwise, Broadcast, Power, PencilSimple, Trash } from '@phosphor-icons/react'
+import { WindowsLogo, Plus, TestTube, ArrowsClockwise, ClockClockwise, Broadcast, Database, Power, PencilSimple, Trash } from '@phosphor-icons/react'
 import { Button, Badge, HelpCard, DetailHeader, DetailContent, ExperimentalBadge } from '../../components'
 import { formatDate } from '../../lib/utils'
 
-export default function MicrosoftCASection({ mscaConnections, mscaLoading, mscaTesting, handleMscaCreate, handleMscaEdit, handleMscaToggle, handleMscaTest, handleMscaSyncCrl, handleMscaPublishCrl, setMscaConfirmDelete, hasPermission }) {
+export default function MicrosoftCASection({ mscaConnections, mscaLoading, mscaTesting, handleMscaCreate, handleMscaEdit, handleMscaToggle, handleMscaTest, handleMscaSyncCrl, handleMscaPublishCrl, handleMscaInventorySync, setMscaConfirmDelete, hasPermission }) {
   const { t } = useTranslation()
   return (
     <DetailContent>
@@ -77,6 +77,11 @@ export default function MicrosoftCASection({ mscaConnections, mscaLoading, mscaT
                       {t('msca.adminChannel')}: WinRM {conn.winrm_transport} · {conn.winrm_host || conn.server}:{conn.winrm_port}
                     </p>
                   )}
+                  {conn.inventory_sync_enabled && conn.last_inventory_sync_at && (
+                    <p className="text-xs text-text-tertiary">
+                      {t('msca.lastInventorySync')}: {conn.last_inventory_sync_result?.startsWith('success') ? '✓' : '✗'} {formatDate(conn.last_inventory_sync_at)}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -91,6 +96,11 @@ export default function MicrosoftCASection({ mscaConnections, mscaLoading, mscaT
                 {conn.winrm_enabled && hasPermission('admin:system') && (
                   <Button type="button" size="sm" variant="secondary" onClick={() => handleMscaPublishCrl(conn)} disabled={mscaTesting || !conn.enabled} title={t('msca.publishCrl')}>
                     <Broadcast size={14} />
+                  </Button>
+                )}
+                {conn.inventory_sync_enabled && hasPermission('admin:system') && (
+                  <Button type="button" size="sm" variant="secondary" onClick={() => handleMscaInventorySync(conn)} disabled={mscaTesting || !conn.enabled} title={t('msca.inventorySyncNow')}>
+                    <Database size={14} />
                   </Button>
                 )}
                 <Button type="button" size="sm" variant="secondary" onClick={() => handleMscaToggle(conn)} title={conn.enabled ? t('common.disable') : t('common.enable')}>

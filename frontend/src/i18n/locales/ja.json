@@ -4096,6 +4096,12 @@
     "publishCrl": "CA で CRL を発行",
     "publishCrlSuccess": "Microsoft CA で CRL を発行しました",
     "publishCrlFailed": "CRL の発行に失敗しました",
+    "inventorySyncEnable": "CA で直接発行された証明書をインポート（インベントリ）",
+    "inventorySyncHint": "UCM がまだ把握していない、Windows CA で発行された証明書を定期的にインポートし、UCM が証明書のライフサイクル全体を管理できるようにします。増分処理で、管理チャネルを使用します。",
+    "lastInventorySync": "最終インベントリ",
+    "inventorySyncNow": "今すぐ CA からインポート",
+    "inventorySyncResult": "インベントリ完了：{{imported}} 件インポート（{{skipped}} 件は既知）",
+    "inventorySyncFailed": "インベントリに失敗しました",
     "testFailed": "接続テスト失敗",
     "templatesFetchHint": "接続をテストして利用可能なテンプレートを自動読み込み",
     "warnings": {

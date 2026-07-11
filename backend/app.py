@@ -631,6 +631,19 @@ def create_app(config_name=None):
         except ImportError:
             pass
 
+        # Register Microsoft CA inventory sync (every 6h, opt-in per connection)
+        try:
+            from services.msca.inventory import scheduled_msca_inventory_sync
+            scheduler.register_task(
+                name="msca_inventory_sync",
+                func=scheduled_msca_inventory_sync,
+                interval=21600,  # 6 hours
+                description="Import certificates issued directly on Microsoft CAs"
+            )
+            app.logger.info("Registered Microsoft CA inventory sync task (every 6h)")
+        except ImportError:
+            pass
+
         # Register scheduled reports task (checks every minute for due reports)
         try:
             from services.report_service import run_scheduled_reports

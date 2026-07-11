@@ -4096,6 +4096,12 @@
     "publishCrl": "在 CA 上发布 CRL",
     "publishCrlSuccess": "已在 Microsoft CA 上发布 CRL",
     "publishCrlFailed": "发布 CRL 失败",
+    "inventorySyncEnable": "导入直接在 CA 上签发的证书（清点）",
+    "inventorySyncHint": "定期导入 Windows CA 上签发但 UCM 尚未掌握的证书，使 UCM 能管理证书的完整生命周期。增量执行，通过管理通道进行。",
+    "lastInventorySync": "上次清点",
+    "inventorySyncNow": "立即从 CA 导入",
+    "inventorySyncResult": "清点完成：已导入 {{imported}} 个（{{skipped}} 个已知）",
+    "inventorySyncFailed": "清点失败",
     "testFailed": "连接测试失败",
     "templatesFetchHint": "测试连接以自动加载可用模板",
     "warnings": {

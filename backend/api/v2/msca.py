@@ -94,6 +94,16 @@ def _apply_winrm_fields(msca, data):
     return None
 
 
+def _actor():
+    """Current username for audit/attribution, or 'system'."""
+    try:
+        if hasattr(g, 'current_user') and g.current_user:
+            return g.current_user.username
+    except Exception:
+        pass
+    return 'system'
+
+
 def _audit(action: str, msca, details: str, success: bool = True):
     try:
         AuditService.log_action(
@@ -201,6 +211,7 @@ def create_connection():
         err = _apply_winrm_fields(msca, data)
         if err:
             return err
+        msca.inventory_sync_enabled = bool(data.get('inventory_sync_enabled', False))
 
         db.session.add(msca)
         ok, err = safe_commit(logger, "Failed to create connection")
@@ -290,6 +301,8 @@ def update_connection(msca_id):
         err = _apply_winrm_fields(msca, data)
         if err:
             return err
+        if 'inventory_sync_enabled' in data:
+            msca.inventory_sync_enabled = bool(data['inventory_sync_enabled'])
 
         # Auth method change: clear ALL stale credentials for the old method
         # so a basic→certificate switch doesn't leave the old encrypted password
@@ -479,6 +492,61 @@ def publish_crl(msca_id):
         logger.error(f"Publish CRL failed for MS CA '{msca.name}': {e}", exc_info=True)
         _audit('msca.publish_crl', msca, f"error={e}", success=False)
         return error_response("Publish CRL failed", 500)
+
+
+# --- CA inventory sync (#185 phase B) ---
+
+@bp.route('/<int:msca_id>/inventory-sync', methods=['POST'])
+@require_auth(['admin:system'])
+def inventory_sync(msca_id):
+    """Import certs issued directly on the CA that UCM doesn't know yet."""
+    from services.msca_service import MSCAAdminChannelError
+
+    msca = db.session.get(MicrosoftCA, msca_id)
+    if not msca:
+        return error_response("Connection not found", 404)
+    if not MicrosoftCAService.admin_channel_available(msca):
+        return error_response("WinRM admin channel is not configured", 400)
+
+    full = bool((request.get_json(silent=True) or {}).get('full', False))
+    try:
+        summary = MicrosoftCAService.inventory_sync(msca_id, username=_actor(), full=full)
+        _audit('msca.inventory_sync', msca,
+               f"imported={summary['imported']} skipped={summary['skipped']} "
+               f"failed={summary['failed']} full={full}")
+        return success_response(
+            data=summary,
+            message=f"Inventory sync complete: {summary['imported']} certificate(s) imported"
+        )
+    except MSCAAdminChannelError as e:
+        _audit('msca.inventory_sync', msca, f"error={e}", success=False)
+        return error_response(str(e), 400)
+    except Exception as e:
+        logger.error(f"Inventory sync failed for MS CA '{msca.name}': {e}", exc_info=True)
+        _audit('msca.inventory_sync', msca, f"error={e}", success=False)
+        return error_response("Inventory sync failed", 500)
+
+
+@bp.route('/<int:msca_id>/reconciliation', methods=['GET'])
+@require_auth(['read:certificates'])
+def inventory_reconciliation(msca_id):
+    """Compare the CA's issued certs with UCM's known set (read-only)."""
+    from services.msca_service import MSCAAdminChannelError
+
+    msca = db.session.get(MicrosoftCA, msca_id)
+    if not msca:
+        return error_response("Connection not found", 404)
+    if not MicrosoftCAService.admin_channel_available(msca):
+        return error_response("WinRM admin channel is not configured", 400)
+
+    try:
+        result = MicrosoftCAService.reconcile_inventory(msca_id)
+        return success_response(data=result)
+    except MSCAAdminChannelError as e:
+        return error_response(str(e), 400)
+    except Exception as e:
+        logger.error(f"Reconciliation failed for MS CA '{msca.name}': {e}", exc_info=True)
+        return error_response("Reconciliation failed", 500)
 
 
 # --- Templates ---

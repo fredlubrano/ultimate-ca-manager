@@ -4099,6 +4099,12 @@
     "publishCrl": "Publish CRL on CA",
     "publishCrlSuccess": "CRL published on the Microsoft CA",
     "publishCrlFailed": "Failed to publish CRL",
+    "inventorySyncEnable": "Import certificates issued directly on the CA (inventory)",
+    "inventorySyncHint": "Periodically imports certificates issued on the Windows CA that UCM doesn't know yet, so UCM tracks the whole certificate lifecycle. Incremental; runs via the admin channel.",
+    "lastInventorySync": "Last inventory sync",
+    "inventorySyncNow": "Import from CA now",
+    "inventorySyncResult": "Inventory sync complete: {{imported}} imported ({{skipped}} already known)",
+    "inventorySyncFailed": "Inventory sync failed",
     "testFailed": "Connection test failed",
     "templatesFetchHint": "Test the connection to auto-load available templates",
     "warnings": {

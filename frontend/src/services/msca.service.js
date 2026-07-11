@@ -39,6 +39,13 @@ const mscaService = {
   publishCrl: (id) =>
     apiClient.post(`/microsoft-cas/${id}/publish-crl`),
 
+  // CA inventory sync + reconciliation
+  inventorySync: (id, full = false) =>
+    apiClient.post(`/microsoft-cas/${id}/inventory-sync`, { full }),
+
+  reconciliation: (id) =>
+    apiClient.get(`/microsoft-cas/${id}/reconciliation`),
+
   // Templates
   getTemplates: (id) =>
     apiClient.get(`/microsoft-cas/${id}/templates`),

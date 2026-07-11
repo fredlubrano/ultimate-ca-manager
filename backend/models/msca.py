@@ -65,6 +65,13 @@ class MicrosoftCA(db.Model):
     _winrm_password = db.Column('winrm_password', db.Text)
     ca_config = db.Column(db.String(500))
 
+    # CA inventory sync (#185 phase B) — import certs issued directly on the
+    # Windows CA into UCM via the admin channel; incremental by RequestId.
+    inventory_sync_enabled = db.Column(db.Boolean, default=False)
+    last_inventory_sync_at = db.Column(db.DateTime)
+    last_inventory_sync_result = db.Column(db.String(500))
+    last_synced_request_id = db.Column(db.Integer, default=0)
+
     # Timestamps
     created_at = db.Column(db.DateTime, default=utc_now)
     updated_at = db.Column(db.DateTime, default=utc_now, onupdate=utc_now)
@@ -190,6 +197,10 @@ class MicrosoftCA(db.Model):
             'winrm_username': self.winrm_username or '',
             'winrm_password': '***' if self._winrm_password else None,
             'ca_config': self.ca_config or '',
+            'inventory_sync_enabled': bool(self.inventory_sync_enabled),
+            'last_inventory_sync_at': utc_isoformat(self.last_inventory_sync_at),
+            'last_inventory_sync_result': self.last_inventory_sync_result,
+            'last_synced_request_id': self.last_synced_request_id or 0,
             'created_at': utc_isoformat(self.created_at),
             'updated_at': utc_isoformat(self.updated_at),
             'created_by': self.created_by,
