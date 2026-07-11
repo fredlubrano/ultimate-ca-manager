@@ -222,8 +222,6 @@ def new_order(slug=None):
     eab_cfg = SystemConfig.query.filter_by(key='acme_eab_required').first()
     eab_required = (eab_cfg.value if eab_cfg else 'false').lower() == 'true'
     if eab_required:
-        if not jwk:
-            return proxy_error('malformed', 'Missing JWK in protected header')
         try:
             jws_data = request.get_json(silent=True) or {}
             protected_b64 = jws_data.get('protected', '')
