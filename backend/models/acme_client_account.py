@@ -38,6 +38,8 @@ class AcmeClientAccount(db.Model):
     http_timeout_sec = db.Column(
         db.Integer, nullable=False, default=DEFAULT_HTTP_TIMEOUT_SEC,
     )
+    # RFC 8555 §7.4.2 — match alternate chain by root subject CN (e.g. ISRG Root X1).
+    preferred_chain = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
@@ -84,6 +86,7 @@ class AcmeClientAccount(db.Model):
             'order_poll_timeout_sec': self.get_order_poll_timeout_sec(),
             'order_poll_interval_sec': self.get_order_poll_interval_sec(),
             'http_timeout_sec': self.get_http_timeout_sec(),
+            'preferred_chain': self.preferred_chain,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'eab_hmac_key_set': bool(self.eab_hmac_key),

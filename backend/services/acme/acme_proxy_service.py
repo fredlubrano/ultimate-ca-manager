@@ -1050,7 +1050,27 @@ class AcmeProxyService:
         
         if resp.status_code == 200:
             # Certificate obtained successfully
-            cert_pem = resp.content.decode('utf-8') if isinstance(resp.content, bytes) else resp.content
+            from services.acme.acme_chain_selection import select_acme_certificate_chain
+
+            def _fetch_alternate(url: str) -> str:
+                alt_resp = self._post_with_account(url, "")
+                if alt_resp.status_code != 200:
+                    raise RuntimeError(
+                        f'Alternate chain fetch failed: HTTP {alt_resp.status_code}'
+                    )
+                content = alt_resp.content
+                return content.decode('utf-8') if isinstance(content, bytes) else content
+
+            preferred = None
+            if self.account:
+                preferred = (self.account.preferred_chain or '').strip() or None
+
+            cert_pem = select_acme_certificate_chain(
+                resp.content.decode('utf-8') if isinstance(resp.content, bytes) else resp.content,
+                resp.headers,
+                preferred,
+                _fetch_alternate,
+            )
             
             stored_cert = None
             # Store the certificate in the database

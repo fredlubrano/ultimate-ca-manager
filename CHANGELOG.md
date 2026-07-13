@@ -13,6 +13,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ### Changed
 - **WinRM admin channel dependencies bundled** — `pywinrm` and `requests-ntlm` are now part of the default requirements (pure-python wheels), so the Microsoft CA admin channel (revoke/unrevoke, CRL publish, inventory sync) works out of the box on Docker, DEB and RPM without a manual `pip install` — previously impossible in policy-restricted or air-gapped deployments. `requests-kerberos` stays optional (C-extension dependencies). (#159)
 
+### Added
+- **ACME preferred certificate chain** — per-account `preferred_chain` (trust-anchor CN, e.g. `ISRG Root X1`) selects an RFC 8555 `Link: rel="alternate"` chain during certificate download in the ACME client and proxy; matches last cert subject or issuer CN; unset keeps the CA default chain. (#197)
+
 ### Fixed
 - **SoftHSM token persistence in Docker Compose** — `docker-compose.yml` and `docker-compose.simple.yml` now mount `ucm-hsm-tokens:/var/lib/softhsm/tokens` like `docker-compose.hsm.yml` already did. Without it, the token auto-initialized by the entrypoint was lost on container re-creation, orphaning the `SoftHSM-Default` provider row and any keys stored under it. (#195)
 
