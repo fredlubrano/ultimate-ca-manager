@@ -57,7 +57,7 @@ startup repair, migration 057 SQLite rewrite.
 
 ```bash
 cd frontend
-UCM_BASE_URL=https://admin.ucm.pfcorp.eu:8443 \
+UCM_BASE_URL=https://admin.ucm.example.com:8443 \
 UCM_PASSWORD='…' \
 npx playwright test e2e/hsm.spec.ts
 ```
@@ -67,7 +67,7 @@ requires SoftHSM on the target host.
 
 ## Lab validation (native Debian — 2026-07-13)
 
-Host `10.42.0.8` (`admin.ucm.pfcorp.eu`):
+Host `10.42.0.8` (`admin.ucm.example.com`):
 
 - SoftHSM2 installed; token **UCM-Default** in `/opt/ucm/data/softhsm/tokens/`
 - `HSM_DEFAULT_PIN` in `/etc/ucm/ucm.env` → auto-register **SoftHSM-Default**

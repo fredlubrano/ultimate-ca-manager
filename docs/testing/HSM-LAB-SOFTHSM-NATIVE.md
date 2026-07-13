@@ -111,12 +111,12 @@ sudo systemctl status ucm
 
 ```bash
 # Login (session cookie + CSRF)
-curl -sk -c /tmp/ucm.jar -b /tmp/ucm.jar -X POST https://admin.ucm.pfcorp.eu:8443/api/v2/auth/login \
+curl -sk -c /tmp/ucm.jar -b /tmp/ucm.jar -X POST https://admin.ucm.example.com:8443/api/v2/auth/login \
   -H 'Content-Type: application/json' -d '{"username":"admin","password":"…"}'
 
 CSRF=$(curl -sk -b /tmp/ucm.jar -X POST …/auth/login … | jq -r '.data.csrf_token')
 
-curl -sk -b /tmp/ucm.jar -X POST https://admin.ucm.pfcorp.eu:8443/api/v2/hsm/providers/1/test \
+curl -sk -b /tmp/ucm.jar -X POST https://admin.ucm.example.com:8443/api/v2/hsm/providers/1/test \
   -H "X-CSRF-Token: $CSRF"
 ```
 
@@ -134,7 +134,7 @@ Expected:
 
 ```bash
 cd frontend
-UCM_BASE_URL=https://admin.ucm.pfcorp.eu:8443 UCM_PASSWORD='…' \
+UCM_BASE_URL=https://admin.ucm.example.com:8443 UCM_PASSWORD='…' \
   npx playwright test e2e/hsm.spec.ts --project=chromium
 ```
 
