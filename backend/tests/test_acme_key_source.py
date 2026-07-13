@@ -97,6 +97,7 @@ class TestAcmeClientKeySourceApi:
 
         class FakeCertResp:
             status_code = 200
+            headers = {}
             text = (
                 '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n'
             )
@@ -143,6 +144,7 @@ class TestAcmeClientFinalizeReuse:
 
         class FakeCertResp:
             status_code = 200
+            headers = {}
             text = '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n'
 
         with app.app_context():

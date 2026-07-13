@@ -629,7 +629,10 @@ class AcmeClientService:
     def _select_certificate_chain(self, cert_resp) -> str:
         from services.acme.acme_chain_selection import select_acme_certificate_chain
 
-        preferred = (self.account.preferred_chain or '').strip() or None
+        acct = getattr(self, 'account', None)
+        preferred = None
+        if acct is not None:
+            preferred = (acct.preferred_chain or '').strip() or None
         return select_acme_certificate_chain(
             cert_resp.text,
             cert_resp.headers,
