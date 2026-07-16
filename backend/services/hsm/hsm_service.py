@@ -582,9 +582,9 @@ class HsmService:
                 status='connected',
             )
             provider.set_config({
-                'library_path': lib_path,
+                'module_path': lib_path,
                 'token_label': 'UCM-Default',
-                'pin': pin,
+                'user_pin': pin,
             })
             db.session.add(provider)
             db.session.commit()
