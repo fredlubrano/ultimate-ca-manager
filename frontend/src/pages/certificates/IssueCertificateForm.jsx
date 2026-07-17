@@ -29,6 +29,7 @@ export function IssueCertificateForm({ cas, initialData, onSubmit, onCancel, t }
     key_size: '2048',
     validity_days: '365',
     expiry_date: '',
+    digest: 'sha256',
     ocsp_must_staple: false,
     extra_ekus: [],
   })
@@ -153,6 +154,7 @@ export function IssueCertificateForm({ cas, initialData, onSubmit, onCancel, t }
       }
     }
     if (tpl.validity_days) updates.validity_days = String(tpl.validity_days)
+    if (tpl.digest) updates.digest = String(tpl.digest).toLowerCase()
 
     // Map template_type to cert_type
     const typeMap = {
@@ -287,6 +289,7 @@ export function IssueCertificateForm({ cas, initialData, onSubmit, onCancel, t }
       ...(san_uri.length && { san_uri }),
       ...(san_upn.length && { san_upn }),
       ...(selectedTemplate && { template_id: parseInt(selectedTemplate) }),
+      ...(formData.digest && { digest: formData.digest }),
       ...(formData.ocsp_must_staple && { ocsp_must_staple: true }),
       ...(formData.extra_ekus?.length && { extra_ekus: formData.extra_ekus }),
     }
