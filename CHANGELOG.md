@@ -10,6 +10,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.194] - 2026-07-17
+
 ### Fixed
 - **CSR SKI/AKI injection** — Subject Key Identifier and Authority Key Identifier from a client CSR are no longer copied into the issued certificate. SKI is always derived from the subject public key; AKI always from the issuing CA's SKI (public-key fallback). Prevents enrollee-controlled key-identifier spoofing (RFC 5280 §4.2.1.1 / §4.2.1.2).
 - **EE and intermediate AKI** — end-entity and intermediate certificates set AKI from the issuer certificate's SKI when present, matching CRL AKI behaviour.
