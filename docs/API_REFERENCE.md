@@ -1332,6 +1332,19 @@ POST /api/v2/crl/{ca_id}/delta/regenerate
 
 Requires CDP + delta CRL enabled on the CA, and an existing complete CRL.
 
+### CRL Schedule
+```http
+GET /api/v2/crl/{ca_id}/config
+POST /api/v2/crl/{ca_id}/config
+```
+
+Full CRL schedule per CA. `POST` accepts `validity_days` (1 to 365, default 7),
+`publish_interval_hours` (1 to 8760 or null for the legacy regenerate near expiry
+behaviour) and `digest` (`sha256`, `sha384`, `sha512`). The publish interval must
+not exceed the validity window: publishing more often than the validity gives
+relying parties a grace period. Responses include the computed `next_publish`,
+also present in CRL metadata responses when a cadence is configured.
+
 ### OCSP Status
 ```http
 GET /api/v2/ocsp/status
