@@ -10,6 +10,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.195] - 2026-07-18
+
 ### Added
 - **Named protocol URLs per CA (opt-in)** — a CA created with `namedUrls` gets an immutable unique slug derived from its name, used instead of the random id in CDP/AIA URL paths (`/cdp/my-issuing-ca.crl`); both slug and refid forms always resolve. Easier manual configuration of CRL/OCSP paths in relying products; refid stays the default. Migration 060. (#207)
 - **Full CRL schedule per CA** — CRL validity (`nextUpdate` window) decoupled from the publish cadence, with `next_publish` exposed in CRL metadata and the scheduler republishing on the configured interval; configurable CRL signature digest (SHA-256/384/512). New `GET|POST /api/v2/crl/<ca_id>/config`, CRL & OCSP page UI, migration 059. (#207)
