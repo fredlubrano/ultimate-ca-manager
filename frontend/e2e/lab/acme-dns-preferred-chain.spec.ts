@@ -11,6 +11,7 @@ import { test, expect } from '@playwright/test'
 import { selectByLabel } from '../helpers/select'
 
 const isLab = process.env.UCM_LAB === '1'
+const LAB_DOMAIN_BASE = process.env.UCM_LAB_DOMAIN_BASE || 'lab.ucm.example.com'
 const PREFERRED_CHAIN = 'ISRG Root X1'
 const CA_LABEL = /Let's Encrypt Staging/i
 const DNS_PROVIDER = /register-gandi/i
@@ -28,7 +29,7 @@ test.describe('Lab — ACME DNS + preferred_chain', () => {
   })
 
   test('issues staging cert with DNS auto-create', async ({ page }) => {
-    const domain = `test-pw-${Date.now()}.lab.ucm.example.com`
+    const domain = `test-pw-${Date.now()}.${LAB_DOMAIN_BASE}`
 
     const stagingCard = page.locator('div').filter({ hasText: CA_LABEL }).first()
     await expect(stagingCard).toBeVisible({ timeout: 15000 })
