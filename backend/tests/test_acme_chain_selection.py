@@ -9,6 +9,7 @@ from cryptography.x509.oid import NameOID
 
 from services.acme.acme_chain_selection import (
     chain_issuer_serials,
+    chain_matches_preferred_cn,
     chain_root_common_name,
     collect_link_header_values,
     parse_link_rel_alternate,
@@ -80,6 +81,13 @@ def _issuer_chain_pem(intermediate_cn: str, root_cn: str) -> str:
     return (intermediate + root).decode()
 
 
+def _short_chain_pem(leaf_cn: str, intermediate_cn: str, root_cn: str) -> str:
+    """Chain ending at intermediate; self-signed root omitted from PEM."""
+    intermediate = _cert_pem(intermediate_cn, root_cn)
+    leaf = _cert_pem(leaf_cn, intermediate_cn)
+    return (leaf + intermediate).decode()
+
+
 class TestLinkParsing:
     def test_parse_single_alternate(self):
         link = '<https://acme.example/cert/alt>;rel="alternate"'
@@ -118,6 +126,11 @@ class TestChainHelpers:
     def test_chain_root_common_name(self):
         chain = _chain_pem('leaf.example', 'ISRG Root X2')
         assert chain_root_common_name(chain) == 'ISRG Root X2'
+
+    def test_chain_matches_preferred_cn_via_issuer_when_root_omitted(self):
+        short = _short_chain_pem('leaf.example', 'R3', 'ISRG Root X1')
+        assert chain_root_common_name(short) == 'R3'
+        assert chain_matches_preferred_cn(short, 'ISRG Root X1')
 
 
 class TestSelectAcmeCertificateChain:
@@ -200,6 +213,33 @@ class TestSelectAcmeCertificateChain:
             '<https://acme.example/alt>;rel="alternate"',
             'ISRG Root X1',
             fetch,
+        )
+        assert result == default
+
+    def test_selects_short_alternate_matching_issuer_cn(self):
+        default = _chain_pem('leaf.example', 'ISRG Root X2')
+        short_alternate = _short_chain_pem('leaf.example', 'R3', 'ISRG Root X1')
+
+        result = select_acme_certificate_chain(
+            default,
+            '<https://acme.example/alt>;rel="alternate"',
+            'ISRG Root X1',
+            lambda _url: short_alternate,
+        )
+        assert chain_matches_preferred_cn(result, 'ISRG Root X1')
+        assert chain_issuer_serials(result) == chain_issuer_serials(
+            rebuild_acme_chain(default, short_alternate)
+        )
+
+    def test_keeps_default_when_alternate_matches_same_issuers(self):
+        default = _chain_pem('leaf.example', 'ISRG Root X1')
+        alternate = default
+
+        result = select_acme_certificate_chain(
+            default,
+            '<https://acme.example/alt>;rel="alternate"',
+            'ISRG Root X1',
+            lambda _url: alternate,
         )
         assert result == default
 
