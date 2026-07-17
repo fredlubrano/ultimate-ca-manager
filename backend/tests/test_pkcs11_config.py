@@ -118,12 +118,18 @@ class TestAutoRegisterSofthsm:
 
 class TestMigration057:
     def test_sqlite_rewrites_legacy_config(self, tmp_path):
+        import importlib.util
         import sqlite3
+        from pathlib import Path
 
-        mig = __import__(
-            'migrations.057_pkcs11_config_keys',
-            fromlist=['upgrade'],
+        mig_path = (
+            Path(__file__).resolve().parents[1]
+            / 'migrations'
+            / '057_pkcs11_config_keys.py'
         )
+        spec = importlib.util.spec_from_file_location('migration_057', mig_path)
+        mig = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mig)
 
         db_path = tmp_path / 'hsm.db'
         conn = sqlite3.connect(db_path)
