@@ -10,7 +10,8 @@ from auth.unified import require_auth
 from utils.response import success_response, error_response, created_response
 from utils.dn_validation import validate_dn_field
 from utils.eku_validation import normalize_extra_ekus, to_object_identifiers, merge_eku_lists
-from models import Certificate, CA, db
+from models import Certificate, CertificateTemplate, CA, db
+from services.trust_store.constants import HASH_ALGORITHMS
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
@@ -66,6 +67,14 @@ def create_certificate():
     ca = db.session.get(CA, data['ca_id'])
     if not ca:
         return error_response('CA not found', 404)
+
+    # Resolve template: its digest is honored at signing and the link is
+    # persisted on the issued row (usage counting, "template used" display)
+    template = None
+    if data.get('template_id'):
+        template = db.session.get(CertificateTemplate, data['template_id'])
+        if not template:
+            return error_response('Template not found', 404)
 
     if not ca.has_private_key:
         return error_response('CA private key not available', 400)
@@ -386,8 +395,11 @@ def create_certificate():
                 critical=False,
             )
 
-        # Sign certificate
-        new_cert = builder.sign(ca_key, hashes.SHA256(), default_backend())
+        # Sign certificate — honor the template digest when one is used
+        sign_hash = hashes.SHA256()
+        if template and template.digest:
+            sign_hash = HASH_ALGORITHMS.get(template.digest.lower().strip(), hashes.SHA256())
+        new_cert = builder.sign(ca_key, sign_hash, default_backend())
 
         # Serialize
         cert_pem = new_cert.public_bytes(serialization.Encoding.PEM).decode('utf-8')
@@ -433,6 +445,7 @@ def create_certificate():
             san_uri=json.dumps(final_san_uri),
             san_upn=json.dumps(final_san_upn) if final_san_upn else None,
             ocsp_must_staple=bool(data.get('ocsp_must_staple')),
+            template_id=template.id if template else None,
             created_by=g.current_user.username if hasattr(g, 'current_user') else None
         )
 

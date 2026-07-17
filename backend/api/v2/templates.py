@@ -18,6 +18,17 @@ from services.template_service import TemplateService
 from datetime import datetime
 import traceback
 
+
+def _template_usage_counts():
+    """Issued-certificate count per template_id, one grouped query."""
+    rows = (
+        db.session.query(Certificate.template_id, db.func.count(Certificate.id))
+        .filter(Certificate.template_id.isnot(None))
+        .group_by(Certificate.template_id)
+        .all()
+    )
+    return {template_id: count for template_id, count in rows}
+
 logger = logging.getLogger(__name__)
 import json
 from utils.datetime_utils import utc_now
@@ -102,10 +113,13 @@ def list_templates():
             
             if search:
                 search_lower = search.lower()
-                templates = [t for t in templates if 
-                           search_lower in t['name'].lower() or 
+                templates = [t for t in templates if
+                           search_lower in t['name'].lower() or
                            search_lower in (t.get('description') or '').lower()]
-            
+
+            counts = _template_usage_counts()
+            for t in templates:
+                t['usage_count'] = counts.get(t['id'], 0)
             return success_response(data=templates)
         except Exception as e:
             logger.error(f"Failed to list templates with pin status for CA {ca_id}: {e}")
@@ -132,10 +146,14 @@ def list_templates():
         )
     
     templates = query.order_by(CertificateTemplate.created_at.desc()).all()
-    
-    return success_response(
-        data=[template.to_dict() for template in templates]
-    )
+
+    counts = _template_usage_counts()
+    data = []
+    for template in templates:
+        d = template.to_dict()
+        d['usage_count'] = counts.get(template.id, 0)
+        data.append(d)
+    return success_response(data=data)
 
 
 @bp.route('/api/v2/templates', methods=['POST'])
@@ -250,8 +268,12 @@ def get_template(template_id):
     template = db.session.get(CertificateTemplate, template_id)
     if not template:
         return error_response('Template not found', 404)
-    
-    return success_response(data=template.to_dict())
+
+    data = template.to_dict()
+    data['usage_count'] = (
+        Certificate.query.filter_by(template_id=template.id).count()
+    )
+    return success_response(data=data)
 
 
 @bp.route('/api/v2/templates/<int:template_id>', methods=['PUT'])
