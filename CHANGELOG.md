@@ -10,6 +10,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Security
+- **Outbound HTTP SSRF via redirect** — `safe_request_get` / `safe_request_post` / `safe_request_head` no longer follow redirects automatically. Each `Location` hop is re-resolved, re-checked against the cloud-metadata/loopback deny-list, and DNS-pinned before connect. Prevents an attacker-controlled webhook or ACME proxy test URL from bouncing the request to `127.0.0.1` or `169.254.169.254` after an initially safe host passes validation.
+
 ### Fixed
 - **CSR SKI/AKI injection** — Subject Key Identifier and Authority Key Identifier from a client CSR are no longer copied into the issued certificate. SKI is always derived from the subject public key; AKI always from the issuing CA's SKI (public-key fallback). Prevents enrollee-controlled key-identifier spoofing (RFC 5280 §4.2.1.1 / §4.2.1.2).
 - **EE and intermediate AKI** — end-entity and intermediate certificates set AKI from the issuer certificate's SKI when present, matching CRL AKI behaviour.
@@ -23,6 +26,7 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 - Regression coverage for #202: intermediate full/delta CRL AKI≠parent, root CRL, SKI-missing fallback, and unauthenticated regenerate gates.
 - RFC 5280 CRL profile suite: IDP parity, FreshestCRL, reasonCode, AKI smoke, auth gates, openssl lab text dump.
 - Cert/CRL profile gaps suite: CSR SKI/AKI overwrite, CA AIA caIssuers, invalidityDate, unhold removeFromCRL, auth gates, openssl lab.
+- SSRF: `safe_request_*` redirect chains to loopback and cloud metadata are rejected; safe same-origin redirects still succeed.
 - Lab scripts: `scripts/lab_crl_openssl_verify.py`, `scripts/lab_rfc5280_cert_crl_profile.py`.
 
 ### Docs

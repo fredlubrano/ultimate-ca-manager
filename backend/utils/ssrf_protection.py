@@ -252,34 +252,84 @@ def _resolve_and_validate(url: str) -> tuple:
     return host, chosen
 
 
+# Cap redirect chains so a malicious Location cannot keep the server busy.
+_MAX_REDIRECT_HOPS = 5
+
+
+def _safe_request(method: str, url: str, **kwargs):
+    """DNS-pin + cloud-metadata/loopback deny-list, re-validated on every redirect.
+
+    ``requests`` follows redirects by default. Pinning only the *original*
+    hostname left a gap: an attacker-controlled host that passes the initial
+    check could 302/307 to ``http://127.0.0.1/…`` or ``http://169.254.169.254/…``
+    and the redirect hop would connect without re-running the guard.
+
+    We force ``allow_redirects=False`` and manually follow ``Location``,
+    re-resolving and re-validating each hop (and re-pinning the TCP peer).
+    """
+    import requests
+    from urllib.parse import urljoin
+
+    kwargs = dict(kwargs)
+    kwargs.setdefault('timeout', 30)  # never hang forever on a stuck/slow upstream
+    # Callers cannot opt into automatic redirects — each hop must be validated.
+    kwargs['allow_redirects'] = False
+
+    method = method.upper()
+    if method not in ('GET', 'POST', 'HEAD'):
+        raise ValueError(f'Unsupported HTTP method for safe_request: {method}')
+
+    current_url = url
+    for _ in range(_MAX_REDIRECT_HOPS + 1):
+        host, ip = _resolve_and_validate(current_url)
+        with _pin_host(host, ip):
+            if method == 'GET':
+                resp = requests.get(current_url, **kwargs)
+            elif method == 'POST':
+                resp = requests.post(current_url, **kwargs)
+            else:
+                resp = requests.head(current_url, **kwargs)
+
+        if not resp.is_redirect:
+            return resp
+
+        location = resp.headers.get('Location')
+        if not location:
+            return resp
+
+        next_url = urljoin(resp.url or current_url, location)
+
+        # Match common client behaviour: 301/302/303 turn POST into GET and
+        # drop the body; 307/308 keep method and body.
+        if method == 'POST' and resp.status_code in (301, 302, 303):
+            method = 'GET'
+            for key in ('data', 'json', 'files'):
+                kwargs.pop(key, None)
+
+        current_url = next_url
+
+    raise ValueError(
+        f'Too many redirects (>{_MAX_REDIRECT_HOPS}) while fetching {url!r}'
+    )
+
+
 def safe_request_post(url, **kwargs):
-    """requests.post() with DNS-rebinding protection.
+    """requests.post() with DNS-rebinding protection and redirect re-validation.
 
     Resolves the URL hostname once, validates it against the cloud-metadata
     deny-list, and pins the underlying TCP connection to that exact IP for
-    the duration of the call. SNI and certificate verification continue to
-    use the original hostname so HTTPS works normally.
+    the duration of each hop. SNI and certificate verification continue to
+    use the original hostname so HTTPS works normally. Redirect targets are
+    re-validated before being followed.
     """
-    import requests
-    kwargs.setdefault('timeout', 30)  # never hang forever on a stuck/slow upstream
-    host, ip = _resolve_and_validate(url)
-    with _pin_host(host, ip):
-        return requests.post(url, **kwargs)
+    return _safe_request('POST', url, **kwargs)
 
 
 def safe_request_get(url, **kwargs):
     """requests.get() counterpart of safe_request_post()."""
-    import requests
-    kwargs.setdefault('timeout', 30)  # never hang forever on a stuck/slow upstream
-    host, ip = _resolve_and_validate(url)
-    with _pin_host(host, ip):
-        return requests.get(url, **kwargs)
+    return _safe_request('GET', url, **kwargs)
 
 
 def safe_request_head(url, **kwargs):
-    """requests.head() with DNS-rebinding protection (e.g. ACME newNonce)."""
-    import requests
-    kwargs.setdefault('timeout', 30)
-    host, ip = _resolve_and_validate(url)
-    with _pin_host(host, ip):
-        return requests.head(url, **kwargs)
+    """requests.head() with DNS-rebinding protection and redirect re-validation."""
+    return _safe_request('HEAD', url, **kwargs)

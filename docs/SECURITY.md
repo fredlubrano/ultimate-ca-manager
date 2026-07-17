@@ -381,6 +381,7 @@ If you discover a security vulnerability, please report it responsibly:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| Unreleased | 2026-07-17 | `safe_request_*` re-validates each HTTP redirect hop (blocks bounce to loopback / cloud metadata) |
 | Unreleased | 2026-07-17 | CSR SKI/AKI never copied from enrollee CSR; EE/CA AKI from issuer SKI; CA AIA `caIssuers`; CRL `invalidityDate`; unhold → delta `removeFromCRL` |
 | 2.56 | 2026-07-17 | ACME/CSR certificates now include Extended Key Usage (serverAuth), empty subject populated from SAN |
 | 2.55 | 2026-07-17 | DN format fix (RFC 4514), auto-migration corrects existing records |
