@@ -616,6 +616,30 @@ class AcmeClientService:
         )
         return resp
     
+    def _fetch_alternate_chain_pem(self, url: str) -> str:
+        """POST-as-GET an alternate certificate URL from directory Link headers."""
+        self._validate_outbound_acme_url(url)
+        resp = self._post(url, "")
+        if resp.status_code != 200:
+            raise RuntimeError(
+                f'Alternate chain fetch failed: HTTP {resp.status_code}'
+            )
+        return resp.text
+
+    def _select_certificate_chain(self, cert_resp) -> str:
+        from services.acme.acme_chain_selection import select_acme_certificate_chain
+
+        acct = getattr(self, 'account', None)
+        preferred = None
+        if acct is not None:
+            preferred = (acct.preferred_chain or '').strip() or None
+        return select_acme_certificate_chain(
+            cert_resp.text,
+            cert_resp.headers,
+            preferred,
+            self._fetch_alternate_chain_pem,
+        )
+
     # =========================================================================
     # Account Management
     # =========================================================================
@@ -1113,8 +1137,8 @@ class AcmeClientService:
             
             if cert_resp.status_code != 200:
                 return False, "Failed to download certificate", None
-            
-            cert_pem = cert_resp.text
+
+            cert_pem = self._select_certificate_chain(cert_resp)
 
             # Store private key (not available for external CSR-only issuance)
             key_pem = None

@@ -13,9 +13,16 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 ### Changed
 - **WinRM admin channel dependencies bundled** — `pywinrm` and `requests-ntlm` are now part of the default requirements (pure-python wheels), so the Microsoft CA admin channel (revoke/unrevoke, CRL publish, inventory sync) works out of the box on Docker, DEB and RPM without a manual `pip install` — previously impossible in policy-restricted or air-gapped deployments. `requests-kerberos` stays optional (C-extension dependencies). (#159)
 
+### Added
+### Added
+- **ACME preferred certificate chain** — per-account `preferred_chain` (trust-anchor CN, e.g. `ISRG Root X1`) selects an RFC 8555 `Link: rel="alternate"` chain during certificate download in the ACME client and proxy; matches last cert subject or issuer CN; alternate issuer chains are rebuilt with the primary leaf when intermediates differ; UI field on the multi-CA account manager. (#197)
+
 ### Fixed
 - **SoftHSM token persistence in Docker Compose** — `docker-compose.yml` and `docker-compose.simple.yml` now mount `ucm-hsm-tokens:/var/lib/softhsm/tokens` like `docker-compose.hsm.yml` already did. Without it, the token auto-initialized by the entrypoint was lost on container re-creation, orphaning the `SoftHSM-Default` provider row and any keys stored under it. (#195)
 - **PKCS#11 config key normalization (#198)** — migration **057** rewrites legacy `library_path`/`pin` rows to `module_path`/`user_pin`; startup repair for existing SoftHSM-Default; runtime alias acceptance in `PKCS11Provider`. Extends #194.
+
+### Security
+- **ACME proxy post-directory SSRF** — upstream directory, nonce, and signed POST-as-GET calls now use DNS-pinned `safe_request_get` / `safe_request_head` / `safe_request_post` with `validate_url_not_cloud_metadata()`, matching the hardened ACME client path.
 
 ## [2.192] - 2026-07-11
 

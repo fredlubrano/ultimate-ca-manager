@@ -102,6 +102,15 @@ def _apply_timing_fields(acct: AcmeClientAccount, data: dict) -> None:
         )
 
 
+def _apply_preferred_chain_field(acct: AcmeClientAccount, data: dict) -> None:
+    if 'preferred_chain' not in data:
+        return
+    value = (data.get('preferred_chain') or '').strip()
+    if value and len(value) > 255:
+        raise ValueError('preferred_chain must be 255 characters or less')
+    acct.preferred_chain = value or None
+
+
 def _clear_other_defaults(except_id=None):
     q = AcmeClientAccount.query.filter(AcmeClientAccount.is_default.is_(True))
     if except_id is not None:
@@ -191,6 +200,7 @@ def create_ca_account():
     try:
         _apply_timing_fields(acct, data)
         _apply_proxy_endpoint_fields(acct, data)
+        _apply_preferred_chain_field(acct, data)
     except ValueError as exc:
         return error_response(str(exc), 400)
     db.session.add(acct)
@@ -215,7 +225,7 @@ def update_ca_account(account_id):
     """Update mutable fields of a CA account.
 
     Editable: label, email, account_key_algorithm, eab_kid, eab_hmac_key,
-    is_default. directory_url is immutable (it is the identity of the account;
+    is_default, preferred_chain. directory_url is immutable (it is the identity of the account;
     changing it would orphan the registration). EAB hmac is only overwritten
     when a non-empty value is supplied.
     """
@@ -253,6 +263,7 @@ def update_ca_account(account_id):
     try:
         _apply_timing_fields(acct, data)
         _apply_proxy_endpoint_fields(acct, data)
+        _apply_preferred_chain_field(acct, data)
     except ValueError as exc:
         return error_response(str(exc), 400)
 

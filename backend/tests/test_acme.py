@@ -1349,10 +1349,8 @@ class TestAcmeProxyProtocol:
             def json(self):
                 return fake_directory
 
-        monkeypatch.setattr(
-            'services.acme.acme_proxy_service.requests.get',
-            lambda *args, **kwargs: _FakeResp(),
-        )
+        from tests.acme_proxy_upstream_stub import stub_acme_proxy_upstream
+        stub_acme_proxy_upstream(monkeypatch, fake_directory)
 
         with app.app_context():
             SystemConfig.query.filter_by(key=PROXY_ACCOUNT_ID_KEY).delete()
@@ -1583,10 +1581,8 @@ class TestAcmeProxyFreshInstall:
             def json(self):
                 return fake_directory
 
-        monkeypatch.setattr(
-            'services.acme.acme_proxy_service.requests.get',
-            lambda *args, **kwargs: _FakeResp(),
-        )
+        from tests.acme_proxy_upstream_stub import stub_acme_proxy_upstream
+        stub_acme_proxy_upstream(monkeypatch, fake_directory)
 
         with app.app_context():
             # Snapshot existing rows so other tests are not affected (session DB).

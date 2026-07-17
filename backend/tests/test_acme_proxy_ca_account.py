@@ -279,10 +279,8 @@ class TestProxyMultiPath:
             def json(self):
                 return fake_directory
 
-        monkeypatch.setattr(
-            'services.acme.acme_proxy_service.requests.get',
-            lambda *args, **kwargs: _FakeResp(),
-        )
+        from tests.acme_proxy_upstream_stub import stub_acme_proxy_upstream
+        stub_acme_proxy_upstream(monkeypatch, fake_directory)
 
     def test_resolve_proxy_by_slug(self, app, clean_proxy_state):
         from services.acme.acme_proxy_account import resolve_proxy_by_slug
