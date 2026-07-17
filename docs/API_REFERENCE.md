@@ -641,9 +641,12 @@ Content-Type: application/json
 
 {
   "reason": "keyCompromise",
-  "comments": "Private key was exposed"
+  "comments": "Private key was exposed",
+  "invalidity_date": "2026-07-10T12:00:00Z"
 }
 ```
+
+Optional **`invalidity_date`** / **`invalidity_at`** (ISO 8601): RFC 5280 §5.3.2 date on which the certificate became invalid (may precede revocation). Emitted as CRL entry `invalidityDate` when set.
 
 **Revocation Reasons:**
 - `unspecified`
@@ -652,6 +655,14 @@ Content-Type: application/json
 - `affiliationChanged`
 - `superseded`
 - `cessationOfOperation`
+- `certificateHold` (temporary; can be lifted via unhold)
+
+### Unhold Certificate (lift certificateHold)
+```http
+POST /api/v2/certificates/{cert_id}/unhold
+```
+
+Requires reason `certificateHold` / `certificate_hold`. When the issuing CA has delta CRL enabled, UCM emits a delta entry with reason `removeFromCRL` (RFC 5280 §5.3.1) before regenerating the full CRL.
 
 ### Import Certificate
 ```http
@@ -1304,6 +1315,22 @@ GET /api/v2/crl/{ca_id}
 ```http
 POST /api/v2/crl/{ca_id}/regenerate
 ```
+
+Requires `write:crl`. Offline CAs return `400`. Response metadata omits PEM by default; fetch PEM with `GET /api/v2/crl/{ca_id}`.
+
+Generated CRLs include **Authority Key Identifier** = issuing CA **Subject Key Identifier** (RFC 5280 §5.2.1).
+
+### Get Delta CRL
+```http
+GET /api/v2/crl/{ca_id}/delta
+```
+
+### Regenerate Delta CRL
+```http
+POST /api/v2/crl/{ca_id}/delta/regenerate
+```
+
+Requires CDP + delta CRL enabled on the CA, and an existing complete CRL.
 
 ### OCSP Status
 ```http

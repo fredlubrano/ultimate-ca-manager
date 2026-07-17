@@ -356,10 +356,62 @@ psql -U ucm -h db.example.com ucm < ucm-pg-backup.sql
 
 ### CRL Distribution
 
-**Configure CRL endpoint:**
-1. CRL URL: `https://your-server:8443/crl/<ca-id>.crl`
-2. Configure in CA settings > CRL tab
-3. Set regeneration interval
+Public CDP (HTTP, typically port 8080):
+
+```text
+http://your-server:8080/cdp/<ca_refid>.crl
+http://your-server:8080/cdp/<ca_refid>-delta.crl   # when delta CRL is enabled
+```
+
+Management UI: **CA → CRL / CDP** tab (enable CDP, optional delta, regeneration interval).
+
+**Regenerate via API** (requires `write:crl`):
+
+```bash
+curl -k -X POST -H "Authorization: Bearer $TOKEN" \
+  https://your-server:8443/api/v2/crl/<ca_id>/regenerate
+curl -k -X POST -H "Authorization: Bearer $TOKEN" \
+  https://your-server:8443/api/v2/crl/<ca_id>/delta/regenerate
+```
+
+#### RFC 5280 profile (what UCM puts on the wire)
+
+| Extension / rule | Behaviour | RFC |
+|------------------|-----------|-----|
+| **Authority Key Identifier** | Identifies the **signing CA key**: SKI of the issuing CA certificate (fallback: hash of the CA public key if SKI is absent). **Not** a copy of the CA certificate's own AKI (that points at the parent for intermediates). | §5.2.1 (#202) |
+| **CRL Number** | Monotonic, non-critical; full and delta CRLs share one number sequence | §5.2.3 |
+| **Delta CRL Indicator** | Critical on delta CRLs; `BaseCRLNumber` = last complete CRL | §5.2.4 |
+| **Freshest CRL** | Non-critical on complete CRLs when delta+CDP are configured; points at the delta CDP URL | §5.2.6 |
+| **Serials** | Entries with serials >159 bits are **skipped** (logged); no silent truncation | §4.1.2.2 |
+| **Offline CA** | Cannot regenerate while `ca.offline` | ops |
+
+**Intermediate CAs:** clients that match `CRL.AKI` to the intermediate's SKI will reject a CRL that incorrectly carried the parent's key id. After #202, regenerate CRLs for intermediates so published CDP objects pick up the corrected AKI.
+
+**Verify with OpenSSL** (after fetching PEM from `GET /api/v2/crl/<ca_id>` or CDP):
+
+```bash
+openssl crl -in ca.crl -inform PEM -text -noout | grep -A2 'Authority Key Identifier'
+openssl x509 -in intermediate.pem -noout -text | grep -A1 'Subject Key Identifier'
+# keyIdentifier bytes must match the intermediate SKI, not the parent
+```
+
+**Since #204:** IDP omitted on both full and delta (§5.2.4 parity), FreshestCRL guarded when CDP is missing, and `reasonCode` hygiene (`unspecified` omitted; `removeFromCRL` on delta only).
+
+**RFC 5280 profile (issuing CA + CRL):**
+- CRL **Authority Key Identifier** identifies the **signing CA** Subject Key Identifier (§5.2.1).
+- Base and delta CRLs both **omit** IssuingDistributionPoint (§5.2.4).
+- **FreshestCRL** points at the delta URL when CDP + delta CRL are enabled (§5.2.6).
+- Reason `unspecified` is omitted; `removeFromCRL` appears only on delta CRLs (§5.3.1).
+- Optional revoke field **`invalidity_date`** is emitted as CRL entry `invalidityDate` (§5.3.2).
+- Lifting a **certificateHold** (unhold) regenerates the full CRL; with delta CRL enabled, UCM first emits a delta entry with reason `removeFromCRL`.
+
+**Certificate issuance profile:**
+- CSR-supplied SKI/AKI extensions are **ignored**; SKI comes from the subject public key and AKI from the issuing CA’s SKI.
+- Intermediate CAs inherit parent **AIA caIssuers** (and OCSP) when the parent has AIA/OCSP configured.
+
+Lab scripts (repo root):
+- `python3 scripts/lab_crl_openssl_verify.py`
+- `python3 scripts/lab_rfc5280_cert_crl_profile.py`
 
 ### OCSP Configuration
 
