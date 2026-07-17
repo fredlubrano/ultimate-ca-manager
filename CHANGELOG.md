@@ -10,6 +10,10 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Fixed
+- **Template usage_count** — template API reports live count from `Certificate.template_id` instead of a stuck zero. (#207)
+
+
 ## [2.194] - 2026-07-17
 
 ### Fixed
