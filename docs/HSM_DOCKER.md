@@ -12,20 +12,21 @@ On first start, a default SoftHSM token (`UCM-Default`) is automatically initial
 
 **Auto-registration:** UCM automatically creates an `SoftHSM-Default` provider in the database when it detects the Docker entrypoint initialized a token (`HSM_DEFAULT_PIN` env var). The provider appears immediately in the HSM page — no manual setup needed.
 
-## Normalisation des clés PKCS#11 legacy (upgrade)
+## Legacy PKCS#11 key normalization (upgrade)
 
-Lors de l’upgrade, UCM assure la compatibilité des providers PKCS#11 créés par les anciens chemins de config :
+On upgrade, UCM maintains compatibility for PKCS#11 providers created by older configuration paths:
 
-- Legacy : `library_path` / `pin`
-- Canonique : `module_path` / `user_pin`
+- Legacy: `library_path` / `pin`
+- Canonical: `module_path` / `user_pin`
 
-Le processus se fait à trois niveaux :
+Normalization runs at three levels:
 
-1. **Migration 057** : réécriture automatique des champs JSON legacy dans toutes les lignes `pkcs11` de `hsm_providers`.
-2. **Startup repair** : si la ligne `SoftHSM-Default` existe déjà, UCM normalise aussi sa configuration au démarrage.
-3. **Fallback runtime** : `PKCS11Provider` accepte les alias legacy à la lecture (avant validation).
+1. **Migration 057** — automatically rewrites legacy JSON fields in all `pkcs11` rows in `hsm_providers`.
+2. **Startup repair** — if the `SoftHSM-Default` row already exists, UCM normalizes its configuration at startup as well.
+3. **Runtime fallback** — `PKCS11Provider` accepts legacy aliases on read (before validation).
 
-**Conséquence attendue :** après upgrade, le provider `SoftHSM-Default` ne doit plus échouer sur un test de connexion (pas d’erreur du type `module_path is required`) et l’UI doit afficher `module_path` / `user_pin`.
+**Expected outcome:** after upgrade, the `SoftHSM-Default` provider should no longer fail a connection test (no `module_path is required` error) and the UI should show `module_path` / `user_pin`.
+
 
 ## Persistent Tokens
 

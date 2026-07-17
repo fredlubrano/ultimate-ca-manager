@@ -376,23 +376,23 @@ View ACME accounts and orders in the ACME page, or via API:
 curl -k -b cookies.txt https://localhost:8443/api/v2/acme/accounts
 ```
 
-### ACME client accounts — `preferred_chain` (chaînes RFC 8555 / alternates)
+### ACME client accounts — `preferred_chain` (RFC 8555 alternate chains)
 
-UCM peut choisir une chaîne *alternate* annoncée par le CA via `Link: rel="alternate"` (RFC 8555 §7.4.2). Ce choix est piloté par le champ `preferred_chain` sur les **ACME client accounts**.
+UCM can select an *alternate* chain advertised by the CA via `Link: rel="alternate"` (RFC 8555 §7.4.2). This choice is driven by the `preferred_chain` field on **ACME client accounts**.
 
-**Que mettre dans `preferred_chain` ?**
-- Le **CN du trust anchor** au bas de la chaîne visée (ex. `ISRG Root X1` pour Let’s Encrypt gen-Y).
-- Comparaison **case-insensitive** sur le **CN du dernier certificat** fourni dans le PEM : match sur le **subject CN** *ou* sur le **issuer CN** (utile quand le CA “shortens” et **omet le root**).
+**What to put in `preferred_chain`**
+- The **trust anchor CN** at the bottom of the target chain (e.g. `ISRG Root X1` for Let's Encrypt gen-Y).
+- **Case-insensitive** comparison on the **last certificate's CN** in the PEM: match on **subject CN** *or* **issuer CN** (useful when the CA "shortens" the chain and **omits the root**).
 
-**Contraintes / sémantique**
-- Longueur max : **255** caractères.
-- Valeur vide (`""`) / non renseignée : UCM conserve la chaîne **default** de la CA (comportement inchangé).
+**Constraints / semantics**
+- Maximum length: **255** characters.
+- Empty value (`""`) or unset: UCM keeps the CA's **default** chain (unchanged behavior).
 
-**Portée (client + proxy)**
-- Le même registre (`AcmeClientAccount`) alimente à la fois le client ACME et le **proxy ACME**.
+**Scope (client + proxy)**
+- The same registry (`AcmeClientAccount`) backs both the ACME client and the **ACME proxy**.
 
-**API (exemple)**
-- Mise à jour via `PATCH /api/v2/acme/client/accounts/<id>` (nécessite `write:acme`) :
+**API (example)**
+- Update via `PATCH /api/v2/acme/client/accounts/<id>` (requires `write:acme`):
 ```bash
 curl -k -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"preferred_chain":"ISRG Root X1"}' \
