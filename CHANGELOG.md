@@ -10,6 +10,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Fixed
+- **Certificate notBefore clock skew** — newly issued certificates backdate `notBefore` by 15 minutes so relying parties with slightly slow clocks accept fresh certs immediately (#207).
+
 ## [2.194] - 2026-07-17
 
 ### Fixed

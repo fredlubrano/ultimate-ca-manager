@@ -19,7 +19,7 @@ from cryptography.x509.oid import NameOID, ExtendedKeyUsageOID, ExtensionOID
 from services.audit_service import AuditService
 from services.notification_service import NotificationService
 from websocket.emitters import on_certificate_issued
-from utils.datetime_utils import utc_now, utc_isoformat
+from utils.datetime_utils import cert_not_before, utc_isoformat, utc_now
 from utils.db_transaction import safe_commit
 from . import bp
 
@@ -170,9 +170,8 @@ def create_certificate():
         if validity_days < 1 or validity_days > MAX_VALIDITY_DAYS:
             return error_response(
                 f"validity_days must be between 1 and {MAX_VALIDITY_DAYS}", 400)
-        now = utc_now()
-        not_before = now
-        not_after = now + timedelta(days=validity_days)
+        not_before = cert_not_before()
+        not_after = utc_now() + timedelta(days=validity_days)
 
         # Cert validity must not exceed CA cert validity
         ca_not_after = ca_cert.not_valid_after_utc.replace(tzinfo=None)
