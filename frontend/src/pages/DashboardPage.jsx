@@ -381,7 +381,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full w-full">
         <LoadingSpinner message={t('dashboard.loading')} />
       </div>
     )

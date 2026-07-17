@@ -859,7 +859,7 @@ export default function LoginPage() {
               <button
                 onClick={() => { setThemeMenuOpen(!themeMenuOpen); setLangMenuOpen(false) }}
                 className="flex items-center justify-center w-9 h-9 rounded-md bg-bg-tertiary hover:bg-bg-secondary border border-border text-text-secondary hover:text-text-primary transition-colors"
-                title={t('settings.tabs.appearance')}
+                title={t('common.theme')}
               >
                 <Palette size={18} />
               </button>
