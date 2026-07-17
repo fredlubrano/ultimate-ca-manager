@@ -20,3 +20,15 @@ def sanitize_filename(name):
     # Limit length
     name = name[:200]
     return name or 'download'
+
+
+def crl_download_filename(ca, delta=False):
+    """Readable CRL filename for Content-Disposition (#207).
+
+    URLs keep the refid (they are embedded in issued certificates); only the
+    suggested download name uses the CA description, e.g. ``lan-ca-6382320a.crl``.
+    """
+    slug = re.sub(r'[^a-z0-9]+', '-', (ca.descr or '').lower()).strip('-')[:40]
+    ref = (ca.refid or '')[:8]
+    base = f"{slug}-{ref}" if slug else (ref or 'ca')
+    return f"{base}-delta.crl" if delta else f"{base}.crl"
