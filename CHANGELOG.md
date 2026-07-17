@@ -12,6 +12,7 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ### Fixed
 - **Template digest on certificate issuance** — `POST /api/v2/certificates` honors template (or request) digest and persists `template_id`. (#207)
+- **Template usage_count** — template API reports live count from `Certificate.template_id` instead of a stuck zero. (#207)
 
 
 ## [2.194] - 2026-07-17
