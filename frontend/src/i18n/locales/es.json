@@ -917,7 +917,9 @@
     "offlineKeyFile": "Archivo de clave cifrado",
     "offlineKeyFilePick": "Elegir archivo de clave",
     "offlineKeyFileTooLarge": "El archivo de clave es demasiado grande (máx. 256 KB)",
-    "restorePasswordHint": "La contraseña utilizada al poner la CA fuera de línea."
+    "restorePasswordHint": "La contraseña utilizada al poner la CA fuera de línea.",
+    "namedUrls": "Usar el nombre de la CA en las URLs de protocolo",
+    "namedUrlsHint": "Las rutas CDP/OCSP/AIA usan un slug derivado del nombre de la CA en lugar del id aleatorio. Más fácil de configurar manualmente; revela el nombre de la CA en las URLs. No se puede cambiar después."
   },
   "csrs": {
     "uploadCSR": "Subir CSR",

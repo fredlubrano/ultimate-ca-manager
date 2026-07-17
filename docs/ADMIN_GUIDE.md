@@ -363,6 +363,12 @@ http://your-server:8080/cdp/<ca_refid>.crl
 http://your-server:8080/cdp/<ca_refid>-delta.crl   # when delta CRL is enabled
 ```
 
+**Named URLs (opt-in, per CA):** when a CA is created with *Use CA name in
+protocol URLs* (Advanced), CDP/AIA paths use an immutable slug derived from the
+CA name (`/cdp/my-issuing-ca.crl`) instead of the random id — easier to
+configure manually in relying products. Both forms always resolve; the slug
+cannot be changed after creation and reveals the CA name in URLs.
+
 Management UI: **CA → CRL / CDP** tab (enable CDP, optional delta, regeneration interval).
 
 #### Serving protocol endpoints on port 80

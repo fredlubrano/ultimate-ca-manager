@@ -40,6 +40,7 @@ export function CreateCAModal({ open, onClose, cas, onSuccess }) {
   const [createFormValidity, setCreateFormValidity] = useState('10')
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [createFormPathLength, setCreateFormPathLength] = useState('')
+  const [createFormNamedUrls, setCreateFormNamedUrls] = useState(false)
   const [createFormDigest, setCreateFormDigest] = useState('auto')
   const [createFormKeyUsage, setCreateFormKeyUsage] = useState(ROOT_KEY_USAGE)
   const [createFormEkuServerAuth, setCreateFormEkuServerAuth] = useState(false)
@@ -140,6 +141,7 @@ export function CreateCAModal({ open, onClose, cas, onSuccess }) {
       type: createFormType,
       parentCAId: createFormType === 'intermediate' ? createFormParentCAId : null,
       ...(createFormPathLength !== '' && { pathLength: parseInt(createFormPathLength) }),
+      namedUrls: createFormNamedUrls,
       hashAlgorithm: createFormDigest,
       keyUsage: createFormKeyUsage,
       ...(createFormType === 'intermediate' && {
@@ -519,6 +521,18 @@ export function CreateCAModal({ open, onClose, cas, onSuccess }) {
                 onChange={(e) => setCreateFormPathLength(e.target.value)}
                 placeholder={t('cas.pathLengthPlaceholder')}
               />
+              <label className="flex items-start gap-2 text-sm text-text-secondary cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={createFormNamedUrls}
+                  onChange={(e) => setCreateFormNamedUrls(e.target.checked)}
+                />
+                <span>
+                  {t('cas.namedUrls')}
+                  <span className="block text-xs text-text-tertiary">{t('cas.namedUrlsHint')}</span>
+                </span>
+              </label>
             </div>
           )}
         </div>

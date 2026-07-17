@@ -68,9 +68,9 @@ class CASigningMixin:
         ca_private_key = get_ca_signing_key(ca)
 
         # Resolve CDP/OCSP/AIA URLs
-        cdp_urls = [url.replace('{ca_refid}', ca.refid or '') for url in ca.get_cdp_urls()] if ca.cdp_enabled else None
+        cdp_urls = [url.replace('{ca_refid}', ca.url_ref) for url in ca.get_cdp_urls()] if ca.cdp_enabled else None
         ocsp_urls = ca.get_ocsp_urls() if ca.ocsp_enabled else None
-        aia_ca_issuers_urls = [url.replace('{ca_refid}', ca.refid or '') for url in ca.get_aia_urls()] if ca.aia_ca_issuers_enabled else None
+        aia_ca_issuers_urls = [url.replace('{ca_refid}', ca.url_ref) for url in ca.get_aia_urls()] if ca.aia_ca_issuers_enabled else None
         cps_uri = ca.cps_uri if ca.cps_enabled and ca.cps_uri else None
         cps_oid = ca.cps_oid if cps_uri else None
 

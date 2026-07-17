@@ -22,6 +22,11 @@ def sanitize_filename(name):
     return name or 'download'
 
 
+def ca_url_slug(name):
+    """URL-safe slug from a CA name for named protocol URLs (#207)."""
+    return re.sub(r'[^a-z0-9]+', '-', (name or '').lower()).strip('-')[:48]
+
+
 def crl_download_filename(ca, delta=False):
     """Readable CRL filename for Content-Disposition (#207).
 

@@ -26,6 +26,26 @@ class CACreationMixin:
     """CA creation and import operations"""
 
     @staticmethod
+    def _unique_url_slug(descr):
+        """Unique, immutable slug for named protocol URLs (#207).
+
+        '-delta' suffixes are reserved by the delta CRL route — pad them so
+        /cdp/<slug>-delta.crl stays unambiguous.
+        """
+        from utils.sanitize import ca_url_slug
+        base = ca_url_slug(descr)
+        if not base:
+            return None
+        if base.endswith('-delta'):
+            base += '-ca'
+        slug = base
+        i = 2
+        while CA.query.filter_by(url_slug=slug).first() is not None:
+            slug = f"{base}-{i}"
+            i += 1
+        return slug
+
+    @staticmethod
     def create_internal_ca(
         descr: str,
         dn: Dict[str, str],
@@ -48,6 +68,7 @@ class CACreationMixin:
         hsm_key_algorithm: Optional[str] = None,
         key_usage: Optional[List[str]] = None,
         extended_key_usage: Optional[List[str]] = None,
+        named_urls: bool = False,
     ) -> CA:
         """
         Create an internal Certificate Authority.
@@ -164,13 +185,13 @@ class CACreationMixin:
 
             # Resolve parent CDP/OCSP/AIA URLs
             if parent_ca.cdp_enabled:
-                parent_cdp_urls = [url.replace('{ca_refid}', parent_ca.refid or '')
+                parent_cdp_urls = [url.replace('{ca_refid}', parent_ca.url_ref)
                                   for url in parent_ca.get_cdp_urls()]
             if parent_ca.ocsp_enabled:
                 parent_ocsp_urls = parent_ca.get_ocsp_urls()
             if parent_ca.aia_ca_issuers_enabled:
                 parent_aia_urls = [
-                    url.replace('{ca_refid}', parent_ca.refid or '')
+                    url.replace('{ca_refid}', parent_ca.url_ref)
                     for url in parent_ca.get_aia_urls()
                 ]
             if parent_ca.cps_enabled and parent_ca.cps_uri:
@@ -232,6 +253,7 @@ class CACreationMixin:
         # Create CA record
         ca = CA(
             refid=str(uuid.uuid4()),
+            url_slug=CACreationMixin._unique_url_slug(descr) if named_urls else None,
             descr=descr,
             crt=base64.b64encode(cert_pem).decode('utf-8'),
             prv=prv_encoded,
@@ -274,7 +296,7 @@ class CACreationMixin:
             base_url = get_protocol_base_url()
             if base_url:
                 ca.cdp_enabled = True
-                ca.set_cdp_urls([f"{base_url}/cdp/{ca.refid}.crl"])
+                ca.set_cdp_urls([f"{base_url}/cdp/{ca.url_ref}.crl"])
                 db.session.commit()
         except Exception:
             pass

@@ -12,6 +12,9 @@ class CA(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     refid = db.Column(db.String(36), unique=True, nullable=False, index=True)
+    # Opt-in named protocol URLs (#207): immutable slug used instead of refid
+    # in CDP/OCSP/AIA paths. NULL = refid-based URLs (default).
+    url_slug = db.Column(db.String(64), unique=True)
     descr = db.Column(db.String(255), nullable=False)
     crt = db.Column(db.Text, nullable=False)  # Base64 encoded
     prv = db.Column(db.Text)  # Base64 encoded private key
@@ -98,6 +101,11 @@ class CA(db.Model):
     def uses_hsm(self) -> bool:
         """Check if CA uses HSM for private key"""
         return bool(self.hsm_key_id)
+
+    @property
+    def url_ref(self) -> str:
+        """Path segment for protocol URLs: opt-in slug, else refid (#207)"""
+        return self.url_slug or self.refid or ''
     
     # Mapping of short DN field names to their OID long equivalents
     _DN_FIELD_ALIASES = {
@@ -321,6 +329,7 @@ class CA(db.Model):
         data = {
             "id": self.id,
             "refid": self.refid,
+            "url_slug": self.url_slug,
             "descr": self.descr,
             "name": self.descr,  # Alias for frontend
             "serial": self.serial,

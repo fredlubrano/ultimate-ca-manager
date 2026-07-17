@@ -86,8 +86,8 @@ def _add_freshest_crl(builder: x509.CertificateRevocationListBuilder, ca: CA):
         return builder
 
     try:
-        parsed = urlparse(primary_cdp.replace('{ca_refid}', ca.refid))
-        delta_url = f"{parsed.scheme}://{parsed.netloc}/cdp/{ca.refid}-delta.crl"
+        parsed = urlparse(primary_cdp.replace('{ca_refid}', ca.url_ref))
+        delta_url = f"{parsed.scheme}://{parsed.netloc}/cdp/{ca.url_ref}-delta.crl"
         return builder.add_extension(
             x509.FreshestCRL([
                 x509.DistributionPoint(

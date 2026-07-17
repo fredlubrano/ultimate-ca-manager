@@ -917,7 +917,9 @@
     "offlineKeyFile": "加密的密钥文件",
     "offlineKeyFilePick": "选择密钥文件",
     "offlineKeyFileTooLarge": "密钥文件过大（最大 256 KB）",
-    "restorePasswordHint": "将 CA 设为离线时使用的密码。"
+    "restorePasswordHint": "将 CA 设为离线时使用的密码。",
+    "namedUrls": "在协议URL中使用CA名称",
+    "namedUrlsHint": "CDP/OCSP/AIA路径使用由CA名称生成的标识而非随机id。更便于手动配置；但URL中会显示CA名称。创建后不可更改。"
   },
   "csrs": {
     "uploadCSR": "上传CSR",

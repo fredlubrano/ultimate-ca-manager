@@ -917,7 +917,9 @@
     "offlineKeyFile": "暗号化された鍵ファイル",
     "offlineKeyFilePick": "鍵ファイルを選択",
     "offlineKeyFileTooLarge": "鍵ファイルが大きすぎます（最大 256 KB）",
-    "restorePasswordHint": "CA をオフラインにしたときに使用したパスワード。"
+    "restorePasswordHint": "CA をオフラインにしたときに使用したパスワード。",
+    "namedUrls": "プロトコルURLにCA名を使用",
+    "namedUrlsHint": "CDP/OCSP/AIAのパスにランダムIDの代わりにCA名由来のスラッグを使用します。手動設定が容易になりますが、URLにCA名が表示されます。後から変更できません。"
   },
   "csrs": {
     "uploadCSR": "CSRをアップロード",

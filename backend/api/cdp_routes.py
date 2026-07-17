@@ -51,6 +51,10 @@ def _resolve_ca(ca_ref):
     ca = CA.query.filter_by(refid=ca_ref).first()
     if ca:
         return ca
+    # Opt-in named URLs (#207): resolve by immutable slug
+    ca = CA.query.filter_by(url_slug=ca_ref).first()
+    if ca:
+        return ca
     # Fallback to numeric ID for backwards compatibility
     try:
         ca_id_int = int(ca_ref)

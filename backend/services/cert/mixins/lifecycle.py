@@ -115,7 +115,7 @@ class LifecycleMixin:
         # Prepare CDP URLs if CA has it enabled
         cdp_urls = None
         if ca.cdp_enabled:
-            cdp_urls = [url.replace('{ca_refid}', ca.refid) for url in ca.get_cdp_urls()]
+            cdp_urls = [url.replace('{ca_refid}', ca.url_ref) for url in ca.get_cdp_urls()]
             if not cdp_urls:
                 cdp_urls = None
 
@@ -129,7 +129,7 @@ class LifecycleMixin:
         # Prepare AIA CA Issuers URLs if CA has it enabled
         aia_ca_issuers_urls = None
         if ca.aia_ca_issuers_enabled:
-            aia_ca_issuers_urls = [url.replace('{ca_refid}', ca.refid) for url in ca.get_aia_urls()]
+            aia_ca_issuers_urls = [url.replace('{ca_refid}', ca.url_ref) for url in ca.get_aia_urls()]
             if not aia_ca_issuers_urls:
                 aia_ca_issuers_urls = None
 

@@ -917,7 +917,9 @@
     "offlineKeyFile": "Verschlüsselte Schlüsseldatei",
     "offlineKeyFilePick": "Schlüsseldatei wählen",
     "offlineKeyFileTooLarge": "Schlüsseldatei zu groß (max 256 KB)",
-    "restorePasswordHint": "Das beim Offline-Schalten der CA verwendete Passwort."
+    "restorePasswordHint": "Das beim Offline-Schalten der CA verwendete Passwort.",
+    "namedUrls": "CA Namen in Protokoll URLs verwenden",
+    "namedUrlsHint": "CDP/OCSP/AIA Pfade verwenden einen Slug aus dem CA Namen statt der zufälligen ID. Einfacher manuell zu konfigurieren; der CA Name erscheint in den URLs. Später nicht änderbar."
   },
   "csrs": {
     "uploadCSR": "CSR hochladen",

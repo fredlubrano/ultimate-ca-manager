@@ -22,6 +22,10 @@ def _resolve_ca(ca_ref):
     ca = CA.query.filter_by(refid=ca_ref).first()
     if ca:
         return ca
+    # Opt-in named URLs (#207): resolve by immutable slug
+    ca = CA.query.filter_by(url_slug=ca_ref).first()
+    if ca:
+        return ca
     try:
         ca_id_int = int(ca_ref)
         return db.session.get(CA, ca_id_int)

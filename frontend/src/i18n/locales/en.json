@@ -917,7 +917,9 @@
     "offlineKeyFile": "Encrypted key file",
     "offlineKeyFilePick": "Choose key file",
     "offlineKeyFileTooLarge": "Key file is too large (max 256 KB)",
-    "restorePasswordHint": "The password used when the CA was taken offline."
+    "restorePasswordHint": "The password used when the CA was taken offline.",
+    "namedUrls": "Use CA name in protocol URLs",
+    "namedUrlsHint": "CDP/OCSP/AIA paths use a slug from the CA name instead of the random id. Easier to configure manually; reveals the CA name in URLs. Cannot be changed later."
   },
   "csrs": {
     "uploadCSR": "Upload CSR",

@@ -204,7 +204,7 @@ def _issue_approved_certificate(approval):
     
     # CDP/OCSP/CPS
     if ca.cdp_enabled:
-        cdp_urls = [url.replace('{ca_refid}', ca.refid or '') for url in ca.get_cdp_urls()]
+        cdp_urls = [url.replace('{ca_refid}', ca.url_ref) for url in ca.get_cdp_urls()]
         if cdp_urls:
             builder = builder.add_extension(x509.CRLDistributionPoints([
                 x509.DistributionPoint(full_name=[x509.UniformResourceIdentifier(url)], relative_name=None, reasons=None, crl_issuer=None)
@@ -216,7 +216,7 @@ def _issue_approved_certificate(approval):
             aia_descs.append(x509.AccessDescription(x509.oid.AuthorityInformationAccessOID.OCSP, x509.UniformResourceIdentifier(uri)))
     if ca.aia_ca_issuers_enabled:
         for url in ca.get_aia_urls():
-            aia_descs.append(x509.AccessDescription(x509.oid.AuthorityInformationAccessOID.CA_ISSUERS, x509.UniformResourceIdentifier(url.replace('{ca_refid}', ca.refid or ''))))
+            aia_descs.append(x509.AccessDescription(x509.oid.AuthorityInformationAccessOID.CA_ISSUERS, x509.UniformResourceIdentifier(url.replace('{ca_refid}', ca.url_ref))))
     if aia_descs:
         builder = builder.add_extension(x509.AuthorityInformationAccess(aia_descs), critical=False)
     if ca.cps_enabled and ca.cps_uri:
