@@ -10,6 +10,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Added
+- **Full CRL validity/publish decoupling + configurable digest** — per-CA `crl_validity_days` (nextUpdate window), `crl_publish_interval_hours` (automatic republish cadence), and `crl_digest` (sha224/sha256/sha384/sha512). `CRLMetadata.next_publish` tracks the scheduler's next republish target independently of `next_update`; the CRL scheduler regenerates on `next_publish` when set, falling back to the existing 24h-before-expiry threshold. New `GET|POST /api/v2/crl/<ca_id>/config` endpoints and a "Full CRL schedule" panel on the CRL/OCSP page. (#207)
+
 ## [2.194] - 2026-07-17
 
 ### Fixed

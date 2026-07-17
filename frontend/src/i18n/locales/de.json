@@ -1678,7 +1678,17 @@
     "selectResponder": "Responder-Zertifikat auswählen",
     "noEligibleResponders": "Keine berechtigten Zertifikate gefunden. Ein Zertifikat benötigt OCSPSigning-EKU und einen privaten Schlüssel.",
     "removeResponder": "Responder entfernen",
-    "assignResponder": "Responder zuweisen"
+    "assignResponder": "Responder zuweisen",
+    "nextPublish": "Nächste Veröffentlichung",
+    "fullCrlScheduleTitle": "Vollständige CRL-Zeitplanung",
+    "fullCrlScheduleHelp": "Gültigkeit setzt nextUpdate auf der CRL. Das Veröffentlichungsintervall steuert die automatische Neuveröffentlichung (next_publish). Digest gilt bei der nächsten Regenerierung.",
+    "crlValidityDays": "CRL-Gültigkeit",
+    "crlValidityDaysOption": "{{count}} Tage",
+    "crlPublishInterval": "Veröffentlichungsintervall",
+    "crlPublishIntervalOption": "{{count}} Stunden",
+    "crlDigest": "CRL-Signatur-Digest",
+    "fullCrlConfigUpdated": "Vollständige CRL-Zeitplanung aktualisiert",
+    "fullCrlConfigFailed": "Aktualisierung der CRL-Zeitplanung fehlgeschlagen"
   },
   "trustStore": {
     "caTrust": "CA-Vertrauen",

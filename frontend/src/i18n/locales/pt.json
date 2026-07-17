@@ -1678,7 +1678,17 @@
     "selectResponder": "Selecionar certificado respondedor",
     "noEligibleResponders": "Nenhum certificado elegível encontrado. Um certificado precisa de EKU OCSPSigning e chave privada.",
     "removeResponder": "Remover respondedor",
-    "assignResponder": "Atribuir respondedor"
+    "assignResponder": "Atribuir respondedor",
+    "nextPublish": "Próxima publicação",
+    "fullCrlScheduleTitle": "Agendamento da CRL completa",
+    "fullCrlScheduleHelp": "A validade define nextUpdate na CRL. O intervalo de publicação controla a republicação automática (next_publish). O digest aplica-se na próxima regeneração.",
+    "crlValidityDays": "Validade da CRL",
+    "crlValidityDaysOption": "{{count}} dias",
+    "crlPublishInterval": "Intervalo de publicação",
+    "crlPublishIntervalOption": "{{count}} horas",
+    "crlDigest": "Digest de assinatura da CRL",
+    "fullCrlConfigUpdated": "Agendamento da CRL completa atualizado",
+    "fullCrlConfigFailed": "Falha ao atualizar o agendamento da CRL"
   },
   "trustStore": {
     "caTrust": "AC Trust",

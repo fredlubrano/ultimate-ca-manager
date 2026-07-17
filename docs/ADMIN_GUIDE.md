@@ -365,6 +365,22 @@ http://your-server:8080/cdp/<ca_refid>-delta.crl   # when delta CRL is enabled
 
 Management UI: **CA → CRL / CDP** tab (enable CDP, optional delta, regeneration interval).
 
+**Full CRL schedule** (validity vs publish — discussion #207):
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `crl_validity_days` | 7 | `nextUpdate` window on the full CRL |
+| `crl_publish_interval_hours` | 168 | Scheduler republish target (`next_publish` in metadata) |
+| `crl_digest` | `sha256` | CRL signature hash (`sha224`/`sha256`/`sha384`/`sha512`) |
+
+```bash
+curl -k -H "Authorization: Bearer $TOKEN" \
+  https://your-server:8443/api/v2/crl/<ca_id>/config
+curl -k -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"crl_validity_days":14,"crl_publish_interval_hours":24,"crl_digest":"sha384"}' \
+  https://your-server:8443/api/v2/crl/<ca_id>/config
+```
+
 **Regenerate via API** (requires `write:crl`):
 
 ```bash
