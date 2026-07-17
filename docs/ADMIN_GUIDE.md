@@ -376,6 +376,29 @@ View ACME accounts and orders in the ACME page, or via API:
 curl -k -b cookies.txt https://localhost:8443/api/v2/acme/accounts
 ```
 
+### ACME client accounts — `preferred_chain` (RFC 8555 alternate chains)
+
+UCM can select an *alternate* chain advertised by the CA via `Link: rel="alternate"` (RFC 8555 §7.4.2). This choice is driven by the `preferred_chain` field on **ACME client accounts**.
+
+**What to put in `preferred_chain`**
+- The **trust anchor CN** at the bottom of the target chain (e.g. `ISRG Root X1` for Let's Encrypt gen-Y).
+- **Case-insensitive** comparison on the **last certificate's CN** in the PEM: match on **subject CN** *or* **issuer CN** (useful when the CA "shortens" the chain and **omits the root**).
+
+**Constraints / semantics**
+- Maximum length: **255** characters.
+- Empty value (`""`) or unset: UCM keeps the CA's **default** chain (unchanged behavior).
+
+**Scope (client + proxy)**
+- The same registry (`AcmeClientAccount`) backs both the ACME client and the **ACME proxy**.
+
+**API (example)**
+- Update via `PATCH /api/v2/acme/client/accounts/<id>` (requires `write:acme`):
+```bash
+curl -k -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"preferred_chain":"ISRG Root X1"}' \
+  https://localhost:8443/api/v2/acme/client/accounts/<id>
+```
+
 ### SCEP Administration
 
 View pending SCEP requests in the SCEP page, or via API:
