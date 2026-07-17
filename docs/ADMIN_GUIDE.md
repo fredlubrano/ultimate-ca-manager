@@ -365,6 +365,34 @@ http://your-server:8080/cdp/<ca_refid>-delta.crl   # when delta CRL is enabled
 
 Management UI: **CA → CRL / CDP** tab (enable CDP, optional delta, regeneration interval).
 
+#### Serving protocol endpoints on port 80
+
+CDP/OCSP/AIA clients often expect plain HTTP on port **80**. UCM runs
+unprivileged, so it cannot bind ports below 1024 by itself. Three options:
+
+1. **Systemd capability** — let the service bind 80 directly:
+
+   ```bash
+   # /etc/ucm/ucm.env
+   HTTP_PROTOCOL_PORT=80
+   ```
+
+   ```bash
+   sudo systemctl edit ucm
+   # add:
+   # [Service]
+   # AmbientCapabilities=CAP_NET_BIND_SERVICE
+   sudo systemctl restart ucm
+   ```
+
+2. **Reverse proxy** — keep UCM on 8080 and forward `:80 → :8080` for the
+   protocol paths (`/cdp/`, `/ocsp`, `/aia/`) with nginx/HAProxy/Caddy.
+
+3. **Docker** — map the port at run time: `-p 80:8080`.
+
+Whichever option you pick, set the CDP/OCSP/AIA URLs on the CA so issued
+certificates embed the port-80 form of the URL.
+
 **Regenerate via API** (requires `write:crl`):
 
 ```bash

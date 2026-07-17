@@ -12,6 +12,9 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ### Added
 - **Full CRL schedule per CA** — CRL validity (`nextUpdate` window) decoupled from the publish cadence, with `next_publish` exposed in CRL metadata and the scheduler republishing on the configured interval; configurable CRL signature digest (SHA-256/384/512). New `GET|POST /api/v2/crl/<ca_id>/config`, CRL & OCSP page UI, migration 059. (#207)
+- **Readable CRL download filename** — CDP downloads suggest `{ca-slug}-{refid8}.crl` via `Content-Disposition`; URLs are unchanged (they are embedded in issued certificates). (#207)
+- **Clock-skew tolerance on issuance** — issued certificates backdate `notBefore` by a fixed 15 minutes so relying parties with slightly slow clocks accept fresh certificates; `notAfter` stays anchored on the requested validity. (#207)
+- **Port 80 for protocol endpoints** — documented the supported ways to serve CDP/OCSP/AIA on port 80 (systemd `CAP_NET_BIND_SERVICE`, reverse proxy, Docker port mapping). (#207)
 
 ### Fixed
 - **Template digest honored at issuance** — certificates issued from the certificate menu were always signed SHA-256 regardless of the template's configured digest; the template link (`template_id`) is now persisted on the issued row. (#207)
