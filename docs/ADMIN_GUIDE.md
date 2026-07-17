@@ -395,7 +395,7 @@ openssl x509 -in intermediate.pem -noout -text | grep -A1 'Subject Key Identifie
 # keyIdentifier bytes must match the intermediate SKI, not the parent
 ```
 
-**Follow-up (#204):** IDP omitted on both full and delta (§5.2.4 parity), FreshestCRL guarded when CDP is missing, and `reasonCode` hygiene (`unspecified` omitted; `removeFromCRL` on delta only). Track that PR if you rely on strict delta combining.
+**Since #204:** IDP omitted on both full and delta (§5.2.4 parity), FreshestCRL guarded when CDP is missing, and `reasonCode` hygiene (`unspecified` omitted; `removeFromCRL` on delta only).
 
 **RFC 5280 profile (issuing CA + CRL):**
 - CRL **Authority Key Identifier** identifies the **signing CA** Subject Key Identifier (§5.2.1).
