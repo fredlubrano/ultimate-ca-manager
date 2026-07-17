@@ -5,7 +5,16 @@ in this codebase represent UTC. This module provides a utc_now()
 function that uses the non-deprecated datetime.now(timezone.utc) API
 but returns a naive datetime for DB compatibility.
 """
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+# Fixed clock-skew tolerance for issued certificates (#207): relying parties
+# with clocks slightly behind the CA otherwise reject freshly issued certs.
+CERT_NOT_BEFORE_SKEW = timedelta(minutes=15)
+
+
+def cert_not_before() -> datetime:
+    """notBefore for newly issued certificates: utc_now() minus a fixed skew."""
+    return utc_now() - CERT_NOT_BEFORE_SKEW
 
 
 def utc_now() -> datetime:
