@@ -465,6 +465,10 @@ Content-Type: application/json
 }
 ```
 
+Optional `namedUrls: true` gives the CA an immutable unique slug derived from
+its name, used instead of the random id in CDP/AIA URL paths (both forms keep
+resolving). Returned as `url_slug` (null when not opted in).
+
 **For Intermediate CA:**
 ```json
 {

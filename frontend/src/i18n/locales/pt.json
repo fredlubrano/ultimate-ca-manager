@@ -917,7 +917,9 @@
     "offlineKeyFile": "Arquivo de chave cifrado",
     "offlineKeyFilePick": "Escolher arquivo de chave",
     "offlineKeyFileTooLarge": "Arquivo de chave muito grande (máx. 256 KB)",
-    "restorePasswordHint": "A senha usada quando a CA foi colocada offline."
+    "restorePasswordHint": "A senha usada quando a CA foi colocada offline.",
+    "namedUrls": "Usar o nome da CA nas URLs de protocolo",
+    "namedUrlsHint": "Os caminhos CDP/OCSP/AIA usam um slug derivado do nome da CA em vez do id aleatório. Mais fácil de configurar manualmente; revela o nome da CA nas URLs. Não pode ser alterado depois."
   },
   "csrs": {
     "uploadCSR": "Carregar CSR",

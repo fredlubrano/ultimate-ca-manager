@@ -396,6 +396,7 @@ def create_ca():
             hsm_key_id=int(hsm_key_id) if hsm_key_id else None,
             hsm_key_label=hsm_key_label,
             hsm_key_algorithm=hsm_key_algorithm,
+            named_urls=bool(data.get('namedUrls')),
         )
 
         # Single lifecycle event — bus fans out to webhook + email + WebSocket.
@@ -552,7 +553,7 @@ def update_ca(ca_id):
             base_url = get_protocol_base_url()
             if not base_url:
                 return error_response('Cannot auto-generate CDP URL: configure a FQDN or Protocol Base URL in Settings first', 400)
-            ca.set_cdp_urls([f"{base_url}/cdp/{ca.refid}.crl"])
+            ca.set_cdp_urls([f"{base_url}/cdp/{ca.url_ref}.crl"])
     for field, setter in (
         ('cdp_url', ca.set_cdp_urls),
         ('cdp_urls', ca.set_cdp_urls),
@@ -573,7 +574,7 @@ def update_ca(ca_id):
             base_url = get_protocol_base_url()
             if not base_url:
                 return error_response('Cannot auto-generate AIA URL: configure a FQDN or Protocol Base URL in Settings first', 400)
-            ca.set_aia_urls([f"{base_url}/ca/{ca.refid}.cer"])
+            ca.set_aia_urls([f"{base_url}/ca/{ca.url_ref}.cer"])
     for field, setter in (
         ('aia_ca_issuers_url', ca.set_aia_urls),
         ('aia_ca_issuers_urls', ca.set_aia_urls),

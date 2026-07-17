@@ -335,7 +335,7 @@ def create_certificate():
 
         # CRL Distribution Points — embed CA's CDP URLs if enabled
         if ca.cdp_enabled:
-            cdp_urls = [url.replace('{ca_refid}', ca.refid) for url in ca.get_cdp_urls()]
+            cdp_urls = [url.replace('{ca_refid}', ca.url_ref) for url in ca.get_cdp_urls()]
             if cdp_urls:
                 dist_points = [
                     x509.DistributionPoint(
@@ -366,7 +366,7 @@ def create_certificate():
                 aia_descriptions.append(
                     x509.AccessDescription(
                         x509.oid.AuthorityInformationAccessOID.CA_ISSUERS,
-                        x509.UniformResourceIdentifier(url.replace('{ca_refid}', ca.refid))
+                        x509.UniformResourceIdentifier(url.replace('{ca_refid}', ca.url_ref))
                     )
                 )
         if aia_descriptions:

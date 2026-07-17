@@ -727,7 +727,7 @@ class SCEPService:
         # CRL Distribution Points
         if self.ca.cdp_enabled:
             cdp_urls = [
-                url.replace('{ca_refid}', self.ca.refid)
+                url.replace('{ca_refid}', self.ca.url_ref)
                 for url in self.ca.get_cdp_urls()
             ]
             if cdp_urls:
@@ -760,7 +760,7 @@ class SCEPService:
                     x509.AccessDescription(
                         x509.oid.AuthorityInformationAccessOID.CA_ISSUERS,
                         x509.UniformResourceIdentifier(
-                            url.replace('{ca_refid}', self.ca.refid)
+                            url.replace('{ca_refid}', self.ca.url_ref)
                         ),
                     )
                 )

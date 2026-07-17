@@ -746,7 +746,9 @@
     "offlineKeyFile": "Fichier de clé chiffré",
     "offlineKeyFilePick": "Choisir le fichier de clé",
     "offlineKeyFileTooLarge": "Fichier de clé trop volumineux (max 256 Ko)",
-    "restorePasswordHint": "Le mot de passe utilisé lors de la mise hors ligne de l'AC."
+    "restorePasswordHint": "Le mot de passe utilisé lors de la mise hors ligne de l'AC.",
+    "namedUrls": "Utiliser le nom de la CA dans les URLs protocole",
+    "namedUrlsHint": "Les chemins CDP/OCSP/AIA utilisent un slug dérivé du nom de la CA au lieu de l'identifiant aléatoire. Plus simple à configurer manuellement ; révèle le nom de la CA dans les URLs. Non modifiable ensuite."
   },
   "certificates": {
     "createCertificate": "Créer un certificat",

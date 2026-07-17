@@ -171,7 +171,7 @@ def toggle_auto_regen(ca_id):
             base_url = get_protocol_base_url()
             if not base_url:
                 return error_response('Cannot auto-generate CDP URL: configure a FQDN or Protocol Base URL in Settings first', 400)
-            ca.set_cdp_urls([f"{base_url}/cdp/{ca.refid}.crl"])
+            ca.set_cdp_urls([f"{base_url}/cdp/{ca.url_ref}.crl"])
         
         # Audit log
         username = getattr(g, 'user', {}).get('username', 'admin') if hasattr(g, 'user') else 'admin'
