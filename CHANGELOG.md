@@ -10,6 +10,8 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+## [2.196] - 2026-07-18
+
 ### Added
 - **ACME loopback upstream opt-in** — a new toggle (Let's Encrypt settings / `acme.client.allow_loopback_upstream`, default off) allows the ACME client and proxy to reach an upstream CA on a loopback address (a colocated Pebble/step-ca on 127.0.0.1). Cloud-metadata targets remain blocked unconditionally.
 
