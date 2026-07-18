@@ -219,6 +219,23 @@ class TestCreateCA:
         assert 'SHA384' in cert.signature_algorithm_oid._name.upper()
         ku = cert.extensions.get_extension_for_oid(ExtensionOID.KEY_USAGE).value
         assert ku.digital_signature and ku.key_cert_sign and ku.crl_sign
+        # No EKU by default: an EKU on an issuing CA would constrain (EKU chaining)
+        # every leaf it can sign. Callers opt in via extendedKeyUsage.
+        with pytest.raises(x509.ExtensionNotFound):
+            cert.extensions.get_extension_for_oid(ExtensionOID.EXTENDED_KEY_USAGE)
+
+    def test_create_intermediate_ca_with_explicit_eku(self, auth_client, create_ca):
+        root = create_ca(cn='Parent For EKU Opt-In')
+        payload = {
+            **VALID_ROOT_CA,
+            'type': 'intermediate',
+            'commonName': 'EKU Opt-In Intermediate',
+            'parentCAId': root['id'],
+            'extendedKeyUsage': ['serverAuth'],
+        }
+        r = post_json(auth_client, '/api/v2/cas', payload)
+        data = assert_success(r, status=201)
+        cert = _load_created_cert(data)
         eku = cert.extensions.get_extension_for_oid(ExtensionOID.EXTENDED_KEY_USAGE).value
         assert x509.oid.ExtendedKeyUsageOID.SERVER_AUTH in eku
 

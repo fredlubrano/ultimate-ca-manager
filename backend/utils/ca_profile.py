@@ -3,7 +3,7 @@ CA certificate profile helpers (RFC 5280 §4.2.1.3, §4.2.1.12).
 
 Defaults follow common PKI practice (e.g. Let's Encrypt Root-YR / issuing CA):
   - Root CA: keyCertSign + cRLSign (no digitalSignature)
-  - Subordinate CA: digitalSignature + keyCertSign + cRLSign + optional serverAuth EKU
+  - Subordinate CA: digitalSignature + keyCertSign + cRLSign, no EKU by default
 """
 from typing import List, Optional, Tuple
 
@@ -31,9 +31,13 @@ ALLOWED_CA_KEY_USAGE = frozenset({'digitalSignature', 'keyCertSign', 'cRLSign'})
 # RFC 5280 §4.2.1.3 — root / offline CA profile (LE ISRG Root X2 style)
 DEFAULT_ROOT_KEY_USAGE = ['keyCertSign', 'cRLSign']
 
-# Subordinate issuing CA (LE E7 / YE1 style KU + typical EKU)
+# Subordinate issuing CA. KU follows LE E7/YE1 style. EKU is left empty by
+# default: an EKU on an issuing CA constrains (via EKU chaining) every leaf it
+# can sign, so a serverAuth default would silently break clientAuth / emailProtection
+# / OCSPSigning leafs (incl. UCM's delegated OCSP responders). Callers opt into
+# EKU constraints explicitly via extendedKeyUsage.
 DEFAULT_INTERMEDIATE_KEY_USAGE = ['digitalSignature', 'keyCertSign', 'cRLSign']
-DEFAULT_INTERMEDIATE_EKU = ['serverAuth']
+DEFAULT_INTERMEDIATE_EKU = []
 
 ALLOWED_DIGESTS = frozenset({'sha256', 'sha384', 'sha512'})
 
@@ -71,7 +75,7 @@ def default_key_usage_for_ca(is_root: bool) -> List[str]:
 
 
 def default_eku_for_ca(is_root: bool) -> List[str]:
-    """Default Extended Key Usage (empty for roots; serverAuth for issuing CAs)."""
+    """Default Extended Key Usage — empty (unconstrained) for both root and issuing CAs."""
     if is_root:
         return []
     return list(DEFAULT_INTERMEDIATE_EKU)
