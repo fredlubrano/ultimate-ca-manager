@@ -6,6 +6,8 @@ from typing import Optional, Tuple, List
 from datetime import datetime, timedelta
 import secrets
 import base64
+import hashlib
+import hmac
 import json
 
 from webauthn import (
@@ -262,7 +264,33 @@ class WebAuthnService:
         )
         
         return json.loads(options_to_json(options)), user.id
-    
+
+    @staticmethod
+    def generate_decoy_authentication_options(username: str, hostname: str, secret: bytes) -> dict:
+        """Return well-formed authentication options for a phantom user.
+
+        Anti-enumeration: a request for an unknown username (or a user without
+        enabled credentials) must be indistinguishable from a real one. We emit
+        a random challenge (never stored, so verify fails generically) plus a
+        single decoy credential whose id is HMAC(secret, username) — stable per
+        username across probes and unguessable without the server secret, so an
+        attacker cannot tell it apart from a genuine credential id.
+        """
+        rp_id = get_rp_id(hostname)
+        challenge_bytes = secrets.token_bytes(32)
+        decoy_id = hmac.new(
+            secret or b'ucm-webauthn-decoy',
+            b'webauthn-decoy:' + username.strip().lower().encode('utf-8'),
+            hashlib.sha256,
+        ).digest()
+        options = generate_authentication_options(
+            rp_id=rp_id,
+            challenge=challenge_bytes,
+            allow_credentials=[PublicKeyCredentialDescriptor(id=decoy_id)],
+            user_verification=UserVerificationRequirement.PREFERRED,
+        )
+        return json.loads(options_to_json(options))
+
     @staticmethod
     def verify_authentication(user_id: int, credential_data: dict, hostname: str) -> Tuple[bool, str, Optional[User]]:
         """

@@ -241,18 +241,47 @@ class TestWebAuthnStart:
         r = _post(client, '/api/v2/auth/login/webauthn/start', {})
         assert r.status_code == 400
 
-    def test_start_nonexistent_user(self, client):
+    def test_start_nonexistent_user_returns_decoy(self, client):
+        """Anti-enumeration: an unknown username gets well-formed decoy options, not a 401."""
         r = _post(client, '/api/v2/auth/login/webauthn/start', {
             'username': 'ghost_user',
         })
-        assert r.status_code in (401, 404)
+        assert r.status_code == 200
+        data = get_json(r).get('data', {})
+        assert data.get('username') == 'ghost_user'
+        options = data.get('options', {})
+        assert options.get('challenge')
+        # A decoy credential is always advertised so the shape matches a real user.
+        assert options.get('allowCredentials')
 
-    def test_start_user_without_credentials(self, client):
-        """Admin has no WebAuthn credentials registered → 401 (no user enumeration)."""
+    def test_start_user_without_credentials_returns_decoy(self, client):
+        """Admin has no WebAuthn credentials → indistinguishable 200 (no user enumeration)."""
         r = _post(client, '/api/v2/auth/login/webauthn/start', {
             'username': 'admin',
         })
-        assert r.status_code == 401
+        assert r.status_code == 200
+        assert get_json(r).get('data', {}).get('options', {}).get('allowCredentials')
+
+    def test_start_decoy_is_stable_per_username(self, client):
+        """The decoy credential id must be identical across probes of the same username,
+        otherwise a changing id would itself reveal the account is a decoy."""
+        def _ids(username):
+            r = _post(client, '/api/v2/auth/login/webauthn/start', {'username': username})
+            creds = get_json(r)['data']['options']['allowCredentials']
+            return [c['id'] for c in creds]
+
+        assert _ids('ghost_user') == _ids('ghost_user')
+        # Different usernames yield different decoys (derivation is username-bound).
+        assert _ids('ghost_user') != _ids('other_ghost')
+
+    def test_start_existing_and_missing_are_indistinguishable(self, client):
+        """A user with no creds and a nonexistent user return the same status + shape."""
+        r_real = _post(client, '/api/v2/auth/login/webauthn/start', {'username': 'admin'})
+        r_ghost = _post(client, '/api/v2/auth/login/webauthn/start', {'username': 'ghost_user'})
+        assert r_real.status_code == r_ghost.status_code == 200
+        keys_real = set(get_json(r_real)['data']['options'].keys())
+        keys_ghost = set(get_json(r_ghost)['data']['options'].keys())
+        assert keys_real == keys_ghost
 
 
 # ============================================================

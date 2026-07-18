@@ -636,36 +636,46 @@ def webauthn_start():
     if not username:
         return error_response('Username required', 400)
 
-    # Find user
-    user = User.query.filter_by(username=username).first()
-    if not user or not user.active:
-        return error_response('WebAuthn authentication not available', 401)
+    username = str(username).strip()[:255]
+    if not username:
+        return error_response('Username required', 400)
 
-    # Check if user has WebAuthn credentials
+    # Anti-enumeration: this endpoint MUST return the same well-formed challenge
+    # whether or not the username exists or has enabled credentials. A phantom
+    # user gets decoy options (see generate_decoy_authentication_options); the
+    # response and echoed username never depend on account existence.
+    hostname = request.host
+    secret = (current_app.secret_key or '').encode('utf-8')
+
     from models.webauthn import WebAuthnCredential
-    creds = WebAuthnCredential.query.filter_by(user_id=user.id, enabled=True).all()
-    if not creds:
-        return error_response('WebAuthn authentication not available', 401)
+    user = User.query.filter_by(username=username).first()
+    creds = []
+    if user and user.active:
+        creds = WebAuthnCredential.query.filter_by(user_id=user.id, enabled=True).all()
 
-    # Generate authentication options
     try:
-        hostname = request.host
-        options, user_id = WebAuthnService.generate_authentication_options(username, hostname)
-
+        options = None
+        if creds:
+            options, _user_id = WebAuthnService.generate_authentication_options(username, hostname)
         if not options:
-            return error_response('Failed to generate WebAuthn options', 500)
+            options = WebAuthnService.generate_decoy_authentication_options(username, hostname, secret)
 
-        logger.info(f"WebAuthn auth started for: {user.username}")
+        logger.info("WebAuthn auth started")
 
         return success_response(
             data={
                 'options': options,
-                'username': user.username
+                'username': username,
             }
         )
     except Exception as e:
         logger.error(f"WebAuthn start error: {e}")
-        return error_response('Failed to generate WebAuthn options', 500)
+        # Even on failure, do not leak account state — return decoy options.
+        try:
+            options = WebAuthnService.generate_decoy_authentication_options(username, hostname, secret)
+            return success_response(data={'options': options, 'username': username})
+        except Exception:
+            return error_response('Failed to generate WebAuthn options', 500)
 
 
 @bp.route('/api/v2/auth/login/webauthn/verify', methods=['POST'])
@@ -702,10 +712,12 @@ def webauthn_verify():
     if _check_2fa_lockout(username, _WEBAUTHN_FAILED):
         return error_response('Too many failed attempts. Try again later.', 429)
 
-    # Find user
+    # Find user. Return the SAME generic error as a failed verification so this
+    # path is not an existence oracle (mirrors webauthn_start's anti-enumeration).
     user = User.query.filter_by(username=username).first()
     if not user or not user.active:
-        return error_response('Invalid credentials', 401)
+        _record_2fa_failure(username, _WEBAUTHN_FAILED)
+        return error_response('WebAuthn verification failed', 401)
     try:
         from services.audit_service import AuditService
 
