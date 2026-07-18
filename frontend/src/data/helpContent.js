@@ -548,6 +548,7 @@ export const helpContent = {
         content: 'HTTP-01 and TLS-ALPN-01 validation works out of the box for RFC1918, loopback, .lan / .local / .corp targets — UCM\'s primary deployment model.',
         items: [
           { label: 'Toggle', text: 'Settings → SystemConfig → acme.allow_private_ips (default: true)' },
+          { label: 'Toggle', text: 'Let\'s Encrypt tab → Allow loopback ACME CA — opt in for a colocated CA on 127.0.0.1 (default: off)' },
           { label: 'Always blocked', text: 'Cloud metadata IPs (169.254.169.254, fd00:ec2::254, etc.) are blocked unconditionally' },
         ]
       },

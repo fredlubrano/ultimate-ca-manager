@@ -305,6 +305,14 @@ export default function LetsEncryptTab({
             description={t('acme.debugLoggingDesc')}
           />
 
+          <ToggleSwitch
+            checked={clientSettings.allow_loopback_upstream ?? false}
+            onChange={(val) => onUpdateClientSetting('allow_loopback_upstream', val)}
+            disabled={!canWrite}
+            label={t('acme.allowLoopbackUpstream')}
+            description={t('acme.allowLoopbackUpstreamDesc')}
+          />
+
           <Select
             label={t('acme.keyType')}
             value={clientSettings.key_type || 'RSA-2048'}

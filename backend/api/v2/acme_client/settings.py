@@ -97,6 +97,7 @@ def get_settings():
         proxy_eab_hmac_set = bool(proxy_eab_hmac_cfg and proxy_eab_hmac_cfg.value)
     dns_timeout_cfg = SystemConfig.query.filter_by(key='acme.client.dns_propagation_timeout').first()
     debug_logging_cfg = SystemConfig.query.filter_by(key='acme.client.debug_logging').first()
+    allow_loopback_cfg = SystemConfig.query.filter_by(key='acme.client.allow_loopback_upstream').first()
     try:
         dns_timeout = int(dns_timeout_cfg.value) if dns_timeout_cfg else 120
     except (ValueError, TypeError):
@@ -109,6 +110,7 @@ def get_settings():
         'renewal_days': int(renewal_days.value) if renewal_days else 30,
         'dns_propagation_timeout': dns_timeout,
         'debug_logging': _coerce_bool(debug_logging_cfg.value if debug_logging_cfg else None, False),
+        'allow_loopback_upstream': _coerce_bool(allow_loopback_cfg.value if allow_loopback_cfg else None, False),
         'has_staging_account': bool(staging_account and staging_account.is_registered()),
         'has_production_account': bool(production_account and production_account.is_registered()),
         'proxy_enabled': proxy_enabled_cfg.value == 'true' if proxy_enabled_cfg else False,
@@ -205,6 +207,18 @@ def update_settings():
         )
         clear_acme_debug_cache()
         updates.append('debug_logging')
+
+    if 'allow_loopback_upstream' in data:
+        try:
+            allow_loopback = _coerce_bool(data.get('allow_loopback_upstream'), False, strict=True)
+        except ValueError:
+            return error_response('allow_loopback_upstream must be a boolean', 400)
+        _set_config(
+            'acme.client.allow_loopback_upstream',
+            'true' if allow_loopback else 'false',
+            'Allow ACME upstream traffic to a loopback address (colocated Pebble/step-ca)',
+        )
+        updates.append('allow_loopback_upstream')
 
     if 'proxy_enabled' in data:
         _set_config('acme.proxy_enabled',
