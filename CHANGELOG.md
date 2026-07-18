@@ -10,6 +10,24 @@ Starting with v2.48, UCM uses Major.Build versioning (e.g., 2.48, 2.49). Earlier
 
 ## [Unreleased]
 
+### Added
+- **ACME loopback upstream opt-in** — a new toggle (Let's Encrypt settings / `acme.client.allow_loopback_upstream`, default off) allows the ACME client and proxy to reach an upstream CA on a loopback address (a colocated Pebble/step-ca on 127.0.0.1). Cloud-metadata targets remain blocked unconditionally.
+
+### Fixed
+- **Security-key (WebAuthn) login restored** — after the per-user credential count was removed from `/auth/methods` (username-enumeration hardening), the login page stopped offering the security-key option and auto-attempt. The UI no longer depends on that count: it auto-attempts based on the device's saved method and always offers the security-key button when the browser supports it.
+- **WebAuthn username-enumeration oracle closed** — `POST /auth/login/webauthn/start` returned a challenge only for users with a registered key (200) versus a 401 otherwise, and `/verify` used distinguishable errors. Both now return identical, well-formed responses for unknown, credential-less, and real users (a deterministic per-username decoy credential), removing the account-existence oracle.
+- **No default `serverAuth` EKU on issuing CAs** — intermediate CAs created via the API without an explicit `extendedKeyUsage` were given a `serverAuth` EKU, which (via EKU chaining) invalidated clientAuth / emailProtection / OCSPSigning leafs issued beneath them, including delegated OCSP responders. Issuing CAs now have no EKU by default; constrain them explicitly via `extendedKeyUsage`.
+- **ACME proxy serves the preferred certificate chain** — the per-account preferred chain was computed and stored but the upstream default chain was returned to the client; the selected chain is now the one delivered.
+- **ACME proxy order ownership binding** — new-order and finalize now bind an order to the account resolved from the request `kid`, so a different account can no longer finalize someone else's order. The previous binding only took effect for JWK-signed requests, which RFC 8555 new-order/finalize never are.
+- **ACME DNS-01 self-check is advisory** — a local resolver that cannot see the challenge TXT record (split-horizon or filtered egress DNS) no longer aborts renewal or proxy issuance before the challenge is submitted; the CA remains the authority. Set the propagation timeout to 0 to skip the pre-check entirely.
+- **SAN URI validation** — the issuance/CSR forms now accept authority-less URIs (`urn:`, `mailto:`, `did:`), matching what the API already allowed.
+- **Account page PKCS#12 labels** — two missing translation keys rendered as raw identifiers on the mTLS certificate export controls.
+- **Signed CSR history panel** — clicking "View certificate" no longer throws a runtime error.
+- **ACME auto-renewal toggle persistence** — the Let's Encrypt auto-renewal switch sent a field the API did not read, so the setting never saved; it now uses `renewal_enabled`.
+
+### Translations
+- Completed the ACME "verbose logs" label and description across all locales.
+
 ## [2.195] - 2026-07-18
 
 ### Added
