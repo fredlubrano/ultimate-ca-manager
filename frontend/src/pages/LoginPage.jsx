@@ -79,6 +79,9 @@ export default function LoginPage() {
   const saveAuthMethod = (method, providerId = null) => {
     try { localStorage.setItem(STORAGE_AUTH_METHOD_KEY, JSON.stringify({ method, providerId })) } catch {}
   }
+  const getSavedAuthMethod = () => {
+    try { return JSON.parse(localStorage.getItem(STORAGE_AUTH_METHOD_KEY) || '{}').method || null } catch { return null }
+  }
 
   // ═══════════════════════════════════════════════════
   // INIT: After AuthContext finishes session check,
@@ -227,8 +230,9 @@ export default function LoginPage() {
       setUserMethods(methods)
       setStep('auth')
 
-      // Auto-attempt WebAuthn if user has registered keys
-      if (methods.webauthn && methods.webauthn_credentials > 0 && authMethodsService.isWebAuthnSupported()) {
+      // Auto-attempt WebAuthn if this device last signed in with a key —
+      // the API no longer discloses per-user credential counts (anti-enumeration)
+      if (methods.webauthn && authMethodsService.isWebAuthnSupported() && getSavedAuthMethod() === 'webauthn') {
         await attemptWebAuthn()
         return
       }
@@ -629,7 +633,7 @@ export default function LoginPage() {
                 )}
 
                 {/* Show WebAuthn option if available */}
-                {userMethods?.webauthn && userMethods.webauthn_credentials > 0 && authMethodsService.isWebAuthnSupported() && (
+                {userMethods?.webauthn && authMethodsService.isWebAuthnSupported() && (
                   <button
                     onClick={() => attemptWebAuthn()}
                     className="w-full text-sm text-text-secondary hover:text-accent transition-colors py-2 flex items-center justify-center gap-2"
@@ -664,7 +668,7 @@ export default function LoginPage() {
                 <span>mTLS</span>
               </div>
             )}
-            {userMethods.webauthn && userMethods.webauthn_credentials > 0 && (
+            {userMethods.webauthn && authMethodsService.isWebAuthnSupported() && (
               <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${authMethod === 'webauthn' ? 'bg-accent text-white' : 'bg-bg-secondary text-text-secondary'}`}>
                 <Fingerprint size={12} weight="fill" />
                 <span>{t('common.key')}</span>
