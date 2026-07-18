@@ -265,8 +265,8 @@ export default function LetsEncryptTab({
           />
 
           <ToggleSwitch
-            checked={clientSettings.auto_renewal ?? true}
-            onChange={(val) => onUpdateClientSetting('auto_renewal', val)}
+            checked={clientSettings.renewal_enabled ?? true}
+            onChange={(val) => onUpdateClientSetting('renewal_enabled', val)}
             disabled={!canWrite}
             label={t('acme.autoRenewal')}
             description={t('acme.autoRenewalDesc')}

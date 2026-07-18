@@ -469,7 +469,7 @@ export default function AccountPage() {
 
   const handleDownloadMTLSPkcs12 = async (certId, certName, password) => {
     if (!password || password.length < 8) {
-      showError(t('certificates.pkcs12PasswordRequired'))
+      showError(t('tools.pkcs12PasswordRequired'))
       return
     }
     setMtlsP12Downloading(true)
@@ -1152,7 +1152,7 @@ export default function AccountPage() {
                     )}
                   >
                     <Download size={16} className="mr-1" />
-                    {t('export.formats.pkcs12')}
+                    {t('export.formatOptions.pkcs12')}
                   </Button>
                 </div>
                 <Button type="button" variant="secondary" onClick={handleCloseMTLSModal}>

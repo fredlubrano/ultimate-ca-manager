@@ -34,4 +34,16 @@ describe('sanValidate CN auto-SAN', () => {
     const err = getSanValidationError('ip', 'www.example.com', { i18nNs: 'certificates' })
     expect(err?.key).toBe('certificates.sanFqdnUseDns')
   })
+
+  it('accepts authority-less URIs like the backend (urn:, mailto:, did:)', () => {
+    expect(getSanValidationError('uri', 'urn:uuid:6e8bc430-9c3a-11d9-9669-0800200c9a66')).toBeNull()
+    expect(getSanValidationError('uri', 'mailto:admin@example.com')).toBeNull()
+    expect(getSanValidationError('uri', 'did:example:123')).toBeNull()
+    expect(getSanValidationError('uri', 'https://example.com/acme')).toBeNull()
+  })
+
+  it('still rejects a URI with no scheme', () => {
+    const err = getSanValidationError('uri', 'not-a-uri')
+    expect(err?.key).toBe('csrs.sanUriInvalid')
+  })
 })

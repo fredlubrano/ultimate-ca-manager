@@ -37,7 +37,9 @@ function isValidEmail(v) {
 }
 
 function isValidUri(v) {
-  return /^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(v)
+  // Backend (utils/san_parse.py) accepts any RFC 3986 scheme via urlparse,
+  // including authority-less URIs (urn:, mailto:, did:) — mirror that here.
+  return /^[a-zA-Z][a-zA-Z0-9+.-]*:.+/.test(v)
 }
 
 function isValidUpn(v) {

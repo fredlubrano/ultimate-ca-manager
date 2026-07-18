@@ -1337,6 +1337,7 @@ function CSRDetailsPanel({ csr, canWrite, canDelete, onSign, onDownload, onDelet
 // =============================================================================
 
 function SignedCSRDetailsPanel({ cert, onDownload, onRekey, t }) {
+  const navigate = useNavigate()
   const daysRemaining = cert.days_remaining || 0
   const expiryVariant = daysRemaining < 0 ? 'danger' : daysRemaining < 30 ? 'warning' : 'success'
   const isAcme = cert.source === 'acme'
