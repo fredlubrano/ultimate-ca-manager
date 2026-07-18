@@ -99,6 +99,44 @@ def _require_empty_payload(payload):
     return None
 
 
+def _request_protected_header():
+    """Decode the JWS protected header of the current request, or {} on failure."""
+    try:
+        jws_data = request.get_json(silent=True) or {}
+        protected_b64 = jws_data.get('protected', '')
+        if not protected_b64:
+            return {}
+        protected_b64 += '=' * (-len(protected_b64) % 4)
+        return json.loads(base64.urlsafe_b64decode(protected_b64))
+    except Exception:
+        return {}
+
+
+def _kid_account_id(protected):
+    """Account id embedded in the JWS 'kid', or None."""
+    kid = (protected or {}).get('kid', '')
+    return kid.rstrip('/').rsplit('/', 1)[-1] if kid else None
+
+
+def _kid_account_thumbprint(protected):
+    """Stable JWK thumbprint of the account the (verified) kid resolves to.
+
+    new-order/finalize are kid-signed (RFC 8555 §6.2), so the client JWK is not
+    in the header; the order↔account binding must derive from the account the
+    kid points at. verify_proxy_jws has already validated the signature against
+    that account's key, so trusting the kid here is sound.
+    """
+    acct_id = _kid_account_id(protected)
+    if not acct_id:
+        return None
+    try:
+        from models import AcmeAccount
+        acct = AcmeAccount.query.filter_by(account_id=acct_id).first()
+        return acct.jwk_thumbprint if acct else None
+    except Exception:
+        return None
+
+
 def _dual_route(rule, methods, endpoint):
     """Register both default and slug-scoped proxy routes."""
 
@@ -249,6 +287,9 @@ def new_order(slug=None):
         if not_before:
             not_before = datetime.fromisoformat(not_before.replace('Z', '+00:00'))
 
+        # Bind the order to its owner so finalize can reject cross-account use.
+        # RFC 8555 new-order is kid-signed, so derive the binding from the
+        # account the kid resolves to; fall back to the header JWK if present.
         client_thumbprint = None
         if jwk:
             try:
@@ -259,6 +300,8 @@ def new_order(slug=None):
                 ).rstrip(b'=').decode()
             except Exception:
                 pass
+        if not client_thumbprint:
+            client_thumbprint = _kid_account_thumbprint(_request_protected_header())
 
         svc = get_proxy_service(slug)
         order_data, order_id = svc.new_order(
@@ -375,20 +418,17 @@ def finalize(order_id, slug=None):
     requester_account_id = None
     requester_thumbprint = None
     try:
-        jws_data = request.get_json(silent=True) or {}
-        protected_b64 = jws_data.get('protected', '')
-        if protected_b64:
-            protected_b64 += '=' * (-len(protected_b64) % 4)
-            protected = json.loads(base64.urlsafe_b64decode(protected_b64))
-            kid = protected.get('kid', '')
-            if kid:
-                requester_account_id = kid.rstrip('/').rsplit('/', 1)[-1]
+        protected = _request_protected_header()
+        requester_account_id = _kid_account_id(protected)
         if jwk:
             import hashlib
             jwk_canonical = json.dumps(jwk, separators=(',', ':'), sort_keys=True)
             requester_thumbprint = base64.urlsafe_b64encode(
                 hashlib.sha256(jwk_canonical.encode()).digest()
             ).rstrip(b'=').decode()
+        else:
+            # kid-signed (RFC-compliant path): mirror new-order's binding.
+            requester_thumbprint = _kid_account_thumbprint(protected)
     except Exception:
         pass
 

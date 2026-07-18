@@ -25,6 +25,22 @@ def dns_propagation_timeout(config_key: str = 'acme.client.dns_propagation_timeo
     return DNS_SELFCHECK_DEFAULT_TIMEOUT
 
 
+def acme_allow_loopback_upstream() -> bool:
+    """Opt-in (default False): allow ACME upstream traffic to a loopback address.
+
+    UCM already permits RFC1918/.lan upstreams; loopback stays blocked by default
+    (SSRF hardening). Operators running a colocated ACME CA (Pebble/step-ca on
+    127.0.0.1) flip ``acme.client.allow_loopback_upstream`` to true to opt in.
+    """
+    try:
+        cfg = SystemConfig.query.filter_by(key='acme.client.allow_loopback_upstream').first()
+        if cfg is None or cfg.value is None:
+            return False
+        return str(cfg.value).strip().lower() in ('1', 'true', 'yes', 'on')
+    except Exception:
+        return False
+
+
 def challenge_txt_name(domain: str, challenge: dict) -> str:
     """TXT owner name for a dns-01 challenge dict (renewal rows may omit dns_txt_name)."""
     return challenge.get('dns_txt_name') or f"_acme-challenge.{domain.lstrip('*.')}"

@@ -74,21 +74,24 @@ _CLOUD_METADATA_HOSTS = {
 _CLOUD_METADATA_IP_OBJS = {ipaddress.ip_address(a) for a in _CLOUD_METADATA_IPS}
 
 
-def _forbidden_ip_reason(ip):
+def _forbidden_ip_reason(ip, allow_loopback: bool = False):
     """Why `ip` (an ipaddress object) is a forbidden SSRF target — cloud metadata,
     loopback, or unspecified (0.0.0.0 / ::, which route to loopback on most OSes) — or
-    None. IPv4-mapped IPv6 is collapsed to IPv4 first so it can't slip past the checks."""
+    None. IPv4-mapped IPv6 is collapsed to IPv4 first so it can't slip past the checks.
+
+    allow_loopback=True permits loopback/unspecified (for a colocated ACME upstream
+    such as Pebble/step-ca on 127.0.0.1); cloud metadata stays blocked regardless."""
     mapped = getattr(ip, 'ipv4_mapped', None)
     if mapped is not None:
         ip = mapped
     if ip in _CLOUD_METADATA_IP_OBJS:
         return "cloud metadata IP"
-    if ip.is_loopback or ip.is_unspecified:
+    if (ip.is_loopback or ip.is_unspecified) and not allow_loopback:
         return "loopback/unspecified address"
     return None
 
 
-def validate_url_not_cloud_metadata(url: str) -> None:
+def validate_url_not_cloud_metadata(url: str, allow_loopback: bool = False) -> None:
     """Validate that a URL doesn't target cloud metadata services or loopback.
 
     This is a *narrow* SSRF guard — it explicitly ALLOWS RFC1918 private IPs
@@ -98,6 +101,9 @@ def validate_url_not_cloud_metadata(url: str) -> None:
 
     - Cloud instance metadata endpoints (credential exfiltration)
     - Loopback (would let a compromised admin probe UCM's own internals)
+
+    allow_loopback=True is an opt-in used only for a colocated ACME upstream
+    (Pebble/step-ca on 127.0.0.1); cloud metadata stays blocked regardless.
 
     Raises ValueError if the URL targets a forbidden endpoint.
     """
@@ -115,7 +121,7 @@ def validate_url_not_cloud_metadata(url: str) -> None:
     # Check literal IP
     try:
         ip = ipaddress.ip_address(host)
-        reason = _forbidden_ip_reason(ip)
+        reason = _forbidden_ip_reason(ip, allow_loopback)
         if reason:
             raise ValueError(f"Host {host} is a {reason}")
         return
@@ -129,7 +135,7 @@ def validate_url_not_cloud_metadata(url: str) -> None:
         addrs = socket.getaddrinfo(host, None)
         for _, _, _, _, sockaddr in addrs:
             ip = ipaddress.ip_address(sockaddr[0])
-            reason = _forbidden_ip_reason(ip)
+            reason = _forbidden_ip_reason(ip, allow_loopback)
             if reason:
                 raise ValueError(f"Host {host} resolves to {reason} {ip}")
     except socket.gaierror:
@@ -210,7 +216,7 @@ def _pin_host(host: str, ip: str):
             pinned[key] = prev
 
 
-def _resolve_and_validate(url: str) -> tuple:
+def _resolve_and_validate(url: str, allow_loopback: bool = False) -> tuple:
     """Resolve URL hostname to a single safe IP. Returns (host, ip).
 
     Raises ValueError if the URL has no hostname, fails to resolve,
@@ -223,7 +229,7 @@ def _resolve_and_validate(url: str) -> tuple:
     # Already a literal IP — validate and pin to itself.
     try:
         ip_obj = ipaddress.ip_address(host)
-        reason = _forbidden_ip_reason(ip_obj)
+        reason = _forbidden_ip_reason(ip_obj, allow_loopback)
         if reason:
             raise ValueError(f"Host {host} is a {reason}")
         return host, str(ip_obj)
@@ -240,7 +246,7 @@ def _resolve_and_validate(url: str) -> tuple:
     chosen = None
     for _, _, _, _, sockaddr in addrs:
         ip = ipaddress.ip_address(sockaddr[0])
-        reason = _forbidden_ip_reason(ip)
+        reason = _forbidden_ip_reason(ip, allow_loopback)
         if reason:
             raise ValueError(f"Host {host} resolves to {reason} {ip}")
         if chosen is None:
@@ -252,34 +258,37 @@ def _resolve_and_validate(url: str) -> tuple:
     return host, chosen
 
 
-def safe_request_post(url, **kwargs):
+def safe_request_post(url, allow_loopback: bool = False, **kwargs):
     """requests.post() with DNS-rebinding protection.
 
     Resolves the URL hostname once, validates it against the cloud-metadata
     deny-list, and pins the underlying TCP connection to that exact IP for
     the duration of the call. SNI and certificate verification continue to
     use the original hostname so HTTPS works normally.
+
+    allow_loopback=True permits a colocated upstream on 127.0.0.1 (ACME
+    Pebble/step-ca); cloud metadata stays blocked. Default keeps loopback denied.
     """
     import requests
     kwargs.setdefault('timeout', 30)  # never hang forever on a stuck/slow upstream
-    host, ip = _resolve_and_validate(url)
+    host, ip = _resolve_and_validate(url, allow_loopback)
     with _pin_host(host, ip):
         return requests.post(url, **kwargs)
 
 
-def safe_request_get(url, **kwargs):
+def safe_request_get(url, allow_loopback: bool = False, **kwargs):
     """requests.get() counterpart of safe_request_post()."""
     import requests
     kwargs.setdefault('timeout', 30)  # never hang forever on a stuck/slow upstream
-    host, ip = _resolve_and_validate(url)
+    host, ip = _resolve_and_validate(url, allow_loopback)
     with _pin_host(host, ip):
         return requests.get(url, **kwargs)
 
 
-def safe_request_head(url, **kwargs):
+def safe_request_head(url, allow_loopback: bool = False, **kwargs):
     """requests.head() with DNS-rebinding protection (e.g. ACME newNonce)."""
     import requests
     kwargs.setdefault('timeout', 30)
-    host, ip = _resolve_and_validate(url)
+    host, ip = _resolve_and_validate(url, allow_loopback)
     with _pin_host(host, ip):
         return requests.head(url, **kwargs)

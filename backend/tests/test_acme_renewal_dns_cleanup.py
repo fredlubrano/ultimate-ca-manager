@@ -41,7 +41,9 @@ def renewal_order(app):
         yield order.id, provider.id
 
 
-def test_renewal_deletes_txt_when_propagation_not_ready(app, renewal_order):
+def test_renewal_submits_upstream_when_propagation_not_ready(app, renewal_order):
+    """Soft-fail: a local DNS pre-check miss must NOT abort the renewal — the challenge
+    is still submitted to the CA (which has its own DNS view). See acme_renewal_service."""
     from models import db, SystemConfig
     from models.acme_models import AcmeClientOrder
     from services import acme_renewal_service as renew_mod
@@ -72,6 +74,10 @@ def test_renewal_deletes_txt_when_propagation_not_ready(app, renewal_order):
 
         mock_client = MagicMock()
         mock_client.create_order.return_value = (True, 'ok', new_order)
+        mock_client.verify_challenge.return_value = (True, 'ok')
+        # Stop the flow right after challenge submission so we don't need to mock
+        # the full finalize/cert-import path; the pre-check must be behind us by then.
+        mock_client.finalize_order.side_effect = RuntimeError('STOP_AFTER_SUBMIT')
 
         cfg = SystemConfig.query.filter_by(
             key='acme.client.dns_propagation_timeout',
@@ -93,18 +99,24 @@ def test_renewal_deletes_txt_when_propagation_not_ready(app, renewal_order):
                  'services.acme.acme_client_service.AcmeClientService.for_order',
                  return_value=mock_client,
              ), \
+             patch('time.sleep', return_value=None), \
              patch.object(
                  renew_mod,
                  'wait_for_challenges',
                  return_value={'ok': False, 'missing': ['example.com'], 'waited': 5},
              ):
-            with pytest.raises(Exception, match='DNS propagation not ready'):
+            # Renewal proceeds past the DNS pre-check (soft-fail) and reaches finalize,
+            # where our sentinel stops it — it does NOT raise 'DNS propagation not ready'.
+            with pytest.raises(RuntimeError, match='STOP_AFTER_SUBMIT'):
                 renew_mod.renew_certificate(order)
 
     assert mock_provider.create_txt_record.called
+    # The upstream challenge WAS submitted despite the local DNS miss.
+    mock_client.verify_challenge.assert_called_once()
+    assert mock_client.verify_challenge.call_args[0][1] == 'example.com'
+    # TXT is still cleaned up on the way out (finally block).
     assert len(deleted) == 1
     assert deleted[0]['record_name'] == '_acme-challenge.example.com'
-    assert deleted[0]['domain'] == 'example.com'
 
 
 def test_renewal_deletes_txt_when_create_fails_on_second_domain(app, renewal_order):

@@ -205,8 +205,9 @@ class TestProxyServiceBinding:
 
             post_mock.assert_called_once()
 
-    def test_bg_thread_skips_upstream_when_dns_not_ready(self, app, clean_proxy_state):
-        """If DNS TXT is still missing after timeout, do not submit upstream."""
+    def test_bg_thread_submits_upstream_when_dns_not_visible_locally(self, app, clean_proxy_state):
+        """Soft-fail: if the local resolver can't see the TXT after timeout, still submit
+        upstream and let the CA be the authority (split-horizon / filtered egress DNS)."""
         from unittest.mock import MagicMock, patch
         from services.acme.acme_proxy_service import AcmeProxyService
         from models import AcmeClientOrder
@@ -245,6 +246,7 @@ class TestProxyServiceBinding:
                 provider.get_zone_for_domain.return_value = 'example.com'
                 provider.get_acme_challenge_name.return_value = '_acme-challenge.test.example.com'
                 create_prov.return_value = provider
+                post_mock.return_value.status_code = 200
 
                 svc._bg_respond_challenge(
                     app,
@@ -254,10 +256,12 @@ class TestProxyServiceBinding:
                     order.id,
                 )
 
-            post_mock.assert_not_called()
+            # Upstream validation IS triggered despite the local DNS miss.
+            post_mock.assert_called_once()
+            assert post_mock.call_args[0][0] == 'https://acme-proxy-test.example/chall/2'
             db.session.refresh(order)
             entry = order.challenges_dict.get('https://acme-proxy-test.example/chall/2', {})
-            assert entry.get('status') == 'dns_not_ready'
+            assert entry.get('status') == 'submitted'
 
 
 class TestProxyMultiPath:

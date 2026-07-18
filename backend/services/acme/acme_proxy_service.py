@@ -22,7 +22,11 @@ from services.acme.acme_proxy_account import (
     resolve_proxy_account,
     legacy_upstream_directory_url,
 )
-from services.acme.dns_selfcheck import dns_propagation_timeout, wait_for_txt
+from services.acme.dns_selfcheck import (
+    acme_allow_loopback_upstream,
+    dns_propagation_timeout,
+    wait_for_txt,
+)
 from utils.acme_debug import acme_log
 
 logger = logging.getLogger(__name__)
@@ -273,11 +277,14 @@ class AcmeProxyService:
 
     @staticmethod
     def _validate_outbound_acme_url(url: str) -> None:
-        """Block loopback/cloud-metadata targets for upstream ACME sub-URLs."""
+        """Block loopback/cloud-metadata targets for upstream ACME sub-URLs.
+
+        Loopback is allowed only when the operator opts in for a colocated
+        upstream (see acme_allow_loopback_upstream); metadata stays blocked."""
         from utils.ssrf_protection import validate_url_not_cloud_metadata
 
         try:
-            validate_url_not_cloud_metadata(url)
+            validate_url_not_cloud_metadata(url, allow_loopback=acme_allow_loopback_upstream())
         except ValueError as exc:
             raise ValueError(f'ACME outbound URL blocked: {exc}') from exc
 
@@ -296,6 +303,7 @@ class AcmeProxyService:
             try:
                 resp = safe_request_get(
                     self.upstream_directory_url,
+                    allow_loopback=acme_allow_loopback_upstream(),
                     timeout=15,
                     verify=self.verify_ssl,
                 )
@@ -323,6 +331,7 @@ class AcmeProxyService:
         self._validate_outbound_acme_url(nonce_url)
         resp = safe_request_head(
             nonce_url,
+            allow_loopback=acme_allow_loopback_upstream(),
             timeout=15,
             verify=self.verify_ssl,
         )
@@ -361,6 +370,7 @@ class AcmeProxyService:
         self._validate_outbound_acme_url(url)
         return safe_request_post(
             url,
+            allow_loopback=acme_allow_loopback_upstream(),
             json=data,
             headers=headers,
             timeout=self._http_timeout(),
@@ -794,22 +804,16 @@ class AcmeProxyService:
                 else:
                     check = wait_for_txt(full_record_name, txt_value, timeout)
                 if not check['ok']:
-                    logger.error(
-                        "[ACME Proxy BG] DNS TXT not visible after %ss for %s (%s) — "
-                        "not submitting upstream",
+                    # Soft-fail: our local resolver may miss the record (split-horizon,
+                    # filtered egress DNS) while the CA still sees it. Warn, keep the
+                    # TXT record in place, and submit upstream — the CA is authoritative.
+                    logger.warning(
+                        "[ACME Proxy BG] DNS TXT not visible locally after %ss for %s (%s) — "
+                        "submitting upstream anyway",
                         timeout, domain, full_record_name,
                     )
-                    self._delete_dns_record(provider, zone, full_record_name)
-                    challenges_data = order.challenges_dict
-                    entry = challenges_data.get(chall_url, {})
-                    entry['status'] = 'dns_not_ready'
-                    entry['error'] = f'dns txt not visible after {timeout}s'
-                    entry['checked_at'] = datetime.now().isoformat()
-                    challenges_data[chall_url] = entry
-                    order.set_challenges_dict(challenges_data)
-                    db.session.commit()
-                    return
-                logger.info("[ACME Proxy BG] DNS TXT confirmed after %ss for %s", check['waited'], domain)
+                else:
+                    logger.info("[ACME Proxy BG] DNS TXT confirmed after %ss for %s", check['waited'], domain)
                 
                 # Store record info for cleanup
                 records = json.loads(order.dns_records_created) if order.dns_records_created else []
@@ -1073,7 +1077,10 @@ class AcmeProxyService:
         
         # Extract Link header from upstream (contains issuer cert URL)
         link_header = resp.headers.get('Link')
-        
+
+        # Body served to the client — replaced by the selected chain below on 200.
+        response_body = resp.content
+
         if resp.status_code == 200:
             # Certificate obtained successfully
             from services.acme.acme_chain_selection import select_acme_certificate_chain
@@ -1097,7 +1104,9 @@ class AcmeProxyService:
                 preferred,
                 _fetch_alternate,
             )
-            
+            # Serve the selected (preferred) chain to the client, not just store it.
+            response_body = cert_pem
+
             stored_cert = None
             # Store the certificate in the database
             try:
@@ -1167,4 +1176,4 @@ class AcmeProxyService:
                     logger.error(f"Failed during certificate cleanup: {e}")
         
         # Cert response is PEM stream usually
-        return resp.content, resp.headers.get('Content-Type', 'application/pem-certificate-chain'), link_header
+        return response_body, resp.headers.get('Content-Type', 'application/pem-certificate-chain'), link_header

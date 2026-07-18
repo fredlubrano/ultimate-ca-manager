@@ -200,10 +200,16 @@ def renew_certificate(order) -> tuple:
         else:
             check = wait_for_challenges(challenges, timeout)
         if not check['ok']:
-            raise Exception(
-                f"DNS propagation not ready after {timeout}s for: {', '.join(check['missing'])}"
+            # Soft-fail: our local resolver may not see the record (split-horizon,
+            # filtered egress DNS) even though the CA can. Warn and let the CA be
+            # the authority — do NOT abort before submitting the challenge.
+            logger.warning(
+                "DNS propagation not confirmed locally after %ss for: %s — "
+                "submitting to the CA anyway",
+                timeout, ', '.join(check['missing']),
             )
-        logger.info("DNS propagation confirmed after %ss", check['waited'])
+        else:
+            logger.info("DNS propagation confirmed after %ss", check['waited'])
 
         # Submit challenges for validation
         for domain in challenges.keys():

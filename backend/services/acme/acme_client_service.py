@@ -23,6 +23,7 @@ from cryptography.hazmat.primitives.serialization import Encoding
 
 from models import db, SystemConfig, Certificate, DnsProvider, AcmeClientOrder
 from services.acme.dns_providers import create_provider, get_provider_class
+from services.acme.dns_selfcheck import acme_allow_loopback_upstream
 from utils.safe_requests import create_session
 
 logger = logging.getLogger(__name__)
@@ -329,7 +330,7 @@ class AcmeClientService:
         from utils.ssrf_protection import validate_url_not_cloud_metadata
 
         try:
-            validate_url_not_cloud_metadata(url)
+            validate_url_not_cloud_metadata(url, allow_loopback=acme_allow_loopback_upstream())
         except ValueError as exc:
             raise ValueError(f'ACME outbound URL blocked: {exc}') from exc
     
@@ -342,6 +343,7 @@ class AcmeClientService:
 
         resp = safe_request_get(
             self.directory_url,
+            allow_loopback=acme_allow_loopback_upstream(),
             timeout=self._http_timeout(),
             verify=self.verify_ssl,
             headers={'User-Agent': self.session.headers.get('User-Agent', 'UCM-ACME-Client/2.1')},
@@ -368,6 +370,7 @@ class AcmeClientService:
 
                 resp = safe_request_head(
                     nonce_url,
+                    allow_loopback=acme_allow_loopback_upstream(),
                     timeout=30,
                     verify=self.verify_ssl,
                     headers=dict(self.session.headers),
@@ -606,6 +609,7 @@ class AcmeClientService:
         jws = self._sign_jws(url, payload, use_jwk=use_jwk)
         resp = safe_request_post(
             url,
+            allow_loopback=acme_allow_loopback_upstream(),
             json=jws,
             headers={
                 "Content-Type": "application/jose+json",
